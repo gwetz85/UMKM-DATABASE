@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, Users, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck, Send, Folder, MessageCircle, ClipboardList, Camera, Copy, Check, MoreVertical, ExternalLink, Calendar, Phone, PhoneCall, Sparkles, Navigation, UserCheck, Maximize2, ShieldCheck, BadgeCheck, UploadCloud, Ban, XCircle, AlertTriangle, Database, FileText, Briefcase, Heart, Mail, Globe, Banknote, Layers } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, Users, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, ChevronDown, Download, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck, Send, Folder, MessageCircle, ClipboardList, Camera, Copy, Check, MoreVertical, ExternalLink, Calendar, Phone, PhoneCall, Sparkles, Navigation, UserCheck, Maximize2, ShieldCheck, BadgeCheck, UploadCloud, Ban, XCircle, AlertTriangle, Database, FileText, Briefcase, Heart, Mail, Globe, Banknote, Layers } from "lucide-react"
 import * as XLSX from "xlsx"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -30,11 +30,135 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 
 
-const normalizeGender = (g: string) => {
+const normalizeGender = (g: string, nik?: string) => {
   const val = (g || "").toLowerCase().trim();
-  if (val === "l" || val === "laki-laki") return "Laki-laki";
-  if (val === "p" || val === "perempuan") return "Perempuan";
+  if (val === "l" || val === "laki-laki" || val.includes("laki") || val === "pria") return "Laki-laki";
+  if (val === "p" || val === "perempuan" || val.includes("perempuan") || val === "wanita") return "Perempuan";
+  if (nik && nik.replace(/\D/g, "").length >= 8) {
+    const cleanNik = nik.replace(/\D/g, "");
+    const day = parseInt(cleanNik.substring(6, 8), 10);
+    if (!isNaN(day)) {
+      return day > 40 ? "Perempuan" : "Laki-laki";
+    }
+  }
   return "";
+};
+
+const GenderAvatar = ({ isFemale, className }: { isFemale: boolean; className?: string }) => {
+  if (isFemale) {
+    // Avatar Anak Perempuan (Perempuan)
+    return (
+      <div
+        className={cn(
+          "w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-full overflow-hidden border-2 border-rose-200 dark:border-rose-800 shadow-xs shrink-0 bg-gradient-to-b from-rose-100 to-pink-200 dark:from-rose-950 dark:to-pink-900 flex items-center justify-center",
+          className
+        )}
+        title="Perempuan"
+      >
+        <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Background Circle */}
+          <circle cx="50" cy="50" r="50" fill="url(#girlBg)" />
+          {/* Back Hair & Pigtails */}
+          <circle cx="22" cy="48" r="12" fill="#2D1B18" />
+          <circle cx="78" cy="48" r="12" fill="#2D1B18" />
+          <path d="M24 38C24 22 35 15 50 15C65 15 76 22 76 38V66H24V38Z" fill="#2D1B18" />
+          {/* Hair Ribbons / Clips */}
+          <circle cx="26" cy="40" r="4.5" fill="#F43F5E" />
+          <circle cx="74" cy="40" r="4.5" fill="#F43F5E" />
+          {/* Shirt / Outfit */}
+          <path d="M22 100C24 80 35 74 50 74C65 74 76 80 78 100H22Z" fill="#E11D48" />
+          {/* Peter Pan White Collar */}
+          <path d="M38 74L50 84L43 87L34 77Z" fill="#FFFFFF" />
+          <path d="M62 74L50 84L57 87L66 77Z" fill="#FFFFFF" />
+          {/* Neck */}
+          <rect x="44" y="64" width="12" height="13" rx="6" fill="#F5CBA7" />
+          {/* Ears */}
+          <circle cx="28" cy="50" r="5" fill="#F5CBA7" />
+          <circle cx="72" cy="50" r="5" fill="#F5CBA7" />
+          {/* Earring dots */}
+          <circle cx="28" cy="53" r="1.5" fill="#FBBF24" />
+          <circle cx="72" cy="53" r="1.5" fill="#FBBF24" />
+          {/* Face */}
+          <rect x="30" y="27" width="40" height="42" rx="20" fill="#FFE0C2" />
+          {/* Cheeks Blush */}
+          <ellipse cx="37" cy="53" rx="4.5" ry="2.5" fill="#FB7185" fillOpacity="0.45" />
+          <ellipse cx="63" cy="53" rx="4.5" ry="2.5" fill="#FB7185" fillOpacity="0.45" />
+          {/* Eyes */}
+          <circle cx="40" cy="46" r="3.2" fill="#1E293B" />
+          <circle cx="60" cy="46" r="3.2" fill="#1E293B" />
+          <circle cx="41" cy="44.8" r="1.1" fill="#FFFFFF" />
+          <circle cx="61" cy="44.8" r="1.1" fill="#FFFFFF" />
+          {/* Eyelashes */}
+          <path d="M36 44L34.5 42.5" stroke="#1E293B" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M64 44L65.5 42.5" stroke="#1E293B" strokeWidth="1.5" strokeLinecap="round" />
+          {/* Eyebrows */}
+          <path d="M36 39.5C38 38 42 38 44 39.5" stroke="#3E2723" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M56 39.5C58 38 62 38 64 39.5" stroke="#3E2723" strokeWidth="1.8" strokeLinecap="round" />
+          {/* Cute Smile */}
+          <path d="M44 56C46 59.5 54 59.5 56 56" stroke="#BE123C" strokeWidth="2.2" strokeLinecap="round" />
+          {/* Front Hair Bangs */}
+          <path d="M28 42C28 26 38 18 50 18C62 18 72 26 72 42C66 36 58 31 50 35C42 31 34 36 28 42Z" fill="#3E2723" />
+          <defs>
+            <linearGradient id="girlBg" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#FFE4E6" />
+              <stop offset="1" stopColor="#FECDD3" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    );
+  }
+
+  // Avatar Anak Laki-laki (Laki-laki)
+  return (
+    <div
+      className={cn(
+        "w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-full overflow-hidden border-2 border-sky-200 dark:border-sky-800 shadow-xs shrink-0 bg-gradient-to-b from-sky-100 to-blue-200 dark:from-sky-950 dark:to-blue-900 flex items-center justify-center",
+        className
+      )}
+      title="Laki-laki"
+    >
+      <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Background Circle */}
+        <circle cx="50" cy="50" r="50" fill="url(#boyBg)" />
+        {/* Shirt / Hoodie */}
+        <path d="M20 100C22 79 34 73 50 73C66 73 78 79 80 100H20Z" fill="#0284C7" />
+        {/* Inner White Crew Neck & Collar */}
+        <path d="M41 73L50 83L59 73H41Z" fill="#FFFFFF" />
+        <path d="M36 74L45 84L40 87L32 77Z" fill="#38BDF8" />
+        <path d="M64 74L55 84L60 87L68 77Z" fill="#38BDF8" />
+        {/* Neck */}
+        <rect x="44" y="63" width="12" height="13" rx="6" fill="#F5CBA7" />
+        {/* Ears */}
+        <circle cx="28" cy="49" r="5.5" fill="#F5CBA7" />
+        <circle cx="72" cy="49" r="5.5" fill="#F5CBA7" />
+        {/* Face */}
+        <rect x="30" y="27" width="40" height="42" rx="20" fill="#FFE0C2" />
+        {/* Subtle Cheeks */}
+        <ellipse cx="37" cy="53" rx="4" ry="2.2" fill="#F87171" fillOpacity="0.35" />
+        <ellipse cx="63" cy="53" rx="4" ry="2.2" fill="#F87171" fillOpacity="0.35" />
+        {/* Eyes */}
+        <circle cx="40" cy="46" r="3.2" fill="#0F172A" />
+        <circle cx="60" cy="46" r="3.2" fill="#0F172A" />
+        <circle cx="41" cy="44.8" r="1.1" fill="#FFFFFF" />
+        <circle cx="61" cy="44.8" r="1.1" fill="#FFFFFF" />
+        {/* Eyebrows */}
+        <path d="M35.5 39.5C38 38 42.5 38 44.5 39.5" stroke="#1E293B" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M55.5 39.5C57.5 38 62 38 64.5 39.5" stroke="#1E293B" strokeWidth="2.2" strokeLinecap="round" />
+        {/* Cheerful Smile */}
+        <path d="M43.5 55.5C46 59.5 54 59.5 56.5 55.5" stroke="#9A3412" strokeWidth="2.3" strokeLinecap="round" />
+        {/* Short Boy Hair with Spiky Fringe */}
+        <path d="M27 42C26 26 36 16 50 16C64 16 74 26 73 42C70 34 64 31 57 33C53 29 46 30 42 34C36 31 30 35 27 42Z" fill="#1E293B" />
+        <path d="M44 17C47 12 53 12 56 16" stroke="#1E293B" strokeWidth="3.5" strokeLinecap="round" />
+        <defs>
+          <linearGradient id="boyBg" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#E0F2FE" />
+            <stop offset="1" stopColor="#BAE6FD" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
 };
 
 const getActorMapUrl = (actor: BusinessActor) => {
@@ -2417,9 +2541,9 @@ function ActorDataContent() {
           setEditingDriveMode(false)
         }
       }}>
-        <DialogContent className="w-[96vw] max-w-5xl max-h-[92vh] p-0 overflow-hidden flex flex-col rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xl bg-slate-50/70 dark:bg-slate-950">
+        <DialogContent className="w-[96vw] max-w-6xl max-h-[94vh] p-0 overflow-hidden flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl bg-[#F8FAFC] dark:bg-slate-950 [&>button]:hidden">
           {viewingActor && !editingBankMode && !editingDriveMode && (() => {
-            const isFemale = normalizeGender(viewingActor.gender) === 'Perempuan';
+            const isFemale = normalizeGender(viewingActor.gender, viewingActor.nik) === 'Perempuan';
             const initials = (viewingActor.fullName || "U")
               .split(" ")
               .filter(Boolean)
@@ -2430,220 +2554,277 @@ function ActorDataContent() {
             const rawAge = calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || ""));
             const cleanAge = rawAge && rawAge !== '-' ? rawAge.replace(/[^0-9]/g, '') : '';
 
-            return (
-              <div className="flex flex-col h-full max-h-[92vh] overflow-hidden">
-                {/* ── TOP ACCENT GRADIENT STRIPE ── */}
-                <div 
-                  className={cn(
-                    "h-1.5 w-full shrink-0 bg-gradient-to-r",
-                    isFemale 
-                      ? "from-rose-500 via-pink-500 to-indigo-500" 
-                      : "from-blue-600 via-indigo-600 to-teal-500"
-                  )} 
-                />
+            // ── STRICT AVAILABILITY HELPER: Hanya tampilkan data yang tersedia / diinput ──
+            const hasVal = (v: any): boolean => {
+              if (v === null || v === undefined) return false;
+              if (typeof v === "boolean") return true;
+              if (typeof v === "number") return !isNaN(v) && v > 0;
+              if (Array.isArray(v)) return v.filter(item => hasVal(item)).length > 0;
+              if (typeof v === "string") {
+                const trimmed = v.trim();
+                if (!trimmed) return false;
+                const upper = trimmed.toUpperCase();
+                if (
+                  upper === "-" ||
+                  upper === "--" ||
+                  upper === "BELUM ADA" ||
+                  upper === "BELUM TERISI" ||
+                  upper === "BELUM DIINPUT" ||
+                  upper === "TIDAK ADA" ||
+                  upper === "NULL" ||
+                  upper === "UNDEFINED" ||
+                  upper === "N/A"
+                ) {
+                  return false;
+                }
+                return true;
+              }
+              if (typeof v === "object") return Object.keys(v).length > 0;
+              return Boolean(v);
+            };
 
-                {/* ── STICKY MODAL HEADER (MODERN EXECUTIVE SUITE) ── */}
-                <div className="relative z-20 px-5 sm:px-6 py-4 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md space-y-3.5 shrink-0 shadow-2xs">
-                  {/* TIER 1: Profile Avatar & Identity Row */}
-                  <div className="flex items-center gap-4 pr-10 sm:pr-12">
-                    <div className={cn(
-                      "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center font-black text-white text-base sm:text-xl shadow-md shrink-0 ring-2 ring-white dark:ring-slate-800 ring-offset-2 ring-offset-slate-100 dark:ring-offset-slate-900 bg-gradient-to-br",
-                      isFemale ? "from-rose-500 via-pink-600 to-rose-700" : "from-blue-600 via-indigo-600 to-sky-600"
-                    )}>
-                      {initials}
+            const getWaLink = (phoneStr: string) => {
+              if (!phoneStr) return "#";
+              let clean = String(phoneStr).replace(/\D/g, "");
+              if (clean.startsWith("0")) clean = "62" + clean.slice(1);
+              else if (!clean.startsWith("62")) clean = "62" + clean;
+              return `https://wa.me/${clean}`;
+            };
+
+            const avatarPhotoUrl = detailSurveyPhotoUrl || viewingActor.photoUsahaUri || viewingActor.ktpUri || null;
+            const statusRaw = viewingActor.status || "pending";
+            const isCancelDinas = (statusRaw === "verified_dinas" && viewingActor.hasilVerifikasiDinas === "Tidak Lolos") || Boolean(viewingActor.alasanCancelDinas);
+            const isRejected = statusRaw === "rejected" || isCancelDinas;
+            const statusLabel = isRejected
+              ? "Ditolak / Batal"
+              : statusRaw === "finish"
+              ? "Selesai"
+              : statusRaw === "lpj_pending"
+              ? "Proses Survey"
+              : statusRaw === "verified_dinas"
+              ? "Verifikasi Dinas"
+              : statusRaw === "verified_actor"
+              ? "Terverifikasi"
+              : "Menunggu Verifikasi";
+
+            // Reusable Clean Field Component (matches reference screenshot)
+            const CleanField = ({
+              label,
+              value,
+              subValue,
+              isMono = false,
+              isCopyable = false,
+              copyLabel,
+              colSpan2 = false,
+            }: {
+              label: string;
+              value: React.ReactNode;
+              subValue?: string;
+              isMono?: boolean;
+              isCopyable?: boolean;
+              copyLabel?: string;
+              colSpan2?: boolean;
+            }) => (
+              <div className={cn("space-y-1", colSpan2 && "sm:col-span-2")}>
+                <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                  {label}
+                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className={cn(
+                    "text-sm font-semibold text-slate-900 dark:text-slate-100 break-words leading-snug",
+                    isMono && "font-mono tracking-tight"
+                  )}>
+                    {value}
+                  </div>
+                  {isCopyable && typeof value === "string" && (
+                    <button
+                      type="button"
+                      onClick={() => handleCopyText(value, copyLabel || label)}
+                      className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-0.5 rounded transition-colors cursor-pointer"
+                      title={`Salin ${copyLabel || label}`}
+                    >
+                      {copiedField === (copyLabel || label) ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  )}
+                </div>
+                {hasVal(subValue) && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {subValue}
+                  </p>
+                )}
+              </div>
+            );
+
+            return (
+              <div className="flex flex-col h-full max-h-[94vh] overflow-y-auto custom-scrollbar">
+                <div className="p-4 sm:p-6 md:p-8 space-y-5">
+                  {/* ── TOP BREADCRUMB & BACK BUTTON BAR ── */}
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex-wrap">
+                      <span>Dashboard</span>
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Data Pelaku Usaha</span>
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        Detail Pelaku Usaha #{viewingActor.registrationCode || viewingActor.nik || viewingActor.id.slice(0, 8)}
+                      </span>
                     </div>
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <DialogTitle className="text-base sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setViewingActor(null);
+                        setIsEditMode(false);
+                      }}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs transition-colors cursor-pointer"
+                    >
+                      <ArrowLeft className="w-4 h-4 text-slate-500" />
+                      <span>Kembali ke Daftar</span>
+                    </button>
+                  </div>
+
+                  {/* ── HERO PROFILE CARD ── */}
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <GenderAvatar isFemale={isFemale} />
+
+                      <div className="min-w-0 space-y-1">
+                        <DialogTitle className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight truncate">
                           {isEditMode ? `Edit: ${viewingActor.fullName}` : viewingActor.fullName}
                         </DialogTitle>
-                        <span className={cn(
-                          "px-3 py-1 rounded-full text-xs font-black uppercase border inline-flex items-center gap-1.5 shrink-0 shadow-2xs",
-                          isFemale 
-                            ? "bg-rose-100 text-rose-900 border-rose-300 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-700"
-                            : "bg-sky-100 text-sky-900 border-sky-300 dark:bg-sky-950/60 dark:text-sky-200 dark:border-sky-700"
-                        )}>
-                          <span className={cn("w-2 h-2 rounded-full animate-pulse", isFemale ? "bg-rose-600" : "bg-sky-600")} />
-                          {isFemale ? "Perempuan" : "Laki-laki"}
-                        </span>
-                        {cleanAge && (
-                          <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-950 dark:text-emerald-200 shrink-0 shadow-2xs">
-                            {cleanAge} Tahun
+
+                        <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+                          {hasVal(viewingActor.businessName) && (
+                            <span className="font-medium">{viewingActor.businessName}</span>
+                          )}
+                          {hasVal(viewingActor.businessName) && hasVal(viewingActor.businessCategory) && (
+                            <span className="text-slate-300 dark:text-slate-600">&bull;</span>
+                          )}
+                          {hasVal(viewingActor.businessCategory) && (
+                            <span className="text-slate-500">{viewingActor.businessCategory}</span>
+                          )}
+                          <span className={cn(
+                            "px-2.5 py-0.5 rounded-full text-xs font-semibold",
+                            isRejected
+                              ? "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
+                              : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                          )}>
+                            {statusLabel}
                           </span>
-                        )}
-                      </div>
+                        </div>
 
-                      {/* Info Chips Row */}
-                      <div className="flex flex-wrap items-center gap-2 text-xs pt-0.5">
-                        {viewingActor.registrationCode && (
-                          <button
-                            type="button"
-                            onClick={() => handleCopyText(viewingActor.registrationCode || '', 'Reg ID')}
-                            className="inline-flex items-center gap-1.5 font-mono font-bold text-xs text-sky-950 dark:text-sky-100 bg-sky-100/90 dark:bg-sky-950/60 hover:bg-sky-200 dark:hover:bg-sky-900/80 px-2.5 py-1 rounded-lg border border-sky-300 dark:border-sky-700 transition-all shadow-2xs group cursor-pointer"
-                            title="Klik untuk menyalin Reg ID"
-                          >
-                            <span className="text-sky-700 dark:text-sky-300 font-black">REG:</span>
-                            <span className="font-black">{viewingActor.registrationCode}</span>
-                            {copiedField === 'Reg ID' ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 group-hover:text-primary transition-colors" />
-                            )}
-                          </button>
-                        )}
-                        {viewingActor.nik && (
-                          <button
-                            type="button"
-                            onClick={() => handleCopyText(viewingActor.nik || '', 'NIK')}
-                            className="inline-flex items-center gap-1.5 font-mono font-bold text-xs text-indigo-950 dark:text-indigo-100 bg-indigo-100/90 dark:bg-indigo-950/60 hover:bg-indigo-200 dark:hover:bg-indigo-900/80 px-2.5 py-1 rounded-lg border border-indigo-300 dark:border-indigo-700 transition-all shadow-2xs group cursor-pointer"
-                            title="Klik untuk menyalin NIK"
-                          >
-                            <span className="text-indigo-700 dark:text-indigo-300 font-black">NIK:</span>
-                            <span className="font-black">{viewingActor.nik}</span>
-                            {copiedField === 'NIK' ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 group-hover:text-primary transition-colors" />
-                            )}
-                          </button>
-                        )}
-                        <ActorMenuBadge actor={viewingActor} asLink />
-                        <VerificationBadge actor={viewingActor} className="mt-0" />
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 pt-0.5">
+                          {hasVal(viewingActor.registrationCode) && (
+                            <span>ID: {viewingActor.registrationCode}</span>
+                          )}
+                          {hasVal(viewingActor.nik) && (
+                            <span className="font-mono">NIK: {viewingActor.nik}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* TIER 2: Dedicated Action Command Bar */}
-                  <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800/90">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {!isEditMode && viewingActor && !isKoordinator && !isInspektorat && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => handlePrintForm(viewingActor)}
-                          className="font-black bg-blue-600 hover:bg-blue-700 text-white shadow-xs rounded-xl text-xs h-8 px-3.5 transition-all cursor-pointer"
-                        >
-                          <Printer className="w-3.5 h-3.5 mr-1.5" /> Cetak Formulir
-                        </Button>
-                      )}
-                      {!isEditMode && isAdmin && viewingActor && (viewingActor as any).surveyData && (
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            if (database && viewingActor?.id && !(viewingActor as any).surveyData?.fotoSurveyUrl) {
-                              get(ref(database, `businessActors/${viewingActor.id}`)).then(snap => {
-                                if (snap.exists()) {
-                                  const full = { ...snap.val(), id: snap.key } as BusinessActor;
-                                  setViewingActor(full);
-                                  setSurveyViewActor(full);
-                                } else {
-                                  setSurveyViewActor(viewingActor);
-                                }
-                              }).catch(() => setSurveyViewActor(viewingActor));
-                            } else {
-                              setSurveyViewActor(viewingActor);
-                            }
-                          }}
-                          className="font-black bg-teal-600 hover:bg-teal-700 text-white shadow-xs rounded-xl text-xs h-8 px-3 transition-all cursor-pointer"
-                        >
-                          <ClipboardList className="w-3.5 h-3.5 mr-1.5" /> Lihat Form Survey
-                        </Button>
-                      )}
-                      {(!isMonitoring && !isKoordinator && !isInspektorat && !isEditMode && (isAdmin || viewingActor.status === 'verified_actor')) && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => setEditingBankMode(true)}
-                          className="font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs h-8 px-3 transition-all cursor-pointer shadow-xs"
-                        >
-                          <CreditCard className="w-3.5 h-3.5 mr-1.5" /> {viewingActor.bankNumber ? "Ubah Rekening" : "Input Rekening"}
-                        </Button>
-                      )}
-                      {isAdmin && !isEditMode && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => setEditingDriveMode(true)}
-                          className="font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-900 dark:text-blue-200 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900 shadow-2xs rounded-xl text-xs h-8 px-3 transition-all cursor-pointer"
-                        >
-                          <Folder className="w-3.5 h-3.5 mr-1.5 text-blue-600 dark:text-blue-400" /> Link Drive
-                        </Button>
-                      )}
-                      {isAdmin && !isEditMode && viewingActor && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => handleSingleLanjutDinas(viewingActor)}
-                          className="font-black bg-purple-600 hover:bg-purple-700 text-white shadow-xs rounded-xl text-xs h-8 px-3.5 transition-all cursor-pointer"
-                          title="Push Data Susulan ke Verifikasi Dinas"
-                        >
-                          <Send className="w-3.5 h-3.5 mr-1.5" /> Lanjut Dinas
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* Secondary Administrative Actions */}
-                    <div className="flex items-center gap-1.5">
+                    {/* Right Action Buttons (Edit Data & Cetak / Ekspor Dropdown) */}
+                    <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                       {isAdmin && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <button
+                          type="button"
                           onClick={() => setIsEditMode(!isEditMode)}
                           className={cn(
-                            "font-bold rounded-xl text-xs h-8 px-3 shadow-2xs transition-all cursor-pointer", 
-                            isEditMode 
-                              ? "border-amber-500 text-amber-700 bg-amber-100 dark:bg-amber-950/60 hover:bg-amber-200" 
-                              : "border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
+                            "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold border transition-colors cursor-pointer",
+                            isEditMode
+                              ? "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"
+                              : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800"
                           )}
                         >
-                          {isEditMode ? "Batal Edit" : <><Edit3 className="w-3.5 h-3.5 mr-1.5 text-slate-600 dark:text-slate-300"/> Edit Data</>}
-                        </Button>
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>{isEditMode ? "Batal Edit" : "Edit Data"}</span>
+                        </button>
                       )}
-                      {isAdmin && !isEditMode && (
-                        <>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} 
-                            className="border-amber-300 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 font-bold shadow-2xs rounded-xl text-xs h-8 px-2.5 cursor-pointer" 
-                            title="Kembalikan ke antrean awal (Pending)"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5 mr-1 sm:mr-0 text-amber-600" />
-                            <span className="sm:hidden text-[11px]">Revert</span>
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} 
-                            className="border-rose-300 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 font-bold shadow-2xs rounded-xl text-xs h-8 px-2.5 cursor-pointer" 
-                            title="Hapus Permanen"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 mr-1 sm:mr-0 text-rose-600" />
-                            <span className="sm:hidden text-[11px]">Delete</span>
-                          </Button>
-                        </>
+
+                      {!isEditMode && (!isMonitoring && !isKoordinator && !isInspektorat && (isAdmin || viewingActor.status === 'verified_actor')) && (
+                        <button
+                          type="button"
+                          onClick={() => setEditingBankMode(true)}
+                          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                        >
+                          <CreditCard className="w-3.5 h-3.5 text-slate-500" />
+                          <span>{hasVal(viewingActor.bankNumber) ? "Ubah Rekening" : "Input Rekening"}</span>
+                        </button>
+                      )}
+
+                      {!isEditMode && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                            >
+                              <Download className="w-3.5 h-3.5 text-slate-500" />
+                              <span>Cetak / Aksi</span>
+                              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-56 rounded-xl">
+                            <DropdownMenuLabel className="text-xs text-slate-500">Dokumen & Tindakan</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {!isKoordinator && !isInspektorat && (
+                              <DropdownMenuItem onClick={() => handlePrintForm(viewingActor)} className="cursor-pointer text-xs font-medium">
+                                <Printer className="w-4 h-4 mr-2 text-slate-500" /> Cetak Formulir Pendaftaran
+                              </DropdownMenuItem>
+                            )}
+                            {isAdmin && (viewingActor as any).surveyData && (
+                              <DropdownMenuItem
+                                onClick={() => setSurveyViewActor(viewingActor)}
+                                className="cursor-pointer text-xs font-medium"
+                              >
+                                <ClipboardList className="w-4 h-4 mr-2 text-teal-600" /> Lihat Form Survey Lengkap
+                              </DropdownMenuItem>
+                            )}
+                            {isAdmin && (
+                              <>
+                                <DropdownMenuItem onClick={() => setEditingDriveMode(true)} className="cursor-pointer text-xs font-medium">
+                                  <Folder className="w-4 h-4 mr-2 text-blue-600" /> Input Link Google Drive
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleSingleLanjutDinas(viewingActor)} className="cursor-pointer text-xs font-medium">
+                                  <Send className="w-4 h-4 mr-2 text-purple-600" /> Push Lanjut ke Dinas
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} className="cursor-pointer text-xs font-medium text-amber-700">
+                                  <RotateCcw className="w-4 h-4 mr-2 text-amber-600" /> Kembalikan ke Pending
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} className="cursor-pointer text-xs font-medium text-rose-600">
+                                  <Trash2 className="w-4 h-4 mr-2 text-rose-600" /> Hapus Permanen
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
                   </div>
-                </div>
 
-                {/* ── SCROLLABLE BODY CONTENT ── */}
-                <div className="p-4 sm:p-6 space-y-5 overflow-y-auto max-h-[calc(92vh-130px)]">
+                  {/* ── BODY: EDIT MODE OR 2-COLUMN CLEAN DETAIL VIEW ── */}
                   {isEditMode ? (
                     <form onSubmit={handleSaveFullEdit} className="space-y-5">
                       {/* 1. Edit Data Pelaku Usaha */}
-                      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-xs space-y-4">
-                        <div className="flex items-center gap-2.5 text-blue-600 dark:text-blue-400 font-black text-xs sm:text-sm uppercase border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center">
-                            <User className="w-4 h-4" />
-                          </div>
-                          <span>1. Data Pelaku Usaha (Edit)</span>
-                        </div>
+                      <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-2xs space-y-4">
+                        <h4 className="text-base font-bold text-slate-900 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800">
+                          Data Pelaku Usaha (Edit)
+                        </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Nama Lengkap</Label><Input name="fullName" defaultValue={viewingActor.fullName} required className="rounded-xl" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Nama Lengkap</Label><Input name="fullName" defaultValue={viewingActor.fullName} required className="rounded-lg" /></div>
                           <div className="space-y-1">
-                            <Label className="text-xs font-bold uppercase text-slate-500">NIK</Label>
+                            <Label className="text-xs font-medium text-slate-500">NIK (No. KTP)</Label>
                             <Input 
                               name="nik" 
                               value={editNik} 
                               required 
-                              className="rounded-xl font-mono"
+                              className="rounded-lg font-mono"
                               onChange={(e) => {
                                 const cleanNik = e.target.value.replace(/[^0-9]/g, "");
                                 setEditNik(cleanNik);
@@ -2658,38 +2839,38 @@ function ActorDataContent() {
                               }}
                             />
                           </div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Nomor KK</Label><Input name="noKK" defaultValue={viewingActor.noKK} className="rounded-xl font-mono" /></div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Jenis Kelamin</Label>
-                            <select name="gender" defaultValue={normalizeGender(viewingActor.gender || "")} className="flex h-9 w-full rounded-xl border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Nomor KK</Label><Input name="noKK" defaultValue={viewingActor.noKK} className="rounded-lg font-mono" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Jenis Kelamin</Label>
+                            <select name="gender" defaultValue={normalizeGender(viewingActor.gender || "")} className="flex h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-2xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                               <option value="Laki-laki">Laki-laki</option>
                               <option value="Perempuan">Perempuan</option>
                             </select>
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs font-bold uppercase text-slate-500">Tempat Lahir</Label>
+                            <Label className="text-xs font-medium text-slate-500">Tempat Lahir</Label>
                             <Input 
                               name="pob" 
                               value={editPob}
                               onChange={(e) => setEditPob(e.target.value)}
-                              className="rounded-xl"
+                              className="rounded-lg"
                             />
                           </div>
                           <div className="space-y-1">
                             <div className="flex items-center justify-between">
-                              <Label className="text-xs font-bold uppercase text-slate-500">Tanggal Lahir</Label>
-                              {editDob && <span className="text-[10px] text-primary font-bold">(Auto-NIK)</span>}
+                              <Label className="text-xs font-medium text-slate-500">Tanggal Lahir</Label>
+                              {editDob && <span className="text-[10px] text-primary font-semibold">(Auto-NIK)</span>}
                             </div>
                             <Input 
                               name="dob" 
                               value={editDob} 
                               onChange={(e) => setEditDob(e.target.value)}
                               placeholder="DD-MM-YYYY" 
-                              className="rounded-xl font-mono"
+                              className="rounded-lg font-mono"
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs font-bold uppercase text-slate-500">Agama</Label>
-                            <select name="agama" defaultValue={viewingActor.agama || ""} className="flex h-9 w-full rounded-xl border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                            <Label className="text-xs font-medium text-slate-500">Agama</Label>
+                            <select name="agama" defaultValue={viewingActor.agama || ""} className="flex h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-2xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                               <option value="">-- Pilih Agama --</option>
                               {AGAMA_INDONESIA.map((a) => (
                                 <option key={a} value={a}>{a}</option>
@@ -2697,48 +2878,45 @@ function ActorDataContent() {
                             </select>
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs font-bold uppercase text-slate-500">Pekerjaan</Label>
-                            <Input name="pekerjaan" defaultValue={viewingActor.pekerjaan || ""} list="pekerjaan-list-edit" className="rounded-xl" />
+                            <Label className="text-xs font-medium text-slate-500">Pekerjaan</Label>
+                            <Input name="pekerjaan" defaultValue={viewingActor.pekerjaan || ""} list="pekerjaan-list-edit" className="rounded-lg" />
                             <datalist id="pekerjaan-list-edit">
                               {PEKERJAAN_DUKCAPIL.map((p) => (
                                 <option key={p} value={p} />
                               ))}
                             </datalist>
                           </div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Tanggal Cetak KTP</Label><Input name="tanggalCetakKtp" defaultValue={viewingActor.tanggalCetakKtp || ""} placeholder="DD-MM-YYYY" className="rounded-xl" /></div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Nomor HP / WhatsApp</Label><Input name="phone" defaultValue={viewingActor.phone} className="rounded-xl" /></div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Kecamatan</Label><Input name="kecamatan" defaultValue={viewingActor.kecamatan} className="rounded-xl" /></div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Kelurahan</Label><Input name="kelurahan" defaultValue={viewingActor.kelurahan} className="rounded-xl" /></div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">RT / RW</Label><Input name="rtRw" defaultValue={viewingActor.rtRw} className="rounded-xl" /></div>
-                          <div className="space-y-1 md:col-span-2"><Label className="text-xs font-bold uppercase text-slate-500">Alamat Lengkap</Label><Input name="address" defaultValue={viewingActor.address} className="rounded-xl" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Tanggal Cetak KTP</Label><Input name="tanggalCetakKtp" defaultValue={viewingActor.tanggalCetakKtp || ""} placeholder="DD-MM-YYYY" className="rounded-lg" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Nomor HP / WhatsApp</Label><Input name="phone" defaultValue={viewingActor.phone} className="rounded-lg" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Kecamatan</Label><Input name="kecamatan" defaultValue={viewingActor.kecamatan} className="rounded-lg" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Kelurahan</Label><Input name="kelurahan" defaultValue={viewingActor.kelurahan} className="rounded-lg" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">RT / RW</Label><Input name="rtRw" defaultValue={viewingActor.rtRw} className="rounded-lg" /></div>
+                          <div className="space-y-1 md:col-span-2"><Label className="text-xs font-medium text-slate-500">Alamat Lengkap</Label><Input name="address" defaultValue={viewingActor.address} className="rounded-lg" /></div>
                         </div>
                       </section>
 
                       {/* 2. Edit Data Keluarga */}
-                      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-xs space-y-4">
-                        <div className="flex items-center gap-2.5 text-rose-600 dark:text-rose-400 font-black text-xs sm:text-sm uppercase border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center">
-                            <Users className="w-4 h-4" />
-                          </div>
-                          <span>2. Data Keluarga (Edit)</span>
-                        </div>
+                      <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-2xs space-y-4">
+                        <h4 className="text-base font-bold text-slate-900 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800">
+                          Data Keluarga (Edit)
+                        </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           <div className="space-y-1">
-                            <Label className="text-xs font-bold uppercase text-slate-500">Status Dalam Keluarga</Label>
-                            <select name="statusKeluarga" defaultValue={viewingActor.statusKeluarga || ""} className="flex h-9 w-full rounded-xl border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                            <Label className="text-xs font-medium text-slate-500">Status Dalam Keluarga</Label>
+                            <select name="statusKeluarga" defaultValue={viewingActor.statusKeluarga || ""} className="flex h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-2xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                               <option value="">-- Pilih Status Keluarga --</option>
                               {STATUS_KELUARGA_LIST.map((s) => (
                                 <option key={s} value={s}>{s}</option>
                               ))}
                             </select>
                           </div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Nama Kepala Keluarga</Label><Input name="namaKepalaKeluarga" defaultValue={viewingActor.namaKepalaKeluarga || ""} className="rounded-xl uppercase" /></div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">NIK Kepala Keluarga</Label><Input name="nikKepalaKeluarga" defaultValue={viewingActor.nikKepalaKeluarga || ""} className="rounded-xl font-mono" /></div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Tempat Lahir Kepala Keluarga</Label><Input name="pobKepalaKeluarga" defaultValue={viewingActor.pobKepalaKeluarga || ""} className="rounded-xl uppercase" /></div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Tanggal Lahir Kepala Keluarga</Label><Input name="dobKepalaKeluarga" defaultValue={viewingActor.dobKepalaKeluarga || ""} placeholder="DD-MM-YYYY" className="rounded-xl font-mono" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Nama Kepala Keluarga</Label><Input name="namaKepalaKeluarga" defaultValue={viewingActor.namaKepalaKeluarga || ""} className="rounded-lg uppercase" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">NIK Kepala Keluarga</Label><Input name="nikKepalaKeluarga" defaultValue={viewingActor.nikKepalaKeluarga || ""} className="rounded-lg font-mono" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Tempat Lahir Kepala Keluarga</Label><Input name="pobKepalaKeluarga" defaultValue={viewingActor.pobKepalaKeluarga || ""} className="rounded-lg uppercase" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Tanggal Lahir Kepala Keluarga</Label><Input name="dobKepalaKeluarga" defaultValue={viewingActor.dobKepalaKeluarga || ""} placeholder="DD-MM-YYYY" className="rounded-lg font-mono" /></div>
                           <div className="space-y-1">
-                            <Label className="text-xs font-bold uppercase text-slate-500">Agama Kepala Keluarga</Label>
-                            <select name="agamaKepalaKeluarga" defaultValue={viewingActor.agamaKepalaKeluarga || ""} className="flex h-9 w-full rounded-xl border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                            <Label className="text-xs font-medium text-slate-500">Agama Kepala Keluarga</Label>
+                            <select name="agamaKepalaKeluarga" defaultValue={viewingActor.agamaKepalaKeluarga || ""} className="flex h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-2xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                               <option value="">-- Pilih Agama --</option>
                               {AGAMA_INDONESIA.map((a) => (
                                 <option key={a} value={a}>{a}</option>
@@ -2746,30 +2924,27 @@ function ActorDataContent() {
                             </select>
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs font-bold uppercase text-slate-500">Pekerjaan Kepala Keluarga</Label>
-                            <Input name="pekerjaanKepalaKeluarga" defaultValue={viewingActor.pekerjaanKepalaKeluarga || ""} list="pekerjaan-list-edit" className="rounded-xl" />
+                            <Label className="text-xs font-medium text-slate-500">Pekerjaan Kepala Keluarga</Label>
+                            <Input name="pekerjaanKepalaKeluarga" defaultValue={viewingActor.pekerjaanKepalaKeluarga || ""} list="pekerjaan-list-edit" className="rounded-lg" />
                           </div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Tanggal Cetak KK</Label><Input name="tanggalCetakKk" defaultValue={viewingActor.tanggalCetakKk || ""} placeholder="DD-MM-YYYY" className="rounded-xl" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Tanggal Cetak KK</Label><Input name="tanggalCetakKk" defaultValue={viewingActor.tanggalCetakKk || ""} placeholder="DD-MM-YYYY" className="rounded-lg" /></div>
                         </div>
                       </section>
 
                       {/* 3. Edit Data Usaha */}
-                      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-xs space-y-4">
-                        <div className="flex items-center gap-2.5 text-purple-600 dark:text-purple-400 font-black text-xs sm:text-sm uppercase border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center">
-                            <Store className="w-4 h-4" />
-                          </div>
-                          <span>3. Data Usaha (Edit)</span>
-                        </div>
+                      <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-2xs space-y-4">
+                        <h4 className="text-base font-bold text-slate-900 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800">
+                          Data Usaha (Edit)
+                        </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Nama Usaha</Label><Input name="businessName" defaultValue={viewingActor.businessName} className="rounded-xl" /></div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Kategori Usaha</Label><Input name="businessCategory" defaultValue={viewingActor.businessCategory} className="rounded-xl" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Nama Usaha</Label><Input name="businessName" defaultValue={viewingActor.businessName} className="rounded-lg" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Kategori Usaha</Label><Input name="businessCategory" defaultValue={viewingActor.businessCategory} className="rounded-lg" /></div>
                           <div className="space-y-1">
-                            <Label className="text-xs font-bold uppercase text-slate-500">Usulan Koordinator</Label>
+                            <Label className="text-xs font-medium text-slate-500">Usulan Koordinator</Label>
                             <select
                               name="coordinator"
                               defaultValue={normalizeCoordinator(viewingActor.coordinator || "").toUpperCase().trim()}
-                              className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-bold uppercase ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                              className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-semibold uppercase"
                             >
                               {viewingActor.coordinator && !coordinatorOptions.includes(normalizeCoordinator(viewingActor.coordinator).toUpperCase().trim()) && (
                                 <option value={normalizeCoordinator(viewingActor.coordinator).toUpperCase().trim()}>
@@ -2783,103 +2958,70 @@ function ActorDataContent() {
                               ))}
                             </select>
                           </div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Petugas Survey</Label><Input name="petugasSurvey" defaultValue={viewingActor.petugasSurvey || ""} className="rounded-xl" /></div>
-                          <div className="space-y-1 md:col-span-2"><Label className="text-xs font-bold uppercase text-slate-500">Lokasi Usaha</Label><Input name="businessLocation" defaultValue={viewingActor.businessLocation} className="rounded-xl" /></div>
-                          <div className="space-y-1 md:col-span-3"><Label className="text-xs font-bold uppercase text-slate-500">Link Google Drive</Label><Input name="googleDriveLink" defaultValue={viewingActor.googleDriveLink || ""} className="rounded-xl" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Petugas Survey</Label><Input name="petugasSurvey" defaultValue={viewingActor.petugasSurvey || ""} className="rounded-lg" /></div>
+                          <div className="space-y-1 md:col-span-2"><Label className="text-xs font-medium text-slate-500">Lokasi Usaha</Label><Input name="businessLocation" defaultValue={viewingActor.businessLocation} className="rounded-lg" /></div>
+                          <div className="space-y-1 md:col-span-3"><Label className="text-xs font-medium text-slate-500">Link Google Drive</Label><Input name="googleDriveLink" defaultValue={viewingActor.googleDriveLink || ""} className="rounded-lg" /></div>
                         </div>
                       </section>
 
                       {/* 4. Edit Data Rekening */}
-                      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-xs space-y-4">
-                        <div className="flex items-center gap-2.5 text-amber-600 dark:text-amber-400 font-black text-xs sm:text-sm uppercase border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center">
-                            <CreditCard className="w-4 h-4" />
-                          </div>
-                          <span>4. Data Rekening (Edit)</span>
-                        </div>
+                      <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-2xs space-y-4">
+                        <h4 className="text-base font-bold text-slate-900 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800">
+                          Data Rekening (Edit)
+                        </h4>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Nama Bank</Label><Input name="bankName" defaultValue={viewingActor.bankName} className="rounded-xl" /></div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Nomor Rekening</Label><Input name="bankNumber" defaultValue={viewingActor.bankNumber} className="rounded-xl font-mono" /></div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Pemilik Rekening</Label><Input name="bankOwner" defaultValue={viewingActor.bankOwner} className="uppercase rounded-xl" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Nama Bank</Label><Input name="bankName" defaultValue={viewingActor.bankName} className="rounded-lg" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Nomor Rekening</Label><Input name="bankNumber" defaultValue={viewingActor.bankNumber} className="rounded-lg font-mono" /></div>
+                          <div className="space-y-1"><Label className="text-xs font-medium text-slate-500">Pemilik Rekening</Label><Input name="bankOwner" defaultValue={viewingActor.bankOwner} className="uppercase rounded-lg" /></div>
                         </div>
                       </section>
 
-                      <div className="sticky bottom-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2.5 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 rounded-b-2xl shadow-lg">
-                        <Button type="button" variant="outline" onClick={() => setIsEditMode(false)} className="font-bold rounded-xl cursor-pointer">Batal</Button>
-                        <Button type="submit" className="bg-primary font-bold rounded-xl shadow-xs cursor-pointer"><Save className="w-4 h-4 mr-2" /> Simpan Perubahan</Button>
+                      <div className="flex justify-end gap-2.5 pt-2">
+                        <Button type="button" variant="outline" onClick={() => setIsEditMode(false)} className="font-semibold rounded-lg cursor-pointer">Batal</Button>
+                        <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-2xs cursor-pointer"><Save className="w-4 h-4 mr-2" /> Simpan Perubahan</Button>
                       </div>
                     </form>
                   ) : (() => {
-                    // ── STRICT AVAILABILITY HELPER: Hanya tampilkan data yang tersedia / diinput ──
-                    const hasVal = (v: any): boolean => {
-                      if (v === null || v === undefined) return false;
-                      if (typeof v === "boolean") return true;
-                      if (typeof v === "number") return !isNaN(v) && v > 0;
-                      if (Array.isArray(v)) return v.filter(item => hasVal(item)).length > 0;
-                      if (typeof v === "string") {
-                        const trimmed = v.trim();
-                        if (!trimmed) return false;
-                        const upper = trimmed.toUpperCase();
-                        if (
-                          upper === "-" ||
-                          upper === "--" ||
-                          upper === "BELUM ADA" ||
-                          upper === "BELUM TERISI" ||
-                          upper === "BELUM DIINPUT" ||
-                          upper === "TIDAK ADA" ||
-                          upper === "NULL" ||
-                          upper === "UNDEFINED" ||
-                          upper === "N/A"
-                        ) {
-                          return false;
-                        }
-                        return true;
-                      }
-                      if (typeof v === "object") return Object.keys(v).length > 0;
-                      return Boolean(v);
-                    };
-
-                    const getWaLink = (phoneStr: string) => {
-                      if (!phoneStr) return "#";
-                      let clean = String(phoneStr).replace(/\D/g, "");
-                      if (clean.startsWith("0")) clean = "62" + clean.slice(1);
-                      else if (!clean.startsWith("62")) clean = "62" + clean;
-                      return `https://wa.me/${clean}`;
-                    };
-
                     // ────────────────────────────────────────────────────────────
                     // 1. PERSIAPAN DATA PELAKU USAHA
                     // ────────────────────────────────────────────────────────────
                     const pobVal = viewingActor.pob || parsePobDob(viewingActor.pobDob || "").pob;
                     const dobVal = viewingActor.dob || parsePobDob(viewingActor.pobDob || "").dob;
+                    const ttlCombined = hasVal(pobVal) && hasVal(dobVal)
+                      ? `${pobVal}, ${dobVal}`
+                      : (hasVal(pobVal) ? pobVal : (hasVal(dobVal) ? dobVal : ""));
                     const genderVal = normalizeGender(viewingActor.gender || "") || viewingActor.gender;
                     const noKkVal = viewingActor.noKK || (viewingActor as any).kk;
                     const ageVal = hasVal(cleanAge) ? `${cleanAge} Tahun` : "";
                     const createdAtVal = viewingActor.createdAt ? formatDateTimeIndo(viewingActor.createdAt) : "";
 
+                    const fullAddressParts = [
+                      hasVal(viewingActor.address) ? viewingActor.address : "",
+                      hasVal(viewingActor.rtRw) ? `RT/RW ${viewingActor.rtRw}` : "",
+                      hasVal(viewingActor.kelurahan) ? `Kel. ${viewingActor.kelurahan}` : "",
+                      hasVal(viewingActor.kecamatan) ? `Kec. ${viewingActor.kecamatan}` : "",
+                    ].filter(Boolean).join(", ");
+
                     const pelakuFields = [
-                      { key: "registrationCode", label: "Kode Registrasi (Reg ID)", value: viewingActor.registrationCode, icon: ClipboardCheck, isMono: true, isCopyable: true, color: "sky" },
-                      { key: "fullName", label: "Nama Lengkap (Sesuai KTP)", value: viewingActor.fullName, icon: User, isBold: true, isCopyable: true, color: "blue" },
-                      { key: "nik", label: "NIK (Nomor Induk Kependudukan)", value: viewingActor.nik, icon: CreditCard, isMono: true, isCopyable: true, color: "indigo" },
-                      { key: "noKK", label: "Nomor Kartu Keluarga (No. KK)", value: noKkVal, icon: Users, isMono: true, isCopyable: true, color: "purple" },
-                      { key: "gender", label: "Jenis Kelamin", value: genderVal, icon: UserCheck, isGenderBadge: true, color: isFemale ? "rose" : "sky" },
-                      { key: "pob", label: "Tempat Lahir", value: pobVal, icon: MapPin, color: "amber" },
-                      { key: "dob", label: "Tanggal Lahir", value: dobVal, icon: Calendar, isMono: true, color: "teal" },
-                      { key: "age", label: "Usia", value: ageVal, icon: Sparkles, color: "emerald" },
-                      { key: "agama", label: "Agama", value: viewingActor.agama, icon: Heart, color: "cyan" },
-                      { key: "pekerjaan", label: "Pekerjaan (KTP)", value: viewingActor.pekerjaan, icon: Briefcase, color: "violet" },
-                      { key: "phone", label: "Nomor HP / WhatsApp", value: viewingActor.phone, icon: Phone, isPhone: true, isCopyable: true, color: "emerald" },
-                      { key: "tanggalCetakKtp", label: "Tanggal Cetak KTP", value: viewingActor.tanggalCetakKtp, icon: FileText, isMono: true, color: "slate" },
-                      { key: "kecamatan", label: "Kecamatan", value: viewingActor.kecamatan, icon: Building2, color: "cyan" },
-                      { key: "kelurahan", label: "Kelurahan", value: viewingActor.kelurahan, icon: MapPin, color: "teal" },
-                      { key: "rtRw", label: "RT / RW", value: viewingActor.rtRw, icon: Navigation, isMono: true, color: "emerald" },
-                      { key: "createdBy", label: "Petugas Input", value: viewingActor.createdBy, icon: UserCheck, color: "slate" },
-                      { key: "createdAt", label: "Waktu Pendaftaran", value: createdAtVal, icon: History, color: "slate" },
+                      { key: "fullName", label: "Nama Lengkap", value: viewingActor.fullName, isCopyable: true },
+                      { key: "ttl", label: "Tempat, Tanggal Lahir", value: ttlCombined },
+                      { key: "gender", label: "Jenis Kelamin", value: genderVal },
+                      { key: "age", label: "Usia", value: ageVal },
+                      { key: "nik", label: "No. KTP (NIK)", value: viewingActor.nik, isMono: true, isCopyable: true },
+                      { key: "noKK", label: "Nomor Kartu Keluarga", value: noKkVal, isMono: true, isCopyable: true },
+                      { key: "agama", label: "Agama", value: viewingActor.agama },
+                      { key: "pekerjaan", label: "Pekerjaan", value: viewingActor.pekerjaan },
+                      { key: "phone", label: "Nomor Telepon / WhatsApp", value: viewingActor.phone, isMono: true, isCopyable: true },
+                      { key: "tanggalCetakKtp", label: "Tanggal Cetak KTP", value: viewingActor.tanggalCetakKtp },
+                      { key: "kelurahan", label: "Kelurahan", value: viewingActor.kelurahan },
+                      { key: "kecamatan", label: "Kecamatan", value: viewingActor.kecamatan },
+                      { key: "rtRw", label: "RT / RW", value: viewingActor.rtRw },
+                      { key: "registrationCode", label: "Kode Registrasi", value: viewingActor.registrationCode, isMono: true, isCopyable: true },
+                      { key: "address", label: "Alamat Lengkap", value: fullAddressParts || viewingActor.address, colSpan2: true },
                     ].filter(f => hasVal(f.value));
 
-                    const hasPelakuAddress = hasVal(viewingActor.address);
                     const hasPelakuKtpPhoto = hasVal(viewingActor.ktpUri);
-                    const hasPelakuGroup = pelakuFields.length > 0 || hasPelakuAddress || hasPelakuKtpPhoto;
+                    const hasPelakuGroup = pelakuFields.length > 0 || hasPelakuKtpPhoto;
 
                     // ────────────────────────────────────────────────────────────
                     // 2. PERSIAPAN DATA PEMBACAAN DATABASE
@@ -2896,25 +3038,25 @@ function ActorDataContent() {
                     const allMasterMatches: Array<{ sheetTitle: string; sheetBadge: string; theme: "emerald" | "amber" | "rose"; item: any }> = [
                       ...(activeDetailData.data2024 || []).map((item: any) => ({
                         sheetTitle: "Sheet 1 — Database Penerima Tahun 2024",
-                        sheetBadge: "SHEET 1 (2024)",
+                        sheetBadge: "Sheet 1 (2024)",
                         theme: "emerald" as const,
                         item
                       })),
                       ...(activeDetailData.data2023 || []).map((item: any) => ({
                         sheetTitle: "Sheet 2 — Database Penerima Tahun 2023",
-                        sheetBadge: "SHEET 2 (2023)",
+                        sheetBadge: "Sheet 2 (2023)",
                         theme: "emerald" as const,
                         item
                       })),
                       ...(activeDetailData.data2025 || []).map((item: any) => ({
                         sheetTitle: "Sheet 3 — Database Pembanding Tahun 2025",
-                        sheetBadge: "SHEET 3 (2025)",
+                        sheetBadge: "Sheet 3 (2025)",
                         theme: "amber" as const,
                         item
                       })),
                       ...(activeDetailData.dataBlacklist || []).map((item: any) => ({
                         sheetTitle: "Sheet 4 — Database Blacklist / Cekal",
-                        sheetBadge: "BLACKLIST",
+                        sheetBadge: "Blacklist",
                         theme: "rose" as const,
                         item
                       })),
@@ -2926,19 +3068,21 @@ function ActorDataContent() {
                     // ────────────────────────────────────────────────────────────
                     // 3. PERSIAPAN DATA KELUARGA
                     // ────────────────────────────────────────────────────────────
+                    const ttlKkCombined = hasVal(viewingActor.pobKepalaKeluarga) && hasVal(viewingActor.dobKepalaKeluarga)
+                      ? `${viewingActor.pobKepalaKeluarga}, ${viewingActor.dobKepalaKeluarga}`
+                      : (hasVal(viewingActor.pobKepalaKeluarga) ? viewingActor.pobKepalaKeluarga : (hasVal(viewingActor.dobKepalaKeluarga) ? viewingActor.dobKepalaKeluarga : ""));
+
                     const keluargaFields = [
-                      { key: "noKK", label: "Nomor Kartu Keluarga (No. KK)", value: noKkVal, icon: CreditCard, isMono: true, isCopyable: true },
-                      { key: "statusKeluarga", label: "Status Dalam Keluarga", value: viewingActor.statusKeluarga, icon: Users, isHighlight: true },
-                      { key: "namaKepalaKeluarga", label: "Nama Kepala Keluarga", value: viewingActor.namaKepalaKeluarga, icon: User, isBold: true, isCopyable: true },
-                      { key: "nikKepalaKeluarga", label: "NIK Kepala Keluarga", value: viewingActor.nikKepalaKeluarga, icon: CreditCard, isMono: true, isCopyable: true },
-                      { key: "pobKepalaKeluarga", label: "Tempat Lahir Kepala Keluarga", value: viewingActor.pobKepalaKeluarga, icon: MapPin },
-                      { key: "dobKepalaKeluarga", label: "Tanggal Lahir Kepala Keluarga", value: viewingActor.dobKepalaKeluarga, icon: Calendar, isMono: true },
-                      { key: "agamaKepalaKeluarga", label: "Agama Kepala Keluarga", value: viewingActor.agamaKepalaKeluarga, icon: Heart },
-                      { key: "pekerjaanKepalaKeluarga", label: "Pekerjaan Kepala Keluarga", value: viewingActor.pekerjaanKepalaKeluarga, icon: Briefcase },
-                      { key: "tanggalCetakKk", label: "Tanggal Cetak KK", value: viewingActor.tanggalCetakKk, icon: FileText, isMono: true },
+                      { key: "noKK", label: "Nomor Kartu Keluarga (No. KK)", value: noKkVal, isMono: true, isCopyable: true },
+                      { key: "statusKeluarga", label: "Status Dalam Keluarga", value: viewingActor.statusKeluarga },
+                      { key: "namaKepalaKeluarga", label: "Nama Kepala Keluarga", value: viewingActor.namaKepalaKeluarga, isCopyable: true },
+                      { key: "nikKepalaKeluarga", label: "NIK Kepala Keluarga", value: viewingActor.nikKepalaKeluarga, isMono: true, isCopyable: true },
+                      { key: "ttlKepalaKeluarga", label: "Tempat, Tanggal Lahir Kepala Keluarga", value: ttlKkCombined },
+                      { key: "agamaKepalaKeluarga", label: "Agama Kepala Keluarga", value: viewingActor.agamaKepalaKeluarga },
+                      { key: "pekerjaanKepalaKeluarga", label: "Pekerjaan Kepala Keluarga", value: viewingActor.pekerjaanKepalaKeluarga },
+                      { key: "tanggalCetakKk", label: "Tanggal Cetak KK", value: viewingActor.tanggalCetakKk },
                     ].filter(f => hasVal(f.value));
 
-                    // Hanya tampilkan kelompok Data Keluarga jika minimal ada data keluarga selain No. KK saja, atau jika No. KK tersedia
                     const hasKkPhoto = hasVal(viewingActor.kkUri);
                     const hasKeluargaGroup = keluargaFields.length > 0 || hasKkPhoto;
 
@@ -2953,15 +3097,17 @@ function ActorDataContent() {
                     const hasPetugasSurvey = hasVal(rawPetugas);
 
                     const usahaFields = [
-                      { key: "businessName", label: "Nama Usaha / Produk", value: viewingActor.businessName, icon: Store, isBold: true },
-                      { key: "businessCategory", label: "Kategori / Jenis Usaha", value: viewingActor.businessCategory, icon: Sparkles, isBadge: true },
-                      { key: "businessLocation", label: "Alamat / Lokasi Tempat Usaha", value: viewingActor.businessLocation, icon: MapPin, isFullWidth: true },
+                      { key: "businessName", label: "Nama Usaha / Produk", value: viewingActor.businessName },
+                      { key: "businessCategory", label: "Kategori / Jenis Usaha", value: viewingActor.businessCategory },
+                      ...(!isInspektorat && hasCoordinator ? [{ key: "coordinator", label: "Usulan / Koordinator", value: canonicalCoordinator }] : []),
+                      ...(!isInspektorat && hasPetugasSurvey ? [{ key: "petugasSurvey", label: "Petugas Survey", value: rawPetugas }] : []),
+                      { key: "businessLocation", label: "Lokasi Tempat Usaha", value: viewingActor.businessLocation, colSpan2: true },
                     ].filter(f => hasVal(f.value));
 
                     const hasDriveLink = hasVal(viewingActor.googleDriveLink);
                     const hasNibPhoto = hasVal(viewingActor.nibUri);
                     const hasUsahaPhoto = hasVal(viewingActor.photoUsahaUri);
-                    const hasUsahaGroup = usahaFields.length > 0 || hasCoordinator || hasPetugasSurvey || hasDriveLink || hasNibPhoto || hasUsahaPhoto;
+                    const hasUsahaGroup = usahaFields.length > 0 || hasDriveLink || hasNibPhoto || hasUsahaPhoto;
 
                     // ────────────────────────────────────────────────────────────
                     // 5. PERSIAPAN DATA REKENING
@@ -2973,7 +3119,7 @@ function ActorDataContent() {
 
                     const rekeningFields = [
                       { key: "bankName", label: "Bank Penyalur", value: viewingActor.bankName },
-                      { key: "bankNumber", label: "Nomor Rekening", value: viewingActor.bankNumber },
+                      { key: "bankNumber", label: "Nomor Rekening", value: viewingActor.bankNumber, isMono: true, isCopyable: true },
                       { key: "bankOwner", label: "Nama Pemilik Rekening", value: viewingActor.bankOwner },
                       { key: "lpjNominal", label: "Nominal Pencairan / LPJ", value: lpjNominalVal },
                       { key: "lpjEntryDate", label: "Tanggal Input LPJ", value: lpjDateVal },
@@ -3008,7 +3154,7 @@ function ActorDataContent() {
                       : (typeof sd.izin === "string" && hasVal(sd.izin) ? sd.izin : "");
 
                     const dtksVal = sd.dtks && typeof sd.dtks.masuk === "boolean"
-                      ? (sd.dtks.masuk ? `Ya, Terdaftar DTKS${hasVal(sd.dtks.jenis) ? ` (${sd.dtks.jenis})` : ""}` : "Tidak Terdaftar DTKS")
+                      ? (sd.dtks.masuk ? `Terdaftar DTKS${hasVal(sd.dtks.jenis) ? ` (${sd.dtks.jenis})` : ""}` : "Tidak Terdaftar DTKS")
                       : "";
 
                     const hibahVal = sd.hibah && typeof sd.hibah.pernah === "boolean"
@@ -3018,42 +3164,41 @@ function ActorDataContent() {
                       : "";
 
                     const surveyMainFields = [
-                      { key: "tanggalSurvey", label: "Tanggal Pelaksanaan Survey", value: tanggalSurveyVal, icon: Calendar },
-                      { key: "petugasSurvey", label: "Petugas Survey Lapangan", value: petugasSurveyVal, subValue: [pejabatPetugas.nipppk ? `NIP/NIPPPK: ${pejabatPetugas.nipppk}` : "", pejabatPetugas.pangkat, pejabatPetugas.jabatan].filter(Boolean).join(" • "), icon: UserCheck },
-                      { key: "verifikatorDinas", label: "Verifikator Dinas", value: verifikatorVal, subValue: [pejabatVerifikator.nipppk ? `NIP/NIPPPK: ${pejabatVerifikator.nipppk}` : "", pejabatVerifikator.pangkat, pejabatVerifikator.jabatan].filter(Boolean).join(" • "), icon: ShieldCheck },
-                      { key: "verifiedDinasAt", label: "Waktu Verifikasi Dinas", value: verifiedDinasAtVal, icon: History },
-                      { key: "hasilVerifikasiDinas", label: "Status Verifikasi Dinas", value: viewingActor.hasilVerifikasiDinas, icon: BadgeCheck, isStatusBadge: true },
-                      { key: "hasilSurvey", label: "Hasil Rekomendasi Survey", value: sd.hasilSurvey, icon: ClipboardCheck, isStatusBadge: true },
-                      { key: "namaPemilik", label: "Nama Pemilik (Saat Survey)", value: sd.namaPemilik, icon: User },
-                      { key: "jenisKelamin", label: "Jenis Kelamin (Survey)", value: sd.jenisKelamin, icon: UserCheck },
-                      { key: "statusPerkawinan", label: "Status Perkawinan", value: sd.status, icon: Heart },
-                      { key: "noHp", label: "Nomor HP (Survey)", value: sd.noHp, icon: Phone, isMono: true },
-                      { key: "email", label: "Alamat Email", value: sd.email, icon: Mail },
-                      { key: "sosmed", label: "Akun Sosial Media", value: sd.sosmed, icon: Globe },
-                      { key: "alamatRumah", label: "Alamat Rumah (Hasil Survey)", value: sd.alamatRumah, icon: MapPin, isFullWidth: true },
-                      { key: "alamatUsaha", label: "Alamat Usaha (Hasil Survey)", value: sd.alamatUsaha, icon: MapPin, isFullWidth: true },
-                      { key: "dtks", label: "Status DTKS (Kesejahteraan Sosial)", value: dtksVal, icon: CheckCircle2 },
-                      { key: "namaUsaha", label: "Nama Usaha (Hasil Survey)", value: sd.namaUsaha, icon: Store, isBold: true },
-                      { key: "bidangUsaha", label: "Bidang Usaha (Survey)", value: sd.bidangUsaha, icon: Briefcase },
-                      { key: "tahunBerdiri", label: "Tahun Berdiri Usaha", value: sd.tahunBerdiri, icon: Calendar, isMono: true },
-                      { key: "izin", label: "Legalitas / Izin Usaha", value: izinVal, icon: FileText },
-                      { key: "modalUsaha", label: "Estimasi Modal Usaha", value: modalUsahaVal, icon: Banknote, isMono: true },
-                      { key: "omset", label: "Estimasi Omset / Bulan", value: omsetVal, icon: Banknote, isMono: true },
-                      { key: "peralatan", label: "Peralatan Usaha yang Dimiliki", value: sd.peralatan, icon: Layers, isFullWidth: true },
-                      { key: "hibah", label: "Riwayat Penerimaan Hibah", value: hibahVal, icon: History },
-                      { key: "rencanaPenggunaan", label: "Rencana Penggunaan Bantuan Hibah", value: sd.rencanaPenggunaan, icon: ClipboardList, isFullWidth: true },
-                      { key: "keteranganDinas", label: "Catatan / Keterangan Dinas", value: viewingActor.keteranganDinas || (viewingActor as any).filingNote, icon: FileText, isFullWidth: true },
-                      { key: "catatanPengembalian", label: "Catatan Pengembalian Berkas", value: viewingActor.catatanPengembalian, icon: AlertTriangle, isFullWidth: true },
-                      { key: "alasanCancelDinas", label: "Alasan Pembatalan / Penolakan", value: viewingActor.alasanCancelDinas || (viewingActor as any).rejectionReason, icon: XCircle, isFullWidth: true },
+                      { key: "tanggalSurvey", label: "Tanggal Pelaksanaan Survey", value: tanggalSurveyVal },
+                      { key: "petugasSurvey", label: "Petugas Survey Lapangan", value: petugasSurveyVal, subValue: [pejabatPetugas.nipppk ? `NIP/NIPPPK: ${pejabatPetugas.nipppk}` : "", pejabatPetugas.pangkat, pejabatPetugas.jabatan].filter(Boolean).join(" • ") },
+                      { key: "verifikatorDinas", label: "Verifikator Dinas", value: verifikatorVal, subValue: [pejabatVerifikator.nipppk ? `NIP/NIPPPK: ${pejabatVerifikator.nipppk}` : "", pejabatVerifikator.pangkat, pejabatVerifikator.jabatan].filter(Boolean).join(" • ") },
+                      { key: "verifiedDinasAt", label: "Waktu Verifikasi Dinas", value: verifiedDinasAtVal },
+                      { key: "hasilVerifikasiDinas", label: "Status Verifikasi Dinas", value: viewingActor.hasilVerifikasiDinas },
+                      { key: "hasilSurvey", label: "Hasil Rekomendasi Survey", value: sd.hasilSurvey },
+                      { key: "namaPemilik", label: "Nama Pemilik (Saat Survey)", value: sd.namaPemilik },
+                      { key: "jenisKelamin", label: "Jenis Kelamin (Survey)", value: sd.jenisKelamin },
+                      { key: "statusPerkawinan", label: "Status Perkawinan", value: sd.status },
+                      { key: "noHp", label: "Nomor HP (Survey)", value: sd.noHp, isMono: true },
+                      { key: "email", label: "Alamat Email", value: sd.email },
+                      { key: "sosmed", label: "Akun Sosial Media", value: sd.sosmed },
+                      { key: "dtks", label: "Status DTKS", value: dtksVal },
+                      { key: "namaUsaha", label: "Nama Usaha (Hasil Survey)", value: sd.namaUsaha },
+                      { key: "bidangUsaha", label: "Bidang Usaha (Survey)", value: sd.bidangUsaha },
+                      { key: "tahunBerdiri", label: "Tahun Berdiri Usaha", value: sd.tahunBerdiri },
+                      { key: "izin", label: "Legalitas / Izin Usaha", value: izinVal },
+                      { key: "modalUsaha", label: "Estimasi Modal Usaha", value: modalUsahaVal },
+                      { key: "omset", label: "Estimasi Omset / Bulan", value: omsetVal },
+                      { key: "hibah", label: "Riwayat Penerimaan Hibah", value: hibahVal },
+                      { key: "alamatRumah", label: "Alamat Rumah (Hasil Survey)", value: sd.alamatRumah, colSpan2: true },
+                      { key: "alamatUsaha", label: "Alamat Usaha (Hasil Survey)", value: sd.alamatUsaha, colSpan2: true },
+                      { key: "peralatan", label: "Peralatan Usaha yang Dimiliki", value: sd.peralatan, colSpan2: true },
+                      { key: "rencanaPenggunaan", label: "Rencana Penggunaan Bantuan Hibah", value: sd.rencanaPenggunaan, colSpan2: true },
+                      { key: "keteranganDinas", label: "Catatan / Keterangan Dinas", value: viewingActor.keteranganDinas || (viewingActor as any).filingNote, colSpan2: true },
+                      { key: "catatanPengembalian", label: "Catatan Pengembalian Berkas", value: viewingActor.catatanPengembalian, colSpan2: true },
+                      { key: "alasanCancelDinas", label: "Alasan Pembatalan / Penolakan", value: viewingActor.alasanCancelDinas || (viewingActor as any).rejectionReason, colSpan2: true },
                     ].filter(f => hasVal(f.value));
 
-                    const gpsPoints: Array<{ label: string; lat: number; lon: number; color: string }> = [];
+                    const gpsPoints: Array<{ label: string; lat: number; lon: number }> = [];
                     if ((viewingActor as any).verificationLocation?.lat && (viewingActor as any).verificationLocation?.lon) {
                       gpsPoints.push({
                         label: "Titik Lokasi Verifikasi Admin",
                         lat: (viewingActor as any).verificationLocation.lat,
                         lon: (viewingActor as any).verificationLocation.lon,
-                        color: "emerald"
                       });
                     }
                     if ((viewingActor as any).verificationLocationDinas?.lat && (viewingActor as any).verificationLocationDinas?.lon) {
@@ -3061,7 +3206,6 @@ function ActorDataContent() {
                         label: "Titik Lokasi Verifikasi Dinas",
                         lat: (viewingActor as any).verificationLocationDinas.lat,
                         lon: (viewingActor as any).verificationLocationDinas.lon,
-                        color: "indigo"
                       });
                     }
                     if (sd.location?.lat && sd.location?.lon) {
@@ -3071,7 +3215,6 @@ function ActorDataContent() {
                           label: "Titik Lokasi Geotagging Survey",
                           lat: sd.location.lat,
                           lon: sd.location.lon,
-                          color: "teal"
                         });
                       }
                     }
@@ -3079,253 +3222,241 @@ function ActorDataContent() {
                     const hasBypass = Boolean((viewingActor as any).verificationBypass?.isBypassed && hasVal((viewingActor as any).verificationBypass?.reason));
                     const hasSurveyPhoto = hasVal(detailSurveyPhotoUrl);
                     const hasTandaTangan = hasVal(sd.tandaTanganPelakuUsaha);
-                    // Hanya tampilkan Data Survey jika benar-benar ada inputan hasil survey / verifikasi (bukan sekadar penugasan petugasSurvey yang sudah tampil di Data Usaha)
                     const hasActualSurveyFields = surveyMainFields.some(f => f.key !== "petugasSurvey");
                     const hasSurveyGroup = hasActualSurveyFields || gpsPoints.length > 0 || hasBypass || hasSurveyPhoto || hasTandaTangan;
 
-                    // Daftar Kelompok yang Tersedia untuk Navigasi Cepat
-                    const availableGroups = [
-                      { id: "pelaku", label: "Data Pelaku Usaha", icon: User, show: hasPelakuGroup, count: pelakuFields.length + (hasPelakuAddress ? 1 : 0) + (hasPelakuKtpPhoto ? 1 : 0), activeClass: "bg-blue-600 text-white border-blue-600 shadow-xs" },
-                      { id: "database", label: "Data Pembacaan Database", icon: Database, show: hasDatabaseGroup, count: allMasterMatches.length + (hasBpjsData ? 1 : 0) + (hasComparisonPhoto ? 1 : 0), activeClass: "bg-indigo-600 text-white border-indigo-600 shadow-xs" },
-                      { id: "keluarga", label: "Data Keluarga", icon: Users, show: hasKeluargaGroup, count: keluargaFields.length + (hasKkPhoto ? 1 : 0), activeClass: "bg-rose-600 text-white border-rose-600 shadow-xs" },
-                      { id: "usaha", label: "Data Usaha", icon: Store, show: hasUsahaGroup, count: usahaFields.length + (hasCoordinator ? 1 : 0) + (hasPetugasSurvey ? 1 : 0) + (hasDriveLink ? 1 : 0) + (hasNibPhoto ? 1 : 0) + (hasUsahaPhoto ? 1 : 0), activeClass: "bg-purple-600 text-white border-purple-600 shadow-xs" },
-                      { id: "rekening", label: "Data Rekening", icon: CreditCard, show: hasRekeningGroup, count: rekeningFields.length, activeClass: "bg-amber-600 text-white border-amber-600 shadow-xs" },
-                      { id: "survey", label: "Data Survey", icon: ClipboardList, show: hasSurveyGroup, count: surveyMainFields.length + gpsPoints.length + (hasSurveyPhoto ? 1 : 0) + (hasTandaTangan ? 1 : 0), activeClass: "bg-teal-600 text-white border-teal-600 shadow-xs" },
-                    ].filter(g => g.show);
-
-                    const currentFilter = availableGroups.some(g => g.id === activeDetailGroup) ? activeDetailGroup : "all";
-                    const shouldShowGroup = (id: string) => currentFilter === "all" || currentFilter === id;
+                    // ────────────────────────────────────────────────────────────
+                    // 7. RIWAYAT AKTIVITAS TERAKHIR (TIMELINE)
+                    // ────────────────────────────────────────────────────────────
+                    const activityLogs: Array<{ title: string; date: string }> = [];
+                    if (hasVal(lpjDateVal)) {
+                      activityLogs.push({
+                        title: `Input Pencairan / LPJ${hasVal(lpjNominalVal) ? ` (${lpjNominalVal})` : ""}`,
+                        date: lpjDateVal
+                      });
+                    }
+                    if (hasVal(tanggalSurveyVal)) {
+                      activityLogs.push({
+                        title: `Pelaksanaan Survey Lapangan${hasVal(petugasSurveyVal) ? ` oleh ${petugasSurveyVal}` : ""}`,
+                        date: tanggalSurveyVal
+                      });
+                    }
+                    if (hasVal(verifiedDinasAtVal)) {
+                      activityLogs.push({
+                        title: `Verifikasi Berkas Dinas${hasVal(verifikatorVal) ? ` oleh ${verifikatorVal}` : ""}`,
+                        date: verifiedDinasAtVal
+                      });
+                    }
+                    if (hasVal(createdAtVal)) {
+                      activityLogs.push({
+                        title: `Data Didaftarkan oleh ${hasVal(viewingActor.createdBy) ? viewingActor.createdBy : "Sistem"}`,
+                        date: createdAtVal
+                      });
+                    }
 
                     return (
-                      <div className="space-y-6">
-                        {/* ── NAVIGASI FILTER KELOMPOK DATA (STICKY) ── */}
-                        <div className="bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 rounded-2xl p-2.5 flex flex-wrap items-center gap-1.5 shadow-2xs">
-                          <button
-                            type="button"
-                            onClick={() => setActiveDetailGroup("all")}
-                            className={cn(
-                              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wide border transition-all cursor-pointer",
-                              currentFilter === "all"
-                                ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white shadow-xs"
-                                : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100"
-                            )}
-                          >
-                            <Layers className="w-3.5 h-3.5" />
-                            <span>Semua Kelompok ({availableGroups.length})</span>
-                          </button>
-
-                          {availableGroups.map((g) => {
-                            const IconComp = g.icon;
-                            const isSelected = currentFilter === g.id;
-                            return (
-                              <button
-                                key={g.id}
-                                type="button"
-                                onClick={() => setActiveDetailGroup(g.id)}
-                                className={cn(
-                                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer",
-                                  isSelected
-                                    ? g.activeClass
-                                    : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/70"
-                                )}
-                              >
-                                <IconComp className="w-3.5 h-3.5" />
-                                <span>{g.label}</span>
-                                <span className={cn(
-                                  "text-[10px] font-black px-1.5 py-0.2 rounded-full",
-                                  isSelected ? "bg-white/25 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
-                                )}>
-                                  {g.count}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
                         {/* ════════════════════════════════════════════════════════════
-                            KELOMPOK 1: DATA PELAKU USAHA
+                            KOLOM KIRI: STACKED SUMMARY CARDS (SAMA SEPERTI SCREENSHOT)
                            ════════════════════════════════════════════════════════════ */}
-                        {hasPelakuGroup && shouldShowGroup("pelaku") && (
-                          <section className="bg-white dark:bg-slate-900 rounded-2xl border border-blue-200/80 dark:border-blue-900/60 shadow-xs overflow-hidden">
-                            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 text-white">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center font-black shadow-2xs">
-                                  <User className="w-4 h-4 text-white" />
-                                </div>
-                                <div>
-                                  <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider">
-                                    1. Data Pelaku Usaha
-                                  </h4>
-                                  <p className="text-[11px] text-blue-100 font-medium">
-                                    Identitas kependudukan sesuai KTP, kontak aktif, dan alamat domisili pelaku usaha
-                                  </p>
-                                </div>
-                              </div>
-                              <Badge className="bg-white/20 hover:bg-white/25 text-white border-none text-[10px] font-black uppercase px-2.5 py-1 rounded-lg shrink-0">
-                                {pelakuFields.length + (hasPelakuAddress ? 1 : 0) + (hasPelakuKtpPhoto ? 1 : 0)} Data Tersedia
-                              </Badge>
+                        <div className="lg:col-span-4 xl:col-span-3 space-y-3.5">
+                          {/* Card 1: Status Data */}
+                          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs space-y-2">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                              Status Data
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <span className={cn(
+                                "w-2.5 h-2.5 rounded-full shrink-0",
+                                isRejected ? "bg-rose-500" : "bg-emerald-500"
+                              )} />
+                              <span className="text-sm font-bold text-slate-900 dark:text-white">
+                                {statusLabel}
+                              </span>
                             </div>
+                            <div className="pt-1 flex flex-wrap gap-1.5">
+                              <ActorMenuBadge actor={viewingActor} asLink />
+                              <VerificationBadge actor={viewingActor} className="mt-0" />
+                            </div>
+                          </div>
 
-                            <div className="p-4 sm:p-5 space-y-4">
-                              {pelakuFields.length > 0 && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                  {pelakuFields.map((item) => {
-                                    const IconComp = item.icon;
-                                    return (
-                                      <div
-                                        key={item.key}
-                                        className="bg-slate-50/90 dark:bg-slate-800/50 border border-slate-200/90 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-800 rounded-xl p-3 sm:p-3.5 transition-all flex flex-col justify-between min-h-[78px] shadow-2xs"
-                                      >
-                                        <div className="flex items-center justify-between gap-1.5 mb-1">
-                                          <div className="flex items-center gap-2 min-w-0">
-                                            <div className="w-6 h-6 rounded-md bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                                              <IconComp className="w-3.5 h-3.5" />
-                                            </div>
-                                            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 truncate">
-                                              {item.label}
-                                            </span>
-                                          </div>
-                                          {item.isCopyable && item.value && (
-                                            <button
-                                              type="button"
-                                              onClick={() => handleCopyText(String(item.value), item.label)}
-                                              className="p-1 rounded-md text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors cursor-pointer shrink-0"
-                                              title={`Salin ${item.label}`}
-                                            >
-                                              {copiedField === item.label ? (
-                                                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                              ) : (
-                                                <Copy className="w-3.5 h-3.5" />
-                                              )}
-                                            </button>
-                                          )}
-                                        </div>
-
-                                        {item.isPhone && item.value ? (
-                                          <div className="flex items-center justify-between gap-2 pt-1">
-                                            <a
-                                              href={getWaLink(String(item.value))}
-                                              target="_blank"
-                                              rel="noreferrer"
-                                              className="inline-flex items-center gap-1.5 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-xl shadow-xs transition-colors group cursor-pointer"
-                                              title="Hubungi via WhatsApp"
-                                            >
-                                              <MessageCircle className="w-3.5 h-3.5 text-white fill-white/20 group-hover:scale-110 transition-transform" />
-                                              <span className="font-mono">{item.value}</span>
-                                            </a>
-                                          </div>
-                                        ) : item.isGenderBadge && item.value ? (
-                                          <div className="pt-1">
-                                            <span className={cn(
-                                              "inline-flex items-center gap-1.5 text-xs font-black uppercase px-3 py-1 rounded-full shadow-2xs text-white",
-                                              isFemale ? "bg-rose-600" : "bg-sky-600"
-                                            )}>
-                                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                                              {item.value}
-                                            </span>
-                                          </div>
-                                        ) : (
-                                          <p className={cn(
-                                            "text-sm sm:text-base font-black text-slate-950 dark:text-white pt-1 break-words",
-                                            item.isMono ? "font-mono tracking-tight" : "uppercase",
-                                            item.isBold && "text-blue-950 dark:text-blue-100"
-                                          )}>
-                                            {item.value}
-                                          </p>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
+                          {/* Card 2: Koordinator / Pengusul (Hanya jika tersedia) */}
+                          {!isInspektorat && hasCoordinator && (
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs space-y-1.5">
+                              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                Usulan / Koordinator
+                              </p>
+                              <p className="text-sm font-bold text-slate-900 dark:text-white uppercase">
+                                {canonicalCoordinator}
+                              </p>
+                              {hasVal(coordPhone) && (
+                                <a
+                                  href={getWaLink(coordPhone)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 hover:underline pt-0.5"
+                                >
+                                  <Phone className="w-3.5 h-3.5" /> WA Koordinator ({coordPhone})
+                                </a>
+                              )}
+                              {isAdmin && (
+                                <div className="pt-1.5">
+                                  <select
+                                    value={canonicalCoordinator}
+                                    onChange={(e) => handleQuickReassignCoordinator(viewingActor.id, e.target.value)}
+                                    className="text-xs font-medium h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-0.5 text-slate-700 dark:text-slate-200 cursor-pointer w-full"
+                                  >
+                                    {!coordinatorOptions.includes(canonicalCoordinator) && (
+                                      <option value={canonicalCoordinator}>{canonicalCoordinator} (Saat Ini)</option>
+                                    )}
+                                    {coordinatorOptions.map((name: string) => (
+                                      <option key={name} value={name}>{name}</option>
+                                    ))}
+                                  </select>
                                 </div>
                               )}
+                            </div>
+                          )}
 
-                              {/* Alamat Lengkap Domisili KTP */}
-                              {hasPelakuAddress && (
-                                <div className="bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/70 rounded-xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-                                  <div className="space-y-1 min-w-0 flex-1">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-6 h-6 rounded-md bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                                        <MapPin className="w-3.5 h-3.5" />
-                                      </div>
-                                      <span className="text-[11px] font-black uppercase tracking-wider text-blue-950 dark:text-blue-200">
-                                        Alamat Lengkap Domisili (KTP)
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleCopyText(viewingActor.address || "", "Alamat Lengkap")}
-                                        className="p-1 rounded-md text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors cursor-pointer"
-                                        title="Salin Alamat"
-                                      >
-                                        {copiedField === "Alamat Lengkap" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                                      </button>
-                                    </div>
-                                    <p className="text-sm sm:text-base font-black text-slate-950 dark:text-white uppercase leading-relaxed break-words">
-                                      {viewingActor.address}
-                                      {hasVal(viewingActor.rtRw) ? ` (RT/RW ${viewingActor.rtRw})` : ""}
-                                      {hasVal(viewingActor.kelurahan) ? `, KEL. ${viewingActor.kelurahan}` : ""}
-                                      {hasVal(viewingActor.kecamatan) ? `, KEC. ${viewingActor.kecamatan}` : ""}
-                                    </p>
-                                  </div>
+                          {/* Card 3: Petugas Survey (Hanya jika tersedia) */}
+                          {!isInspektorat && hasPetugasSurvey && (
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs space-y-1.5">
+                              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                Petugas Survey
+                              </p>
+                              <p className="text-sm font-bold text-slate-900 dark:text-white uppercase">
+                                {rawPetugas}
+                              </p>
+                              {isAdmin && (
+                                <div className="pt-1.5">
+                                  <select
+                                    value={rawPetugas}
+                                    onChange={(e) => handleQuickReassignPetugas(viewingActor.id, e.target.value)}
+                                    className="text-xs font-medium h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-0.5 text-slate-700 dark:text-slate-200 cursor-pointer w-full"
+                                  >
+                                    <option value="BELUM ADA">BELUM ADA</option>
+                                    {!surveyorOptions.includes(rawPetugas) && (
+                                      <option value={rawPetugas}>{rawPetugas} (Saat Ini)</option>
+                                    )}
+                                    {surveyorOptions.map((name: string) => (
+                                      <option key={name} value={name}>{name}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Card 4: Tanggal Terdaftar (Hanya jika tersedia) */}
+                          {hasVal(createdAtVal) && (
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs space-y-1">
+                              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                Tanggal Terdaftar
+                              </p>
+                              <p className="text-sm font-bold text-slate-900 dark:text-white">
+                                {createdAtVal}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Card 5: Kontak Cepat (Hanya jika tersedia) */}
+                          {(hasVal(viewingActor.phone) || hasVal(sd.email) || hasVal(viewingActor.address) || hasDriveLink) && (
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs space-y-2.5">
+                              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                Kontak Cepat
+                              </p>
+                              <div className="space-y-2 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200">
+                                {hasVal(sd.email) && (
+                                  <a
+                                    href={`mailto:${sd.email}`}
+                                    className="flex items-center gap-2.5 hover:text-blue-600 transition-colors break-all"
+                                  >
+                                    <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                                    <span>{sd.email}</span>
+                                  </a>
+                                )}
+                                {hasVal(viewingActor.phone) && (
+                                  <a
+                                    href={getWaLink(viewingActor.phone)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex items-center gap-2.5 hover:text-emerald-600 transition-colors"
+                                  >
+                                    <Phone className="w-4 h-4 text-slate-400 shrink-0" />
+                                    <span>{viewingActor.phone}</span>
+                                  </a>
+                                )}
+                                {hasVal(viewingActor.address) && (
                                   <a
                                     href={getActorMapUrl(viewingActor)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-all shrink-0 cursor-pointer"
+                                    className="flex items-center gap-2.5 hover:text-blue-600 transition-colors"
                                   >
-                                    <ExternalLink className="w-3.5 h-3.5" /> Buka di Maps
+                                    <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
+                                    <span>Buka Lokasi di Maps</span>
                                   </a>
-                                </div>
-                              )}
+                                )}
+                                {hasDriveLink && (
+                                  <a
+                                    href={viewingActor.googleDriveLink}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex items-center gap-2.5 hover:text-blue-600 transition-colors"
+                                  >
+                                    <Folder className="w-4 h-4 text-slate-400 shrink-0" />
+                                    <span>Folder Google Drive</span>
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
 
-                              {/* Lampiran Foto KTP jika tersedia */}
+                        {/* ════════════════════════════════════════════════════════════
+                            KOLOM KANAN: 6 KELOMPOK DATA LENGKAP (CLEAN WHITE CARDS)
+                           ════════════════════════════════════════════════════════════ */}
+                        <div className="lg:col-span-8 xl:col-span-9 space-y-5">
+                          {/* ── 1. DATA PELAKU USAHA ── */}
+                          {hasPelakuGroup && (
+                            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 shadow-2xs">
+                              <h4 className="text-base font-bold text-slate-900 dark:text-white pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
+                                Data Pelaku Usaha
+                              </h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                                {pelakuFields.map((item) => (
+                                  <CleanField
+                                    key={item.key}
+                                    label={item.label}
+                                    value={item.value}
+                                    isMono={item.isMono}
+                                    isCopyable={item.isCopyable}
+                                    colSpan2={item.colSpan2}
+                                  />
+                                ))}
+                              </div>
+
                               {hasPelakuKtpPhoto && (
-                                <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs font-black uppercase text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                                      <Camera className="w-4 h-4 text-blue-600" /> Foto / Dokumen KTP
-                                    </span>
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => setPreviewImageModal({ url: viewingActor.ktpUri!, title: `Foto KTP — ${viewingActor.fullName}` })}
-                                      className="h-7 text-xs font-bold rounded-lg cursor-pointer"
-                                    >
-                                      <Maximize2 className="w-3 h-3 mr-1" /> Perbesar
-                                    </Button>
-                                  </div>
+                                <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                                  <p className="text-xs font-medium text-slate-400">Foto / Dokumen KTP</p>
                                   <img
                                     src={viewingActor.ktpUri}
                                     alt="Foto KTP"
                                     onClick={() => setPreviewImageModal({ url: viewingActor.ktpUri!, title: `Foto KTP — ${viewingActor.fullName}` })}
-                                    className="max-h-56 rounded-lg border object-contain bg-slate-950 cursor-pointer hover:opacity-90 transition-opacity"
+                                    className="max-h-48 rounded-lg border border-slate-200 dark:border-slate-700 object-contain bg-slate-50 cursor-pointer hover:opacity-90 transition-opacity"
                                   />
                                 </div>
                               )}
-                            </div>
-                          </section>
-                        )}
+                            </section>
+                          )}
 
-                        {/* ════════════════════════════════════════════════════════════
-                            KELOMPOK 2: DATA PEMBACAAN DATABASE
-                           ════════════════════════════════════════════════════════════ */}
-                        {(hasDatabaseGroup || isCheckingAuxData) && shouldShowGroup("database") && (
-                          <section className="bg-white dark:bg-slate-900 rounded-2xl border border-indigo-200/80 dark:border-indigo-900/60 shadow-xs overflow-hidden">
-                            <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 sm:px-5 sm:py-3.5 flex flex-wrap items-center justify-between gap-3 text-white">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center font-black shadow-2xs">
-                                  <Database className="w-4 h-4 text-white" />
-                                </div>
-                                <div>
-                                  <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider">
-                                    2. Data Pembacaan Database
-                                  </h4>
-                                  <p className="text-[11px] text-indigo-100 font-medium">
-                                    Hasil pencocokan NIK & Nomor KK pada Sheet 1 (2024), Sheet 2 (2023), Sheet 3 (2025), Blacklist, & BPJS
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
+                          {/* ── 2. DATA PEMBACAAN DATABASE ── */}
+                          {(hasDatabaseGroup || isCheckingAuxData) && (
+                            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 shadow-2xs space-y-4">
+                              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+                                <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                                  Data Pembacaan Database
+                                </h4>
                                 <CheckDataIndicator
                                   actor={viewingActor}
                                   data2023={activeDetailData.data2023}
@@ -3334,19 +3465,16 @@ function ActorDataContent() {
                                   dataBlacklist={activeDetailData.dataBlacklist}
                                 />
                               </div>
-                            </div>
 
-                            <div className="p-4 sm:p-5 space-y-4">
                               {isCheckingAuxData && allMasterMatches.length === 0 && (
-                                <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 text-xs font-bold text-indigo-700 dark:text-indigo-300">
-                                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                                  <span>Memeriksa kecocokan NIK & Nomor KK pada database master...</span>
+                                <div className="flex items-center gap-2 text-xs text-slate-500">
+                                  <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                                  <span>Memeriksa kecocokan database...</span>
                                 </div>
                               )}
 
-                              {/* Daftar Rincian Data yang Cocok di Sheet 1, Sheet 2, Sheet 3, atau Blacklist */}
                               {allMasterMatches.length > 0 && (
-                                <div className="space-y-3.5">
+                                <div className="space-y-4">
                                   {allMasterMatches.map((match, idx) => {
                                     const m = match.item || {};
                                     const matchedBy = m._matchedBy || (
@@ -3367,15 +3495,15 @@ function ActorDataContent() {
                                       { label: "NIK Terdata", value: m.nik || m.Nik || m.NIK, isMono: true },
                                       { label: "Nomor KK Terdata", value: m.noKK || m.kk || m["NO KK"], isMono: true },
                                       { label: "Jenis Kelamin", value: m.gender || m.jenisKelamin },
-                                      { label: "Tempat, Tgl Lahir", value: m.pobDob || (m.pob && m.dob ? `${m.pob}, ${m.dob}` : m.dob || m.pob) },
-                                      { label: "Nomor HP / WA", value: m.phone || m.noHp || m.telepon, isMono: true },
-                                      { label: "Nama Usaha / Produk", value: m.businessName || m.usaha || m.USAHA || m.namaUsaha },
-                                      { label: "Kategori / Sektor Usaha", value: m.businessCategory || m.kategori || m.sektor || m.bidangUsaha },
-                                      { label: "Alamat Terdata", value: m.address || m.alamat || m.ALAMAT },
+                                      { label: "Tempat, Tanggal Lahir", value: m.pobDob || (m.pob && m.dob ? `${m.pob}, ${m.dob}` : m.dob || m.pob) },
+                                      { label: "Nomor Telepon", value: m.phone || m.noHp || m.telepon, isMono: true },
+                                      { label: "Nama Usaha", value: m.businessName || m.usaha || m.USAHA || m.namaUsaha },
+                                      { label: "Kategori Usaha", value: m.businessCategory || m.kategori || m.sektor || m.bidangUsaha },
+                                      { label: "Alamat", value: m.address || m.alamat || m.ALAMAT },
                                       { label: "RT / RW", value: m.rtRw || (m.rt && m.rw ? `${m.rt}/${m.rw}` : m.rt) },
                                       { label: "Kelurahan", value: m.kelurahan },
                                       { label: "Kecamatan", value: m.kecamatan },
-                                      { label: "Koordinator / Pengusul", value: m.coordinator || m.koordinator },
+                                      { label: "Koordinator", value: m.coordinator || m.koordinator },
                                       { label: "Tahun Program", value: m.tahunPengajuan || m.tahun || m.year },
                                       { label: "Nominal Bantuan / LPJ", value: nominalFormatted },
                                       { label: "Status Data", value: m.status || m.STATUS },
@@ -3387,7 +3515,6 @@ function ActorDataContent() {
                                       { label: "Keterangan / Alasan", value: m.alasan || m.alasanCancelDinas || m.keterangan || m.reason || m.catatan },
                                     ].filter(p => hasVal(p.value));
 
-                                    // Ambil field tambahan lain dari objek database bila ada
                                     const handledKeys = new Set([
                                       "id", "_matchedBy", "_source", "_table",
                                       "fullName", "nama", "NAMA", "nik", "Nik", "NIK", "noKK", "kk", "NO KK",
@@ -3412,57 +3539,45 @@ function ActorDataContent() {
                                     const allPairs = [...knownPairs, ...extraPairs];
                                     const itemPhoto = m.photoUrl || m.fotoUrl || m.comparisonPhotoUrl;
 
-                                    const themeClasses = match.theme === "rose"
-                                      ? "bg-rose-50/70 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800"
-                                      : match.theme === "amber"
-                                      ? "bg-amber-50/70 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800"
-                                      : "bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800";
-
-                                    const badgeClasses = match.theme === "rose"
-                                      ? "bg-rose-600 text-white"
-                                      : match.theme === "amber"
-                                      ? "bg-amber-600 text-white"
-                                      : "bg-emerald-600 text-white";
-
                                     return (
-                                      <div key={idx} className={cn("rounded-2xl border p-4 space-y-3.5 shadow-2xs", themeClasses)}>
-                                        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-black/10 dark:border-white/10">
-                                          <div className="flex flex-wrap items-center gap-2">
-                                            <span className={cn("text-xs font-black uppercase px-3 py-1 rounded-xl shadow-2xs", badgeClasses)}>
-                                              {match.sheetTitle}
-                                            </span>
-                                            <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-lg bg-white/90 dark:bg-slate-900 border border-black/10 dark:border-white/10 text-slate-800 dark:text-slate-200">
-                                              Cocok via: {matchedBy}
-                                            </span>
-                                          </div>
+                                      <div key={idx} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 p-4 space-y-3.5">
+                                        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-200/80 dark:border-slate-800">
+                                          <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                                            {match.sheetTitle}
+                                          </span>
+                                          <span className={cn(
+                                            "px-2.5 py-0.5 rounded-full text-xs font-semibold",
+                                            match.theme === "rose"
+                                              ? "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
+                                              : match.theme === "amber"
+                                              ? "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                                              : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                                          )}>
+                                            Cocok via {matchedBy}
+                                          </span>
                                         </div>
 
                                         {allPairs.length > 0 && (
-                                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3.5">
                                             {allPairs.map((pair, pIdx) => (
-                                              <div key={pIdx} className="bg-white/90 dark:bg-slate-900/80 p-2.5 rounded-xl border border-black/5 dark:border-white/10 space-y-0.5">
-                                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
-                                                  {pair.label}
-                                                </span>
-                                                <span className={cn(
-                                                  "text-xs sm:text-sm font-black text-slate-950 dark:text-white block break-words",
-                                                  pair.isMono ? "font-mono" : "uppercase"
-                                                )}>
-                                                  {pair.value}
-                                                </span>
-                                              </div>
+                                              <CleanField
+                                                key={pIdx}
+                                                label={pair.label}
+                                                value={pair.value}
+                                                isMono={pair.isMono}
+                                              />
                                             ))}
                                           </div>
                                         )}
 
                                         {hasVal(itemPhoto) && (
-                                          <div className="pt-2">
-                                            <p className="text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 mb-1.5">Foto pada Database:</p>
+                                          <div className="pt-2 space-y-1.5">
+                                            <p className="text-xs font-medium text-slate-400">Foto pada Database</p>
                                             <img
                                               src={itemPhoto}
                                               alt={match.sheetTitle}
                                               onClick={() => setPreviewImageModal({ url: itemPhoto, title: `${match.sheetTitle} — ${viewingActor.fullName}` })}
-                                              className="max-h-48 rounded-xl border object-contain bg-slate-950 cursor-pointer hover:opacity-90 transition-opacity"
+                                              className="max-h-44 rounded-lg border border-slate-200 object-contain bg-white cursor-pointer hover:opacity-90 transition-opacity"
                                             />
                                           </div>
                                         )}
@@ -3472,58 +3587,28 @@ function ActorDataContent() {
                                 </div>
                               )}
 
-                              {/* Fhoto Pembanding (Sheet 3 / 2025) yang diunggah pada pelaku usaha */}
                               {hasComparisonPhoto && (
-                                <div className="bg-amber-50/80 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 rounded-2xl p-4 space-y-3 shadow-2xs">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <Camera className="w-4 h-4 text-amber-600" />
-                                      <span className="text-xs font-black uppercase tracking-wider text-amber-950 dark:text-amber-200">
-                                        Fhoto Pembanding (Sheet 3 — Pembanding 2025)
-                                      </span>
-                                    </div>
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => setPreviewImageModal({ url: viewingActor.comparisonPhotoUrl!, title: `Fhoto Pembanding — ${viewingActor.fullName}` })}
-                                      className="h-7 text-xs font-bold border-amber-300 text-amber-900 hover:bg-amber-100 rounded-lg cursor-pointer"
-                                    >
-                                      <Maximize2 className="w-3 h-3 mr-1" /> Lihat Penuh
-                                    </Button>
-                                  </div>
+                                <div className="pt-2 space-y-2">
+                                  <p className="text-xs font-medium text-slate-400">
+                                    Fhoto Pembanding (Sheet 3 — Pembanding 2025)
+                                  </p>
                                   <img
                                     src={viewingActor.comparisonPhotoUrl}
                                     alt="Fhoto Pembanding Sheet 3"
                                     onClick={() => setPreviewImageModal({ url: viewingActor.comparisonPhotoUrl!, title: `Fhoto Pembanding — ${viewingActor.fullName}` })}
-                                    className="max-h-64 rounded-xl border border-amber-300 object-contain bg-slate-950 cursor-pointer hover:opacity-90 transition-opacity"
+                                    className="max-h-52 rounded-lg border border-slate-200 object-contain bg-white cursor-pointer hover:opacity-90 transition-opacity"
                                   />
                                 </div>
                               )}
 
-                              {/* Hasil Pembacaan Database BPJS Ketenagakerjaan (Hanya jika tersedia) */}
                               {hasBpjsData && (() => {
-                                const badgeBg =
-                                  bpjsInfo.type === "verified"
-                                    ? "bg-emerald-600 text-white"
-                                    : bpjsInfo.type === "duplicate"
-                                    ? "bg-amber-500 text-white"
-                                    : "bg-rose-600 text-white";
-
-                                const containerBg =
-                                  bpjsInfo.type === "verified"
-                                    ? "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200/90 dark:border-emerald-800/80"
-                                    : bpjsInfo.type === "duplicate"
-                                    ? "bg-amber-50/80 dark:bg-amber-950/40 border-amber-200/90 dark:border-amber-800/80"
-                                    : "bg-rose-50/80 dark:bg-rose-950/40 border-rose-200/90 dark:border-rose-800/80";
-
                                 const sourceFile = bpjsInfo.bpjsItem?.fileName || bpjsInfo.bpjsItem?.sumberFile || (viewingActor as any).bpjsSourceFile;
                                 const checkedAt = (viewingActor as any).bpjsCheckedAt || bpjsInfo.bpjsItem?.uploadedAt;
                                 const kpjNumber = bpjsInfo.bpjsItem?.kpj || bpjsInfo.bpjsItem?.noKpj || (viewingActor as any).bpjsKpj;
                                 const bpjsName = bpjsInfo.bpjsItem?.nama || bpjsInfo.bpjsItem?.fullName;
 
                                 const bpjsFields = [
-                                  { label: "Status Kepesertaan BPJS", value: bpjsInfo.badgeLabel, isBadge: true },
+                                  { label: "Status Verifikasi BPJS", value: bpjsInfo.badgeLabel },
                                   { label: "Kode Status", value: bpjsInfo.statusCode },
                                   { label: "Nomor KPJ BPJS", value: kpjNumber, isMono: true },
                                   { label: "Nama pada Database BPJS", value: bpjsName },
@@ -3533,14 +3618,11 @@ function ActorDataContent() {
                                 ].filter(f => hasVal(f.value));
 
                                 return (
-                                  <div className={cn("p-4 rounded-2xl border space-y-3 shadow-2xs", containerBg)}>
-                                    <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-black/10 dark:border-white/10">
-                                      <div className="flex items-center gap-2">
-                                        <ShieldCheck className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
-                                        <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">
-                                          Database Verifikasi BPJS Ketenagakerjaan
-                                        </span>
-                                      </div>
+                                  <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 p-4 space-y-3">
+                                    <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
+                                      <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                                        Verifikasi BPJS Ketenagakerjaan
+                                      </span>
                                       {isAdmin && (
                                         <button
                                           type="button"
@@ -3548,692 +3630,261 @@ function ActorDataContent() {
                                             setViewingActor(null);
                                             router.push("/settings#bpjs");
                                           }}
-                                          className="text-xs font-black text-indigo-700 dark:text-indigo-300 hover:underline flex items-center gap-1 cursor-pointer"
+                                          className="text-xs font-medium text-blue-600 hover:underline cursor-pointer"
                                         >
-                                          Kelola Data BPJS <ChevronRight className="w-3.5 h-3.5" />
+                                          Kelola BPJS
                                         </button>
                                       )}
                                     </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3.5">
                                       {bpjsFields.map((bf, bIdx) => (
-                                        <div key={bIdx} className="bg-white/90 dark:bg-slate-900/80 p-2.5 rounded-xl border border-black/5 dark:border-white/10 space-y-1">
-                                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
-                                            {bf.label}
-                                          </span>
-                                          {bf.isBadge ? (
-                                            <span className={cn("inline-block text-xs font-black px-2.5 py-0.5 rounded-lg uppercase tracking-wider", badgeBg)}>
-                                              {bf.value}
-                                            </span>
-                                          ) : (
-                                            <span className={cn("text-xs sm:text-sm font-black text-slate-950 dark:text-white block break-words", bf.isMono && "font-mono")}>
-                                              {bf.value}
-                                            </span>
-                                          )}
-                                        </div>
+                                        <CleanField
+                                          key={bIdx}
+                                          label={bf.label}
+                                          value={bf.value}
+                                          isMono={bf.isMono}
+                                        />
                                       ))}
                                     </div>
                                   </div>
                                 );
                               })()}
-                            </div>
-                          </section>
-                        )}
+                            </section>
+                          )}
 
-                        {/* ════════════════════════════════════════════════════════════
-                            KELOMPOK 3: DATA KELUARGA
-                           ════════════════════════════════════════════════════════════ */}
-                        {hasKeluargaGroup && shouldShowGroup("keluarga") && (
-                          <section className="bg-white dark:bg-slate-900 rounded-2xl border border-rose-200/80 dark:border-rose-900/60 shadow-xs overflow-hidden">
-                            <div className="bg-gradient-to-r from-rose-600 to-pink-600 px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 text-white">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center font-black shadow-2xs">
-                                  <Users className="w-4 h-4 text-white" />
-                                </div>
-                                <div>
-                                  <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider">
-                                    3. Data Keluarga
-                                  </h4>
-                                  <p className="text-[11px] text-rose-100 font-medium">
-                                    Informasi Kartu Keluarga (KK), status hubungan keluarga, dan identitas Kepala Keluarga
-                                  </p>
-                                </div>
+                          {/* ── 3. DATA KELUARGA ── */}
+                          {hasKeluargaGroup && (
+                            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 shadow-2xs">
+                              <h4 className="text-base font-bold text-slate-900 dark:text-white pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
+                                Data Keluarga
+                              </h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                                {keluargaFields.map((item) => (
+                                  <CleanField
+                                    key={item.key}
+                                    label={item.label}
+                                    value={item.value}
+                                    isMono={item.isMono}
+                                    isCopyable={item.isCopyable}
+                                  />
+                                ))}
                               </div>
-                              <Badge className="bg-white/20 hover:bg-white/25 text-white border-none text-[10px] font-black uppercase px-2.5 py-1 rounded-lg shrink-0">
-                                {keluargaFields.length + (hasKkPhoto ? 1 : 0)} Data Tersedia
-                              </Badge>
-                            </div>
-
-                            <div className="p-4 sm:p-5 space-y-4">
-                              {keluargaFields.length > 0 && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                  {keluargaFields.map((item) => {
-                                    const IconComp = item.icon;
-                                    return (
-                                      <div
-                                        key={item.key}
-                                        className="bg-rose-50/40 dark:bg-slate-800/50 border border-rose-200/70 dark:border-slate-800 hover:border-rose-300 rounded-xl p-3 sm:p-3.5 transition-all flex flex-col justify-between min-h-[78px] shadow-2xs"
-                                      >
-                                        <div className="flex items-center justify-between gap-1.5 mb-1">
-                                          <div className="flex items-center gap-2 min-w-0">
-                                            <div className="w-6 h-6 rounded-md bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                                              <IconComp className="w-3.5 h-3.5" />
-                                            </div>
-                                            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 truncate">
-                                              {item.label}
-                                            </span>
-                                          </div>
-                                          {item.isCopyable && item.value && (
-                                            <button
-                                              type="button"
-                                              onClick={() => handleCopyText(String(item.value), item.label)}
-                                              className="p-1 rounded-md text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-700 transition-colors cursor-pointer shrink-0"
-                                              title={`Salin ${item.label}`}
-                                            >
-                                              {copiedField === item.label ? (
-                                                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                              ) : (
-                                                <Copy className="w-3.5 h-3.5" />
-                                              )}
-                                            </button>
-                                          )}
-                                        </div>
-
-                                        {item.isHighlight ? (
-                                          <div className="pt-1">
-                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase bg-rose-600 text-white shadow-2xs">
-                                              {item.value}
-                                            </span>
-                                          </div>
-                                        ) : (
-                                          <p className={cn(
-                                            "text-sm sm:text-base font-black text-slate-950 dark:text-white pt-1 break-words",
-                                            item.isMono ? "font-mono tracking-tight" : "uppercase"
-                                          )}>
-                                            {item.value}
-                                          </p>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
 
                               {hasKkPhoto && (
-                                <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs font-black uppercase text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                                      <Camera className="w-4 h-4 text-rose-600" /> Foto / Dokumen Kartu Keluarga (KK)
-                                    </span>
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => setPreviewImageModal({ url: viewingActor.kkUri!, title: `Foto KK — ${viewingActor.fullName}` })}
-                                      className="h-7 text-xs font-bold rounded-lg cursor-pointer"
-                                    >
-                                      <Maximize2 className="w-3 h-3 mr-1" /> Perbesar
-                                    </Button>
-                                  </div>
+                                <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                                  <p className="text-xs font-medium text-slate-400">Foto / Dokumen Kartu Keluarga</p>
                                   <img
                                     src={viewingActor.kkUri}
                                     alt="Foto KK"
                                     onClick={() => setPreviewImageModal({ url: viewingActor.kkUri!, title: `Foto KK — ${viewingActor.fullName}` })}
-                                    className="max-h-56 rounded-lg border object-contain bg-slate-950 cursor-pointer hover:opacity-90 transition-opacity"
+                                    className="max-h-48 rounded-lg border border-slate-200 dark:border-slate-700 object-contain bg-slate-50 cursor-pointer hover:opacity-90 transition-opacity"
                                   />
                                 </div>
                               )}
-                            </div>
-                          </section>
-                        )}
+                            </section>
+                          )}
 
-                        {/* ════════════════════════════════════════════════════════════
-                            KELOMPOK 4: DATA USAHA
-                           ════════════════════════════════════════════════════════════ */}
-                        {hasUsahaGroup && shouldShowGroup("usaha") && (
-                          <section className="bg-white dark:bg-slate-900 rounded-2xl border border-purple-200/80 dark:border-purple-900/60 shadow-xs overflow-hidden">
-                            <div className="bg-gradient-to-r from-purple-600 to-fuchsia-600 px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 text-white">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center font-black shadow-2xs">
-                                  <Store className="w-4 h-4 text-white" />
-                                </div>
-                                <div>
-                                  <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider">
-                                    4. Data Usaha
-                                  </h4>
-                                  <p className="text-[11px] text-purple-100 font-medium">
-                                    Profil unit usaha, lokasi usaha, usulan koordinator, dan berkas pendukung usaha
-                                  </p>
-                                </div>
-                              </div>
-                              <Badge className="bg-white/20 hover:bg-white/25 text-white border-none text-[10px] font-black uppercase px-2.5 py-1 rounded-lg shrink-0">
-                                {usahaFields.length + (hasCoordinator ? 1 : 0) + (hasPetugasSurvey ? 1 : 0) + (hasDriveLink ? 1 : 0) + (hasNibPhoto ? 1 : 0) + (hasUsahaPhoto ? 1 : 0)} Data Tersedia
-                              </Badge>
-                            </div>
-
-                            <div className="p-4 sm:p-5 space-y-4">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {usahaFields.map((item) => {
-                                  const IconComp = item.icon;
-                                  return (
-                                    <div
-                                      key={item.key}
-                                      className={cn(
-                                        "bg-purple-50/40 dark:bg-slate-800/50 border border-purple-200/70 dark:border-slate-800 rounded-xl p-3.5 sm:p-4 transition-all flex flex-col justify-between min-h-[82px] shadow-2xs",
-                                        item.isFullWidth && "md:col-span-2"
-                                      )}
-                                    >
-                                      <div className="flex items-center gap-2 mb-1.5">
-                                        <div className="w-6 h-6 rounded-md bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                                          <IconComp className="w-3.5 h-3.5" />
-                                        </div>
-                                        <span className="text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                                          {item.label}
-                                        </span>
-                                      </div>
-                                      {item.isBadge ? (
-                                        <div>
-                                          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-xs sm:text-sm font-black uppercase bg-purple-600 text-white shadow-2xs">
-                                            {item.value}
-                                          </span>
-                                        </div>
-                                      ) : (
-                                        <p className={cn(
-                                          "text-sm sm:text-base font-black text-slate-950 dark:text-white uppercase break-words",
-                                          item.isBold && "text-base sm:text-lg text-purple-950 dark:text-purple-100"
-                                        )}>
-                                          {item.value}
-                                        </p>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-
-                                {/* Usulan / Koordinator (Hanya tampil jika tersedia) */}
-                                {!isInspektorat && hasCoordinator && (
-                                  <div className="bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/70 rounded-xl p-3.5 sm:p-4 space-y-2.5 shadow-2xs">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-6 h-6 rounded-md bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                                        <Users className="w-3.5 h-3.5" />
-                                      </div>
-                                      <span className="text-[11px] font-black uppercase tracking-wider text-amber-950 dark:text-amber-200">
-                                        Usulan / Koordinator
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="inline-flex items-center gap-1.5 text-xs font-black text-white uppercase bg-amber-600 px-3 py-1 rounded-xl shadow-2xs">
-                                        <span className="w-2 h-2 rounded-full bg-white shrink-0" />
-                                        <span>{canonicalCoordinator}</span>
-                                      </span>
-                                      {hasVal(coordPhone) && (
-                                        <a
-                                          href={getWaLink(coordPhone)}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="inline-flex items-center gap-1.5 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1 rounded-xl shadow-xs transition-colors group cursor-pointer"
-                                          title="Chat WA Koordinator"
-                                        >
-                                          <MessageCircle className="w-3.5 h-3.5 text-white fill-white/20 group-hover:scale-110 transition-transform" />
-                                          <span>WA: {coordPhone}</span>
-                                        </a>
-                                      )}
-                                    </div>
-                                    {isAdmin && (
-                                      <div className="pt-0.5">
-                                        <select
-                                          value={canonicalCoordinator}
-                                          onChange={(e) => handleQuickReassignCoordinator(viewingActor.id, e.target.value)}
-                                          className="text-xs font-bold h-8 rounded-xl border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-800 px-2.5 py-0.5 shadow-2xs text-amber-950 dark:text-amber-200 cursor-pointer hover:border-amber-500 transition-all w-full max-w-[260px]"
-                                          title="Admin: Pindahkan Usulan / Koordinator secara langsung"
-                                        >
-                                          {!coordinatorOptions.includes(canonicalCoordinator) && (
-                                            <option value={canonicalCoordinator}>
-                                              🟢 {canonicalCoordinator} (Saat Ini)
-                                            </option>
-                                          )}
-                                          {coordinatorOptions.map((name: string) => (
-                                            <option key={name} value={name}>
-                                              🟢 {name}
-                                            </option>
-                                          ))}
-                                        </select>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* Petugas Survey (Hanya tampil jika sudah ditugaskan / diinput) */}
-                                {!isInspektorat && hasPetugasSurvey && (
-                                  <div className="bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-800/70 rounded-xl p-3.5 sm:p-4 space-y-2.5 shadow-2xs">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-6 h-6 rounded-md bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                                        <UserCheck className="w-3.5 h-3.5" />
-                                      </div>
-                                      <span className="text-[11px] font-black uppercase tracking-wider text-indigo-950 dark:text-indigo-200">
-                                        Petugas Survey Ditugaskan
-                                      </span>
-                                    </div>
-                                    <div>
-                                      <span className="inline-flex items-center gap-1.5 text-xs font-black text-white uppercase bg-emerald-600 px-3 py-1 rounded-xl shadow-2xs">
-                                        <span className="w-2 h-2 rounded-full bg-white shrink-0" />
-                                        <span>{rawPetugas}</span>
-                                      </span>
-                                    </div>
-                                    {isAdmin && (
-                                      <div className="pt-0.5">
-                                        <select
-                                          value={rawPetugas}
-                                          onChange={(e) => handleQuickReassignPetugas(viewingActor.id, e.target.value)}
-                                          className="text-xs font-bold h-8 rounded-xl border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-slate-800 px-2.5 py-0.5 shadow-2xs text-indigo-950 dark:text-indigo-200 cursor-pointer hover:border-indigo-500 transition-all w-full max-w-[260px]"
-                                          title="Admin: Ganti Petugas Survey secara langsung"
-                                        >
-                                          <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
-                                          {!surveyorOptions.includes(rawPetugas) && (
-                                            <option value={rawPetugas}>
-                                              🟢 {rawPetugas} (Saat Ini)
-                                            </option>
-                                          )}
-                                          {surveyorOptions.map((name: string) => (
-                                            <option key={name} value={name}>
-                                              🟢 {name}
-                                            </option>
-                                          ))}
-                                        </select>
-                                      </div>
-                                    )}
-                                  </div>
+                          {/* ── 4. DATA USAHA ── */}
+                          {hasUsahaGroup && (
+                            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 shadow-2xs">
+                              <h4 className="text-base font-bold text-slate-900 dark:text-white pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
+                                Data Usaha
+                              </h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                                {usahaFields.map((item) => (
+                                  <CleanField
+                                    key={item.key}
+                                    label={item.label}
+                                    value={item.value}
+                                    colSpan2={(item as any).colSpan2}
+                                  />
+                                ))}
+                                {hasDriveLink && (
+                                  <CleanField
+                                    label="Berkas Google Drive"
+                                    value={
+                                      <a
+                                        href={viewingActor.googleDriveLink}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-blue-600 hover:underline inline-flex items-center gap-1.5"
+                                      >
+                                        <span>Buka Folder Google Drive</span>
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                      </a>
+                                    }
+                                  />
                                 )}
                               </div>
 
-                              {/* Link Google Drive jika tersedia */}
-                              {hasDriveLink && (
-                                <div className="bg-blue-50/80 dark:bg-blue-950/40 p-4 rounded-xl border border-blue-200/90 dark:border-blue-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                                      <Folder className="w-4 h-4" />
-                                    </div>
-                                    <div>
-                                      <p className="text-xs sm:text-sm font-black text-blue-950 dark:text-white uppercase">Folder Berkas Google Drive</p>
-                                      <p className="text-[11px] font-semibold text-blue-800/80 dark:text-blue-300 truncate max-w-md">{viewingActor.googleDriveLink}</p>
-                                    </div>
-                                  </div>
-                                  <a
-                                    href={viewingActor.googleDriveLink}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-black px-4 py-2 rounded-xl text-xs shadow-xs inline-flex items-center justify-center shrink-0 cursor-pointer"
-                                  >
-                                    <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> Buka Folder Drive
-                                  </a>
-                                </div>
-                              )}
-
-                              {/* Foto NIB / Foto Usaha jika tersedia */}
                               {(hasNibPhoto || hasUsahaPhoto) && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                   {hasNibPhoto && (
-                                    <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-xs font-black uppercase text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                                          <FileText className="w-4 h-4 text-purple-600" /> Dokumen NIB / SKU
-                                        </span>
-                                        <Button
-                                          type="button"
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => setPreviewImageModal({ url: viewingActor.nibUri!, title: `Dokumen NIB — ${viewingActor.fullName}` })}
-                                          className="h-7 text-xs font-bold rounded-lg cursor-pointer"
-                                        >
-                                          <Maximize2 className="w-3 h-3 mr-1" /> Perbesar
-                                        </Button>
-                                      </div>
+                                    <div className="space-y-1.5">
+                                      <p className="text-xs font-medium text-slate-400">Dokumen NIB / SKU</p>
                                       <img
                                         src={viewingActor.nibUri}
                                         alt="Dokumen NIB"
                                         onClick={() => setPreviewImageModal({ url: viewingActor.nibUri!, title: `Dokumen NIB — ${viewingActor.fullName}` })}
-                                        className="max-h-52 rounded-lg border object-contain bg-slate-950 cursor-pointer hover:opacity-90 transition-opacity"
+                                        className="max-h-44 rounded-lg border border-slate-200 object-contain bg-slate-50 cursor-pointer hover:opacity-90 transition-opacity"
                                       />
                                     </div>
                                   )}
                                   {hasUsahaPhoto && (
-                                    <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-xs font-black uppercase text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                                          <Camera className="w-4 h-4 text-purple-600" /> Foto Tempat / Produk Usaha
-                                        </span>
-                                        <Button
-                                          type="button"
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => setPreviewImageModal({ url: viewingActor.photoUsahaUri!, title: `Foto Usaha — ${viewingActor.fullName}` })}
-                                          className="h-7 text-xs font-bold rounded-lg cursor-pointer"
-                                        >
-                                          <Maximize2 className="w-3 h-3 mr-1" /> Perbesar
-                                        </Button>
-                                      </div>
+                                    <div className="space-y-1.5">
+                                      <p className="text-xs font-medium text-slate-400">Foto Tempat / Produk Usaha</p>
                                       <img
                                         src={viewingActor.photoUsahaUri}
                                         alt="Foto Usaha"
                                         onClick={() => setPreviewImageModal({ url: viewingActor.photoUsahaUri!, title: `Foto Usaha — ${viewingActor.fullName}` })}
-                                        className="max-h-52 rounded-lg border object-contain bg-slate-950 cursor-pointer hover:opacity-90 transition-opacity"
+                                        className="max-h-44 rounded-lg border border-slate-200 object-contain bg-slate-50 cursor-pointer hover:opacity-90 transition-opacity"
                                       />
                                     </div>
                                   )}
                                 </div>
                               )}
-                            </div>
-                          </section>
-                        )}
+                            </section>
+                          )}
 
-                        {/* ════════════════════════════════════════════════════════════
-                            KELOMPOK 5: DATA REKENING
-                           ════════════════════════════════════════════════════════════ */}
-                        {hasRekeningGroup && shouldShowGroup("rekening") && (
-                          <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white p-5 sm:p-6 shadow-md border border-slate-700/60 space-y-5">
-                            <div className="absolute -right-16 -top-16 w-56 h-56 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
-
-                            <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3.5">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/15 text-white flex items-center justify-center font-bold backdrop-blur-xs">
-                                  <CreditCard className="w-5 h-5" />
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <h4 className="text-xs sm:text-sm font-black text-white uppercase tracking-wider">
-                                      5. Data Rekening
-                                    </h4>
-                                    {hasVal(viewingActor.bankNumber) && (
-                                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                        <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Terdata
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-[11px] text-slate-300 font-medium">
-                                    Informasi rekening bank penyaluran dana bantuan & status pencairan LPJ
-                                  </p>
-                                </div>
-                              </div>
-                              {isAdmin && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setEditingBankMode(true)}
-                                  className="h-8 text-xs font-bold text-white bg-white/10 hover:bg-white/20 border-white/20 rounded-xl shadow-2xs transition-all cursor-pointer"
-                                >
-                                  <CreditCard className="w-3.5 h-3.5 mr-1.5" /> Ubah Rekening
-                                </Button>
-                              )}
-                            </div>
-
-                            <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                              {hasVal(viewingActor.bankName) && (
-                                <div className="space-y-1">
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                                    Bank Penyalur
-                                  </span>
-                                  <span className="inline-block px-3.5 py-1.5 rounded-xl text-sm sm:text-base font-black uppercase tracking-wider bg-white/10 text-white border border-white/15">
-                                    {viewingActor.bankName}
-                                  </span>
-                                </div>
-                              )}
-
-                              {hasVal(viewingActor.bankNumber) && (
-                                <div className="space-y-1 md:col-span-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                      Nomor Rekening Penerima
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleCopyText(viewingActor.bankNumber || "", "Nomor Rekening")}
-                                      className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-lg border border-white/20 transition-all cursor-pointer"
-                                      title="Salin Nomor Rekening"
-                                    >
-                                      {copiedField === "Nomor Rekening" ? (
-                                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                      ) : (
-                                        <Copy className="w-3.5 h-3.5" />
-                                      )}
-                                      <span>{copiedField === "Nomor Rekening" ? "Tersalin" : "Salin"}</span>
-                                    </button>
-                                  </div>
-                                  <p className="text-xl sm:text-2xl font-black font-mono text-white tracking-[0.12em] select-all break-all">
-                                    {viewingActor.bankNumber}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-
-                            {(hasVal(viewingActor.bankOwner) || hasVal(lpjNominalVal) || hasVal(lpjDateVal)) && (
-                              <div className="relative z-10 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
-                                {hasVal(viewingActor.bankOwner) && (
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-[11px] font-bold text-slate-400 uppercase">Pemilik Rekening:</span>
-                                    <span className="text-sm font-black uppercase text-white tracking-wide">
-                                      {viewingActor.bankOwner}
-                                    </span>
-                                    {viewingActor.fullName && viewingActor.bankOwner!.trim().toLowerCase() === viewingActor.fullName.trim().toLowerCase() && (
-                                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
-                                        <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Sesuai Nama Pelaku
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-
-                                {(hasVal(lpjNominalVal) || hasVal(lpjDateVal)) && (
-                                  <div className="flex items-center gap-3 flex-wrap">
-                                    {hasVal(lpjNominalVal) && (
-                                      <span className="text-xs font-black bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 px-3 py-1 rounded-xl">
-                                        Nominal LPJ: {lpjNominalVal}
-                                      </span>
-                                    )}
-                                    {hasVal(lpjDateVal) && (
-                                      <span className="text-xs font-bold bg-white/10 text-slate-200 px-3 py-1 rounded-xl">
-                                        Tanggal LPJ: {lpjDateVal}
-                                      </span>
-                                    )}
-                                  </div>
+                          {/* ── 5. DATA REKENING ── */}
+                          {hasRekeningGroup && (
+                            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 shadow-2xs">
+                              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
+                                <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                                  Data Rekening
+                                </h4>
+                                {isAdmin && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingBankMode(true)}
+                                    className="text-xs font-semibold text-blue-600 hover:underline cursor-pointer"
+                                  >
+                                    Ubah Rekening
+                                  </button>
                                 )}
                               </div>
-                            )}
-                          </section>
-                        )}
-
-                        {/* ════════════════════════════════════════════════════════════
-                            KELOMPOK 6: DATA SURVEY
-                           ════════════════════════════════════════════════════════════ */}
-                        {hasSurveyGroup && shouldShowGroup("survey") && (
-                          <section className="bg-white dark:bg-slate-900 rounded-2xl border border-teal-200/80 dark:border-teal-900/60 shadow-xs overflow-hidden">
-                            <div className="bg-gradient-to-r from-teal-600 to-emerald-600 px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 text-white">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center font-black shadow-2xs">
-                                  <ClipboardList className="w-4 h-4 text-white" />
-                                </div>
-                                <div>
-                                  <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider">
-                                    6. Data Survey
-                                  </h4>
-                                  <p className="text-[11px] text-teal-100 font-medium">
-                                    Rincian hasil survey lapangan, verifikasi berkas dinas, foto dokumentasi survey, dan titik koordinat GPS
-                                  </p>
-                                </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                                {rekeningFields.map((item) => (
+                                  <CleanField
+                                    key={item.key}
+                                    label={item.label}
+                                    value={item.value}
+                                    isMono={item.isMono}
+                                    isCopyable={item.isCopyable}
+                                  />
+                                ))}
                               </div>
-                              <Badge className="bg-white/20 hover:bg-white/25 text-white border-none text-[10px] font-black uppercase px-2.5 py-1 rounded-lg shrink-0">
-                                {surveyMainFields.length + gpsPoints.length + (hasSurveyPhoto ? 1 : 0) + (hasTandaTangan ? 1 : 0)} Data Tersedia
-                              </Badge>
-                            </div>
+                            </section>
+                          )}
 
-                            <div className="p-4 sm:p-5 space-y-5">
-                              {/* Foto Survey Lapangan & Tanda Tangan jika tersedia */}
+                          {/* ── 6. DATA SURVEY ── */}
+                          {hasSurveyGroup && (
+                            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 shadow-2xs space-y-5">
+                              <h4 className="text-base font-bold text-slate-900 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800">
+                                Data Survey
+                              </h4>
+
+                              {surveyMainFields.length > 0 && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                                  {surveyMainFields.map((item) => (
+                                    <CleanField
+                                      key={item.key}
+                                      label={item.label}
+                                      value={item.value}
+                                      subValue={(item as any).subValue}
+                                      isMono={item.isMono}
+                                      colSpan2={item.colSpan2}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+
+                              {(gpsPoints.length > 0 || hasBypass) && (
+                                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                                  {gpsPoints.map((pt, idx) => (
+                                    <CleanField
+                                      key={idx}
+                                      label={pt.label}
+                                      value={
+                                        <a
+                                          href={`https://www.google.com/maps?q=${pt.lat},${pt.lon}`}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="text-blue-600 hover:underline font-mono inline-flex items-center gap-1.5"
+                                        >
+                                          <span>{pt.lat}, {pt.lon}</span>
+                                          <ExternalLink className="w-3.5 h-3.5" />
+                                        </a>
+                                      }
+                                    />
+                                  ))}
+                                  {hasBypass && (
+                                    <CleanField
+                                      label="Verifikasi Bypass Lokasi"
+                                      value={(viewingActor as any).verificationBypass.reason}
+                                    />
+                                  )}
+                                </div>
+                              )}
+
                               {(hasSurveyPhoto || isDetailPhotoLoading || hasTandaTangan) && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                   {(hasSurveyPhoto || isDetailPhotoLoading) && (
-                                    <div className="bg-teal-50/40 dark:bg-slate-800/60 border border-teal-200/80 dark:border-teal-800/60 rounded-2xl p-4 space-y-3">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-xs font-black uppercase tracking-wider text-teal-800 dark:text-teal-300 flex items-center gap-2">
-                                          <Camera className="w-4 h-4 text-teal-600" /> Foto Dokumentasi Survey Lapangan
-                                        </span>
-                                        {hasSurveyPhoto && (
-                                          <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => setPreviewImageModal({ url: detailSurveyPhotoUrl!, title: `Foto Survey Lapangan — ${viewingActor.fullName}` })}
-                                            className="h-7 text-xs font-bold border-teal-300 text-teal-800 hover:bg-teal-100 rounded-lg cursor-pointer"
-                                          >
-                                            <Maximize2 className="w-3 h-3 mr-1" /> Perbesar
-                                          </Button>
-                                        )}
-                                      </div>
+                                    <div className="space-y-1.5">
+                                      <p className="text-xs font-medium text-slate-400">Foto Dokumentasi Survey Lapangan</p>
                                       {isDetailPhotoLoading && !hasSurveyPhoto ? (
-                                        <div className="h-48 rounded-xl bg-white/80 dark:bg-slate-900 border flex items-center justify-center gap-2 text-xs font-bold text-slate-500">
-                                          <Loader2 className="w-4 h-4 animate-spin text-teal-600" /> Memuat foto survey...
+                                        <div className="h-36 rounded-lg border border-slate-200 flex items-center justify-center gap-2 text-xs text-slate-400">
+                                          <Loader2 className="w-4 h-4 animate-spin" /> Memuat foto...
                                         </div>
                                       ) : hasSurveyPhoto ? (
                                         <img
                                           src={detailSurveyPhotoUrl!}
                                           alt="Foto Survey Lapangan"
                                           onClick={() => setPreviewImageModal({ url: detailSurveyPhotoUrl!, title: `Foto Survey Lapangan — ${viewingActor.fullName}` })}
-                                          className="w-full max-h-64 object-contain rounded-xl border bg-slate-950 cursor-pointer hover:opacity-95 transition-opacity"
+                                          className="max-h-52 rounded-lg border border-slate-200 object-contain bg-slate-50 cursor-pointer hover:opacity-90 transition-opacity"
                                         />
                                       ) : null}
                                     </div>
                                   )}
 
                                   {hasTandaTangan && (
-                                    <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 space-y-3">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                          <FileText className="w-4 h-4 text-teal-600" /> Tanda Tangan Pelaku Usaha
-                                        </span>
-                                        <Button
-                                          type="button"
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => setPreviewImageModal({ url: sd.tandaTanganPelakuUsaha, title: `Tanda Tangan — ${viewingActor.fullName}` })}
-                                          className="h-7 text-xs font-bold rounded-lg cursor-pointer"
-                                        >
-                                          <Maximize2 className="w-3 h-3 mr-1" /> Perbesar
-                                        </Button>
-                                      </div>
+                                    <div className="space-y-1.5">
+                                      <p className="text-xs font-medium text-slate-400">Tanda Tangan Pelaku Usaha</p>
                                       <img
                                         src={sd.tandaTanganPelakuUsaha}
                                         alt="Tanda Tangan Pelaku Usaha"
                                         onClick={() => setPreviewImageModal({ url: sd.tandaTanganPelakuUsaha, title: `Tanda Tangan — ${viewingActor.fullName}` })}
-                                        className="w-full max-h-48 object-contain rounded-xl border bg-white p-2 cursor-pointer"
+                                        className="max-h-44 rounded-lg border border-slate-200 object-contain bg-white p-2 cursor-pointer"
                                       />
                                     </div>
                                   )}
                                 </div>
                               )}
+                            </section>
+                          )}
 
-                              {/* Grid Field Survey yang Tersedia */}
-                              {surveyMainFields.length > 0 && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                  {surveyMainFields.map((item) => {
-                                    const IconComp = item.icon;
-                                    const valUpper = String(item.value || "").toUpperCase();
-                                    const isNegative = valUpper.includes("TIDAK") || valUpper.includes("TOLAK") || valUpper.includes("BATAL");
-                                    return (
-                                      <div
-                                        key={item.key}
-                                        className={cn(
-                                          "bg-teal-50/40 dark:bg-slate-800/50 border border-teal-200/70 dark:border-slate-800 rounded-xl p-3 sm:p-3.5 transition-all flex flex-col justify-between min-h-[78px] shadow-2xs",
-                                          item.isFullWidth && "sm:col-span-2 lg:col-span-3"
-                                        )}
-                                      >
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <div className="w-6 h-6 rounded-md bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                                            <IconComp className="w-3.5 h-3.5" />
-                                          </div>
-                                          <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                                            {item.label}
-                                          </span>
-                                        </div>
-
-                                        {item.isStatusBadge ? (
-                                          <div className="pt-1">
-                                            <span className={cn(
-                                              "inline-block text-xs font-black uppercase px-3 py-1 rounded-xl text-white shadow-2xs",
-                                              isNegative ? "bg-rose-600" : "bg-emerald-600"
-                                            )}>
-                                              {item.value}
-                                            </span>
-                                          </div>
-                                        ) : (
-                                          <div className="pt-1 space-y-0.5">
-                                            <p className={cn(
-                                              "text-sm sm:text-base font-black text-slate-950 dark:text-white break-words",
-                                              item.isMono ? "font-mono" : "uppercase",
-                                              item.isBold && "text-teal-950 dark:text-teal-200"
-                                            )}>
-                                              {item.value}
-                                            </p>
-                                            {hasVal((item as any).subValue) && (
-                                              <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                                                {(item as any).subValue}
-                                              </p>
-                                            )}
-                                          </div>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-
-                              {/* Titik Lokasi Geotagging GPS & Bypass (Hanya jika tersedia) */}
-                              {(gpsPoints.length > 0 || hasBypass) && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                                  {gpsPoints.map((pt, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="bg-emerald-50/70 dark:bg-emerald-950/30 p-3.5 sm:p-4 rounded-xl border border-emerald-200/90 dark:border-emerald-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
-                                    >
-                                      <div className="space-y-1">
-                                        <span className="inline-flex items-center gap-1.5 text-[11px] font-black text-white uppercase bg-teal-600 px-2.5 py-0.5 rounded-lg">
-                                          <Navigation className="w-3 h-3" /> {pt.label}
-                                        </span>
-                                        <p className="text-xs sm:text-sm font-mono font-black text-slate-900 dark:text-white pt-0.5">
-                                          {pt.lat}, {pt.lon}
-                                        </p>
-                                      </div>
-                                      <a
-                                        href={`https://www.google.com/maps?q=${pt.lat},${pt.lon}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="inline-flex items-center justify-center gap-1.5 text-xs font-black bg-teal-600 hover:bg-teal-700 text-white px-3.5 py-2 rounded-xl shadow-xs transition-colors shrink-0 cursor-pointer"
-                                      >
-                                        <ExternalLink className="w-3.5 h-3.5" /> Lihat di Maps
-                                      </a>
-                                    </div>
-                                  ))}
-
-                                  {hasBypass && (
-                                    <div className="bg-amber-50/80 dark:bg-amber-950/40 p-3.5 sm:p-4 rounded-xl border border-amber-200/90 dark:border-amber-800/80 space-y-2 shadow-2xs">
-                                      <span className="inline-flex items-center gap-1.5 text-[11px] font-black text-white uppercase bg-amber-600 px-2.5 py-0.5 rounded-lg">
-                                        Verifikasi Bypass Lokasi
-                                      </span>
-                                      <p className="text-xs text-amber-950 dark:text-amber-100 font-bold">
-                                        Alasan: {(viewingActor as any).verificationBypass.reason}
-                                      </p>
-                                      {hasVal((viewingActor as any).verificationBypass.fileBase64) && (
-                                        <a
-                                          href={(viewingActor as any).verificationBypass.fileBase64}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="inline-flex items-center gap-1 text-[11px] font-bold bg-amber-600 text-white px-3 py-1.5 rounded-lg shadow-2xs hover:bg-amber-700 transition-colors"
-                                        >
-                                          Lihat Bukti Lampiran
-                                        </a>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </section>
-                        )}
+                          {/* ── RIWAYAT AKTIVITAS TERAKHIR (SAMA SEPERTI SCREENSHOT) ── */}
+                          {activityLogs.length > 0 && (
+                            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 shadow-2xs">
+                              <h4 className="text-base font-bold text-slate-900 dark:text-white pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
+                                Riwayat Aktivitas Terakhir
+                              </h4>
+                              <div className="relative pl-5 space-y-5 before:content-[''] before:absolute before:left-[5px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-200 dark:before:bg-slate-800">
+                                {activityLogs.map((log, idx) => (
+                                  <div key={idx} className="relative">
+                                    <span className="absolute -left-5 top-1.5 w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-600 ring-4 ring-white dark:ring-slate-900" />
+                                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                      {log.title}
+                                    </p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                      {log.date}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            </section>
+                          )}
+                        </div>
                       </div>
                     );
                   })()}
