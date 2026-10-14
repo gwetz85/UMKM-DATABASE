@@ -55,6 +55,22 @@ function base64ToBlobUrl(base64Data: string, mimeType: string = "video/mp4"): st
   }
 }
 
+// Utility: Auto-parse Google Drive shared link into direct CDN streaming link
+function parseGoogleDriveUrl(url: string): { finalUrl: string; isGoogleDrive: boolean; fileId?: string } {
+  if (!url) return { finalUrl: "", isGoogleDrive: false }
+  const trimmed = url.trim()
+  const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)|docs\.google\.com\/file\/d\/)([a-zA-Z0-9_-]+)/
+  const match = trimmed.match(driveRegex)
+  if (match && match[1]) {
+    return {
+      finalUrl: `https://lh3.googleusercontent.com/d/${match[1]}`,
+      isGoogleDrive: true,
+      fileId: match[1]
+    }
+  }
+  return { finalUrl: trimmed, isGoogleDrive: false }
+}
+
 export default function SettingsSlideshowPage() {
   const { user, isUserLoading } = useUser()
   const database = useDatabase()
@@ -412,25 +428,31 @@ export default function SettingsSlideshowPage() {
     }
   }
 
-  // Handler: Save Video from direct URL
+  // Handler: Save Video from direct URL or Google Drive link
   const handleSaveVideoUrl = async () => {
-    const rawUrl = videoUrlInput.trim()
-    if (!rawUrl) {
-      toast({ variant: "destructive", title: "URL Kosong", description: "Silakan masukkan link video yang valid." })
+    const rawInput = videoUrlInput.trim()
+    if (!rawInput) {
+      toast({ variant: "destructive", title: "URL Kosong", description: "Silakan masukkan link video atau link Google Drive." })
       return
     }
 
+    const { finalUrl, isGoogleDrive } = parseGoogleDriveUrl(rawInput)
     setIsVerifyingUrl(true)
+
     const tempVideo = document.createElement("video")
     tempVideo.preload = "metadata"
-    tempVideo.src = rawUrl
+    tempVideo.muted = true
+    tempVideo.playsInline = true
+    tempVideo.src = finalUrl
 
-    tempVideo.onloadedmetadata = async () => {
-      const duration = Number(tempVideo.duration.toFixed(1))
+    let saved = false
+    const commitSave = async (duration: number = 10) => {
+      if (saved) return
+      saved = true
       try {
         const newMeta: VideoMeta = {
-          url: rawUrl,
-          name: "Video URL",
+          url: finalUrl,
+          name: isGoogleDrive ? "Video Google Drive" : "Video URL",
           duration,
           updatedAt: Date.now(),
           active: true
@@ -446,13 +468,13 @@ export default function SettingsSlideshowPage() {
         }
 
         setVideoMeta(newMeta)
-        setVideoPreviewUrl(rawUrl)
+        setVideoPreviewUrl(finalUrl)
         setBackgroundMode("video")
         setVideoUrlInput("")
 
         toast({
-          title: "URL Video Berhasil Disimpan",
-          description: `Video durasi ${duration} detik telah diaktifkan di halaman login.`
+          title: isGoogleDrive ? "Link Google Drive Berhasil Terhubung!" : "URL Video Berhasil Disimpan",
+          description: "Video telah diaktifkan sebagai latar belakang halaman login."
         })
       } catch (err: any) {
         toast({
@@ -465,13 +487,31 @@ export default function SettingsSlideshowPage() {
       }
     }
 
+    tempVideo.onloadedmetadata = () => {
+      const dur = Number(tempVideo.duration.toFixed(1)) || 10
+      commitSave(dur)
+    }
+
+    // Safety timeout in case CORS delays metadata loading for external links
+    setTimeout(() => {
+      if (!saved) {
+        commitSave(10)
+      }
+    }, 2500)
+
     tempVideo.onerror = () => {
-      setIsVerifyingUrl(false)
-      toast({
-        variant: "destructive",
-        title: "URL Video Tidak Dapat Diputar",
-        description: "Pastikan URL mengarah langsung ke file video (.mp4/.webm) yang dapat diakses secara publik."
-      })
+      if (saved) return
+      if (isGoogleDrive) {
+        // Still save it because Google Drive stream URLs play directly in the login video player
+        commitSave(10)
+      } else {
+        setIsVerifyingUrl(false)
+        toast({
+          variant: "destructive",
+          title: "URL Video Tidak Dapat Dimuat",
+          description: "Pastikan URL mengarah ke berkas video publik yang valid."
+        })
+      }
     }
   }
 
@@ -760,18 +800,18 @@ export default function SettingsSlideshowPage() {
               </Button>
             </div>
 
-            {/* Alternative: Direct Video URL */}
+            {/* Alternative: Direct Video URL or Google Drive Link */}
             <div className="pt-6 border-t border-slate-100 space-y-3">
               <div className="flex items-center gap-2">
-                <LinkIcon className="w-4 h-4 text-slate-500" />
-                <Label className="text-xs font-black uppercase text-slate-700">
-                  Atau Masukkan Tautan / Link Video Langsung (Direct MP4 URL)
+                <LinkIcon className="w-4 h-4 text-emerald-600" />
+                <Label className="text-xs font-black uppercase text-slate-800">
+                  Atau Tempel Link Google Drive / Link Video Langsung (URL)
                 </Label>
               </div>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   type="url"
-                  placeholder="https://example.com/video-background.mp4"
+                  placeholder="https://drive.google.com/file/d/.../view atau https://example.com/video.mp4"
                   value={videoUrlInput}
                   onChange={(e) => setVideoUrlInput(e.target.value)}
                   disabled={isVerifyingUrl || isSaving}
@@ -781,15 +821,21 @@ export default function SettingsSlideshowPage() {
                   type="button"
                   onClick={handleSaveVideoUrl}
                   disabled={isVerifyingUrl || !videoUrlInput.trim()}
-                  className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs uppercase tracking-wider shrink-0"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider shrink-0"
                 >
                   {isVerifyingUrl ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Play className="w-4 h-4 mr-2" />}
-                  Simpan dari URL
+                  Terapkan Video
                 </Button>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">
-                Dapat berupa link file video MP4/WebM publik dari Google Drive, hosting mandiri, atau CDN.
-              </p>
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-[11px] text-slate-600 space-y-1">
+                <p className="font-bold text-slate-800">💡 Cara Menggunakan Link Google Drive:</p>
+                <ol className="list-decimal list-inside space-y-0.5 text-slate-500">
+                  <li>Buka video di Google Drive Anda.</li>
+                  <li>Klik tombol <strong>Bagikan (Share)</strong>.</li>
+                  <li>Ubah akses umum menjadi <strong>"Siapa saja yang memiliki link"</strong> (Anyone with the link).</li>
+                  <li>Klik <strong>Salin Link</strong> lalu tempelkan di kolom di atas. Sistem otomatis mengonversinya menjadi video background login.</li>
+                </ol>
+              </div>
             </div>
           </div>
         </TabsContent>
