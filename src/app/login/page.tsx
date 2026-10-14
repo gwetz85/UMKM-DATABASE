@@ -64,10 +64,10 @@ function base64ToBlobUrl(base64Data: string, mimeType: string = "video/mp4"): st
 function parseGoogleDriveUrl(url: string): string {
   if (!url) return "";
   const trimmed = url.trim();
-  const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)|docs\.google\.com\/file\/d\/)([a-zA-Z0-9_-]+)/;
+  const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)|docs\.google\.com\/file\/d\/|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]+)/;
   const match = trimmed.match(driveRegex);
   if (match && match[1]) {
-    return `https://lh3.googleusercontent.com/d/${match[1]}`;
+    return `https://drive.usercontent.google.com/download?id=${match[1]}&export=download`;
   }
   return trimmed;
 }

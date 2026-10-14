@@ -59,11 +59,11 @@ function base64ToBlobUrl(base64Data: string, mimeType: string = "video/mp4"): st
 function parseGoogleDriveUrl(url: string): { finalUrl: string; isGoogleDrive: boolean; fileId?: string } {
   if (!url) return { finalUrl: "", isGoogleDrive: false }
   const trimmed = url.trim()
-  const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)|docs\.google\.com\/file\/d\/)([a-zA-Z0-9_-]+)/
+  const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)|docs\.google\.com\/file\/d\/|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]+)/
   const match = trimmed.match(driveRegex)
   if (match && match[1]) {
     return {
-      finalUrl: `https://lh3.googleusercontent.com/d/${match[1]}`,
+      finalUrl: `https://drive.usercontent.google.com/download?id=${match[1]}&export=download`,
       isGoogleDrive: true,
       fileId: match[1]
     }
@@ -135,7 +135,8 @@ export default function SettingsSlideshowPage() {
             setActiveTab(bgData.mode)
           }
           if (bgData.video?.url) {
-            setVideoPreviewUrl(bgData.video.url)
+            const resolved = parseGoogleDriveUrl(bgData.video.url)
+            setVideoPreviewUrl(resolved.finalUrl)
             setVideoMeta(bgData.video)
           }
         }
@@ -148,7 +149,8 @@ export default function SettingsSlideshowPage() {
           setVideoMeta(meta)
 
           if (meta.url) {
-            setVideoPreviewUrl(meta.url)
+            const resolved = parseGoogleDriveUrl(meta.url)
+            setVideoPreviewUrl(resolved.finalUrl)
           } else if (meta.totalChunks && meta.totalChunks > 0) {
             // Load chunks and reconstruct preview
             const chunksRef = ref(database, 'settings/login_video_chunks')
@@ -438,6 +440,69 @@ export default function SettingsSlideshowPage() {
 
     const { finalUrl, isGoogleDrive } = parseGoogleDriveUrl(rawInput)
     setIsVerifyingUrl(true)
+
+    // If Google Drive link: Import raw MP4 via server route into chunked database
+    if (isGoogleDrive) {
+      setUploadStatusText("Mengimpor berkas MP4 dari Google Drive...")
+      setIsUploadingVideo(true)
+      try {
+        const res = await fetch("/api/import-drive-video", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: rawInput })
+        })
+        const data = await res.json()
+        if (data.success && data.base64) {
+          const base64DataUrl = data.base64
+          const CHUNK_SIZE = 200 * 1024
+          const chunks: string[] = []
+          for (let i = 0; i < base64DataUrl.length; i += CHUNK_SIZE) {
+            chunks.push(base64DataUrl.slice(i, i + CHUNK_SIZE))
+          }
+
+          if (database) {
+            await remove(ref(database, 'settings/login_video_chunks'))
+            for (let i = 0; i < chunks.length; i++) {
+              await set(ref(database, `settings/login_video_chunks/${i}`), chunks[i])
+            }
+
+            const newMeta: VideoMeta = {
+              totalChunks: chunks.length,
+              mimeType: data.mimeType || "video/mp4",
+              name: "Video Google Drive",
+              duration: 10,
+              size: data.size,
+              updatedAt: Date.now(),
+              active: true,
+              url: data.directUrl
+            }
+
+            await set(ref(database, 'settings/login_video_meta'), newMeta)
+            await update(ref(database, 'settings/login_background'), {
+              mode: 'video',
+              updatedAt: Date.now()
+            })
+
+            const previewBlob = base64ToBlobUrl(base64DataUrl, data.mimeType || "video/mp4")
+            setVideoPreviewUrl(previewBlob)
+            setVideoMeta(newMeta)
+            setBackgroundMode("video")
+            setVideoUrlInput("")
+
+            toast({
+              title: "Video Google Drive Berhasil Diimpor!",
+              description: "Video telah tersimpan dan aktif sebagai latar belakang halaman login."
+            })
+            return
+          }
+        }
+      } catch (importErr: any) {
+        console.warn("Server import error, using direct stream URL fallback:", importErr)
+      } finally {
+        setIsUploadingVideo(false)
+        setUploadStatusText("")
+      }
+    }
 
     const tempVideo = document.createElement("video")
     tempVideo.preload = "metadata"
