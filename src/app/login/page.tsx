@@ -119,6 +119,9 @@ export default function LoginPage() {
 
   const [slides, setSlides] = useState<{ id: string, base64: string }[]>([])
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
+  const [backgroundMode, setBackgroundMode] = useState<"slideshow" | "video">("slideshow")
+  const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const [videoLoadError, setVideoLoadError] = useState(false)
 
   const [eventInfo, setEventInfo] = useState<any>(null)
   
@@ -128,6 +131,27 @@ export default function LoginPage() {
     get(evRef).then(snap => {
       if (snap.exists()) {
         setEventInfo(snap.val());
+      }
+    });
+
+    // Fetch Background Mode & Video
+    const bgRef = ref(database, 'settings/login_background');
+    get(bgRef).then(snap => {
+      if (snap.exists()) {
+        const bgData = snap.val();
+        if (bgData.mode) setBackgroundMode(bgData.mode);
+        if (bgData.video?.url) setVideoUrl(bgData.video.url);
+      }
+    });
+
+    const videoNodeRef = ref(database, 'settings/login_video');
+    get(videoNodeRef).then(snap => {
+      if (snap.exists()) {
+        const vidData = snap.val();
+        if (vidData.url) setVideoUrl(vidData.url);
+        if (vidData.active !== undefined) {
+          setBackgroundMode(vidData.active ? 'video' : 'slideshow');
+        }
       }
     });
 
@@ -630,9 +654,20 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center relative overflow-x-hidden overflow-y-auto md:overflow-hidden font-sans bg-slate-950 p-4 sm:p-6 md:p-0">
-      {/* Background Image / Slideshow */}
+      {/* Background Media: Video or Slideshow */}
       <div className="fixed inset-0 z-0 bg-slate-950 overflow-hidden pointer-events-none">
-        {slides.length > 0 ? (
+        {backgroundMode === 'video' && videoUrl && !videoLoadError ? (
+          <video
+            key={videoUrl}
+            src={videoUrl}
+            autoPlay
+            loop
+            muted
+            playsInline
+            onError={() => setVideoLoadError(true)}
+            className="w-full h-full object-cover object-center"
+          />
+        ) : slides.length > 0 ? (
           slides.map((slide, idx) => {
             const isActive = idx === currentSlideIndex;
             // Only render active slide to prevent massive memory and GPU load
