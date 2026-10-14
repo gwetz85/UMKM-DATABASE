@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useAuth, useDatabase, useStorage, useUser, useObject, useMemoFirebase } from "@/firebase"
+import { useDatabase, useUser, useObject, useMemoFirebase } from "@/firebase"
 import { ref, get, set, update, remove } from "firebase/database"
-import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -21,27 +21,43 @@ import {
   Video, 
   Upload, 
   CheckCircle2, 
-  AlertCircle, 
   Play, 
   Link as LinkIcon,
-  Sparkles,
-  ShieldAlert
+  Sparkles
 } from "lucide-react"
 
-interface VideoConfig {
-  url: string;
+interface VideoMeta {
+  url?: string;
+  totalChunks?: number;
+  mimeType?: string;
   name?: string;
   duration?: number;
   size?: number;
   updatedAt?: number;
   active?: boolean;
-  storagePath?: string;
+}
+
+// Utility: Convert Base64 string to Blob Object URL for lightning-fast memory playback
+function base64ToBlobUrl(base64Data: string, mimeType: string = "video/mp4"): string {
+  try {
+    const pureBase64 = base64Data.includes(",") ? base64Data.split(",")[1] : base64Data
+    const binaryString = window.atob(pureBase64)
+    const len = binaryString.length
+    const bytes = new Uint8Array(len)
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i)
+    }
+    const blob = new Blob([bytes], { type: mimeType })
+    return URL.createObjectURL(blob)
+  } catch (err) {
+    console.error("Error creating video blob URL:", err)
+    return ""
+  }
 }
 
 export default function SettingsSlideshowPage() {
   const { user, isUserLoading } = useUser()
   const database = useDatabase()
-  const storage = useStorage()
   const router = useRouter()
   const { toast } = useToast()
 
@@ -52,10 +68,12 @@ export default function SettingsSlideshowPage() {
   const [slides, setSlides] = useState<{ id: string, base64: string }[]>([])
   
   // Video States
-  const [videoConfig, setVideoConfig] = useState<VideoConfig | null>(null)
+  const [videoMeta, setVideoMeta] = useState<VideoMeta | null>(null)
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null)
   const [videoUrlInput, setVideoUrlInput] = useState("")
   const [isVerifyingUrl, setIsVerifyingUrl] = useState(false)
-  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadStatusText, setUploadStatusText] = useState("")
   
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -79,7 +97,7 @@ export default function SettingsSlideshowPage() {
 
     const fetchData = async () => {
       try {
-        // 1. Fetch Slideshow
+        // 1. Fetch Slideshow Images
         const slidesRef = ref(database, 'settings/login_slideshow')
         const snapSlides = await get(slidesRef)
         if (snapSlides.exists()) {
@@ -91,7 +109,7 @@ export default function SettingsSlideshowPage() {
           }
         }
 
-        // 2. Fetch Background Mode & Video
+        // 2. Fetch Background Mode
         const bgRef = ref(database, 'settings/login_background')
         const snapBg = await get(bgRef)
         if (snapBg.exists()) {
@@ -100,25 +118,42 @@ export default function SettingsSlideshowPage() {
             setBackgroundMode(bgData.mode)
             setActiveTab(bgData.mode)
           }
-          if (bgData.video) {
-            setVideoConfig(bgData.video)
+          if (bgData.video?.url) {
             setVideoPreviewUrl(bgData.video.url)
+            setVideoMeta(bgData.video)
           }
         }
 
-        // 3. Fallback / direct video node check
-        const videoNodeRef = ref(database, 'settings/login_video')
-        const snapVid = await get(videoNodeRef)
-        if (snapVid.exists()) {
-          const vidData = snapVid.val()
-          if (vidData.url) {
-            setVideoConfig(prev => prev || vidData)
-            setVideoPreviewUrl(prev => prev || vidData.url)
+        // 3. Fetch Video Meta (Chunked or Direct)
+        const metaRef = ref(database, 'settings/login_video_meta')
+        const snapMeta = await get(metaRef)
+        if (snapMeta.exists()) {
+          const meta = snapMeta.val() as VideoMeta
+          setVideoMeta(meta)
+
+          if (meta.url) {
+            setVideoPreviewUrl(meta.url)
+          } else if (meta.totalChunks && meta.totalChunks > 0) {
+            // Load chunks and reconstruct preview
+            const chunksRef = ref(database, 'settings/login_video_chunks')
+            const snapChunks = await get(chunksRef)
+            if (snapChunks.exists()) {
+              const chunkObj = snapChunks.val()
+              const chunkArr: string[] = []
+              for (let i = 0; i < meta.totalChunks; i++) {
+                if (chunkObj[i]) chunkArr.push(chunkObj[i])
+              }
+              const fullBase64 = chunkArr.join('')
+              if (fullBase64) {
+                const blobUrl = base64ToBlobUrl(fullBase64, meta.mimeType || 'video/mp4')
+                setVideoPreviewUrl(blobUrl)
+              }
+            }
           }
-          if (vidData.active !== undefined) {
-            const mode = vidData.active ? 'video' : 'slideshow'
+
+          if (meta.active !== undefined) {
+            const mode = meta.active ? 'video' : 'slideshow'
             setBackgroundMode(mode)
-            setActiveTab(mode)
           }
         }
       } catch (err) {
@@ -140,7 +175,7 @@ export default function SettingsSlideshowPage() {
         mode,
         updatedAt: Date.now()
       })
-      await update(ref(database, 'settings/login_video'), {
+      await update(ref(database, 'settings/login_video_meta'), {
         active: mode === "video",
         updatedAt: Date.now()
       })
@@ -232,24 +267,25 @@ export default function SettingsSlideshowPage() {
     }
   }
 
-  // Handler: Upload Video with 10s Validation
+  // Handler: Upload Video with Chunked Storage (100% Native Firebase Realtime Database)
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // 1. Format check
-    if (!file.type.includes("video/mp4") && !file.type.includes("video/webm")) {
+    // 1. Format check (permissive: video/* or common video extensions)
+    const isVideo = file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v|mkv|ogg)$/i.test(file.name)
+    if (!isVideo) {
       toast({
         variant: "destructive",
         title: "Format Tidak Didukung",
-        description: "Hanya mendukung berkas video berekstensi MP4 atau WebM."
+        description: "Silakan pilih berkas video (MP4, WebM, atau MOV)."
       })
       if (videoInputRef.current) videoInputRef.current.value = ""
       return
     }
 
-    // 2. Size check (max 15MB)
-    const MAX_SIZE_MB = 15
+    // 2. Size check (max 12 MB)
+    const MAX_SIZE_MB = 12
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
       toast({
         variant: "destructive",
@@ -261,110 +297,118 @@ export default function SettingsSlideshowPage() {
     }
 
     setIsUploadingVideo(true)
+    setUploadProgress(5)
+    setUploadStatusText("Membaca data video...")
 
-    // 3. Duration check via HTML5 Video metadata
-    const objectUrl = URL.createObjectURL(file)
-    const tempVideo = document.createElement("video")
-    tempVideo.preload = "metadata"
-    tempVideo.src = objectUrl
+    // 3. Duration check with timeout fallback
+    let detectedDuration = 10
+    try {
+      const objectUrl = URL.createObjectURL(file)
+      const tempVideo = document.createElement("video")
+      tempVideo.preload = "metadata"
+      tempVideo.muted = true
+      tempVideo.playsInline = true
+      tempVideo.src = objectUrl
 
-    tempVideo.onloadedmetadata = async () => {
-      const duration = tempVideo.duration
+      await Promise.race([
+        new Promise<void>((resolve) => {
+          tempVideo.onloadedmetadata = () => {
+            detectedDuration = Number(tempVideo.duration.toFixed(1))
+            resolve()
+          }
+          tempVideo.onerror = () => resolve()
+        }),
+        new Promise<void>((resolve) => setTimeout(resolve, 3500))
+      ])
+
       URL.revokeObjectURL(objectUrl)
-
-      // Allow slight threshold e.g. 10.6s
-      if (duration > 10.6) {
-        setIsUploadingVideo(false)
-        if (videoInputRef.current) videoInputRef.current.value = ""
-        toast({
-          variant: "destructive",
-          title: "Durasi Melebihi 10 Detik!",
-          description: `Durasi video ini ${duration.toFixed(1)} detik. Maksimal durasi video adalah 10 detik.`
-        })
-        return
-      }
-
-      // Valid duration! Proceed to upload
-      try {
-        let finalVideoUrl = ""
-        let storagePath = ""
-
-        // Try Firebase Storage first
-        if (storage) {
-          try {
-            const fileName = `login_video_${Date.now()}.${file.name.split('.').pop() || 'mp4'}`
-            const fileRef = storageRef(storage, `login_media/${fileName}`)
-            await uploadBytes(fileRef, file)
-            finalVideoUrl = await getDownloadURL(fileRef)
-            storagePath = `login_media/${fileName}`
-          } catch (storageError) {
-            console.warn("Storage upload failed, attempting fallback to base64:", storageError)
-          }
-        }
-
-        // Fallback to base64 if storage not available and size <= 8MB
-        if (!finalVideoUrl) {
-          if (file.size > 8 * 1024 * 1024) {
-            throw new Error("Penyimpanan cloud gagal dan berkas terlalu besar untuk disimpan langsung. Harap gunakan video di bawah 8MB atau masukkan URL video.")
-          }
-          finalVideoUrl = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader()
-            reader.onload = () => resolve(reader.result as string)
-            reader.onerror = reject
-            reader.readAsDataURL(file)
-          })
-        }
-
-        const newVideoConfig: VideoConfig = {
-          url: finalVideoUrl,
-          name: file.name,
-          duration: Number(duration.toFixed(1)),
-          size: file.size,
-          updatedAt: Date.now(),
-          active: true,
-          storagePath
-        }
-
-        // Save to Database
-        if (database) {
-          await update(ref(database, 'settings/login_background'), {
-            mode: 'video',
-            video: newVideoConfig,
-            updatedAt: Date.now()
-          })
-          await set(ref(database, 'settings/login_video'), newVideoConfig)
-        }
-
-        setVideoConfig(newVideoConfig)
-        setVideoPreviewUrl(finalVideoUrl)
-        setBackgroundMode("video")
-
-        toast({
-          title: "Video Berhasil Diunggah!",
-          description: `Video durasi ${duration.toFixed(1)} detik telah aktif sebagai latar belakang halaman login.`
-        })
-      } catch (err: any) {
-        console.error("Error uploading video:", err)
-        toast({
-          variant: "destructive",
-          title: "Gagal Mengunggah Video",
-          description: err.message || "Terjadi kesalahan saat mengunggah video."
-        })
-      } finally {
-        setIsUploadingVideo(false)
-        if (videoInputRef.current) videoInputRef.current.value = ""
-      }
+    } catch {
+      // ignore, continue with default 10s
     }
 
-    tempVideo.onerror = () => {
-      URL.revokeObjectURL(objectUrl)
-      setIsUploadingVideo(false)
-      if (videoInputRef.current) videoInputRef.current.value = ""
+    // If duration > 10.5, inform user that login will loop per 10 seconds
+    if (detectedDuration > 10.5) {
+      toast({
+        title: `Durasi Video: ${detectedDuration} Detik`,
+        description: "Halaman login akan memutar video ini berulang (looping 10 detik)."
+      })
+    }
+
+    // 4. Read file into Base64
+    setUploadProgress(15)
+    setUploadStatusText("Memproses berkas...")
+
+    try {
+      const base64DataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+
+      // 5. Split base64 into safe 200KB chunks for Realtime Database
+      const CHUNK_SIZE = 200 * 1024
+      const chunks: string[] = []
+      for (let i = 0; i < base64DataUrl.length; i += CHUNK_SIZE) {
+        chunks.push(base64DataUrl.slice(i, i + CHUNK_SIZE))
+      }
+
+      setUploadStatusText(`Mengunggah 0/${chunks.length} bagian video...`)
+
+      if (!database) throw new Error("Koneksi database tidak tersedia.")
+
+      // Clear previous chunks
+      await remove(ref(database, 'settings/login_video_chunks'))
+
+      // Upload each chunk sequentially
+      for (let i = 0; i < chunks.length; i++) {
+        await set(ref(database, `settings/login_video_chunks/${i}`), chunks[i])
+        const progress = Math.min(95, Math.round(20 + ((i + 1) / chunks.length) * 75))
+        setUploadProgress(progress)
+        setUploadStatusText(`Mengunggah bagian ${i + 1} dari ${chunks.length}...`)
+      }
+
+      // 6. Save Metadata & Activate
+      const newMeta: VideoMeta = {
+        totalChunks: chunks.length,
+        mimeType: file.type || "video/mp4",
+        name: file.name,
+        duration: detectedDuration,
+        size: file.size,
+        updatedAt: Date.now(),
+        active: true
+      }
+
+      await set(ref(database, 'settings/login_video_meta'), newMeta)
+      await update(ref(database, 'settings/login_background'), {
+        mode: 'video',
+        updatedAt: Date.now()
+      })
+
+      setUploadProgress(100)
+      setUploadStatusText("Selesai!")
+
+      const previewBlob = base64ToBlobUrl(base64DataUrl, file.type || "video/mp4")
+      setVideoPreviewUrl(previewBlob)
+      setVideoMeta(newMeta)
+      setBackgroundMode("video")
+
+      toast({
+        title: "Video Berhasil Diunggah!",
+        description: `Video durasi ${detectedDuration}s telah aktif sebagai latar belakang halaman login.`
+      })
+    } catch (err: any) {
+      console.error("Upload video failed:", err)
       toast({
         variant: "destructive",
-        title: "Gagal Membaca Video",
-        description: "Berkas video rusak atau format codec tidak didukung oleh browser."
+        title: "Gagal Mengunggah Video",
+        description: err.message || "Terjadi kesalahan saat memproses video."
       })
+    } finally {
+      setIsUploadingVideo(false)
+      setUploadProgress(0)
+      setUploadStatusText("")
+      if (videoInputRef.current) videoInputRef.current.value = ""
     }
   }
 
@@ -382,43 +426,33 @@ export default function SettingsSlideshowPage() {
     tempVideo.src = rawUrl
 
     tempVideo.onloadedmetadata = async () => {
-      const duration = tempVideo.duration
-      if (duration > 10.6) {
-        setIsVerifyingUrl(false)
-        toast({
-          variant: "destructive",
-          title: "Durasi Melebihi 10 Detik!",
-          description: `Durasi video ini ${duration.toFixed(1)} detik. Maksimal durasi adalah 10 detik.`
-        })
-        return
-      }
-
+      const duration = Number(tempVideo.duration.toFixed(1))
       try {
-        const newVideoConfig: VideoConfig = {
+        const newMeta: VideoMeta = {
           url: rawUrl,
           name: "Video URL",
-          duration: Number(duration.toFixed(1)),
+          duration,
           updatedAt: Date.now(),
           active: true
         }
 
         if (database) {
+          await remove(ref(database, 'settings/login_video_chunks'))
+          await set(ref(database, 'settings/login_video_meta'), newMeta)
           await update(ref(database, 'settings/login_background'), {
             mode: 'video',
-            video: newVideoConfig,
             updatedAt: Date.now()
           })
-          await set(ref(database, 'settings/login_video'), newVideoConfig)
         }
 
-        setVideoConfig(newVideoConfig)
+        setVideoMeta(newMeta)
         setVideoPreviewUrl(rawUrl)
         setBackgroundMode("video")
         setVideoUrlInput("")
 
         toast({
           title: "URL Video Berhasil Disimpan",
-          description: `Video durasi ${duration.toFixed(1)} detik telah diaktifkan di halaman login.`
+          description: `Video durasi ${duration} detik telah diaktifkan di halaman login.`
         })
       } catch (err: any) {
         toast({
@@ -447,15 +481,9 @@ export default function SettingsSlideshowPage() {
 
     setIsSaving(true)
     try {
-      if (videoConfig?.storagePath && storage) {
-        try {
-          await deleteObject(storageRef(storage, videoConfig.storagePath))
-        } catch (e) {
-          console.warn("Storage deletion error (ignored):", e)
-        }
-      }
-
       if (database) {
+        await remove(ref(database, 'settings/login_video_chunks'))
+        await remove(ref(database, 'settings/login_video_meta'))
         await remove(ref(database, 'settings/login_video'))
         await update(ref(database, 'settings/login_background'), {
           mode: 'slideshow',
@@ -464,7 +492,7 @@ export default function SettingsSlideshowPage() {
         })
       }
 
-      setVideoConfig(null)
+      setVideoMeta(null)
       setVideoPreviewUrl(null)
       setBackgroundMode("slideshow")
       setActiveTab("slideshow")
@@ -518,18 +546,18 @@ export default function SettingsSlideshowPage() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xl md:text-2xl font-black uppercase text-white tracking-wide">
-              {backgroundMode === "video" && videoConfig?.url 
+              {backgroundMode === "video" && videoPreviewUrl 
                 ? "Video Pendek (Looping 10s)" 
                 : "Slideshow Gambar"}
             </span>
-            <Badge className={`${backgroundMode === "video" && videoConfig?.url ? "bg-emerald-500 text-slate-950" : "bg-blue-600 text-white"} font-black text-[11px] uppercase tracking-wider px-3 py-0.5`}>
+            <Badge className={`${backgroundMode === "video" && videoPreviewUrl ? "bg-emerald-500 text-slate-950" : "bg-blue-600 text-white"} font-black text-[11px] uppercase tracking-wider px-3 py-0.5`}>
               AKTIF
             </Badge>
           </div>
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          {backgroundMode === "video" && videoConfig?.url ? (
+          {backgroundMode === "video" && videoPreviewUrl ? (
             <Button
               type="button"
               variant="outline"
@@ -541,7 +569,7 @@ export default function SettingsSlideshowPage() {
               Ganti Ke Slideshow Gambar
             </Button>
           ) : (
-            videoConfig?.url && (
+            videoPreviewUrl && (
               <Button
                 type="button"
                 disabled={isSaving}
@@ -565,7 +593,7 @@ export default function SettingsSlideshowPage() {
           >
             <Video className="w-4 h-4" />
             Video Pendek (10s)
-            {backgroundMode === "video" && videoConfig?.url && (
+            {backgroundMode === "video" && videoPreviewUrl && (
               <span className="w-2 h-2 rounded-full bg-emerald-500 ml-1 animate-pulse" />
             )}
           </TabsTrigger>
@@ -589,16 +617,16 @@ export default function SettingsSlideshowPage() {
             <div className="space-y-1.5">
               <p className="font-black text-sm uppercase tracking-wide">Ketentuan Video Pendek Login</p>
               <ul className="text-xs space-y-1 list-disc list-inside leading-relaxed text-emerald-800">
-                <li><strong>Durasi Maksimal 10 Detik</strong>: Sistem otomatis memvalidasi durasi dan menolak video yang lebih dari 10 detik.</li>
-                <li><strong>Format Berkas</strong>: Mendukung video format <strong>MP4</strong> atau <strong>WebM</strong>.</li>
-                <li><strong>Ukuran Berkas</strong>: Disarankan ukuran di bawah <strong>10 MB</strong> (resolusi 720p atau 1080p).</li>
-                <li><strong>Pemutaran Otomatis</strong>: Video akan berputar otomatis (looping) secara <em>muted</em> (tanpa suara) agar sesuai standar browser modern dan hemat baterai.</li>
+                <li><strong>Durasi Ideal 10 Detik</strong>: Video akan berputar secara looping (berulang) di halaman login.</li>
+                <li><strong>Format Berkas</strong>: Mendukung video format <strong>MP4</strong>, <strong>WebM</strong>, atau <strong>MOV</strong>.</li>
+                <li><strong>Ukuran Berkas</strong>: Maksimal <strong>12 MB</strong> (disarankan resolusi 720p atau 1080p).</li>
+                <li><strong>Otomatis Muted & Looping</strong>: Diputar tanpa suara agar mematuhi aturan browser modern di desktop maupun smartphone.</li>
               </ul>
             </div>
           </div>
 
           {/* Current Video Preview Card */}
-          {videoConfig?.url && (
+          {videoPreviewUrl && (
             <div className="bg-white border rounded-3xl p-6 shadow-sm space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
                 <div>
@@ -607,7 +635,7 @@ export default function SettingsSlideshowPage() {
                     Video yang Sedang Tersimpan
                   </h2>
                   <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
-                    {videoConfig.name || "video-background.mp4"} • Durasi: {videoConfig.duration || "~10"}s
+                    {videoMeta?.name || "video-background.mp4"} • Durasi: {videoMeta?.duration || "~10"}s
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -626,8 +654,8 @@ export default function SettingsSlideshowPage() {
               {/* Video Player */}
               <div className="relative rounded-2xl overflow-hidden bg-slate-950 aspect-video max-h-[380px] flex items-center justify-center border border-slate-200 shadow-inner">
                 <video 
-                  key={videoConfig.url}
-                  src={videoConfig.url} 
+                  key={videoPreviewUrl}
+                  src={videoPreviewUrl} 
                   controls 
                   loop 
                   muted 
@@ -681,10 +709,10 @@ export default function SettingsSlideshowPage() {
           <div className="bg-white border rounded-3xl p-6 shadow-sm space-y-6">
             <div>
               <h2 className="text-lg font-black uppercase text-slate-800">
-                {videoConfig?.url ? "Ganti Berkas Video Baru" : "Unggah Video Pendek (Maks. 10s)"}
+                {videoPreviewUrl ? "Ganti Berkas Video Baru" : "Unggah Video Pendek (Maks. 12 MB)"}
               </h2>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                Pilih file MP4/WebM dari perangkat Anda
+                Pilih file MP4/WebM/MOV dari perangkat Anda
               </p>
             </div>
 
@@ -692,7 +720,7 @@ export default function SettingsSlideshowPage() {
               <input 
                 ref={videoInputRef}
                 type="file" 
-                accept="video/mp4,video/webm"
+                accept="video/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 disabled={isUploadingVideo || isSaving}
                 onChange={handleVideoUpload}
@@ -706,12 +734,22 @@ export default function SettingsSlideshowPage() {
               </div>
               <div className="space-y-1">
                 <p className="font-black text-sm md:text-base text-slate-800 uppercase tracking-wider">
-                  {isUploadingVideo ? "Sedang Memvalidasi & Mengunggah Video..." : "Klik atau Tarik Berkas Video ke Sini"}
+                  {isUploadingVideo ? (uploadStatusText || "Sedang Mengunggah...") : "Klik atau Tarik Berkas Video ke Sini"}
                 </p>
                 <p className="text-xs text-slate-500 font-bold">
-                  MP4 atau WebM • Durasi maksimal 10 detik • Ukuran maksimal 15 MB
+                  MP4, WebM, MOV • Disarankan durasi ~10 detik • Ukuran maksimal 12 MB
                 </p>
               </div>
+
+              {isUploadingVideo && (
+                <div className="w-full max-w-xs space-y-2">
+                  <Progress value={uploadProgress} className="h-2.5 bg-emerald-200" />
+                  <p className="text-xs font-black text-emerald-700 uppercase tracking-wider">
+                    {uploadProgress}% Selesai
+                  </p>
+                </div>
+              )}
+
               <Button 
                 type="button"
                 disabled={isUploadingVideo || isSaving}
@@ -750,7 +788,7 @@ export default function SettingsSlideshowPage() {
                 </Button>
               </div>
               <p className="text-[11px] text-slate-400 font-medium">
-                Sistem akan memverifikasi durasi file langsung dari URL tersebut sebelum mengaktifkannya.
+                Dapat berupa link file video MP4/WebM publik dari Google Drive, hosting mandiri, atau CDN.
               </p>
             </div>
           </div>

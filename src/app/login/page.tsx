@@ -44,7 +44,22 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { PublicCheckData } from "@/components/public-check-data"
 import { logActivity, getDeviceType } from "@/lib/logger"
-import { verifyTotpToken, verifyAndConsumeBackupCode } from "@/lib/totp"
+function base64ToBlobUrl(base64Data: string, mimeType: string = "video/mp4"): string {
+  try {
+    const pureBase64 = base64Data.includes(",") ? base64Data.split(",")[1] : base64Data;
+    const binaryString = window.atob(pureBase64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const blob = new Blob([bytes], { type: mimeType });
+    return URL.createObjectURL(blob);
+  } catch (err) {
+    console.error("Error creating blob URL:", err);
+    return "";
+  }
+}
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -144,6 +159,39 @@ export default function LoginPage() {
       }
     });
 
+    // Fetch Video Metadata (Chunked or Direct URL)
+    const metaRef = ref(database, 'settings/login_video_meta');
+    get(metaRef).then(async snap => {
+      if (snap.exists()) {
+        const meta = snap.val();
+        if (meta.active !== false) {
+          if (meta.url) {
+            setVideoUrl(meta.url);
+            setBackgroundMode('video');
+          } else if (meta.totalChunks && meta.totalChunks > 0) {
+            const chunksRef = ref(database, 'settings/login_video_chunks');
+            const chunksSnap = await get(chunksRef);
+            if (chunksSnap.exists()) {
+              const chunkObj = chunksSnap.val();
+              const chunkArr: string[] = [];
+              for (let i = 0; i < meta.totalChunks; i++) {
+                if (chunkObj[i]) chunkArr.push(chunkObj[i]);
+              }
+              const fullBase64 = chunkArr.join('');
+              if (fullBase64) {
+                const blobUrl = base64ToBlobUrl(fullBase64, meta.mimeType || 'video/mp4');
+                if (blobUrl) {
+                  setVideoUrl(blobUrl);
+                  setBackgroundMode('video');
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Fallback: legacy settings/login_video node
     const videoNodeRef = ref(database, 'settings/login_video');
     get(videoNodeRef).then(snap => {
       if (snap.exists()) {
@@ -664,6 +712,12 @@ export default function LoginPage() {
             loop
             muted
             playsInline
+            onTimeUpdate={(e) => {
+              if (e.currentTarget.currentTime >= 10.5) {
+                e.currentTarget.currentTime = 0;
+                e.currentTarget.play();
+              }
+            }}
             onError={() => setVideoLoadError(true)}
             className="w-full h-full object-cover object-center"
           />
