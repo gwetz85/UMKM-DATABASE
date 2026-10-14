@@ -160,56 +160,55 @@ export default function LoginPage() {
       }
     });
 
-    // Fetch Background Mode & Video
+    // Fetch Background Mode
     const bgRef = ref(database, 'settings/login_background');
     get(bgRef).then(snap => {
       if (snap.exists()) {
         const bgData = snap.val();
         if (bgData.mode) setBackgroundMode(bgData.mode);
-        if (bgData.video?.url) setVideoUrl(bgData.video.url);
       }
     });
 
-    // Fetch Video Metadata (Chunked or Direct URL)
+    // Fetch Video Metadata (Prioritize chunked storage in database)
     const metaRef = ref(database, 'settings/login_video_meta');
     get(metaRef).then(async snap => {
       if (snap.exists()) {
         const meta = snap.val();
         if (meta.active !== false) {
-          if (meta.url) {
-            setVideoUrl(meta.url);
-            setBackgroundMode('video');
-          } else if (meta.totalChunks && meta.totalChunks > 0) {
-            const chunksRef = ref(database, 'settings/login_video_chunks');
-            const chunksSnap = await get(chunksRef);
-            if (chunksSnap.exists()) {
-              const chunkObj = chunksSnap.val();
-              const chunkArr: string[] = [];
-              for (let i = 0; i < meta.totalChunks; i++) {
-                if (chunkObj[i]) chunkArr.push(chunkObj[i]);
-              }
-              const fullBase64 = chunkArr.join('');
-              if (fullBase64) {
-                const blobUrl = base64ToBlobUrl(fullBase64, meta.mimeType || 'video/mp4');
-                if (blobUrl) {
-                  setVideoUrl(blobUrl);
-                  setBackgroundMode('video');
+          // 1. If video is chunked in database, load chunks directly into Blob URL (zero CORS issues)
+          if (meta.totalChunks && meta.totalChunks > 0) {
+            try {
+              const chunksRef = ref(database, 'settings/login_video_chunks');
+              const chunksSnap = await get(chunksRef);
+              if (chunksSnap.exists()) {
+                const chunkObj = chunksSnap.val();
+                const chunkArr: string[] = [];
+                for (let i = 0; i < meta.totalChunks; i++) {
+                  if (chunkObj[i]) chunkArr.push(chunkObj[i]);
+                }
+                const fullBase64 = chunkArr.join('');
+                if (fullBase64) {
+                  const blobUrl = base64ToBlobUrl(fullBase64, meta.mimeType || 'video/mp4');
+                  if (blobUrl) {
+                    setVideoUrl(blobUrl);
+                    setVideoLoadError(false);
+                    setBackgroundMode('video');
+                    return;
+                  }
                 }
               }
+            } catch (chunkErr) {
+              console.warn("Error loading video chunks:", chunkErr);
             }
           }
-        }
-      }
-    });
 
-    // Fallback: legacy settings/login_video node
-    const videoNodeRef = ref(database, 'settings/login_video');
-    get(videoNodeRef).then(snap => {
-      if (snap.exists()) {
-        const vidData = snap.val();
-        if (vidData.url) setVideoUrl(vidData.url);
-        if (vidData.active !== undefined) {
-          setBackgroundMode(vidData.active ? 'video' : 'slideshow');
+          // 2. Direct URL fallback (if no chunks available)
+          if (meta.url) {
+            const resolved = parseGoogleDriveUrl(meta.url);
+            setVideoUrl(resolved);
+            setVideoLoadError(false);
+            setBackgroundMode('video');
+          }
         }
       }
     });
@@ -723,13 +722,21 @@ export default function LoginPage() {
             loop
             muted
             playsInline
+            onLoadedData={(e) => {
+              e.currentTarget.play().catch(() => {});
+            }}
             onTimeUpdate={(e) => {
               if (e.currentTarget.currentTime >= 10.5) {
                 e.currentTarget.currentTime = 0;
-                e.currentTarget.play();
+                e.currentTarget.play().catch(() => {});
               }
             }}
-            onError={() => setVideoLoadError(true)}
+            onError={(e) => {
+              console.warn("Video failed to play:", e);
+              if (!videoUrl?.startsWith("blob:")) {
+                setVideoLoadError(true);
+              }
+            }}
             className="w-full h-full object-cover object-center"
           />
         ) : slides.length > 0 ? (
