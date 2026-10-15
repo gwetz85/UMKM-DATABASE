@@ -74,7 +74,8 @@ import {
   Image as ImageIcon,
   Edit,
   MessageCircle,
-  Users
+  Users,
+  PauseCircle
 } from "lucide-react"
 import { SignaturePadDialog } from "@/components/signature-pad-dialog"
 
@@ -1523,6 +1524,38 @@ export default function PortalSurveyPage() {
             </div>
           </div>
 
+        </div>
+
+        {/* ================= DATA HOLD ACTION BANNER FOR PETUGAS ================= */}
+        <div 
+          onClick={() => router.push('/data-hold')}
+          className="bg-white rounded-2xl p-3.5 shadow-sm border border-amber-200/80 flex items-center justify-between hover:shadow-md hover:border-amber-300 transition-all cursor-pointer group active:scale-98"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0 group-hover:scale-105 transition-transform">
+              <PauseCircle className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[9px] font-black text-amber-600 uppercase tracking-wider">
+                  PENGAJUAN TERPENDING
+                </span>
+                <span className="px-1.5 py-0.2 rounded-full text-[8px] font-black bg-amber-100 text-amber-700">
+                  BARU
+                </span>
+              </div>
+              <h3 className="text-xs font-black text-slate-800 leading-tight mt-0.5 truncate">
+                INPUT DATA HOLD
+              </h3>
+              <p className="text-[10px] text-slate-400 mt-0.5 leading-snug truncate">
+                Formulir input data pelaku usaha terpending
+              </p>
+            </div>
+          </div>
+          <div className="py-1 px-2.5 bg-amber-50 text-amber-700 border border-amber-100 rounded-lg text-[10px] font-bold flex items-center gap-1 shrink-0 ml-2">
+            <span>Input</span>
+            <ChevronRight className="w-3 h-3 text-amber-500 group-hover:translate-x-0.5 transition-transform" />
+          </div>
         </div>
 
         {/* ================= FOOTER REALTIME WIDGET (Persis Gambar 2) ================= */}

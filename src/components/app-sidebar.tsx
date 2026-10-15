@@ -187,6 +187,7 @@ export function AppSidebar() {
           "/cek-usaha",
           "/kuota-koordinator",
           "/input",
+          "/data-hold",
           "/verify-actor",
           "/actor-data",
           "/rejected",

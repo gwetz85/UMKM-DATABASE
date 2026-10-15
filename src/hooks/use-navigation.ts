@@ -23,7 +23,8 @@ import {
   Info,
   FileDown,
   Tv,
-  Store
+  Store,
+  PauseCircle
 } from "lucide-react"
 import { useUser, useObject, useMemoFirebase, useList, useDatabase } from "@/firebase"
 import { ref } from "firebase/database"
@@ -120,6 +121,14 @@ export function useNavigation() {
       show: !!user && !isKoordinator && !isDinas && !isVerifikatorDinas && !isPetugas,
       color: "#059669",
       description: "Pendaftaran Pelaku Usaha Baru"
+    },
+    {
+      name: "Data Hold",
+      href: "/data-hold",
+      icon: PauseCircle,
+      show: !!user && (isAdmin || isPetugas || isStaff),
+      color: "#f59e0b",
+      description: "Data Pelaku Usaha Terpending"
     },
     {
       name: "Verifikasi Admin",

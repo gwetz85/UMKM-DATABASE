@@ -137,3 +137,31 @@ export interface PejabatData {
   petugas: PejabatItem;
   updatedAt?: string;
 }
+
+export interface DataHoldKelengkapanBerkas {
+  ktp: boolean;
+  kk: boolean;
+  nib: boolean;
+  photoUsaha: boolean;
+}
+
+export interface DataHold {
+  id: string;
+  fullName: string;
+  nik: string;
+  pob?: string;
+  dob?: string;
+  pobDob?: string;
+  address: string;
+  noKK: string;
+  phone: string;
+  businessName: string;
+  businessAddress: string;
+  kelengkapanBerkas: DataHoldKelengkapanBerkas;
+  catatan?: string;
+  createdBy?: string;
+  createdById?: string;
+  createdAt: string;
+  updatedAt?: string;
+  status?: string;
+}

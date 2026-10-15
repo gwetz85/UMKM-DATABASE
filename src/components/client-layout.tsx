@@ -268,6 +268,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       case '/rejected': return 'Data Ditolak';
       case '/verify-actor': return 'Verifikasi Admin';
       case '/input': return 'Input Data';
+      case '/data-hold': return 'Data Hold';
       case '/pendaftaran':
       case '/daftar': return 'Pendaftaran Pelaku Usaha';
       case '/check-data': return 'Cek Data';
