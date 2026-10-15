@@ -182,6 +182,77 @@ const BANK_LIST = [
   "BCA", "BNI", "BRI", "BRK", "MANDIRI", "BSI", "BTN", "OCBC", "PANIN", "MUAMALAT", "MAYBANK", "BUKOPIN", "DANAMON", "PERMATA", "CIMB NIAGA"
 ]
 
+const ID_MONTHS_MAP: Record<string, number> = {
+  januari: 0, jan: 0,
+  februari: 1, pebruari: 1, feb: 1,
+  maret: 2, mar: 2,
+  april: 3, apr: 3,
+  mei: 4,
+  juni: 5, jun: 5,
+  juli: 6, jul: 6,
+  agustus: 7, agu: 7, agt: 7,
+  september: 8, sep: 8,
+  oktober: 9, okt: 9,
+  november: 10, nopember: 10, nov: 10,
+  desember: 11, des: 11,
+};
+
+function parseDateToTimestamp(raw?: any, formattedFallback?: string): number {
+  const tryParse = (val: any): number => {
+    if (!val) return 0;
+    if (typeof val === "number") return isNaN(val) ? 0 : val;
+    if (val instanceof Date) return isNaN(val.getTime()) ? 0 : val.getTime();
+    if (typeof val !== "string") return 0;
+    const str = val.trim();
+    if (!str || str === "-") return 0;
+
+    // Check if numeric timestamp string (e.g. "1725753600000")
+    if (/^\d{11,}$/.test(str)) {
+      const num = Number(str);
+      if (!isNaN(num)) return num;
+    }
+
+    // Try standard ISO / Date.parse (works for "2026-09-08", "2026-09-12T01:33:00.000Z", etc.)
+    const directParsed = Date.parse(str);
+    if (!isNaN(directParsed)) return directParsed;
+
+    // Handle DD-MM-YYYY or DD/MM/YYYY with optional time
+    const dmyMatch = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:\s+(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?)?/);
+    if (dmyMatch) {
+      const day = Number(dmyMatch[1]);
+      const month = Number(dmyMatch[2]) - 1;
+      const year = Number(dmyMatch[3]);
+      const hh = dmyMatch[4] ? Number(dmyMatch[4]) : 0;
+      const mm = dmyMatch[5] ? Number(dmyMatch[5]) : 0;
+      const ss = dmyMatch[6] ? Number(dmyMatch[6]) : 0;
+      const d = new Date(year, month, day, hh, mm, ss);
+      if (!isNaN(d.getTime())) return d.getTime();
+    }
+
+    // Handle Indonesian text dates e.g. "Selasa, 8 September 2026" or "12 Sep 2026, 01:33 WIB"
+    const textMatch = str.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
+    if (textMatch) {
+      const day = Number(textMatch[1]);
+      const mKey = textMatch[2].toLowerCase();
+      const year = Number(textMatch[3]);
+      const month = ID_MONTHS_MAP[mKey];
+      if (month !== undefined) {
+        const timeMatch = str.match(/(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?/);
+        const hh = timeMatch ? Number(timeMatch[1]) : 0;
+        const mm = timeMatch ? Number(timeMatch[2]) : 0;
+        const ss = timeMatch && timeMatch[3] ? Number(timeMatch[3]) : 0;
+        const d = new Date(year, month, day, hh, mm, ss);
+        if (!isNaN(d.getTime())) return d.getTime();
+      }
+    }
+
+    return 0;
+  };
+
+  const t1 = tryParse(raw);
+  if (t1 > 0) return t1;
+  return tryParse(formattedFallback);
+}
 
 function ActorDataContent() {
   const { user, userProfile, isProfileLoading } = useUser()
@@ -3118,7 +3189,9 @@ function ActorDataContent() {
                     const lpjNominalVal = viewingActor.lpjNominal && Number(viewingActor.lpjNominal) > 0
                       ? formatCurrency(Number(viewingActor.lpjNominal))
                       : "";
-                    const lpjDateVal = hasVal(viewingActor.lpjEntryDate) ? viewingActor.lpjEntryDate : "";
+                    const lpjDateVal = hasVal(viewingActor.lpjEntryDate)
+                      ? (formatDateTimeIndo(viewingActor.lpjEntryDate) !== "-" ? formatDateTimeIndo(viewingActor.lpjEntryDate) : viewingActor.lpjEntryDate)
+                      : "";
 
                     const rekeningFields = [
                       { key: "bankName", label: "Bank Penyalur", value: viewingActor.bankName },
@@ -3229,33 +3302,83 @@ function ActorDataContent() {
                     const hasSurveyGroup = hasActualSurveyFields || gpsPoints.length > 0 || hasBypass || hasSurveyPhoto || hasTandaTangan;
 
                     // ────────────────────────────────────────────────────────────
-                    // 7. RIWAYAT AKTIVITAS TERAKHIR (TIMELINE)
+                    // 7. RIWAYAT AKTIVITAS TERAKHIR (TIMELINE - DIURUTKAN DARI TERBARU KE TERLAMA)
                     // ────────────────────────────────────────────────────────────
-                    const activityLogs: Array<{ title: string; date: string }> = [];
+                    const activityLogs: Array<{ title: string; date: string; timestamp: number; priority: number }> = [];
+
                     if (hasVal(lpjDateVal)) {
                       activityLogs.push({
                         title: `Input Pencairan / LPJ${hasVal(lpjNominalVal) ? ` (${lpjNominalVal})` : ""}`,
-                        date: lpjDateVal as string
+                        date: lpjDateVal as string,
+                        timestamp: parseDateToTimestamp(viewingActor.lpjEntryDate, lpjDateVal as string),
+                        priority: 50,
                       });
                     }
-                    if (hasVal(tanggalSurveyVal)) {
-                      activityLogs.push({
-                        title: `Pelaksanaan Survey Lapangan${hasVal(petugasSurveyVal) ? ` oleh ${petugasSurveyVal}` : ""}`,
-                        date: tanggalSurveyVal as string
-                      });
-                    }
+
                     if (hasVal(verifiedDinasAtVal)) {
                       activityLogs.push({
                         title: `Verifikasi Berkas Dinas${hasVal(verifikatorVal) ? ` oleh ${verifikatorVal}` : ""}`,
-                        date: verifiedDinasAtVal
+                        date: verifiedDinasAtVal,
+                        timestamp: parseDateToTimestamp(viewingActor.verifiedDinasAt || (viewingActor as any).berkasDinasVerifiedAt, verifiedDinasAtVal),
+                        priority: 40,
                       });
                     }
+
+                    if (hasVal(viewingActor.cancelDinasAt)) {
+                      const cancelDate = formatDateTimeIndo(viewingActor.cancelDinasAt);
+                      activityLogs.push({
+                        title: `Pembatalan Berkas Dinas${hasVal(viewingActor.cancelDinasBy) ? ` oleh ${viewingActor.cancelDinasBy}` : ""}${hasVal(viewingActor.alasanCancelDinas) ? `: ${viewingActor.alasanCancelDinas}` : ""}`,
+                        date: cancelDate !== "-" ? cancelDate : viewingActor.cancelDinasAt!,
+                        timestamp: parseDateToTimestamp(viewingActor.cancelDinasAt, cancelDate),
+                        priority: 35,
+                      });
+                    }
+
+                    if (hasVal(viewingActor.dikembalikanKePetugasAt)) {
+                      const retDate = formatDateTimeIndo(viewingActor.dikembalikanKePetugasAt);
+                      activityLogs.push({
+                        title: `Pengembalian Berkas ke Petugas Survey${hasVal(viewingActor.dikembalikanKePetugasBy) ? ` oleh ${viewingActor.dikembalikanKePetugasBy}` : ""}${hasVal(viewingActor.dikembalikanKePetugasReason || viewingActor.catatanPengembalian) ? `: ${viewingActor.dikembalikanKePetugasReason || viewingActor.catatanPengembalian}` : ""}`,
+                        date: retDate !== "-" ? retDate : viewingActor.dikembalikanKePetugasAt!,
+                        timestamp: parseDateToTimestamp(viewingActor.dikembalikanKePetugasAt, retDate),
+                        priority: 32,
+                      });
+                    }
+
+                    if (hasVal(viewingActor.dikembalikanKeVerifikatorAt)) {
+                      const retDate = formatDateTimeIndo(viewingActor.dikembalikanKeVerifikatorAt);
+                      activityLogs.push({
+                        title: `Pengembalian Berkas ke Verifikator Dinas${hasVal(viewingActor.dikembalikanKeVerifikatorBy) ? ` oleh ${viewingActor.dikembalikanKeVerifikatorBy}` : ""}${hasVal(viewingActor.dikembalikanKeVerifikatorReason) ? `: ${viewingActor.dikembalikanKeVerifikatorReason}` : ""}`,
+                        date: retDate !== "-" ? retDate : viewingActor.dikembalikanKeVerifikatorAt!,
+                        timestamp: parseDateToTimestamp(viewingActor.dikembalikanKeVerifikatorAt, retDate),
+                        priority: 31,
+                      });
+                    }
+
+                    if (hasVal(tanggalSurveyVal)) {
+                      activityLogs.push({
+                        title: `Pelaksanaan Survey Lapangan${hasVal(petugasSurveyVal) ? ` oleh ${petugasSurveyVal}` : ""}`,
+                        date: tanggalSurveyVal as string,
+                        timestamp: parseDateToTimestamp(sd.tanggalSurvey, tanggalSurveyVal as string),
+                        priority: 30,
+                      });
+                    }
+
                     if (hasVal(createdAtVal)) {
                       activityLogs.push({
                         title: `Data Didaftarkan oleh ${hasVal(viewingActor.createdBy) ? viewingActor.createdBy : "Sistem"}`,
-                        date: createdAtVal
+                        date: createdAtVal,
+                        timestamp: parseDateToTimestamp(viewingActor.createdAt, createdAtVal),
+                        priority: 10,
                       });
                     }
+
+                    // Urutkan riwayat aktivitas: tanggal paling baru ke paling lama (descending)
+                    activityLogs.sort((a, b) => {
+                      if (b.timestamp !== a.timestamp) {
+                        return b.timestamp - a.timestamp;
+                      }
+                      return b.priority - a.priority;
+                    });
 
                     return (
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 h-full overflow-y-auto lg:overflow-hidden custom-scrollbar pr-0.5">
