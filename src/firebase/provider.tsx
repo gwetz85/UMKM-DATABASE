@@ -97,20 +97,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       auth,
       (firebaseUser) => { // Auth state determined
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
-        if (!firebaseUser) {
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('simpu_cached_profile');
-          }
-        } else if (typeof window !== 'undefined') {
-          try {
-            const raw = localStorage.getItem('simpu_cached_profile');
-            if (raw) {
-              const parsed = JSON.parse(raw);
-              if (parsed && (parsed.uid === firebaseUser.uid || parsed.id === firebaseUser.uid || parsed.email === firebaseUser.email)) {
-                setUserProfileState({ profile: parsed, isProfileLoading: false });
-              }
-            }
-          } catch {}
+        if (!firebaseUser && typeof window !== 'undefined') {
+          localStorage.removeItem('simpu_cached_profile');
         }
       },
       (error) => { // Auth listener error

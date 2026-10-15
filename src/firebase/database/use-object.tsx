@@ -2,23 +2,68 @@
 
 import { useState, useEffect } from 'react';
 import { DatabaseReference, onValue } from 'firebase/database';
-import {
-  getRefKey,
-  getMemoryCache,
-  setMemoryCache,
-  safeGetLocalStorage,
-  safeSetLocalStorage,
-  getIndexedDBCache,
-  setIndexedDBCache
-} from './cache-storage';
+
+const objectMemoryCache = new Map<string, any>();
+
+function getRefKey(refOrQuery: any): string {
+  if (!refOrQuery) return '';
+  const url = typeof refOrQuery.toString === 'function' ? refOrQuery.toString() : '';
+  let params = '';
+  try {
+    if (typeof refOrQuery.queryIdentifier === 'function') {
+      params = refOrQuery.queryIdentifier();
+    } else if (refOrQuery._queryIdentifier) {
+      params = String(refOrQuery._queryIdentifier);
+    } else if (refOrQuery._queryParams) {
+      params = JSON.stringify(refOrQuery._queryParams);
+    }
+  } catch {}
+  return `${url}::${params}`;
+}
+
+function getLocalObjectCache(key: string): any | null {
+  if (typeof window === 'undefined' || !key) return null;
+  try {
+    const item = localStorage.getItem(`rtdb_obj_${key}`);
+    return item ? JSON.parse(item) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setLocalObjectCache(key: string, data: any): void {
+  if (typeof window === 'undefined' || !key) return;
+  try {
+    const str = JSON.stringify(data);
+    if (str.length < 500000) {
+      try {
+        localStorage.setItem(`rtdb_obj_${key}`, str);
+      } catch (err: any) {
+        if (err && (err.name === 'QuotaExceededError' || err.code === 22 || err.code === 1014)) {
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('rtdb_obj_')) {
+              keysToRemove.push(k);
+            }
+          }
+          keysToRemove.slice(0, Math.ceil(keysToRemove.length / 2)).forEach(k => localStorage.removeItem(k));
+          localStorage.setItem(`rtdb_obj_${key}`, str);
+        }
+      }
+    }
+  } catch {
+    // Ignore quota errors
+  }
+}
 
 export function useObject<T = any>(
   memoizedRef: DatabaseReference | null | undefined
 ) {
   const refKey = getRefKey(memoizedRef);
-  const cachedData = refKey ? (getMemoryCache<T & { id: string }>(refKey) || safeGetLocalStorage<T & { id: string }>(refKey)) : undefined;
+  const cachedData = refKey ? (objectMemoryCache.get(refKey) || getLocalObjectCache(refKey)) : undefined;
 
-  const [data, setData] = useState<(T & { id: string }) | null>(cachedData ? cachedData : null);
+  const [data, setData] = useState<(T & {id: string}) | null>(cachedData ? (cachedData as (T & {id: string})) : null);
   const [isLoading, setIsLoading] = useState<boolean>(!cachedData && !!memoizedRef);
   const [error, setError] = useState<Error | null>(null);
 
@@ -29,37 +74,28 @@ export function useObject<T = any>(
       return;
     }
 
-    const cached = refKey ? (getMemoryCache<T & { id: string }>(refKey) || safeGetLocalStorage<T & { id: string }>(refKey)) : null;
+    const cached = refKey ? (objectMemoryCache.get(refKey) || getLocalObjectCache(refKey)) : null;
     if (cached) {
-      setData(cached);
+      setData(cached as (T & {id: string}));
       setIsLoading(false);
     } else {
       setIsLoading(true);
-      if (refKey) {
-        getIndexedDBCache<T & { id: string }>(refKey).then((idbCached) => {
-          if (idbCached) {
-            setMemoryCache(refKey, idbCached);
-            setData((prev) => prev || idbCached);
-            setIsLoading(false);
-          }
-        }).catch(() => {});
-      }
     }
 
     const unsubscribe = onValue(memoizedRef, (snapshot) => {
       if (snapshot.exists()) {
-        const val = { ...snapshot.val(), id: snapshot.key };
+        const val = snapshot.val();
+        const formatted = (typeof val === 'object' && val !== null) ? { ...val, id: snapshot.key } : val;
         if (refKey) {
-          setMemoryCache(refKey, val);
-          safeSetLocalStorage(refKey, val);
-          setIndexedDBCache(refKey, val).catch(() => {});
+          objectMemoryCache.set(refKey, formatted);
+          setLocalObjectCache(refKey, formatted);
         }
-        setData(val);
+        setData(formatted);
       } else {
         if (refKey) {
-          setMemoryCache(refKey, null);
+          objectMemoryCache.delete(refKey);
           if (typeof window !== 'undefined') {
-            try { localStorage.removeItem(`rtdb_v2_${refKey}`); } catch {}
+            try { localStorage.removeItem(`rtdb_obj_${refKey}`); } catch {}
           }
         }
         setData(null);
