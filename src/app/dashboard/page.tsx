@@ -37,7 +37,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import dynamic from "next/dynamic"
-import { TanjungpinangMapCard } from "@/components/tanjungpinang-map-card"
+import { InteractiveStatisticsChart } from "@/components/interactive-statistics-chart"
 
 const WeatherWidget = dynamic(
   () => import("@/components/weather-widget").then((mod) => mod.WeatherWidget),
@@ -634,15 +634,13 @@ export default function DashboardStatsPage() {
           <WeatherWidget className="w-full h-full min-h-[260px]" />
         </div>
 
-        {/* Right Bento: Interactive Tanjungpinang UMKM Distribution Map */}
-        <TanjungpinangMapCard
+        {/* Right Bento: Real-time Interactive Statistics Overview */}
+        <InteractiveStatisticsChart
           className="lg:col-span-5 xl:col-span-5"
           kelurahanStats={kelurahanStats}
-          totalUmkm={statsValues.total}
-          totalVerified={statsValues.verified}
-          selesaiCount={statsValues.selesai}
+          statsValues={statsValues}
           isLoading={isStatsLoading}
-          onSelectKelurahan={(name) => setSelectedFilter({ name, filterType: 'kelurahan' })}
+          onSelectFilter={(filter) => setSelectedFilter(filter)}
         />
       </div>
 
