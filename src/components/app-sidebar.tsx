@@ -18,6 +18,7 @@ import { signOut } from "firebase/auth"
 import { cn } from "@/lib/utils"
 import { useSoundEffect } from "@/hooks/use-sound-effect"
 import { useNavigation } from "@/hooks/use-navigation"
+import { useActiveEvent } from "@/hooks/use-active-event"
 
 import {
   Sidebar,
@@ -75,6 +76,73 @@ export function AppSidebar() {
     if (/^v(ersi)?/i.test(v)) return v
     return `Versi ${v}`
   }, [config?.version])
+
+  const eventRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'settings/event_info')
+  }, [database])
+  const { data: eventInfo } = useObject(eventRef)
+  const activeEvent = useActiveEvent(eventInfo)
+
+  const [timeLeft, setTimeLeft] = React.useState<{
+    days: number
+    hours: number
+    minutes: number
+    seconds: number
+    isEnded: boolean
+    isStarted: boolean
+  } | null>(null)
+
+  React.useEffect(() => {
+    if (!activeEvent) {
+      setTimeLeft(null)
+      return
+    }
+
+    const calculate = () => {
+      const now = Date.now()
+      const start = activeEvent.startDate ? new Date(activeEvent.startDate).getTime() : 0
+      const end = new Date(activeEvent.endDate || activeEvent.date).getTime()
+
+      let targetTime = end
+      let isStarted = true
+
+      if (start && now < start) {
+        isStarted = false
+        targetTime = start
+      }
+
+      const diff = targetTime - now
+      if (isNaN(diff) || (isStarted && diff <= 0)) {
+        return { days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: now >= end, isStarted }
+      }
+
+      return {
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / (1000 * 60)) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
+        isEnded: false,
+        isStarted
+      }
+    }
+
+    setTimeLeft(calculate())
+    const interval = setInterval(() => {
+      setTimeLeft(calculate())
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [activeEvent])
+
+  const countdownText = React.useMemo(() => {
+    if (!timeLeft || timeLeft.isEnded) return null
+    const pad = (n: number) => String(n).padStart(2, "0")
+    if (timeLeft.days > 0) {
+      return `${timeLeft.days} Hari ${pad(timeLeft.hours)}:${pad(timeLeft.minutes)}:${pad(timeLeft.seconds)}`
+    }
+    return `${pad(timeLeft.hours)}:${pad(timeLeft.minutes)}:${pad(timeLeft.seconds)}`
+  }, [timeLeft])
 
   React.useEffect(() => {
     setMounted(true)
@@ -214,16 +282,56 @@ export function AppSidebar() {
 
             <div className="flex flex-col group-data-[collapsible=icon]:hidden min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="font-black text-lg text-white tracking-tight uppercase">
+                <span className="font-black text-lg text-white tracking-tight uppercase leading-none">
                   SIMPU
                 </span>
-                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-xs">
+                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-xs leading-none">
                   2026
                 </span>
               </div>
-              <span className="text-[10px] font-black text-sky-400 uppercase tracking-wider truncate mt-0.5">
+              <span className="text-[10px] font-black text-sky-400 uppercase tracking-wider truncate mt-1 leading-none">
                 {appVersion}
               </span>
+
+              {/* ─── EVENT COUNTDOWN ─── */}
+              {activeEvent && countdownText && (
+                <div
+                  className="mt-1.5 flex flex-col gap-0.5 max-w-[165px]"
+                  title={activeEvent.description || "Agenda SIMPU"}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span className={cn(
+                      "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider shadow-xs leading-none shrink-0",
+                      timeLeft?.isStarted
+                        ? "bg-emerald-500/25 text-emerald-300 border border-emerald-500/40"
+                        : "bg-amber-500/25 text-amber-300 border border-amber-500/40"
+                    )}>
+                      <span className="relative flex w-1.5 h-1.5">
+                        <span className={cn(
+                          "animate-ping absolute inline-flex h-full w-full rounded-full opacity-80",
+                          timeLeft?.isStarted ? "bg-emerald-400" : "bg-amber-400"
+                        )} />
+                        <span className={cn(
+                          "relative inline-flex rounded-full w-1.5 h-1.5",
+                          timeLeft?.isStarted ? "bg-emerald-400" : "bg-amber-400"
+                        )} />
+                      </span>
+                      {timeLeft?.isStarted ? "EVENT" : "NEXT"}
+                    </span>
+                    <span className="font-mono font-black text-[10px] tracking-tight tabular-nums text-amber-300 drop-shadow-xs whitespace-nowrap">
+                      {countdownText}
+                    </span>
+                  </div>
+                  {activeEvent.description && (
+                    <span
+                      className="text-[8px] font-bold text-slate-300/80 truncate tracking-wide uppercase max-w-[155px]"
+                      title={activeEvent.description}
+                    >
+                      {activeEvent.description}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </button>
         </InfoDialog>

@@ -11,6 +11,7 @@ import {
 import { Info, Mail, Phone, ShieldCheck, Zap, Database, Monitor, CreditCard, Send, SearchCheck } from "lucide-react"
 import { useDatabase, useObject, useMemoFirebase } from "@/firebase"
 import { ref } from "firebase/database"
+import { useActiveEvent } from "@/hooks/use-active-event"
 
 interface InfoDialogProps {
   children: React.ReactNode
@@ -23,6 +24,13 @@ export function InfoDialog({ children }: InfoDialogProps) {
     return ref(database, 'settings/system_config')
   }, [database])
   const { data: config } = useObject(configRef)
+
+  const eventRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'settings/event_info')
+  }, [database])
+  const { data: eventInfo } = useObject(eventRef)
+  const activeEvent = useActiveEvent(eventInfo)
 
   const currentVersion = config?.version || "Versi 8.1"
 
@@ -61,6 +69,28 @@ export function InfoDialog({ children }: InfoDialogProps) {
               <span className="text-primary mt-1 block">{currentVersion}</span>
             </div>
           </div>
+
+          {activeEvent && (
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-700 border border-amber-400/50">
+                  <span className="relative flex w-1.5 h-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75" />
+                    <span className="relative inline-flex rounded-full w-1.5 h-1.5 bg-amber-500" />
+                  </span>
+                  Agenda Aktif
+                </span>
+                {activeEvent.endDate && (
+                  <span className="text-[10px] font-bold text-amber-700/80">
+                    S.d {new Date(activeEvent.endDate || activeEvent.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs sm:text-sm font-black text-gray-800 uppercase leading-snug">
+                {activeEvent.description}
+              </p>
+            </div>
+          )}
 
           <div className="space-y-4 pt-2">
             <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
