@@ -269,8 +269,8 @@ export function AppSidebar() {
       {/* ─── BRAND HEADER ─── */}
       <SidebarHeader className="py-4 px-4 flex flex-row items-center justify-between border-b border-white/10 bg-[#0B132B]">
         <InfoDialog>
-          <button className="flex items-center gap-3 transition-transform hover:scale-105 active:scale-95 outline-none group text-left">
-            <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-sky-400 via-cyan-400 to-teal-300 p-[2.5px] shadow-lg shadow-sky-500/25 shrink-0 transition-transform duration-200 group-hover:scale-105">
+          <button className="flex items-start gap-3 transition-transform hover:scale-[1.01] active:scale-95 outline-none group text-left w-full">
+            <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-sky-400 via-cyan-400 to-teal-300 p-[2.5px] shadow-lg shadow-sky-500/25 shrink-0 transition-transform duration-200 group-hover:scale-105 mt-0.5">
               <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden p-0.5">
                 <img
                   src="/logo.png"
@@ -280,7 +280,7 @@ export function AppSidebar() {
               </div>
             </div>
 
-            <div className="flex flex-col group-data-[collapsible=icon]:hidden min-w-0">
+            <div className="flex flex-col group-data-[collapsible=icon]:hidden min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <span className="font-black text-lg text-white tracking-tight uppercase leading-none">
                   SIMPU
@@ -296,7 +296,7 @@ export function AppSidebar() {
               {/* ─── EVENT COUNTDOWN ─── */}
               {activeEvent && countdownText && (
                 <div
-                  className="mt-1.5 flex flex-col gap-0.5 max-w-[165px]"
+                  className="mt-1.5 flex flex-col gap-1 w-full"
                   title={activeEvent.description || "Agenda SIMPU"}
                 >
                   <div className="flex items-center gap-1.5">
@@ -318,13 +318,13 @@ export function AppSidebar() {
                       </span>
                       {timeLeft?.isStarted ? "EVENT" : "NEXT"}
                     </span>
-                    <span className="font-mono font-black text-[10px] tracking-tight tabular-nums text-amber-300 drop-shadow-xs whitespace-nowrap">
+                    <span className="font-mono font-black text-[10.5px] tracking-tight tabular-nums text-amber-300 drop-shadow-xs whitespace-nowrap">
                       {countdownText}
                     </span>
                   </div>
                   {activeEvent.description && (
                     <span
-                      className="text-[8px] font-bold text-slate-300/80 truncate tracking-wide uppercase max-w-[155px]"
+                      className="text-[8.5px] font-bold text-slate-200/90 tracking-wide uppercase leading-tight whitespace-normal break-words"
                       title={activeEvent.description}
                     >
                       {activeEvent.description}
