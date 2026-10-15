@@ -141,13 +141,13 @@ export function TanjungpinangMapCard({
         </div>
 
         {/* ─── INTERACTIVE MAP CONTAINER ─── */}
-        <div className="relative flex-1 min-h-[220px] sm:min-h-[240px] my-2 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700/70 shadow-inner">
+        <div className="relative flex-1 min-h-[260px] sm:min-h-[280px] my-2 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700/70 shadow-inner">
           <DynamicTanjungpinangMap
             data={kelurahanStats}
             totalUmkm={totalUmkm}
             selectedKelurahan={selectedKelurahan}
             onSelectKelurahan={onSelectKelurahan}
-            className="w-full h-full min-h-[220px]"
+            className="w-full h-full min-h-[260px]"
           />
         </div>
 
