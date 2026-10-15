@@ -37,6 +37,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import dynamic from "next/dynamic"
+import { TanjungpinangMapCard } from "@/components/tanjungpinang-map-card"
 
 const WeatherWidget = dynamic(
   () => import("@/components/weather-widget").then((mod) => mod.WeatherWidget),
@@ -98,7 +99,6 @@ export default function DashboardStatsPage() {
   const [expandedActorId, setExpandedActorId] = useState<string | null>(null)
   const [detailActor, setDetailActor] = useState<BusinessActor | null>(null)
   const [activeTab, setActiveTab] = useState<'details' | 'alur' | 'kuota' | 'aktivitas'>('details')
-  const [selectedBarMonth, setSelectedBarMonth] = useState<string>('Apr')
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -183,23 +183,6 @@ export default function DashboardStatsPage() {
       { id: '3', name: "Sam Wilson", role: "Middle UX Designer", percent: 32 },
     ]
   }, [verifiedDinasData])
-
-  const monthlyBarData = useMemo(() => {
-    return [
-      { month: "Jan", val: 8, height: "26%" },
-      { month: "Feb", val: 12, height: "40%" },
-      { month: "Mar", val: 10, height: "34%" },
-      { month: "Apr", val: 28, height: "90%", isTarget: true },
-      { month: "May", val: 22, height: "72%" },
-      { month: "Jun", val: 15, height: "50%" },
-      { month: "Jul", val: 19, height: "62%" },
-      { month: "Aug", val: 25, height: "82%" },
-      { month: "Sep", val: 20, height: "66%" },
-      { month: "Oct", val: 14, height: "46%" },
-      { month: "Nov", val: 9, height: "30%" },
-      { month: "Dec", val: 6, height: "20%" },
-    ]
-  }, [])
 
   // 4. Fetch Kuota
   const kuotaQuery = useMemoFirebase(() => {
@@ -651,91 +634,16 @@ export default function DashboardStatsPage() {
           <WeatherWidget className="w-full h-full min-h-[260px]" />
         </div>
 
-        {/* Right Bento: Statistics Overview */}
-        <div className="lg:col-span-5 xl:col-span-5 rounded-[28px] bg-white dark:bg-slate-800/90 border border-slate-100 dark:border-slate-800 p-6 shadow-sm flex flex-col justify-between">
-          <div>
-            {/* Header */}
-            <div className="flex items-center justify-between pb-3">
-              <div className="flex items-center gap-1.5">
-                <h3 className="font-extrabold text-slate-900 dark:text-white text-base">
-                  Statistics Overview
-                </h3>
-                <div className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] text-slate-600 dark:text-slate-300 font-bold">
-                  i
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300">
-                <span>2026</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </div>
-            </div>
-
-            {/* Rounded Pill Bar Chart matching Growly LMS */}
-            <div className="relative pt-2 pb-2">
-
-              {/* Chart Grid */}
-              <div className="flex items-end justify-between h-32 gap-1 px-1 pt-6">
-                {monthlyBarData.map((item) => {
-                  const isActive = item.month === selectedBarMonth;
-                  return (
-                    <div
-                      key={item.month}
-                      onClick={() => setSelectedBarMonth(item.month)}
-                      className="flex flex-col items-center gap-1.5 cursor-pointer group flex-1 h-full justify-end"
-                    >
-                      <div className="w-full flex items-end justify-center h-24">
-                        <div
-                          style={{ height: item.height }}
-                          className={cn(
-                            "w-2.5 sm:w-3.5 rounded-full transition-all duration-300",
-                            isActive
-                              ? "bg-emerald-500 shadow-md shadow-emerald-500/30 scale-105"
-                              : "bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-950/60 dark:hover:bg-emerald-900"
-                          )}
-                        />
-                      </div>
-                      <span className={cn(
-                        "text-[9px] font-bold transition-colors",
-                        isActive ? "text-slate-900 dark:text-white font-black" : "text-slate-400"
-                      )}>
-                        {item.month}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* 3 KPI Metrics at Bottom */}
-          <div className="grid grid-cols-3 gap-2 pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
-            <div>
-              <div className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
-                {isStatsLoading ? "..." : statsValues.total.toLocaleString('id-ID')}
-              </div>
-              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                Total UMKM
-              </div>
-            </div>
-            <div>
-              <div className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400">
-                {isStatsLoading ? "..." : statsValues.verified.toLocaleString('id-ID')}
-              </div>
-              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                Terverifikasi
-              </div>
-            </div>
-            <div>
-              <div className="text-base sm:text-lg font-black text-sky-600 dark:text-sky-400">
-                {isStatsLoading ? "..." : statsValues.selesai.toLocaleString('id-ID')}
-              </div>
-              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                Rekening Selesai
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Right Bento: Interactive Tanjungpinang UMKM Distribution Map */}
+        <TanjungpinangMapCard
+          className="lg:col-span-5 xl:col-span-5"
+          kelurahanStats={kelurahanStats}
+          totalUmkm={statsValues.total}
+          totalVerified={statsValues.verified}
+          selesaiCount={statsValues.selesai}
+          isLoading={isStatsLoading}
+          onSelectKelurahan={(name) => setSelectedFilter({ name, filterType: 'kelurahan' })}
+        />
       </div>
 
       {/* ─── MIDDLE SECTION: TAB PILLS ─── */}
@@ -1012,7 +920,7 @@ export default function DashboardStatsPage() {
                     <Button 
                       size="sm"
                       variant="ghost"
-                      onClick={(e) => {
+                      onClick={(e: React.MouseEvent) => {
                         e.stopPropagation();
                         router.push(stage.targetUrl);
                       }}

@@ -4,6 +4,7 @@ import * as React from "react"
 import { InfoDialog } from "./info-dialog"
 import {
   LogOut,
+  LogIn,
   ChevronRight,
   ChevronLeft,
   ChevronsUpDown,

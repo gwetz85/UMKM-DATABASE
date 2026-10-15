@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { PublicCheckData } from "@/components/public-check-data"
+import { verifyTotpToken, verifyAndConsumeBackupCode } from "@/lib/totp"
 import { logActivity, getDeviceType } from "@/lib/logger"
 function base64ToBlobUrl(base64Data: string, mimeType: string = "video/mp4"): string {
   try {

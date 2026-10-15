@@ -3235,13 +3235,13 @@ function ActorDataContent() {
                     if (hasVal(lpjDateVal)) {
                       activityLogs.push({
                         title: `Input Pencairan / LPJ${hasVal(lpjNominalVal) ? ` (${lpjNominalVal})` : ""}`,
-                        date: lpjDateVal
+                        date: lpjDateVal as string
                       });
                     }
                     if (hasVal(tanggalSurveyVal)) {
                       activityLogs.push({
                         title: `Pelaksanaan Survey Lapangan${hasVal(petugasSurveyVal) ? ` oleh ${petugasSurveyVal}` : ""}`,
-                        date: tanggalSurveyVal
+                        date: tanggalSurveyVal as string
                       });
                     }
                     if (hasVal(verifiedDinasAtVal)) {

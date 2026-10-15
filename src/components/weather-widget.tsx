@@ -525,7 +525,7 @@ export function WeatherWidget({ className }: { className?: string }) {
             co: aqiCurrent.carbon_monoxide,
             no2: aqiCurrent.nitrogen_dioxide,
             so2: aqiCurrent.sulphur_dioxide,
-            ozone: aqiCurrent.ozone,
+            o3: aqiCurrent.ozone,
           })
         }
       } else {
