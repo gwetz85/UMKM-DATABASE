@@ -59,7 +59,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import * as XLSX from "xlsx"
 
 const BANK_LIST = [
-  "BCA", "BNI", "BRI", "BRK", "MANDIRI", "BSI", "BTN", "OCBC", "PANIN", "MUAMALAT", "MAYBANK", "BUKOPIN", "DANAMON", "PERMATA"
+  "BCA", "BNI", "BRI", "BRK", "MANDIRI", "BSI", "BTN", "OCBC", "PANIN", "MUAMALAT", "MAYBANK", "BUKOPIN", "DANAMON", "PERMATA", "CIMB NIAGA"
 ]
 
 const normalizeGender = (g: string) => {
@@ -1973,7 +1973,11 @@ function HasilVerifikasiContent() {
                         <Label className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400">
                           Pilih Nama Bank <span className="text-rose-500">*</span>
                         </Label>
-                        <Select name="bankName" defaultValue={inputtingBankActor.bankName || ""} required>
+                        <Select 
+                          name="bankName" 
+                          defaultValue={inputtingBankActor.bankName ? (BANK_LIST.find(b => b.toUpperCase() === inputtingBankActor.bankName?.toUpperCase() || (inputtingBankActor.bankName?.toUpperCase().includes("CIMB") && b === "CIMB NIAGA")) || inputtingBankActor.bankName) : undefined} 
+                          required
+                        >
                           <SelectTrigger className="w-full h-11 font-bold text-sm bg-slate-50/50 dark:bg-slate-900 border-slate-300 dark:border-slate-700">
                             <SelectValue placeholder="Pilih Bank" />
                           </SelectTrigger>

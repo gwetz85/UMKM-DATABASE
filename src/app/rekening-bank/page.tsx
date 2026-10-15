@@ -20,7 +20,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog"
 import ExcelJS from "exceljs"
 
 const BANK_LIST = [
-  "BCA", "BNI", "BRI", "BRK", "MANDIRI", "BSI", "BTN", "OCBC", "PANIN", "MUAMALAT", "MAYBANK", "BUKOPIN", "DANAMON", "PERMATA"
+  "BCA", "BNI", "BRI", "BRK", "MANDIRI", "BSI", "BTN", "OCBC", "PANIN", "MUAMALAT", "MAYBANK", "BUKOPIN", "DANAMON", "PERMATA", "CIMB NIAGA"
 ]
 
 export default function RekeningBankPage() {
@@ -86,7 +86,9 @@ function RekeningBankContent() {
     verifiedActors.forEach(actor => {
       const bank = actor.bankName?.toUpperCase().trim() || "LAINNYA"
       // Find matching bank from our official list
-      const officialBank = BANK_LIST.find(b => bank.includes(b)) || "LAINNYA"
+      const officialBank = (bank.includes("CIMB") || bank.includes("NIAGA"))
+        ? "CIMB NIAGA"
+        : (BANK_LIST.find(b => bank.includes(b)) || "LAINNYA")
       
       // If a bank is selected in URL, only include that bank
       if (selectedBank && officialBank !== selectedBank.toUpperCase()) return

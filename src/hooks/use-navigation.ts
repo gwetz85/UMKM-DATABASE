@@ -219,6 +219,7 @@ export function useNavigation() {
         { name: "BUKOPIN", href: "/rekening-bank?bank=BUKOPIN" },
         { name: "DANAMON", href: "/rekening-bank?bank=DANAMON" },
         { name: "PERMATA", href: "/rekening-bank?bank=PERMATA" },
+        { name: "CIMB NIAGA", href: "/rekening-bank?bank=CIMB%20NIAGA" },
       ]
     },
     {

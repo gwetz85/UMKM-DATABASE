@@ -49,7 +49,7 @@ import { normalizeCoordinator } from "@/lib/coordinator-utils"
 import ExcelJS from "exceljs"
 
 const BANK_LIST = [
-  "BCA", "BNI", "BRI", "BRK", "MANDIRI", "BSI", "BTN", "OCBC", "PANIN", "MUAMALAT", "MAYBANK", "BUKOPIN", "DANAMON", "PERMATA"
+  "BCA", "BNI", "BRI", "BRK", "MANDIRI", "BSI", "BTN", "OCBC", "PANIN", "MUAMALAT", "MAYBANK", "BUKOPIN", "DANAMON", "PERMATA", "CIMB NIAGA"
 ]
 
 function normalizeBankName(bankName?: string): string {
@@ -61,6 +61,7 @@ function normalizeBankName(bankName?: string): string {
   if (upper.includes("NEGARA INDONESIA") || upper.includes("BNI")) return "BNI"
   if (upper.includes("CENTRAL ASIA") || upper.includes("BCA")) return "BCA"
   if (upper.includes("TABUNGAN NEGARA") || upper.includes("BTN")) return "BTN"
+  if (upper.includes("CIMB") || upper.includes("NIAGA")) return "CIMB NIAGA"
   const matched = BANK_LIST.find(b => upper.includes(b))
   return matched || upper
 }
@@ -235,6 +236,21 @@ function getBankTheme(rawBankName?: string): BankTheme {
         filterActive: "bg-orange-700 text-white border-orange-700 shadow-sm ring-2 ring-orange-600/25",
         filterHover: "hover:border-orange-400 hover:bg-orange-50/40",
         percentageBadge: "bg-orange-100 text-orange-900 dark:bg-orange-950/80 dark:text-orange-200",
+      }
+    case "CIMB NIAGA":
+    case "CIMB":
+      return {
+        code: "CIMB NIAGA",
+        badge: "bg-red-800 text-white font-black",
+        border: "border-red-300 dark:border-red-900",
+        hoverBorder: "hover:border-red-600 dark:hover:border-red-500",
+        bgGlow: "bg-gradient-to-b from-red-50/40 via-white to-white dark:from-red-950/20 dark:via-slate-900 dark:to-slate-950",
+        textNum: "text-red-800 dark:text-red-300",
+        btn: "bg-red-800 hover:bg-red-900 text-white shadow-xs shadow-red-800/20",
+        topStripe: "bg-red-800",
+        filterActive: "bg-red-800 text-white border-red-800 shadow-sm ring-2 ring-red-700/25",
+        filterHover: "hover:border-red-400 hover:bg-red-50/40",
+        percentageBadge: "bg-red-100 text-red-900 dark:bg-red-950/80 dark:text-red-200",
       }
     default:
       return {
