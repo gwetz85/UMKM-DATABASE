@@ -92,10 +92,10 @@ export default function DataHoldPage() {
   const { toast } = useToast()
   const { playSound } = useSoundEffect()
 
-  // Data Hold realtime query from Firebase
+  // Data Hold realtime query from Firebase (stored under settings/data_hold to match Firebase security rules)
   const holdRef = useMemoFirebase(() => {
     if (!database) return null
-    return ref(database, "data_hold")
+    return ref(database, "settings/data_hold")
   }, [database])
   const { data: rawHoldList, isLoading: isListLoading } = useList(holdRef)
 
@@ -259,11 +259,11 @@ export default function DataHoldPage() {
 
       if (editingItem) {
         // Update existing record
-        await update(ref(database, `data_hold/${editingItem.id}`), payload)
+        await update(ref(database, `settings/data_hold/${editingItem.id}`), payload)
         toast({ title: "✅ Data Hold Diperbarui", description: `Data pelaku usaha ${payload.fullName} berhasil diperbarui.` })
       } else {
         // Create new record
-        const newRef = push(ref(database, "data_hold"))
+        const newRef = push(ref(database, "settings/data_hold"))
         const officerName = userProfile?.fullName || user.displayName || user.email || "Petugas"
         await set(newRef, {
           ...payload,
@@ -291,7 +291,7 @@ export default function DataHoldPage() {
     if (!database || !deletingId) return
     setIsDeleting(true)
     try {
-      await remove(ref(database, `data_hold/${deletingId}`))
+      await remove(ref(database, `settings/data_hold/${deletingId}`))
       toast({ title: "🗑️ Data Hold Dihapus", description: "Data berhasil dihapus dari database Data Hold." })
       playSound("click")
       setDeletingId(null)
