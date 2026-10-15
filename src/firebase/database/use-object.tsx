@@ -8,7 +8,16 @@ const objectMemoryCache = new Map<string, any>();
 function getRefKey(refOrQuery: any): string {
   if (!refOrQuery) return '';
   const url = typeof refOrQuery.toString === 'function' ? refOrQuery.toString() : '';
-  const params = refOrQuery._queryParams ? JSON.stringify(refOrQuery._queryParams) : '';
+  let params = '';
+  try {
+    if (typeof refOrQuery.queryIdentifier === 'function') {
+      params = refOrQuery.queryIdentifier();
+    } else if (refOrQuery._queryIdentifier) {
+      params = String(refOrQuery._queryIdentifier);
+    } else if (refOrQuery._queryParams) {
+      params = JSON.stringify(refOrQuery._queryParams);
+    }
+  } catch {}
   return `${url}::${params}`;
 }
 

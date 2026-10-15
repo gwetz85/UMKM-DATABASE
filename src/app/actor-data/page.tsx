@@ -268,7 +268,17 @@ function ActorDataContent() {
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || "")
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || "")
   const viewId = searchParams.get('viewId')
-  const [localIndex, setLocalIndex] = useState<BusinessActor[] | null>(null)
+  const [localIndex, setLocalIndex] = useState<BusinessActor[] | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const cached = localStorage.getItem('simpu_actors_search_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return null;
+  });
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [filterMenu, setFilterMenu] = useState<string>("all")
 
@@ -283,17 +293,37 @@ function ActorDataContent() {
     })
   }
 
-  // Pre-fetch lightweight search index (590KB) in background for instant 0ms mobile search
+  // Pre-fetch lightweight search index (590KB) in background for instant 0ms mobile search & coordinator view
   useEffect(() => {
-    if (!database) return
+    if (!database) return;
+
     get(ref(database, 'settings/actors_search')).then(snap => {
       if (snap.exists()) {
-        const val = snap.val()
+        const val = snap.val();
         if (val) {
-          setLocalIndex(Object.values(val) as BusinessActor[])
+          const list = Object.values(val) as BusinessActor[];
+          setLocalIndex(list);
+          try {
+            localStorage.setItem('simpu_actors_search_cache', JSON.stringify(list));
+          } catch {}
         }
       }
-    }).catch(() => {})
+    }).catch(() => {});
+
+    // Fast API fallback if not cached yet
+    if (!localIndex) {
+      fetch('/api/actors/search?all=true')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && Array.isArray(data.results) && data.results.length > 0) {
+            setLocalIndex(prev => (prev && prev.length > 0 ? prev : data.results));
+            try {
+              localStorage.setItem('simpu_actors_search_cache', JSON.stringify(data.results));
+            } catch {}
+          }
+        })
+        .catch(() => {});
+    }
   }, [database])
 
   useEffect(() => {
@@ -661,8 +691,13 @@ function ActorDataContent() {
   }, [kuotaData, systemStats])
 
   const actors = useMemo(() => {
-    if (!allActorsRaw) return undefined;
-    return allActorsRaw.filter(a => {
+    // If live allActorsRaw has arrived, use it. Otherwise immediately use localIndex for 0ms load!
+    const rawList = (allActorsRaw && allActorsRaw.length > 0)
+      ? allActorsRaw
+      : (localIndex || allActorsRaw);
+
+    if (!rawList) return undefined;
+    return rawList.filter(a => {
       if (!a) return false;
       const s = a.status || "";
       const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
@@ -687,7 +722,7 @@ function ActorDataContent() {
       }
       return true;
     });
-  }, [allActorsRaw, filterCoordinator, isPetugas, isKoordinator, userProfile?.fullName]);
+  }, [allActorsRaw, localIndex, filterCoordinator, isPetugas, isKoordinator, userProfile?.fullName]);
 
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingBankMode, setEditingBankMode] = useState(false)
@@ -1591,7 +1626,7 @@ function ActorDataContent() {
     });
   }, [filteredActors, database]);
 
-  const rawDataToDisplay = (isInspektorat || isKoordinator || isSearching) 
+  const rawDataToDisplay = (isInspektorat || isKoordinator || isSearching || filterCoordinator) 
     ? (filteredActors || []) 
     : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []);
 
@@ -1867,7 +1902,7 @@ function ActorDataContent() {
 
 
       <div className="bg-transparent print:bg-transparent">
-        {(isSearching && !localIndex ? isSearchLoading : isLoading) ? (
+        {(isSearching && !localIndex ? isSearchLoading : (isLoading && (!currentDataToDisplay || currentDataToDisplay.length === 0))) ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
               <Skeleton key={i} className="h-12 w-full rounded-lg" />
