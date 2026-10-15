@@ -44,7 +44,7 @@ const normalizeGender = (g: string, nik?: string) => {
   return "";
 };
 
-const GenderAvatar = ({ isFemale, className }: { isFemale: boolean; className?: string }) => {
+const GenderAvatar = React.memo(({ isFemale, className }: { isFemale: boolean; className?: string }) => {
   if (isFemale) {
     // Avatar Anak Perempuan (Perempuan)
     return (
@@ -159,7 +159,8 @@ const GenderAvatar = ({ isFemale, className }: { isFemale: boolean; className?: 
       </svg>
     </div>
   );
-};
+});
+GenderAvatar.displayName = "GenderAvatar";
 
 const getActorMapUrl = (actor: BusinessActor) => {
   const loc = (actor as any).verificationLocationDinas || (actor as any).verificationLocation || (actor as any).surveyData?.lokasiSurvey;
@@ -293,10 +294,12 @@ function ActorDataContent() {
     })
   }
 
-  // Pre-fetch lightweight search index (590KB) in background for instant 0ms mobile search & coordinator view
+  // Pre-fetch lightweight search index in background for instant 0ms mobile search & coordinator view
   useEffect(() => {
     if (!database) return;
+    if (localIndex && localIndex.length > 0) return;
 
+    // 1. Try Firebase settings/actors_search first
     get(ref(database, 'settings/actors_search')).then(snap => {
       if (snap.exists()) {
         const val = snap.val();
@@ -306,12 +309,10 @@ function ActorDataContent() {
           try {
             localStorage.setItem('simpu_actors_search_cache', JSON.stringify(list));
           } catch {}
+          return;
         }
       }
-    }).catch(() => {});
-
-    // Fast API fallback if not cached yet
-    if (!localIndex) {
+      // 2. Only fallback to API route if settings/actors_search was not present
       fetch('/api/actors/search?all=true')
         .then(res => res.json())
         .then(data => {
@@ -323,8 +324,20 @@ function ActorDataContent() {
           }
         })
         .catch(() => {});
-    }
-  }, [database])
+    }).catch(() => {
+      fetch('/api/actors/search?all=true')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && Array.isArray(data.results) && data.results.length > 0) {
+            setLocalIndex(prev => (prev && prev.length > 0 ? prev : data.results));
+            try {
+              localStorage.setItem('simpu_actors_search_cache', JSON.stringify(data.results));
+            } catch {}
+          }
+        })
+        .catch(() => {});
+    });
+  }, [database]);
 
   useEffect(() => {
     const t = setTimeout(() => setSearchQuery(searchInput), 100)
@@ -448,9 +461,9 @@ function ActorDataContent() {
     return null
   }, [database, isProfileLoading, isPetugas, isKoordinator, filterCoordinator, userProfile?.fullName, isInspektorat])
 
-  const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
-
-  const bpjsComparisonRef = useMemoFirebase(() => database ? ref(database, 'settings/bpjs_comparison_data') : null, [database])
+  // Lazy-load BPJS comparison data only when viewing actor list, searching, or modal is open (saves ~5MB on overview)
+  const shouldLoadBpjs = Boolean(filterCoordinator || isSearching || isKoordinator || isPetugas || viewingActor || editingActor)
+  const bpjsComparisonRef = useMemoFirebase(() => (database && shouldLoadBpjs) ? ref(database, 'settings/bpjs_comparison_data') : null, [database, shouldLoadBpjs])
   const { data: rawBpjsData } = useList(bpjsComparisonRef)
 
   const bpjsLookupMap = useMemo(() => {
@@ -653,7 +666,9 @@ function ActorDataContent() {
   const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
   const { data: kuotaData, isLoading: isKuotaLoading } = useList<any>(kuotaRef)
 
-  const systemUsersRef = useMemoFirebase(() => database ? ref(database, 'system_users') : null, [database])
+  // Lazy-load system users only when inside coordinator view, searching, or editing
+  const shouldLoadSystemUsers = Boolean(filterCoordinator || editingActor || isSearching)
+  const systemUsersRef = useMemoFirebase(() => (database && shouldLoadSystemUsers) ? ref(database, 'system_users') : null, [database, shouldLoadSystemUsers])
   const { data: systemUsersRaw } = useList<any>(systemUsersRef)
 
   const surveyorOptions = useMemo(() => {
@@ -835,15 +850,34 @@ function ActorDataContent() {
     // 2. Add names from live data if any (just in case they aren't in kuotaData)
     Object.keys(groupedActors).forEach(name => allNames.add(name))
 
+    // 3. Add names from localIndex for 0ms instant display
+    const localIndexCounts: Record<string, number> = {}
+    if (localIndex && localIndex.length > 0) {
+      localIndex.forEach(a => {
+        if (a && a.coordinator) {
+          const c = String(a.coordinator).toUpperCase().trim()
+          if (c) {
+            allNames.add(c)
+            localIndexCounts[c] = (localIndexCounts[c] || 0) + 1
+          }
+        }
+      })
+    }
+
     return Array.from(allNames).map(name => {
       const quotaObj = (kuotaData || []).find((q: any) => (q.name || "").toUpperCase().trim() === name)
       const quota = quotaObj?.quota || 0
       
       // Verified count is now the primary metric for quota usage (Usage = Verified)
-      // Fallback to systemStats if we haven't fetched allActorsRaw
+      // 1. Live groupedActors if loaded
+      // 2. Fallback to systemStats
+      // 3. Fallback to localIndex
       let verifiedCount = (groupedActors[name] || []).length;
       if (!allActorsRaw && systemStats) {
         verifiedCount = (systemStats as any)?.coordinator?.[name] || 0;
+      }
+      if (verifiedCount === 0 && localIndexCounts[name]) {
+        verifiedCount = localIndexCounts[name];
       }
       
       // Rejected count is for statistics only
@@ -864,7 +898,7 @@ function ActorDataContent() {
         isFull
       }
     }).sort((a: any, b: any) => a.name.localeCompare(b.name))
-  }, [groupedActors, kuotaData, systemStats])
+  }, [groupedActors, kuotaData, systemStats, localIndex, allActorsRaw])
 
   const coordinatorOptions = useMemo(() => {
     const names = new Set<string>()
@@ -2460,7 +2494,7 @@ function ActorDataContent() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4 md:gap-5">
-            {(isKuotaLoading || (!systemStats && isStatsLoading)) ? (
+            {(!coordinatorStats.some(s => s.count > 0) && (isKuotaLoading || (!systemStats && isStatsLoading))) ? (
               [...Array(12)].map((_, i) => (
                 <div 
                   key={i} 

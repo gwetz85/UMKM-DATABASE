@@ -81,6 +81,19 @@ function HasilVerifikasiContent() {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || "")
   const [pageLimit, setPageLimit] = useState(50)
 
+  // Instant local cache for 0ms initial load
+  const [localIndex, setLocalIndex] = useState<BusinessActor[] | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const cached = localStorage.getItem('simpu_actors_search_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return null;
+  });
+
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
 
@@ -96,6 +109,27 @@ function HasilVerifikasiContent() {
       setCopiedKey(null)
     }, 2000)
   }
+
+  // Pre-fetch lightweight search index if not cached yet
+  useEffect(() => {
+    if (!database) return;
+    if (localIndex && localIndex.length > 0) return;
+
+    import("firebase/database").then(({ ref, get }) => {
+      get(ref(database, 'settings/actors_search')).then(snap => {
+        if (snap.exists()) {
+          const val = snap.val();
+          if (val) {
+            const list = Object.values(val) as BusinessActor[];
+            setLocalIndex(list);
+            try {
+              localStorage.setItem('simpu_actors_search_cache', JSON.stringify(list));
+            } catch {}
+          }
+        }
+      }).catch(() => {});
+    });
+  }, [database, localIndex]);
 
   const [inputtingBankActor, setInputtingBankActor] = useState<BusinessActor | null>(null)
   const [isSubmittingBank, setIsSubmittingBank] = useState(false)
@@ -129,10 +163,29 @@ function HasilVerifikasiContent() {
   const isKoordinator = userProfile?.role === 'koordinator'
   const isDinas = userProfile?.role === 'dinas' || userProfile?.role === 'verifikator_dinas'
 
+  // Pre-calculated system stats
+  const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
+  const { data: systemStats } = useObject(statsRef)
+
+  // Only query full records when inside a specific coordinator or for specific role, keeping overview instant (0MB download)
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'))
-  }, [database])
+    if (filterCoordinator) {
+      return query(
+        ref(database, 'businessActors'),
+        orderByChild('coordinator'),
+        equalTo(String(filterCoordinator).toUpperCase().trim())
+      )
+    }
+    if (isKoordinator && userProfile?.fullName) {
+      return query(
+        ref(database, 'businessActors'),
+        orderByChild('coordinator'),
+        equalTo(String(userProfile.fullName).toUpperCase().trim())
+      )
+    }
+    return null
+  }, [database, filterCoordinator, isKoordinator, userProfile?.fullName])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
 
@@ -140,11 +193,22 @@ function HasilVerifikasiContent() {
   const { data: kuotaData, isLoading: isKuotaLoading } = useList<any>(kuotaRef)
 
   const actors = useMemo(() => {
-    if (!allActorsRaw) return undefined
-    return allActorsRaw.filter(a => {
+    // If live allActorsRaw has arrived, use it. Otherwise immediately use localIndex for 0ms load!
+    const rawList = (allActorsRaw && allActorsRaw.length > 0)
+      ? allActorsRaw
+      : (localIndex || allActorsRaw);
+
+    if (!rawList) return undefined
+    return rawList.filter(a => {
       if (!a) return false
       if (a.status !== 'verified_dinas' || a.hasilVerifikasiDinas !== 'Lolos' || !(a as any).berkasDinasVerified) return false
       
+      if (filterCoordinator) {
+        const actorCoord = String(a.coordinator || "").toUpperCase().trim()
+        const targetCoord = String(filterCoordinator).toUpperCase().trim()
+        if (actorCoord !== targetCoord) return false
+      }
+
       if (isPetugas) {
         if (!userProfile?.fullName) return false
         const userPetugasUpper = String(userProfile.fullName).toUpperCase().trim()
@@ -158,7 +222,7 @@ function HasilVerifikasiContent() {
       }
       return true
     })
-  }, [allActorsRaw, isPetugas, isKoordinator, userProfile?.fullName])
+  }, [allActorsRaw, localIndex, filterCoordinator, isPetugas, isKoordinator, userProfile?.fullName])
 
   const filteredActors = useMemo(() => {
     if (!actors) return undefined
@@ -204,14 +268,31 @@ function HasilVerifikasiContent() {
     }
     Object.keys(groupedActors).forEach(name => allNames.add(name))
 
+    // Pre-calculate counts from localIndex for 0ms instant display
+    const localIndexCounts: Record<string, number> = {}
+    if (localIndex && localIndex.length > 0) {
+      localIndex.forEach(a => {
+        if (a && a.coordinator && a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Lolos' && (a as any).berkasDinasVerified) {
+          const c = String(a.coordinator).toUpperCase().trim()
+          if (c) {
+            allNames.add(c)
+            localIndexCounts[c] = (localIndexCounts[c] || 0) + 1
+          }
+        }
+      })
+    }
+
     return Array.from(allNames).map(name => {
-      const count = (groupedActors[name] || []).length
+      let count = (groupedActors[name] || []).length
+      if (count === 0 && localIndexCounts[name]) {
+        count = localIndexCounts[name]
+      }
       return {
         name,
         count
       }
     }).sort((a, b) => a.name.localeCompare(b.name))
-  }, [groupedActors, kuotaData])
+  }, [groupedActors, kuotaData, localIndex])
 
   const activeCoordinatorCount = useMemo(() => {
     return coordinatorStats.filter(s => s.count > 0).length
@@ -882,7 +963,7 @@ function HasilVerifikasiContent() {
       ) : (
         /* ─── COORDINATOR CARDS GRID VIEW (DEFAULT) ─── */
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4 md:gap-5">
-          {isKuotaLoading ? (
+          {(!coordinatorStats.some(s => s.count > 0) && isKuotaLoading) ? (
             [...Array(12)].map((_, i) => (
               <div
                 key={i}
@@ -1008,7 +1089,7 @@ function HasilVerifikasiContent() {
             </div>
           )})}
 
-          {!isKuotaLoading && coordinatorStats.filter(stat => stat.count > 0).length === 0 && (
+          {!(!coordinatorStats.some(s => s.count > 0) && isKuotaLoading) && coordinatorStats.filter(stat => stat.count > 0).length === 0 && (
             <div className="col-span-full py-16 text-center flex flex-col items-center gap-4 bg-white/60 dark:bg-slate-900/60 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800">
               <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl">
                 <Search className="w-8 h-8 text-slate-400" />
