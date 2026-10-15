@@ -12,7 +12,7 @@ import {
 
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
-import { useUser, useAuth, useDatabase } from "@/firebase"
+import { useUser, useAuth, useDatabase, useMemoFirebase, useObject } from "@/firebase"
 import { ref, update } from "firebase/database"
 import { signOut } from "firebase/auth"
 import { cn } from "@/lib/utils"
@@ -62,6 +62,19 @@ export function AppSidebar() {
   const database = useDatabase()
   const [mounted, setMounted] = React.useState(false)
   const { playSound } = useSoundEffect()
+
+  const configRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'settings/system_config')
+  }, [database])
+  const { data: config } = useObject(configRef)
+
+  const appVersion = React.useMemo(() => {
+    if (!config?.version) return "Versi 10.5 VIP"
+    const v = String(config.version).trim()
+    if (/^v(ersi)?/i.test(v)) return v
+    return `Versi ${v}`
+  }, [config?.version])
 
   React.useEffect(() => {
     setMounted(true)
@@ -189,27 +202,27 @@ export function AppSidebar() {
       <SidebarHeader className="py-4 px-4 flex flex-row items-center justify-between border-b border-white/10 bg-[#0B132B]">
         <InfoDialog>
           <button className="flex items-center gap-3 transition-transform hover:scale-105 active:scale-95 outline-none group text-left">
-            <div className="relative w-9 h-9 rounded-full bg-gradient-to-tr from-sky-500 to-teal-400 p-[2px] shadow-md shadow-sky-500/20 shrink-0">
-              <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+            <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-sky-400 via-cyan-400 to-teal-300 p-[2.5px] shadow-lg shadow-sky-500/25 shrink-0 transition-transform duration-200 group-hover:scale-105">
+              <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden p-0.5">
                 <img
                   src="/logo.png"
                   alt="SIMPU Logo"
-                  className="w-full h-full object-cover rounded-full"
+                  className="w-full h-full object-contain rounded-full"
                 />
               </div>
             </div>
 
             <div className="flex flex-col group-data-[collapsible=icon]:hidden min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="font-black text-base text-white tracking-tight uppercase">
+                <span className="font-black text-lg text-white tracking-tight uppercase">
                   SIMPU
                 </span>
-                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-xs">
                   2026
                 </span>
               </div>
-              <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider truncate">
-                Kota Tanjungpinang
+              <span className="text-[10px] font-black text-sky-400 uppercase tracking-wider truncate mt-0.5">
+                {appVersion}
               </span>
             </div>
           </button>
