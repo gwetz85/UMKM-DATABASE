@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, Suspense } from "react"
+import React, { useState, useMemo, useEffect, Suspense } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, useObject, sanitizeForFirebase, updateDocumentNonBlocking } from "@/firebase"
 import { ref, query, orderByChild, equalTo } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
