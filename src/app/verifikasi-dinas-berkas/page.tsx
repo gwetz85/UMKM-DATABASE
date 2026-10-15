@@ -2375,9 +2375,7 @@ export default function VerifikasiDinasBerkasPage() {
                         </div>
                       </div>
                     </div>
-                      </div>
-                    </div>
-                    <div className="mt-auto pt-4 border-t flex flex-col gap-2">
+                    <div className="mt-auto pt-4 border-t border-slate-200 dark:border-neutral-800 flex flex-col gap-2">
                       {checks.ktp && checks.kk && checks.nib && checks.foto ? (
                         <Button 
                           type="button" 
