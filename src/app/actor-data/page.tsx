@@ -3258,11 +3258,11 @@ function ActorDataContent() {
                     }
 
                     return (
-                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 h-full overflow-hidden">
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 h-full overflow-y-auto lg:overflow-hidden custom-scrollbar pr-0.5">
                         {/* ════════════════════════════════════════════════════════════
-                            KOLOM KIRI: STACKED SUMMARY CARDS (TIDAK BISA DI-SCROLL)
+                            KOLOM KIRI: STACKED SUMMARY CARDS (BISA DI-SCROLL)
                            ════════════════════════════════════════════════════════════ */}
-                        <div className="lg:col-span-4 xl:col-span-3 space-y-2.5 overflow-hidden shrink-0">
+                        <div className="lg:col-span-4 xl:col-span-3 lg:h-full lg:min-h-0 overflow-y-auto overscroll-contain custom-scrollbar pr-1.5 pb-6 space-y-2.5">
                           {/* Card 1: Status Data */}
                           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-2xs space-y-1.5">
                             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -3417,9 +3417,9 @@ function ActorDataContent() {
                         </div>
 
                         {/* ════════════════════════════════════════════════════════════
-                            KOLOM KANAN: 6 KELOMPOK DATA LENGKAP (HANYA INI YANG BISA DI-SCROLL)
+                            KOLOM KANAN: 6 KELOMPOK DATA LENGKAP (BISA DI-SCROLL)
                            ════════════════════════════════════════════════════════════ */}
-                        <div className="lg:col-span-8 xl:col-span-9 h-full min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-6 space-y-5">
+                        <div className="lg:col-span-8 xl:col-span-9 lg:h-full lg:min-h-0 overflow-y-auto overscroll-contain custom-scrollbar pr-1 pb-6 space-y-5">
                           {/* ── 1. DATA PELAKU USAHA ── */}
                           {hasPelakuGroup && (
                             <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 shadow-2xs">
