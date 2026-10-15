@@ -1429,8 +1429,8 @@ export default function VerifikasiDinasBerkasPage() {
                 {/* ─── HEADER GRUP VERIFIKATOR ──────────────────────────── */}
                 <div className={`p-4 rounded-2xl border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all ${
                   isUnassigned 
-                    ? "bg-amber-50/70 border-amber-200 text-amber-950" 
-                    : "bg-gradient-to-r from-purple-50 via-indigo-50/60 to-white border-purple-200/80 text-purple-950"
+                    ? "bg-amber-50/70 border-amber-200 text-amber-950 dark:bg-amber-950/40 dark:border-amber-800/80 dark:text-amber-100" 
+                    : "bg-gradient-to-r from-purple-50 via-indigo-50/60 to-white border-purple-200/80 text-purple-950 dark:from-purple-950/60 dark:via-indigo-950/50 dark:to-slate-900/90 dark:border-purple-800/60 dark:text-purple-100"
                 }`}>
                   <div className="flex items-start md:items-center gap-3.5">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${
@@ -1441,17 +1441,17 @@ export default function VerifikasiDinasBerkasPage() {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
-                          isUnassigned ? "bg-amber-200/80 text-amber-800" : "bg-purple-200/80 text-purple-800"
+                          isUnassigned ? "bg-amber-200/80 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200" : "bg-purple-200/80 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200"
                         }`}>
                           Verifikator Dinas
                         </span>
-                        <h2 className="text-base md:text-lg font-black uppercase tracking-tight text-slate-900">
+                        <h2 className="text-base md:text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white">
                           {displayName}
                         </h2>
                         {/* Status Kehadiran Petugas Verifikator - Khusus Admin */}
                         {isAdmin && foundUser && (
                           foundUser.isOnline ? (
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800 shadow-xs">
                               <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -1459,7 +1459,7 @@ export default function VerifikasiDinasBerkasPage() {
                               Online
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
                               <span className="inline-flex rounded-full h-1.5 w-1.5 bg-slate-400"></span>
                               Offline
                             </span>
@@ -1469,27 +1469,27 @@ export default function VerifikasiDinasBerkasPage() {
                       
                       {/* Informasi NIPPPK, Pangkat, Jabatan Verifikator */}
                       {(vInfo || !isUnassigned) ? (
-                        <div className="flex items-center gap-3 mt-1 text-xs text-slate-600 flex-wrap font-medium">
+                        <div className="flex items-center gap-3 mt-1 text-xs text-slate-600 dark:text-slate-300 flex-wrap font-medium">
                           {(vInfo?.nipppk || !isUnassigned) && (
                             <span className="flex items-center gap-1">
-                              <span className="text-slate-400 font-bold">NIPPPK:</span> {vInfo?.nipppk || nipKey}
+                              <span className="text-slate-400 dark:text-slate-400 font-bold">NIPPPK:</span> {vInfo?.nipppk || nipKey}
                             </span>
                           )}
                           {vInfo?.pangkat && (
                             <span className="flex items-center gap-1">
-                              <span className="text-slate-400 font-bold">•</span>
-                              <span className="text-slate-400 font-bold">Pangkat:</span> {vInfo.pangkat}
+                              <span className="text-slate-400 dark:text-slate-400 font-bold">•</span>
+                              <span className="text-slate-400 dark:text-slate-400 font-bold">Pangkat:</span> {vInfo.pangkat}
                             </span>
                           )}
                           {vInfo?.jabatan && (
                             <span className="flex items-center gap-1">
-                              <span className="text-slate-400 font-bold">•</span>
-                              <span className="text-slate-400 font-bold">Jabatan:</span> {vInfo.jabatan}
+                              <span className="text-slate-400 dark:text-slate-400 font-bold">•</span>
+                              <span className="text-slate-400 dark:text-slate-400 font-bold">Jabatan:</span> {vInfo.jabatan}
                             </span>
                           )}
                         </div>
                       ) : isUnassigned ? (
-                        <p className="text-xs text-amber-700 mt-0.5">
+                        <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
                           Petugas survey belum mengisi data Verifikator pada Data Pejabat Berita Acara
                         </p>
                       ) : null}
@@ -1505,11 +1505,11 @@ export default function VerifikasiDinasBerkasPage() {
                       const isNipMismatch = !!(foundUser && currentNipClean && userNipClean && currentNipClean !== userNipClean);
 
                       return foundUser ? (
-                        <div className="flex items-center gap-2 bg-white/95 border border-purple-200/90 px-3 py-1.5 rounded-xl text-xs shadow-sm flex-wrap">
+                        <div className="flex items-center gap-2 bg-white/95 dark:bg-slate-900/90 border border-purple-200/90 dark:border-purple-800/80 px-3 py-1.5 rounded-xl text-xs shadow-sm flex-wrap">
                           {/* Indikator Status Online / Offline */}
                           <div className="flex items-center mr-0.5">
                             {foundUser.isOnline ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700 border border-emerald-300">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
                                 <span className="relative flex h-1.5 w-1.5">
                                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
@@ -1517,27 +1517,27 @@ export default function VerifikasiDinasBerkasPage() {
                                 Online
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
                                 <span className="inline-flex rounded-full h-1.5 w-1.5 bg-slate-400"></span>
                                 Offline
                               </span>
                             )}
                           </div>
 
-                          <div className="flex items-center gap-1 text-purple-800 font-bold">
-                            <Key className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                          <div className="flex items-center gap-1 text-purple-800 dark:text-purple-300 font-bold">
+                            <Key className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
                             <span className="font-mono">User: <strong>{foundUser.username || foundUser.id}</strong></span>
                           </div>
-                          <span className="text-slate-300">|</span>
+                          <span className="text-slate-300 dark:text-slate-700">|</span>
                           <div className="flex items-center gap-1 font-mono">
-                            <span className="text-slate-500 font-bold">Sandi:</span>
-                            <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">{foundUser.password || "••••••"}</span>
+                            <span className="text-slate-500 dark:text-slate-400 font-bold">Sandi:</span>
+                            <span className="text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-50 dark:bg-emerald-950/70 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">{foundUser.password || "••••••"}</span>
                           </div>
-                          <span className="text-slate-300">|</span>
-                          <div className="flex items-center gap-1 text-[11px] text-slate-600 font-medium">
+                          <span className="text-slate-300 dark:text-slate-700">|</span>
+                          <div className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-300 font-medium">
                             <Clock className="w-3 h-3 text-slate-400 shrink-0" />
                             <span className="text-slate-400 font-semibold">Terakhir Login:</span>
-                            <span className="font-semibold text-slate-700">
+                            <span className="font-semibold text-slate-700 dark:text-slate-200">
                               {foundUser.lastLogin ? formatDateTimeIndo(foundUser.lastLogin) : "Belum pernah login"}
                             </span>
                           </div>
@@ -1545,7 +1545,7 @@ export default function VerifikasiDinasBerkasPage() {
                             size="sm"
                             variant="ghost"
                             type="button"
-                            className="h-6 px-2 text-[10px] font-black text-purple-700 hover:bg-purple-100 rounded-lg ml-1"
+                            className="h-6 px-2 text-[10px] font-black text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-950/60 rounded-lg ml-1"
                             onClick={() => {
                               const origin = typeof window !== 'undefined' ? window.location.origin : 'https://umkm-database.web.app'
                               const textToCopy = `AKSES LOGIN VERIFIKATOR DINAS\nNama: ${displayName}\nUsername (NIPPPK): ${foundUser.username || foundUser.id}\nKata Sandi: ${foundUser.password}\nLink Login: ${origin}/login`
@@ -1563,7 +1563,7 @@ export default function VerifikasiDinasBerkasPage() {
                             className={`h-6 px-2.5 text-[10px] font-black rounded-lg gap-1 shadow-sm transition-all ${
                               isNipMismatch
                                 ? "bg-amber-600 hover:bg-amber-700 text-white border-amber-600 animate-pulse"
-                                : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200"
+                                : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 dark:text-indigo-300 dark:border-indigo-800"
                             }`}
                             onClick={async () => {
                               const targetPejabat = {
@@ -1588,7 +1588,7 @@ export default function VerifikasiDinasBerkasPage() {
                             size="sm"
                             variant="ghost"
                             type="button"
-                            className="h-6 px-2 text-[10px] font-black text-rose-600 hover:bg-rose-50 hover:text-rose-700 rounded-lg gap-1 border border-rose-200"
+                            className="h-6 px-2 text-[10px] font-black text-rose-600 hover:bg-rose-50 hover:text-rose-700 rounded-lg gap-1 border border-rose-200 dark:text-rose-400 dark:hover:bg-rose-950/50 dark:border-rose-900/60"
                             onClick={() => handleDeleteVerifikatorAccount(foundUser.username || foundUser.id, displayName)}
                             title="Hapus Akun Verifikator Dinas Secara Permanen"
                           >
@@ -1625,7 +1625,7 @@ export default function VerifikasiDinasBerkasPage() {
                         size="sm"
                         variant="outline"
                         type="button"
-                        className="h-8 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200 font-bold rounded-xl gap-1.5 shadow-sm"
+                        className="h-8 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 dark:text-indigo-300 dark:border-indigo-800 font-bold rounded-xl gap-1.5 shadow-sm"
                         onClick={() => openEditPejabatForGroup(nipKey, group, foundUser)}
                         title="Edit NIPPPK, Nama, Pangkat & Jabatan Pejabat untuk Berita Acara Survey"
                       >
@@ -1660,9 +1660,9 @@ export default function VerifikasiDinasBerkasPage() {
                               [nipKey]: val
                             }))}
                           >
-                            <SelectTrigger className="h-8 text-xs font-bold rounded-xl border-emerald-300 bg-emerald-50/90 text-emerald-950 focus:ring-emerald-500 shadow-xs hover:bg-emerald-100 transition-colors min-w-[190px] max-w-[270px]">
+                            <SelectTrigger className="h-8 text-xs font-bold rounded-xl border-emerald-300 bg-emerald-50/90 text-emerald-950 dark:bg-slate-800 dark:border-emerald-700/60 dark:text-emerald-300 focus:ring-emerald-500 shadow-xs hover:bg-emerald-100 dark:hover:bg-slate-700 transition-colors min-w-[190px] max-w-[270px]">
                               <div className="flex items-center gap-1.5 truncate">
-                                <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <UserCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                                 <SelectValue placeholder="Pilih Petugas Survey" />
                               </div>
                             </SelectTrigger>
@@ -1693,7 +1693,7 @@ export default function VerifikasiDinasBerkasPage() {
                                 ...prev,
                                 [nipKey]: "ALL"
                               }))}
-                              className="h-8 px-2 text-xs text-emerald-700 hover:text-emerald-950 hover:bg-emerald-100 rounded-xl"
+                              className="h-8 px-2 text-xs text-emerald-700 dark:text-emerald-300 hover:text-emerald-950 dark:hover:text-emerald-100 hover:bg-emerald-100 dark:hover:bg-slate-800 rounded-xl"
                               title="Reset Filter Petugas"
                             >
                               <X className="w-3.5 h-3.5" />
@@ -1703,11 +1703,11 @@ export default function VerifikasiDinasBerkasPage() {
                       )
                     })()}
 
-                    <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 shadow-sm flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-purple-600" />
+                    <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-sm flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                       <strong>{displayedGroupActors.length}</strong>
                       {currentPetugasFilter !== "ALL" && (
-                        <span className="text-slate-400 font-normal">/ {group.actors.length}</span>
+                        <span className="text-slate-400 dark:text-slate-500 font-normal">/ {group.actors.length}</span>
                       )}
                       <span>Berkas</span>
                     </span>
@@ -2162,8 +2162,8 @@ export default function VerifikasiDinasBerkasPage() {
 
                     {/* INFORMASI PRIBADI */}
                     <section className="space-y-4">
-                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
+                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b border-slate-200 dark:border-slate-800 pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60">
                         {(() => {
                           const parsed = parsePobDob(verifyingActor.pobDob || "")
                           return [
@@ -2183,12 +2183,12 @@ export default function VerifikasiDinasBerkasPage() {
                                 href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-xs font-bold text-green-600 hover:text-green-700 hover:underline flex items-center gap-1"
+                                className="text-xs font-bold text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:underline flex items-center gap-1"
                               >
                                 {item.value}
                               </a>
                             ) : (
-                              <p className="text-xs font-bold">{item.value || "-"}</p>
+                              <p className="text-xs font-bold text-slate-800 dark:text-slate-100">{item.value || "-"}</p>
                             )}
                           </div>
                         ))}
@@ -2197,8 +2197,8 @@ export default function VerifikasiDinasBerkasPage() {
 
                     {/* DATA HASIL SURVEY DINAS */}
                     <section className="space-y-4">
-                      <div className="flex items-center gap-2 text-emerald-600 font-black text-sm uppercase border-b pb-1"><ClipboardCheck className="w-4 h-4" /> Data Hasil Survey Dinas</div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
+                      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-black text-sm uppercase border-b border-slate-200 dark:border-slate-800 pb-1"><ClipboardCheck className="w-4 h-4" /> Data Hasil Survey Dinas</div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-emerald-50/50 dark:bg-emerald-950/30 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
                         {[
                           { label: "Tanggal Survey", value: verifyingActor.surveyData?.tanggalSurvey ? formatTanggalIndonesia(verifyingActor.surveyData.tanggalSurvey).fullText : "-" },
                           { label: "Nama Usaha", value: verifyingActor.surveyData?.namaUsaha },
@@ -2222,8 +2222,8 @@ export default function VerifikasiDinasBerkasPage() {
                           { label: "Hasil Survey", value: verifyingActor.surveyData?.hasilSurvey }
                         ].map((item, i) => (
                           <div key={i} className="space-y-1">
-                            <p className="text-[10px] font-bold text-emerald-700/80 uppercase">{item.label}</p>
-                            <p className="text-xs font-bold text-slate-800 break-words">{item.value || "-"}</p>
+                            <p className="text-[10px] font-bold text-emerald-700/80 dark:text-emerald-300 uppercase">{item.label}</p>
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-100 break-words">{item.value || "-"}</p>
                           </div>
                         ))}
                       </div>
@@ -2231,32 +2231,32 @@ export default function VerifikasiDinasBerkasPage() {
 
                     {/* TITIK LOKASI & FOTO */}
                     <section className="space-y-4">
-                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Titik Lokasi & Foto Survey</div>
+                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b border-slate-200 dark:border-slate-800 pb-1"><MapPin className="w-4 h-4" /> Titik Lokasi & Foto Survey</div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-2">
-                          <p className="text-[10px] font-bold text-slate-500 uppercase">Titik Lokasi Survey Dinas</p>
+                        <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-100 dark:border-slate-700/60 flex flex-col gap-2">
+                          <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Titik Lokasi Survey Dinas</p>
                           {verifyingActor.verificationLocationDinas ? (
                             <>
                               <p className="text-xs font-mono font-semibold">{verifyingActor.verificationLocationDinas.lat}, {verifyingActor.verificationLocationDinas.lon}</p>
-                              <a href={`https://www.google.com/maps?q=${verifyingActor.verificationLocationDinas.lat},${verifyingActor.verificationLocationDinas.lon}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 font-bold hover:underline inline-block mt-1">Buka di Google Maps</a>
+                              <a href={`https://www.google.com/maps?q=${verifyingActor.verificationLocationDinas.lat},${verifyingActor.verificationLocationDinas.lon}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 dark:text-blue-400 font-bold hover:underline inline-block mt-1">Buka di Google Maps</a>
                             </>
                           ) : (
-                            <p className="text-xs font-medium text-slate-500">Belum ada titik lokasi yang direkam.</p>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Belum ada titik lokasi yang direkam.</p>
                           )}
                         </div>
-                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-3 items-center justify-center">
-                          <p className="text-[10px] font-bold text-slate-500 uppercase self-start">Foto Survey Dinas</p>
+                        <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-100 dark:border-slate-700/60 flex flex-col gap-3 items-center justify-center">
+                          <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase self-start">Foto Survey Dinas</p>
                           {(verifyingPhoto || getCleanSurveyPhoto(verifyingActor)) ? (
-                            <img src={(verifyingPhoto || getCleanSurveyPhoto(verifyingActor))!} alt="Foto Survey" className="max-h-[200px] w-full object-contain rounded-lg border border-slate-200" />
+                            <img src={(verifyingPhoto || getCleanSurveyPhoto(verifyingActor))!} alt="Foto Survey" className="max-h-[200px] w-full object-contain rounded-lg border border-slate-200 dark:border-slate-700" />
                           ) : (
-                            <p className="text-xs font-medium text-slate-500">Belum ada foto survey dinas.</p>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Belum ada foto survey dinas.</p>
                           )}
                           {isAdmin && (
                             <div className="w-full mt-1">
                               <div className="grid grid-cols-2 gap-2 w-full">
                                 {/* Galeri Smartphone */}
                                 <label htmlFor={`admin-photo-gallery-${verifyingActor.id}`} className="cursor-pointer">
-                                  <div className={`flex items-center justify-center gap-1.5 w-full py-2 px-2 rounded-lg border-2 border-dashed text-xs font-bold transition-colors ${adminPhotoUploading ? 'border-slate-200 text-slate-400 cursor-not-allowed' : 'border-emerald-400 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300'}`}>
+                                  <div className={`flex items-center justify-center gap-1.5 w-full py-2 px-2 rounded-lg border-2 border-dashed text-xs font-bold transition-colors ${adminPhotoUploading ? 'border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed' : 'border-emerald-400 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/50'}`}>
                                     <ImageIcon className="w-3.5 h-3.5 shrink-0" />
                                     <span>Galeri HP</span>
                                   </div>
@@ -2272,7 +2272,7 @@ export default function VerifikasiDinasBerkasPage() {
 
                                 {/* Kamera Smartphone */}
                                 <label htmlFor={`admin-photo-camera-${verifyingActor.id}`} className="cursor-pointer">
-                                  <div className={`flex items-center justify-center gap-1.5 w-full py-2 px-2 rounded-lg border-2 border-dashed text-xs font-bold transition-colors ${adminPhotoUploading ? 'border-slate-200 text-slate-400 cursor-not-allowed' : 'border-amber-400 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-300'}`}>
+                                  <div className={`flex items-center justify-center gap-1.5 w-full py-2 px-2 rounded-lg border-2 border-dashed text-xs font-bold transition-colors ${adminPhotoUploading ? 'border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed' : 'border-amber-400 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-950/50'}`}>
                                     <Camera className="w-3.5 h-3.5 shrink-0" />
                                     <span>Kamera HP</span>
                                   </div>
@@ -2287,7 +2287,7 @@ export default function VerifikasiDinasBerkasPage() {
                                   />
                                 </label>
                               </div>
-                              <p className="text-[9px] text-slate-400 text-center mt-1">Foto akan dikompres otomatis maksimal 1MB</p>
+                              <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-1">Foto akan dikompres otomatis maksimal 1MB</p>
                             </div>
                           )}
                         </div>
@@ -2296,13 +2296,13 @@ export default function VerifikasiDinasBerkasPage() {
 
                     {verifyingActor.googleDriveLink && (
                       <section className="space-y-4">
-                        <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Folder className="w-4 h-4" /> Berkas Tambahan (Google Drive)</div>
-                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b border-slate-200 dark:border-slate-800 pb-1"><Folder className="w-4 h-4" /> Berkas Tambahan (Google Drive)</div>
+                        <div className="bg-blue-50 dark:bg-blue-950/40 p-4 rounded-xl border border-blue-100 dark:border-blue-900/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div>
-                            <p className="text-xs font-bold text-blue-800 uppercase">Folder Google Drive Pelaku Usaha</p>
-                            <p className="text-[10px] font-medium text-blue-600 mt-1">Berisi foto, video, dokumen usulan, atau file lainnya</p>
+                            <p className="text-xs font-bold text-blue-800 dark:text-blue-200 uppercase">Folder Google Drive Pelaku Usaha</p>
+                            <p className="text-[10px] font-medium text-blue-600 dark:text-blue-300 mt-1">Berisi foto, video, dokumen usulan, atau file lainnya</p>
                           </div>
-                          <a href={verifyingActor.googleDriveLink} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold px-4 py-2.5 rounded-lg text-xs shadow flex items-center justify-center min-w-[140px]">
+                          <a href={verifyingActor.googleDriveLink} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2.5 rounded-lg text-xs shadow flex items-center justify-center min-w-[140px]">
                             Buka Folder Drive
                           </a>
                         </div>
@@ -2311,7 +2311,7 @@ export default function VerifikasiDinasBerkasPage() {
                   </div>
                   
                   {!showChecklist && (
-                    <DialogFooter className="border-t pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+                    <DialogFooter className="border-t border-slate-200 dark:border-slate-800 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
                       <div className="flex items-center gap-2 w-full sm:w-auto">
                         <Button type="button" variant="ghost" onClick={() => setVerifyingActor(null)}>Tutup</Button>
                         <Button
@@ -2323,7 +2323,7 @@ export default function VerifikasiDinasBerkasPage() {
                             setSaveDateToSurvey(true);
                           }}
                           disabled={!verifyingActor.surveyData}
-                          className="bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 font-bold"
+                          className="bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:hover:bg-purple-900/60 dark:text-purple-300 dark:border-purple-800 font-bold"
                         >
                           <FileDown className="w-4 h-4 mr-1.5" /> Download Berita Acara
                         </Button>
@@ -2335,7 +2335,7 @@ export default function VerifikasiDinasBerkasPage() {
                               setReturnTargetActor(verifyingActor);
                               setReturnReason("");
                             }}
-                            className="bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200 font-bold gap-1.5"
+                            className="bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/50 dark:hover:bg-orange-900/60 dark:text-orange-300 dark:border-orange-800 font-bold gap-1.5"
                           >
                             <RotateCcw className="w-4 h-4" /> Kembalikan ke Petugas
                           </Button>
@@ -2350,29 +2350,31 @@ export default function VerifikasiDinasBerkasPage() {
 
                 {/* Kanan: Checklist Berkas */}
                 {showChecklist && (
-                  <div className="w-full lg:w-[400px] shrink-0 lg:border-l lg:pl-6 flex flex-col gap-4 animate-in slide-in-from-right-8 duration-300">
+                  <div className="w-full lg:w-[400px] shrink-0 lg:border-l lg:border-slate-200 dark:lg:border-slate-800 lg:pl-6 flex flex-col gap-4 animate-in slide-in-from-right-8 duration-300">
                     <DialogHeader>
-                      <DialogTitle className="text-xl font-black text-emerald-600 uppercase">Cek Kelengkapan Berkas</DialogTitle>
+                      <DialogTitle className="text-xl font-black text-emerald-600 dark:text-emerald-400 uppercase">Cek Kelengkapan Berkas</DialogTitle>
                       <DialogDescription>Pastikan 4 berkas ini lengkap.</DialogDescription>
                     </DialogHeader>
                     <div className="py-2 space-y-4">
                       <div className="flex flex-col gap-3">
-                        <div className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center space-x-3 p-3 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                           <Checkbox id="ktp" checked={checks.ktp} onCheckedChange={(c) => setChecks(prev => ({...prev, ktp: !!c}))} />
                           <label htmlFor="ktp" className="text-sm font-semibold cursor-pointer select-none">KTP</label>
                         </div>
-                        <div className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center space-x-3 p-3 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                           <Checkbox id="kk" checked={checks.kk} onCheckedChange={(c) => setChecks(prev => ({...prev, kk: !!c}))} />
                           <label htmlFor="kk" className="text-sm font-semibold cursor-pointer select-none">KK</label>
                         </div>
-                        <div className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center space-x-3 p-3 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                           <Checkbox id="nib" checked={checks.nib} onCheckedChange={(c) => setChecks(prev => ({...prev, nib: !!c}))} />
                           <label htmlFor="nib" className="text-sm font-semibold cursor-pointer select-none">NIB</label>
                         </div>
-                        <div className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center space-x-3 p-3 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                           <Checkbox id="foto" checked={checks.foto} onCheckedChange={(c) => setChecks(prev => ({...prev, foto: !!c}))} />
                           <label htmlFor="foto" className="text-sm font-semibold cursor-pointer select-none">Fhoto Pelaku Usaha</label>
                         </div>
+                      </div>
+                    </div>
                       </div>
                     </div>
                     <div className="mt-auto pt-4 border-t flex flex-col gap-2">
@@ -2410,7 +2412,7 @@ export default function VerifikasiDinasBerkasPage() {
             const vName = getVerifikatorName(av)
 
             const Section = ({ icon, title, color = "text-primary" }: { icon: React.ReactNode; title: string; color?: string }) => (
-              <div className={`flex items-center gap-2 ${color} font-black text-sm uppercase border-b pb-2 mb-3`}>
+              <div className={`flex items-center gap-2 ${color} font-black text-sm uppercase border-b border-slate-200 dark:border-slate-800 pb-2 mb-3`}>
                 {icon} {title}
               </div>
             )
@@ -2418,23 +2420,23 @@ export default function VerifikasiDinasBerkasPage() {
             const Field = ({ label, value, mono = false }: { label: string; value?: string | null; mono?: boolean }) => (
               <div className="space-y-0.5">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">{label}</p>
-                <p className={`text-xs font-bold text-slate-800 break-words ${mono ? 'font-mono' : ''}`}>{value || "-"}</p>
+                <p className={`text-xs font-bold text-slate-800 dark:text-slate-100 break-words ${mono ? 'font-mono' : ''}`}>{value || "-"}</p>
               </div>
             )
 
             return (
               <div className="space-y-1">
-                <DialogHeader className="pb-2 border-b">
+                <DialogHeader className="pb-2 border-b border-slate-200 dark:border-slate-800">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0">
                       <Eye className="w-6 h-6" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md uppercase tracking-wider">View Lengkap — Admin</span>
+                        <span className="text-[10px] font-black bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 px-2 py-0.5 rounded-md uppercase tracking-wider">View Lengkap — Admin</span>
                       </div>
-                      <DialogTitle className="text-xl font-black text-slate-900 uppercase mt-0.5">{av.fullName}</DialogTitle>
-                      <DialogDescription className="text-xs text-slate-500 font-mono">NIK: {av.nik} • ID: {av.id}</DialogDescription>
+                      <DialogTitle className="text-xl font-black text-slate-900 dark:text-white uppercase mt-0.5">{av.fullName}</DialogTitle>
+                      <DialogDescription className="text-xs text-slate-500 dark:text-slate-400 font-mono">NIK: {av.nik} • ID: {av.id}</DialogDescription>
                     </div>
                   </div>
                 </DialogHeader>
@@ -2471,7 +2473,7 @@ export default function VerifikasiDinasBerkasPage() {
 
                   {/* 1. STATUS & TRACKING */}
                   <section>
-                    <Section icon={<Info className="w-4 h-4" />} title="Status & Tracking" color="text-blue-700" />
+                    <Section icon={<Info className="w-4 h-4" />} title="Status & Tracking" color="text-blue-700 dark:text-blue-400" />
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       <Field label="Status" value={(av.status || "-").replace(/_/g, " ").toUpperCase()} />
                       <Field label="Hasil Verifikasi Dinas" value={av.hasilVerifikasiDinas} />
@@ -2486,14 +2488,14 @@ export default function VerifikasiDinasBerkasPage() {
 
                   {/* 2. DATA PEJABAT BERITA ACARA */}
                   <section>
-                    <div className="flex items-center justify-between border-b pb-1">
-                      <Section icon={<BadgeCheck className="w-4 h-4" />} title="Data Pejabat Berita Acara Survey" color="text-indigo-700" />
+                    <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-1">
+                      <Section icon={<BadgeCheck className="w-4 h-4" />} title="Data Pejabat Berita Acara Survey" color="text-indigo-700 dark:text-indigo-400" />
                       {(isAdmin || isVerifikatorDinas) && (
                         <Button
                           size="sm"
                           variant="ghost"
                           type="button"
-                          className="h-7 px-2.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 rounded-lg gap-1"
+                          className="h-7 px-2.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-950/60 rounded-lg gap-1"
                           onClick={() => openEditPejabatForActor(av)}
                         >
                           <Edit className="w-3.5 h-3.5" /> Edit NIPPPK
@@ -2501,8 +2503,8 @@ export default function VerifikasiDinasBerkasPage() {
                       )}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-                      <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100 space-y-2">
-                        <p className="text-[10px] font-black text-indigo-700 uppercase flex items-center gap-1">
+                      <div className="bg-indigo-50 dark:bg-indigo-950/40 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900/60 space-y-2">
+                        <p className="text-[10px] font-black text-indigo-700 dark:text-indigo-300 uppercase flex items-center gap-1">
                           <span className="w-4 h-4 rounded-full bg-indigo-600 text-white text-[9px] font-black flex items-center justify-center">1</span>
                           Verifikator Dinas
                         </p>
@@ -2513,8 +2515,8 @@ export default function VerifikasiDinasBerkasPage() {
                           <Field label="Jabatan" value={avPejabat?.verifikator?.jabatan} />
                         </div>
                       </div>
-                      <div className="bg-violet-50 p-3 rounded-xl border border-violet-100 space-y-2">
-                        <p className="text-[10px] font-black text-violet-700 uppercase flex items-center gap-1">
+                      <div className="bg-violet-50 dark:bg-violet-950/40 p-3 rounded-xl border border-violet-100 dark:border-violet-900/60 space-y-2">
+                        <p className="text-[10px] font-black text-violet-700 dark:text-violet-300 uppercase flex items-center gap-1">
                           <span className="w-4 h-4 rounded-full bg-violet-600 text-white text-[9px] font-black flex items-center justify-center">2</span>
                           Petugas Survey
                         </p>
@@ -2531,7 +2533,7 @@ export default function VerifikasiDinasBerkasPage() {
                   {/* 3. INFORMASI PRIBADI */}
                   <section>
                     <Section icon={<User className="w-4 h-4" />} title="Informasi Pribadi" />
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60">
                       <Field label="Nama Lengkap" value={av.fullName} />
                       <Field label="NIK" value={av.nik} mono />
                       <Field label="Nomor KK" value={av.noKK} mono />
@@ -2548,8 +2550,8 @@ export default function VerifikasiDinasBerkasPage() {
 
                   {/* 4. DATA USAHA */}
                   <section>
-                    <Section icon={<Building2 className="w-4 h-4" />} title="Data Usaha" color="text-orange-700" />
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 bg-orange-50/50 p-4 rounded-xl border border-orange-100">
+                    <Section icon={<Building2 className="w-4 h-4" />} title="Data Usaha" color="text-orange-700 dark:text-orange-400" />
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 bg-orange-50/50 dark:bg-orange-950/30 p-4 rounded-xl border border-orange-100 dark:border-orange-900/40">
                       <Field label="Nama Usaha" value={av.businessName} />
                       <Field label="Kategori Usaha" value={av.businessCategory} />
                       <Field label="Lokasi Usaha" value={av.businessLocation} />
@@ -2561,8 +2563,8 @@ export default function VerifikasiDinasBerkasPage() {
                   {/* 5. DATA HASIL SURVEY DINAS */}
                   {av.surveyData && (
                     <section>
-                      <Section icon={<ClipboardCheck className="w-4 h-4" />} title="Data Hasil Survey Dinas" color="text-emerald-700" />
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
+                      <Section icon={<ClipboardCheck className="w-4 h-4" />} title="Data Hasil Survey Dinas" color="text-emerald-700 dark:text-emerald-400" />
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 bg-emerald-50/50 dark:bg-emerald-950/30 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
                         <Field label="Tanggal Survey" value={av.surveyData.tanggalSurvey ? formatTanggalIndonesia(av.surveyData.tanggalSurvey).fullText : undefined} />
                         <Field label="Nama Usaha (Survey)" value={av.surveyData.namaUsaha} />
                         <Field label="Nama Pemilik" value={av.surveyData.namaPemilik} />
@@ -2589,8 +2591,8 @@ export default function VerifikasiDinasBerkasPage() {
 
                   {/* 6. REKENING BANK */}
                   <section>
-                    <Section icon={<CreditCard className="w-4 h-4" />} title="Rekening Bank" color="text-cyan-700" />
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-cyan-50/50 p-4 rounded-xl border border-cyan-100">
+                    <Section icon={<CreditCard className="w-4 h-4" />} title="Rekening Bank" color="text-cyan-700 dark:text-cyan-400" />
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-cyan-50/50 dark:bg-cyan-950/30 p-4 rounded-xl border border-cyan-100 dark:border-cyan-900/40">
                       <Field label="Nama Bank" value={av.bankName} />
                       <Field label="Nama Pemilik Rekening" value={av.bankOwner} />
                       <Field label="Nomor Rekening" value={av.bankNumber} mono />
@@ -2599,7 +2601,7 @@ export default function VerifikasiDinasBerkasPage() {
 
                   {/* 7. DOKUMEN & FOTO */}
                   <section>
-                    <Section icon={<Camera className="w-4 h-4" />} title="Dokumen & Foto" color="text-rose-700" />
+                    <Section icon={<Camera className="w-4 h-4" />} title="Dokumen & Foto" color="text-rose-700 dark:text-rose-400" />
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {[
                         { label: "Foto KTP", url: av.ktpUri },
@@ -2611,17 +2613,17 @@ export default function VerifikasiDinasBerkasPage() {
                         { label: "Tanda Tangan Pelaku Usaha", url: av.surveyData?.tandaTanganPelakuUsaha || av.tandaTanganPelakuUsaha },
                       ].map((doc, i) => (
                         <div key={i} className="space-y-1">
-                          <p className="text-[10px] font-bold text-rose-700/80 uppercase">{doc.label}</p>
+                          <p className="text-[10px] font-bold text-rose-700/80 dark:text-rose-400 uppercase">{doc.label}</p>
                           {doc.url ? (
                             <div className="space-y-1">
-                              <img src={doc.url} alt={doc.label} className={`w-full h-28 ${doc.label.includes("Tanda Tangan") ? "object-contain bg-white p-2" : "object-cover"} rounded-lg border border-slate-200`} />
-                              <a href={doc.url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 hover:underline flex items-center gap-1">
+                              <img src={doc.url} alt={doc.label} className={`w-full h-28 ${doc.label.includes("Tanda Tangan") ? "object-contain bg-white dark:bg-slate-100 p-2" : "object-cover"} rounded-lg border border-slate-200 dark:border-slate-700`} />
+                              <a href={doc.url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
                                 <ExternalLink className="w-3 h-3" /> Buka penuh
                               </a>
                             </div>
                           ) : (
-                            <div className="w-full h-14 rounded-lg border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center">
-                              <p className="text-[10px] text-slate-400 font-medium">Belum ada</p>
+                            <div className="w-full h-14 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 flex items-center justify-center">
+                              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Belum ada</p>
                             </div>
                           )}
                           {doc.label === "Foto Survey Dinas" && (
@@ -2636,7 +2638,7 @@ export default function VerifikasiDinasBerkasPage() {
                                     const p = adminViewPhoto || (await getSurveyPhoto(database, av.id, av));
                                     setPhotoEditPreview(p);
                                   }}
-                                  className="w-full text-[10px] h-7 bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 font-bold gap-1"
+                                  className="w-full text-[10px] h-7 bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 dark:bg-amber-950/50 dark:border-amber-800 dark:text-amber-300 dark:hover:bg-amber-900/60 font-bold gap-1"
                                 >
                                   <Camera className="w-3 h-3" /> {doc.url ? 'Ganti Foto Survey' : 'Upload Foto Survey'}
                                 </Button>
@@ -2648,7 +2650,7 @@ export default function VerifikasiDinasBerkasPage() {
                                   variant="outline"
                                   onClick={() => setPhotoDeleteTarget(av)}
                                   disabled={isDeletingPhoto}
-                                  className="w-full text-[10px] h-7 bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100 font-bold gap-1 transition-colors"
+                                  className="w-full text-[10px] h-7 bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/50 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-900/60 font-bold gap-1 transition-colors"
                                   title="Hapus Foto Survey Dinas (Khusus Administrator)"
                                 >
                                   <Trash2 className="w-3 h-3" /> Hapus Foto Survey
@@ -2660,10 +2662,10 @@ export default function VerifikasiDinasBerkasPage() {
                       ))}
                     </div>
                     {av.googleDriveLink && (
-                      <div className="mt-3 bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-center justify-between gap-3">
+                      <div className="mt-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 rounded-xl p-3 flex items-center justify-between gap-3">
                         <div>
-                          <p className="text-xs font-bold text-blue-800 uppercase">Folder Google Drive</p>
-                          <p className="text-[10px] text-blue-600 mt-0.5">{av.googleDriveLink}</p>
+                          <p className="text-xs font-bold text-blue-800 dark:text-blue-200 uppercase">Folder Google Drive</p>
+                          <p className="text-[10px] text-blue-600 dark:text-blue-300 mt-0.5">{av.googleDriveLink}</p>
                         </div>
                         <a href={av.googleDriveLink} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-lg shrink-0 flex items-center gap-1.5">
                           <ExternalLink className="w-3.5 h-3.5" /> Buka Drive
@@ -2674,8 +2676,8 @@ export default function VerifikasiDinasBerkasPage() {
 
                   {/* 8. LOKASI SURVEY */}
                   <section>
-                    <Section icon={<MapPin className="w-4 h-4" />} title="Lokasi Survey Dinas" color="text-teal-700" />
-                    <div className="bg-teal-50/50 p-4 rounded-xl border border-teal-100 space-y-2">
+                    <Section icon={<MapPin className="w-4 h-4" />} title="Lokasi Survey Dinas" color="text-teal-700 dark:text-teal-400" />
+                    <div className="bg-teal-50/50 dark:bg-teal-950/30 p-4 rounded-xl border border-teal-100 dark:border-teal-900/40 space-y-2">
                       {av.verificationLocationDinas ? (
                         <>
                           <div className="grid grid-cols-2 gap-3">
@@ -2686,21 +2688,21 @@ export default function VerifikasiDinasBerkasPage() {
                             href={`https://www.google.com/maps?q=${av.verificationLocationDinas.lat},${av.verificationLocationDinas.lon}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 bg-white border border-teal-200 px-3 py-1.5 rounded-lg hover:bg-teal-50 transition-colors"
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 dark:text-teal-300 bg-white dark:bg-slate-800 border border-teal-200 dark:border-teal-800 px-3 py-1.5 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-950/50 transition-colors"
                           >
                             <MapPin className="w-3.5 h-3.5" /> Buka di Google Maps
                           </a>
                         </>
                       ) : (
-                        <p className="text-xs text-slate-500">Belum ada titik lokasi yang direkam.</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Belum ada titik lokasi yang direkam.</p>
                       )}
                     </div>
                   </section>
 
                   {/* 9. CATATAN & INFORMASI TAMBAHAN */}
                   <section>
-                    <Section icon={<History className="w-4 h-4" />} title="Catatan & Informasi Tambahan" color="text-slate-600" />
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-xl border">
+                    <Section icon={<History className="w-4 h-4" />} title="Catatan & Informasi Tambahan" color="text-slate-600 dark:text-slate-300" />
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60">
                       <Field label="Catatan Filing" value={av.filingNote} />
                       <Field label="Alasan Penolakan" value={av.rejectionReason} />
                       <Field label="Nominal LPJ" value={av.lpjNominal ? `Rp ${av.lpjNominal.toLocaleString('id-ID')}` : undefined} />
@@ -2751,10 +2753,10 @@ export default function VerifikasiDinasBerkasPage() {
       <Dialog open={!!printModalActor} onOpenChange={(open) => !open && setPrintModalActor(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-purple-700 font-black uppercase">
+            <DialogTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-400 font-black uppercase">
               <FileDown className="w-5 h-5" /> Download Berita Acara Survey
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-slate-500 dark:text-slate-400">
               Pilih atau sesuaikan tanggal pelaksanaan survey untuk dokumen Berita Acara PDF.
             </DialogDescription>
           </DialogHeader>
@@ -2766,47 +2768,47 @@ export default function VerifikasiDinasBerkasPage() {
 
             return (
               <div className="space-y-4 py-2">
-                <div className="bg-purple-50/70 border border-purple-100 rounded-xl p-3.5 space-y-1">
-                  <p className="text-[10px] text-purple-600 font-bold uppercase tracking-wider">Pelaku Usaha</p>
-                  <p className="text-sm font-black text-purple-950 uppercase">{printModalActor.fullName}</p>
-                  <p className="text-xs text-purple-700 font-medium">{printModalActor.businessName || printModalActor.surveyData?.namaUsaha || "Nama Usaha Belum Ada"}</p>
+                <div className="bg-purple-50/70 border border-purple-100 dark:bg-purple-950/40 dark:border-purple-900/50 rounded-xl p-3.5 space-y-1">
+                  <p className="text-[10px] text-purple-600 dark:text-purple-400 font-bold uppercase tracking-wider">Pelaku Usaha</p>
+                  <p className="text-sm font-black text-purple-950 dark:text-purple-100 uppercase">{printModalActor.fullName}</p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300 font-medium">{printModalActor.businessName || printModalActor.surveyData?.namaUsaha || "Nama Usaha Belum Ada"}</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="print-survey-date" className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4 text-purple-600" /> Tanggal Berita Acara / Survey
+                  <Label htmlFor="print-survey-date" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Tanggal Berita Acara / Survey
                   </Label>
                   <Input
                     id="print-survey-date"
                     type="date"
                     value={selectedPrintDate}
                     onChange={(e) => setSelectedPrintDate(e.target.value)}
-                    className="bg-slate-50 border-slate-200 focus-visible:ring-purple-500 font-semibold"
+                    className="bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 focus-visible:ring-purple-500 font-semibold"
                   />
                 </div>
 
                 {/* Preview teks format Bahasa Indonesia */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    <Check className="w-3.5 h-3.5 text-emerald-600" /> Bunyi Kalimat Pada Berita Acara
+                <div className="bg-slate-50 border border-slate-200 dark:bg-slate-800/60 dark:border-slate-700 rounded-xl p-3 space-y-1.5">
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Bunyi Kalimat Pada Berita Acara
                   </p>
-                  <p className="text-xs text-slate-700 italic bg-white p-2.5 rounded-lg border border-slate-100 leading-relaxed">
-                    "Pada hari ini <strong className="text-purple-700 not-italic font-bold">{formatTanggalIndonesia(selectedPrintDate).hari}</strong>, tanggal <strong className="text-purple-700 not-italic font-bold">{formatTanggalIndonesia(selectedPrintDate).tanggal} {formatTanggalIndonesia(selectedPrintDate).bulan} {formatTanggalIndonesia(selectedPrintDate).tahun}</strong>, yang bertandatangan dibawah ini :"
+                  <p className="text-xs text-slate-700 dark:text-slate-200 italic bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 leading-relaxed">
+                    "Pada hari ini <strong className="text-purple-700 dark:text-purple-400 not-italic font-bold">{formatTanggalIndonesia(selectedPrintDate).hari}</strong>, tanggal <strong className="text-purple-700 dark:text-purple-400 not-italic font-bold">{formatTanggalIndonesia(selectedPrintDate).tanggal} {formatTanggalIndonesia(selectedPrintDate).bulan} {formatTanggalIndonesia(selectedPrintDate).tahun}</strong>, yang bertandatangan dibawah ini :"
                   </p>
                 </div>
 
                 {/* Info Pejabat Penandatangan */}
-                <div className="bg-indigo-50/70 border border-indigo-100 rounded-xl p-3 space-y-2">
+                <div className="bg-indigo-50/70 border border-indigo-100 dark:bg-indigo-950/40 dark:border-indigo-900/50 rounded-xl p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1">
-                      <UserCheck className="w-3.5 h-3.5 text-indigo-600" /> Pejabat Penandatangan Berita Acara
+                    <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider flex items-center gap-1">
+                      <UserCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Pejabat Penandatangan Berita Acara
                     </span>
                     {(isAdmin || isVerifikatorDinas) && (
                       <Button
                         size="sm"
                         variant="ghost"
                         type="button"
-                        className="h-6 px-2 text-[10px] font-bold text-indigo-700 hover:bg-indigo-100 rounded-lg gap-1"
+                        className="h-6 px-2 text-[10px] font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-950/60 rounded-lg gap-1"
                         onClick={() => {
                           if (printModalActor) openEditPejabatForActor(printModalActor);
                         }}
@@ -2817,15 +2819,15 @@ export default function VerifikasiDinasBerkasPage() {
                   </div>
                   
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
-                    <div className="bg-white p-2 rounded-lg border border-indigo-100/80 space-y-0.5">
+                    <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-indigo-100/80 dark:border-indigo-900/60 space-y-0.5">
                       <p className="text-[9px] font-bold text-slate-400 uppercase">1. Verifikator</p>
-                      <p className="font-bold text-indigo-950 truncate">{pmVerifikator}</p>
-                      <p className="text-[9px] text-slate-500 truncate">{pmPejabat?.verifikator?.jabatan || (pmPejabat?.verifikator?.nipppk ? `NIP: ${pmPejabat.verifikator.nipppk}` : "Verifikator Dinas")}</p>
+                      <p className="font-bold text-indigo-950 dark:text-indigo-200 truncate">{pmVerifikator}</p>
+                      <p className="text-[9px] text-slate-500 dark:text-slate-400 truncate">{pmPejabat?.verifikator?.jabatan || (pmPejabat?.verifikator?.nipppk ? `NIP: ${pmPejabat.verifikator.nipppk}` : "Verifikator Dinas")}</p>
                     </div>
-                    <div className="bg-white p-2 rounded-lg border border-indigo-100/80 space-y-0.5">
+                    <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-indigo-100/80 dark:border-indigo-900/60 space-y-0.5">
                       <p className="text-[9px] font-bold text-slate-400 uppercase">2. Petugas Survey</p>
-                      <p className="font-bold text-indigo-950 truncate">{pmPetugas}</p>
-                      <p className="text-[9px] text-slate-500 truncate">{pmPejabat?.petugas?.jabatan || (pmPejabat?.petugas?.nipppk ? `NIP: ${pmPejabat.petugas.nipppk}` : "Petugas Survey")}</p>
+                      <p className="font-bold text-indigo-950 dark:text-indigo-200 truncate">{pmPetugas}</p>
+                      <p className="text-[9px] text-slate-500 dark:text-slate-400 truncate">{pmPejabat?.petugas?.jabatan || (pmPejabat?.petugas?.nipppk ? `NIP: ${pmPejabat.petugas.nipppk}` : "Petugas Survey")}</p>
                     </div>
                   </div>
                 </div>
@@ -2836,7 +2838,7 @@ export default function VerifikasiDinasBerkasPage() {
                     checked={saveDateToSurvey}
                     onCheckedChange={(c) => setSaveDateToSurvey(!!c)}
                   />
-                  <Label htmlFor="save-date-checkbox" className="text-xs text-slate-600 cursor-pointer font-medium">
+                  <Label htmlFor="save-date-checkbox" className="text-xs text-slate-600 dark:text-slate-300 cursor-pointer font-medium">
                     Simpan tanggal ini ke data survey pelaku usaha
                   </Label>
                 </div>
@@ -2844,7 +2846,7 @@ export default function VerifikasiDinasBerkasPage() {
             )
           })()}
 
-          <DialogFooter className="gap-2 pt-2 border-t">
+          <DialogFooter className="gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
             <Button variant="ghost" onClick={() => setPrintModalActor(null)} disabled={!!generatingPdfId}>
               Batal
             </Button>
@@ -2877,10 +2879,10 @@ export default function VerifikasiDinasBerkasPage() {
       <Dialog open={showEditPejabatDialog} onOpenChange={setShowEditPejabatDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-lg font-black uppercase text-indigo-700 flex items-center gap-2">
+            <DialogTitle className="text-lg font-black uppercase text-indigo-700 dark:text-indigo-400 flex items-center gap-2">
               <Edit className="w-5 h-5" /> Edit Data Pejabat & NIPPPK
             </DialogTitle>
-            <DialogDescription className="text-sm text-slate-500">
+            <DialogDescription className="text-sm text-slate-500 dark:text-slate-400">
               Perbarui NIPPPK, Nama, Pangkat, dan Jabatan pejabat. Perubahan otomatis tercetak pada dokumen Berita Acara Survey.
             </DialogDescription>
           </DialogHeader>
@@ -2890,91 +2892,91 @@ export default function VerifikasiDinasBerkasPage() {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-black flex items-center justify-center">1</div>
-                <h3 className="font-black text-sm uppercase tracking-wider text-indigo-800">Data Verifikator Dinas</h3>
+                <h3 className="font-black text-sm uppercase tracking-wider text-indigo-800 dark:text-indigo-300">Data Verifikator Dinas</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-8">
                 <div className="space-y-1">
-                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Nama Lengkap <span className="text-red-500">*</span></Label>
+                  <Label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Nama Lengkap <span className="text-red-500">*</span></Label>
                   <Input
                     value={pejabatEditForm.verifikatorNama}
                     onChange={e => setPejabatEditForm(prev => ({ ...prev, verifikatorNama: e.target.value }))}
                     placeholder="Nama lengkap verifikator"
-                    className="h-10 rounded-xl border-slate-200 bg-slate-50 text-sm focus-visible:ring-indigo-500"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm focus-visible:ring-indigo-500"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wide">NIPPPK / NIP <span className="text-indigo-600 font-normal">(Otomatis ke Berita Acara)</span></Label>
+                  <Label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">NIPPPK / NIP <span className="text-indigo-600 dark:text-indigo-400 font-normal">(Otomatis ke Berita Acara)</span></Label>
                   <Input
                     value={pejabatEditForm.verifikatorNipppk}
                     onChange={e => setPejabatEditForm(prev => ({ ...prev, verifikatorNipppk: e.target.value }))}
                     placeholder="Nomor NIPPPK"
-                    className="h-10 rounded-xl border-slate-200 bg-slate-50 font-mono text-sm focus-visible:ring-indigo-500 text-purple-700 font-bold"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 font-mono text-sm focus-visible:ring-indigo-500 text-purple-700 dark:text-purple-300 font-bold"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Pangkat / Gol. Ruang</Label>
+                  <Label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Pangkat / Gol. Ruang</Label>
                   <Input
                     value={pejabatEditForm.verifikatorPangkat}
                     onChange={e => setPejabatEditForm(prev => ({ ...prev, verifikatorPangkat: e.target.value }))}
                     placeholder="Contoh: Penata, III/c"
-                    className="h-10 rounded-xl border-slate-200 bg-slate-50 text-sm focus-visible:ring-indigo-500"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm focus-visible:ring-indigo-500"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Jabatan</Label>
+                  <Label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Jabatan</Label>
                   <Input
                     value={pejabatEditForm.verifikatorJabatan}
                     onChange={e => setPejabatEditForm(prev => ({ ...prev, verifikatorJabatan: e.target.value }))}
                     placeholder="Contoh: Verifikator Dinas"
-                    className="h-10 rounded-xl border-slate-200 bg-slate-50 text-sm focus-visible:ring-indigo-500"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm focus-visible:ring-indigo-500"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="h-px bg-slate-200" />
+            <div className="h-px bg-slate-200 dark:bg-slate-800" />
 
             {/* Kolom 2 – Petugas Survey */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-violet-600 text-white text-xs font-black flex items-center justify-center">2</div>
-                <h3 className="font-black text-sm uppercase tracking-wider text-violet-800">Data Petugas Survey</h3>
+                <h3 className="font-black text-sm uppercase tracking-wider text-violet-800 dark:text-violet-300">Data Petugas Survey</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-8">
                 <div className="space-y-1">
-                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Nama Petugas Survey</Label>
+                  <Label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Nama Petugas Survey</Label>
                   <Input
                     value={pejabatEditForm.petugasNama}
                     onChange={e => setPejabatEditForm(prev => ({ ...prev, petugasNama: e.target.value }))}
                     placeholder="Nama petugas survey"
-                    className="h-10 rounded-xl border-slate-200 bg-slate-50 text-sm focus-visible:ring-violet-500"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm focus-visible:ring-violet-500"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wide">NIPPPK / NIP Petugas</Label>
+                  <Label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">NIPPPK / NIP Petugas</Label>
                   <Input
                     value={pejabatEditForm.petugasNipppk}
                     onChange={e => setPejabatEditForm(prev => ({ ...prev, petugasNipppk: e.target.value }))}
                     placeholder="Nomor NIPPPK Petugas"
-                    className="h-10 rounded-xl border-slate-200 bg-slate-50 font-mono text-sm focus-visible:ring-violet-500"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 font-mono text-sm focus-visible:ring-violet-500"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Pangkat / Gol. Ruang</Label>
+                  <Label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Pangkat / Gol. Ruang</Label>
                   <Input
                     value={pejabatEditForm.petugasPangkat}
                     onChange={e => setPejabatEditForm(prev => ({ ...prev, petugasPangkat: e.target.value }))}
                     placeholder="Contoh: Pengatur, II/c"
-                    className="h-10 rounded-xl border-slate-200 bg-slate-50 text-sm focus-visible:ring-violet-500"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm focus-visible:ring-violet-500"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Jabatan</Label>
+                  <Label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Jabatan</Label>
                   <Input
                     value={pejabatEditForm.petugasJabatan}
                     onChange={e => setPejabatEditForm(prev => ({ ...prev, petugasJabatan: e.target.value }))}
                     placeholder="Contoh: Petugas Survey"
-                    className="h-10 rounded-xl border-slate-200 bg-slate-50 text-sm focus-visible:ring-violet-500"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 text-sm focus-visible:ring-violet-500"
                   />
                 </div>
               </div>
@@ -2982,21 +2984,21 @@ export default function VerifikasiDinasBerkasPage() {
 
             {/* Checkbox Sinkronisasi ke Seluruh Berkas di Grup */}
             {pejabatEditForm.targetGroupNipKey && (
-              <div className="p-3 bg-purple-50/80 rounded-xl border border-purple-200 flex items-center space-x-2.5">
+              <div className="p-3 bg-purple-50/80 border border-purple-200 dark:bg-purple-950/40 dark:border-purple-900/60 rounded-xl flex items-center space-x-2.5">
                 <Checkbox
                   id="sync-all-checkbox"
                   checked={pejabatEditForm.syncAllInGroup}
                   onCheckedChange={(c) => setPejabatEditForm(prev => ({ ...prev, syncAllInGroup: !!c }))}
                 />
-                <Label htmlFor="sync-all-checkbox" className="text-xs font-semibold text-purple-900 cursor-pointer">
+                <Label htmlFor="sync-all-checkbox" className="text-xs font-semibold text-purple-900 dark:text-purple-200 cursor-pointer">
                   Terapkan perubahan NIPPPK ini secara otomatis ke seluruh berkas pelaku usaha di grup ini
                 </Label>
               </div>
             )}
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row items-start sm:items-center gap-3 pt-2">
-            <p className="text-xs text-slate-400 flex-1">
+          <DialogFooter className="flex-col sm:flex-row items-start sm:items-center gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+            <p className="text-xs text-slate-400 dark:text-slate-400 flex-1">
               Perubahan NIPPPK akan otomatis terupdate pada Berita Acara Survey PDF.
             </p>
             <div className="flex gap-2 w-full sm:w-auto">
@@ -3020,35 +3022,35 @@ export default function VerifikasiDinasBerkasPage() {
       <Dialog open={!!photoEditActor} onOpenChange={(open) => { if (!open) { setPhotoEditActor(null); setPhotoEditPreview(null); } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-amber-700 font-black uppercase text-lg">
+            <DialogTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-black uppercase text-lg">
               <Camera className="w-5 h-5" /> Edit / Upload Foto Survey Dinas
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-slate-500 dark:text-slate-400">
               Upload atau ganti foto survey dinas. Foto akan dikompresi otomatis maksimal 1MB dan langsung terupdate di Berita Acara Survey PDF.
             </DialogDescription>
           </DialogHeader>
 
           {photoEditActor && (
             <div className="space-y-4 py-2">
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
+              <div className="bg-slate-50 border border-slate-200 dark:bg-slate-800/60 dark:border-slate-700 rounded-xl p-3 space-y-1">
                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Pelaku Usaha</p>
-                <p className="text-sm font-black text-slate-900 uppercase">{photoEditActor.fullName}</p>
-                <p className="text-xs text-slate-600">{photoEditActor.businessName || photoEditActor.surveyData?.namaUsaha || "Nama Usaha Belum Ada"}</p>
+                <p className="text-sm font-black text-slate-900 dark:text-white uppercase">{photoEditActor.fullName}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-300">{photoEditActor.businessName || photoEditActor.surveyData?.namaUsaha || "Nama Usaha Belum Ada"}</p>
               </div>
 
               {/* Area Preview Foto */}
               <div className="space-y-2">
-                <Label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
                   Preview Foto Survey:
                 </Label>
-                <div className="w-full h-56 bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden relative group">
+                <div className="w-full h-56 bg-slate-100 dark:bg-slate-900 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center overflow-hidden relative group">
                   {photoEditPreview ? (
-                    <img src={photoEditPreview} alt="Preview Foto Survey" className="w-full h-full object-contain bg-black/5" />
+                    <img src={photoEditPreview} alt="Preview Foto Survey" className="w-full h-full object-contain bg-black/5 dark:bg-black/30" />
                   ) : (
                     <div className="text-center p-4">
                       <Camera className="w-10 h-10 text-slate-400 mx-auto mb-2 opacity-50" />
-                      <p className="text-xs font-semibold text-slate-500">Belum ada foto survey dipilih</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Pilih foto dari galeri atau ambil dengan kamera HP</p>
+                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Belum ada foto survey dipilih</p>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Pilih foto dari galeri atau ambil dengan kamera HP</p>
                     </div>
                   )}
                 </div>
@@ -3100,14 +3102,14 @@ export default function VerifikasiDinasBerkasPage() {
                     />
                   </label>
                 </div>
-                <p className="text-[10px] text-slate-400 text-center mt-1.5">
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center mt-1.5">
                   ✅ Otomatis dikompresi kualitas tinggi dengan ukuran maksimal 1MB
                 </p>
               </div>
             </div>
           )}
 
-          <DialogFooter className="flex-col sm:flex-row items-center justify-between gap-2 pt-3 border-t">
+          <DialogFooter className="flex-col sm:flex-row items-center justify-between gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
             {isAdmin && (photoEditPreview || (photoEditActor && hasSurveyPhoto(photoEditActor))) ? (
               <Button
                 type="button"
@@ -3115,7 +3117,7 @@ export default function VerifikasiDinasBerkasPage() {
                 size="sm"
                 onClick={() => setPhotoDeleteTarget(photoEditActor)}
                 disabled={isSavingPhoto || isDeletingPhoto}
-                className="text-xs h-9 bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100 font-bold gap-1.5 w-full sm:w-auto"
+                className="text-xs h-9 bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/50 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-900/60 font-bold gap-1.5 w-full sm:w-auto"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Hapus Foto Survey
               </Button>
@@ -3147,39 +3149,39 @@ export default function VerifikasiDinasBerkasPage() {
       <Dialog open={!!returnTargetActor} onOpenChange={(open) => { if (!open) { setReturnTargetActor(null); setReturnReason(""); } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-orange-700 font-black uppercase text-lg">
-              <RotateCcw className="w-5 h-5 text-orange-600" /> Kembalikan ke Petugas Survey
+            <DialogTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400 font-black uppercase text-lg">
+              <RotateCcw className="w-5 h-5 text-orange-600 dark:text-orange-400" /> Kembalikan ke Petugas Survey
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-slate-500 dark:text-slate-400">
               Data pelaku usaha ini akan dikembalikan ke status survey lapangan agar petugas survey dapat merevisi atau melengkapi berkas/data survey.
             </DialogDescription>
           </DialogHeader>
 
           {returnTargetActor && (
             <div className="space-y-4 py-2">
-              <div className="bg-orange-50/80 border border-orange-200 rounded-xl p-3.5 space-y-2.5">
+              <div className="bg-orange-50/80 border border-orange-200 dark:bg-orange-950/40 dark:border-orange-900/60 rounded-xl p-3.5 space-y-2.5">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-[10px] text-orange-800 font-bold uppercase tracking-wider">Pelaku Usaha</p>
-                    <p className="text-sm font-black text-slate-900 uppercase">{returnTargetActor.fullName}</p>
-                    <p className="text-xs text-slate-600 font-mono">NIK: {returnTargetActor.nik}</p>
+                    <p className="text-[10px] text-orange-800 dark:text-orange-300 font-bold uppercase tracking-wider">Pelaku Usaha</p>
+                    <p className="text-sm font-black text-slate-900 dark:text-white uppercase">{returnTargetActor.fullName}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 font-mono">NIK: {returnTargetActor.nik}</p>
                   </div>
-                  <span className="text-[10px] font-bold px-2.5 py-1 bg-orange-200 text-orange-900 rounded-lg uppercase">
+                  <span className="text-[10px] font-bold px-2.5 py-1 bg-orange-200 text-orange-900 dark:bg-orange-900/60 dark:text-orange-200 rounded-lg uppercase">
                     {returnTargetActor.kelurahan || "Kelurahan"}
                   </span>
                 </div>
 
-                <div className="pt-2 border-t border-orange-200 flex items-center justify-between text-xs">
-                  <span className="text-slate-600 font-bold uppercase text-[10px]">Tujuan Petugas Survey:</span>
-                  <span className="font-black text-emerald-800 uppercase flex items-center gap-1.5 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <div className="pt-2 border-t border-orange-200 dark:border-orange-900/50 flex items-center justify-between text-xs">
+                  <span className="text-slate-600 dark:text-slate-300 font-bold uppercase text-[10px]">Tujuan Petugas Survey:</span>
+                  <span className="font-black text-emerald-800 dark:text-emerald-300 uppercase flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                    <UserCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     {returnTargetActor.petugasSurvey || returnTargetActor.createdBy || returnTargetActor.surveyData?.pejabatData?.petugas?.nama || "Petugas Terkait"}
                   </span>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="return-reason" className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1">
+                <Label htmlFor="return-reason" className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide flex items-center gap-1">
                   Catatan / Alasan Pengembalian <span className="text-rose-500">*</span>
                 </Label>
                 <Textarea
@@ -3187,9 +3189,9 @@ export default function VerifikasiDinasBerkasPage() {
                   value={returnReason}
                   onChange={(e) => setReturnReason(e.target.value)}
                   placeholder="Contoh: Foto usaha kurang jelas, alamat mohon disesuaikan dengan RT/RW terbaru, atau data peralatan perlu diperbaiki..."
-                  className="min-h-[110px] text-sm rounded-xl border-slate-300 focus-visible:ring-orange-500 bg-white"
+                  className="min-h-[110px] text-sm rounded-xl border-slate-300 dark:border-slate-700 focus-visible:ring-orange-500 bg-white dark:bg-slate-800 dark:text-slate-100"
                 />
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   💡 Catatan ini akan langsung tampil pada akun Petugas Survey terkait sebagai instruksi perbaikan.
                 </p>
               </div>

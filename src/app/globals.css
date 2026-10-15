@@ -1230,99 +1230,375 @@ body:not(.dark) h6:not([class*="text-"]) {
    DARK MODE DATA DETAIL BOXES & MODALS
    ========================================== */
 
+/* 1. Muted & Neutral Light Backgrounds in Dark Mode */
 .dark .bg-muted\/30,
 .dark .bg-muted\/40,
 .dark .bg-muted\/50,
-.dark .bg-muted\/20 {
+.dark .bg-muted\/20,
+.dark .bg-slate-50,
+.dark .bg-slate-100,
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-zinc-50,
+.dark .bg-zinc-100,
+.dark .bg-neutral-50,
+.dark .bg-neutral-100,
+.dark [class*="bg-slate-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-slate-100"]:not([class*="dark:bg-"]),
+.dark [class*="bg-gray-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-gray-100"]:not([class*="dark:bg-"]),
+.dark [class*="bg-zinc-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-zinc-100"]:not([class*="dark:bg-"]) {
   background-color: rgba(30, 41, 59, 0.75) !important;
-  border: 1px solid rgba(51, 65, 85, 0.6) !important;
+  border-color: rgba(51, 65, 85, 0.6) !important;
 }
 
+/* Semi-transparent White Cards in Dark Mode */
+.dark .bg-white\/95:not([class*="dark:bg-"]),
+.dark .bg-white\/90:not([class*="dark:bg-"]),
+.dark .bg-white\/85:not([class*="dark:bg-"]),
+.dark .bg-white\/80:not([class*="dark:bg-"]) {
+  background-color: rgba(15, 23, 42, 0.9) !important;
+  border-color: rgba(51, 65, 85, 0.7) !important;
+}
+
+/* White inner cards in Dialogs */
+.dark [role="dialog"] div.bg-white:not([class*="dark:bg-"]):not(img):not(canvas),
+.dark [data-radix-dialog-content] div.bg-white:not([class*="dark:bg-"]):not(img):not(canvas) {
+  background-color: rgba(15, 23, 42, 0.85) !important;
+  border-color: rgba(51, 65, 85, 0.6) !important;
+}
+
+/* Text Muted Foreground */
 .dark .text-muted-foreground {
   color: #94a3b8 !important;
 }
 
+/* 2. Light Colored Section Backgrounds & Borders in Dark Mode */
+/* Red & Rose */
 .dark .bg-red-50,
-.dark .bg-red-100 {
-  background-color: rgba(69, 10, 10, 0.6) !important;
-  border-color: rgba(153, 27, 27, 0.7) !important;
+.dark .bg-red-100,
+.dark [class*="bg-red-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-red-100"]:not([class*="dark:bg-"]),
+.dark .bg-rose-50,
+.dark .bg-rose-100,
+.dark [class*="bg-rose-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-rose-100"]:not([class*="dark:bg-"]) {
+  background-color: rgba(76, 5, 25, 0.45) !important;
+  border-color: rgba(190, 18, 60, 0.5) !important;
 }
 
+.dark .text-red-950,
+.dark .text-red-900,
+.dark .text-red-800,
 .dark .text-red-700,
-.dark .text-red-800 {
+.dark .text-rose-950,
+.dark .text-rose-900,
+.dark .text-rose-800,
+.dark .text-rose-700 {
   color: #fca5a5 !important;
 }
 
-.dark .text-red-600 {
+.dark .text-red-600,
+.dark .text-rose-600 {
   color: #f87171 !important;
 }
 
+/* Emerald & Green */
 .dark .bg-emerald-50,
 .dark .bg-emerald-100,
+.dark [class*="bg-emerald-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-emerald-100"]:not([class*="dark:bg-"]),
 .dark .bg-green-50,
-.dark .bg-green-100 {
-  background-color: rgba(6, 78, 59, 0.6) !important;
-  border-color: rgba(5, 150, 105, 0.7) !important;
+.dark .bg-green-100,
+.dark [class*="bg-green-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-green-100"]:not([class*="dark:bg-"]) {
+  background-color: rgba(6, 78, 59, 0.45) !important;
+  border-color: rgba(5, 150, 105, 0.5) !important;
 }
+
+.dark .text-emerald-950,
+.dark .text-emerald-900,
 .dark .text-emerald-800,
-.dark .text-emerald-700 {
+.dark .text-emerald-700,
+.dark .text-green-950,
+.dark .text-green-900,
+.dark .text-green-800,
+.dark .text-green-700 {
   color: #a7f3d0 !important;
 }
 
-.dark .bg-blue-50,
-.dark .bg-blue-100 {
-  background-color: rgba(30, 58, 138, 0.6) !important;
-  border-color: rgba(37, 99, 235, 0.7) !important;
+.dark .text-emerald-600,
+.dark .text-green-600 {
+  color: #6ee7b7 !important;
 }
+
+/* Blue */
+.dark .bg-blue-50,
+.dark .bg-blue-100,
+.dark [class*="bg-blue-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-blue-100"]:not([class*="dark:bg-"]) {
+  background-color: rgba(30, 58, 138, 0.45) !important;
+  border-color: rgba(37, 99, 235, 0.5) !important;
+}
+
+.dark .text-blue-950,
+.dark .text-blue-900,
 .dark .text-blue-800,
 .dark .text-blue-700 {
   color: #bfdbfe !important;
 }
 
+.dark .text-blue-600 {
+  color: #60a5fa !important;
+}
+
+/* Amber & Yellow */
 .dark .bg-amber-50,
 .dark .bg-amber-100,
+.dark [class*="bg-amber-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-amber-100"]:not([class*="dark:bg-"]),
 .dark .bg-yellow-50,
-.dark .bg-yellow-100 {
-  background-color: rgba(120, 53, 15, 0.6) !important;
-  border-color: rgba(217, 119, 6, 0.7) !important;
+.dark .bg-yellow-100,
+.dark [class*="bg-yellow-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-yellow-100"]:not([class*="dark:bg-"]) {
+  background-color: rgba(69, 26, 3, 0.45) !important;
+  border-color: rgba(180, 83, 9, 0.5) !important;
 }
+
+.dark .text-amber-950,
+.dark .text-amber-900,
 .dark .text-amber-800,
-.dark .text-amber-700 {
+.dark .text-amber-700,
+.dark .text-yellow-950,
+.dark .text-yellow-900,
+.dark .text-yellow-800,
+.dark .text-yellow-700 {
   color: #fde68a !important;
 }
 
-.dark .bg-teal-50,
-.dark .bg-teal-100 {
-  background-color: rgba(19, 78, 74, 0.6) !important;
-  border-color: rgba(20, 184, 166, 0.7) !important;
+.dark .text-amber-600,
+.dark .text-yellow-600 {
+  color: #fbbf24 !important;
 }
+
+/* Orange */
+.dark .bg-orange-50,
+.dark .bg-orange-100,
+.dark [class*="bg-orange-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-orange-100"]:not([class*="dark:bg-"]) {
+  background-color: rgba(124, 45, 18, 0.4) !important;
+  border-color: rgba(194, 65, 12, 0.5) !important;
+}
+
+.dark .text-orange-950,
+.dark .text-orange-900,
+.dark .text-orange-800,
+.dark .text-orange-700 {
+  color: #fdba74 !important;
+}
+
+.dark .text-orange-600 {
+  color: #fb923c !important;
+}
+
+/* Cyan */
+.dark .bg-cyan-50,
+.dark .bg-cyan-100,
+.dark [class*="bg-cyan-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-cyan-100"]:not([class*="dark:bg-"]) {
+  background-color: rgba(8, 51, 68, 0.45) !important;
+  border-color: rgba(14, 116, 144, 0.5) !important;
+}
+
+.dark .text-cyan-950,
+.dark .text-cyan-900,
+.dark .text-cyan-800,
+.dark .text-cyan-700 {
+  color: #67e8f9 !important;
+}
+
+.dark .text-cyan-600 {
+  color: #22d3ee !important;
+}
+
+/* Teal */
+.dark .bg-teal-50,
+.dark .bg-teal-100,
+.dark [class*="bg-teal-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-teal-100"]:not([class*="dark:bg-"]) {
+  background-color: rgba(19, 78, 74, 0.45) !important;
+  border-color: rgba(20, 184, 166, 0.5) !important;
+}
+
+.dark .text-teal-950,
+.dark .text-teal-900,
 .dark .text-teal-800,
 .dark .text-teal-700 {
   color: #99f6e4 !important;
 }
 
-.dark .bg-indigo-50,
-.dark .bg-indigo-100 {
-  background-color: rgba(49, 46, 129, 0.6) !important;
-  border-color: rgba(99, 102, 241, 0.7) !important;
+.dark .text-teal-600 {
+  color: #2dd4bf !important;
 }
+
+/* Indigo */
+.dark .bg-indigo-50,
+.dark .bg-indigo-100,
+.dark [class*="bg-indigo-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-indigo-100"]:not([class*="dark:bg-"]) {
+  background-color: rgba(30, 27, 75, 0.45) !important;
+  border-color: rgba(67, 56, 202, 0.5) !important;
+}
+
+.dark .text-indigo-950,
+.dark .text-indigo-900,
 .dark .text-indigo-800,
 .dark .text-indigo-700 {
   color: #c7d2fe !important;
 }
 
+.dark .text-indigo-600 {
+  color: #818cf8 !important;
+}
+
+/* Purple & Fuchsia */
+.dark .bg-purple-50,
+.dark .bg-purple-100,
+.dark [class*="bg-purple-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-purple-100"]:not([class*="dark:bg-"]),
 .dark .bg-fuchsia-50,
 .dark .bg-fuchsia-100,
-.dark .bg-purple-50,
-.dark .bg-purple-100 {
-  background-color: rgba(88, 28, 135, 0.6) !important;
-  border-color: rgba(168, 85, 247, 0.7) !important;
+.dark [class*="bg-fuchsia-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-fuchsia-100"]:not([class*="dark:bg-"]) {
+  background-color: rgba(59, 7, 100, 0.45) !important;
+  border-color: rgba(126, 34, 206, 0.5) !important;
 }
-.dark .text-fuchsia-800,
-.dark .text-fuchsia-700,
+
+.dark .text-purple-950,
+.dark .text-purple-900,
 .dark .text-purple-800,
-.dark .text-purple-700 {
-  color: #f0abfc !important;
+.dark .text-purple-700,
+.dark .text-fuchsia-950,
+.dark .text-fuchsia-900,
+.dark .text-fuchsia-800,
+.dark .text-fuchsia-700 {
+  color: #d8b4fe !important;
+}
+
+.dark .text-purple-600,
+.dark .text-fuchsia-600 {
+  color: #c084fc !important;
+}
+
+/* Violet */
+.dark .bg-violet-50,
+.dark .bg-violet-100,
+.dark [class*="bg-violet-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-violet-100"]:not([class*="dark:bg-"]) {
+  background-color: rgba(46, 16, 101, 0.45) !important;
+  border-color: rgba(109, 40, 217, 0.5) !important;
+}
+
+.dark .text-violet-950,
+.dark .text-violet-900,
+.dark .text-violet-800,
+.dark .text-violet-700 {
+  color: #c4b5fd !important;
+}
+
+.dark .text-violet-600 {
+  color: #a78bfa !important;
+}
+
+/* Rose / Red */
+.dark .text-rose-950,
+.dark .text-rose-900,
+.dark .text-rose-800,
+.dark .text-rose-700 {
+  color: #fecdd3 !important;
+}
+.dark .text-rose-600 {
+  color: #fda4af !important;
+}
+
+/* Amber / Yellow */
+.dark .text-amber-950,
+.dark .text-amber-900,
+.dark .text-amber-800,
+.dark .text-amber-700 {
+  color: #fde68a !important;
+}
+.dark .text-amber-600 {
+  color: #fcd34d !important;
+}
+
+/* 3. Light Gradients in Dark Mode (Adaptive Fallback) */
+.dark [class*="from-purple-50"]:not([class*="dark:from-"]) {
+  background-image: linear-gradient(to right, rgba(59, 7, 100, 0.5), rgba(30, 27, 75, 0.45), rgba(15, 23, 42, 0.9)) !important;
+  border-color: rgba(126, 34, 206, 0.5) !important;
+}
+
+.dark [class*="from-amber-50"]:not([class*="dark:from-"]) {
+  background-image: linear-gradient(to right, rgba(69, 26, 3, 0.5), rgba(124, 45, 18, 0.45), rgba(15, 23, 42, 0.9)) !important;
+  border-color: rgba(180, 83, 9, 0.5) !important;
+}
+
+.dark [class*="from-indigo-50"]:not([class*="dark:from-"]) {
+  background-image: linear-gradient(to right, rgba(30, 27, 75, 0.5), rgba(30, 58, 138, 0.45), rgba(15, 23, 42, 0.9)) !important;
+  border-color: rgba(67, 56, 202, 0.5) !important;
+}
+
+/* 4. Form Controls with Light Backgrounds in Dark Mode */
+.dark input.bg-slate-50,
+.dark input[class*="bg-slate-50"],
+.dark textarea.bg-slate-50,
+.dark textarea[class*="bg-slate-50"],
+.dark input.bg-white,
+.dark textarea.bg-white {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+/* 5. Dialog & Radix Dialog Content High-Contrast Text Rules */
+.dark [role="dialog"] p.text-slate-800,
+.dark [data-radix-dialog-content] p.text-slate-800,
+.dark [role="dialog"] .text-slate-800,
+.dark [data-radix-dialog-content] .text-slate-800,
+.dark [role="dialog"] p.text-slate-900,
+.dark [data-radix-dialog-content] p.text-slate-900,
+.dark [role="dialog"] .text-slate-900,
+.dark [data-radix-dialog-content] .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+.dark [role="dialog"] p.text-slate-700,
+.dark [data-radix-dialog-content] p.text-slate-700,
+.dark [role="dialog"] .text-slate-700,
+.dark [data-radix-dialog-content] .text-slate-700 {
+  color: #e2e8f0 !important;
+}
+
+.dark [role="dialog"] p.text-slate-600,
+.dark [data-radix-dialog-content] p.text-slate-600,
+.dark [role="dialog"] .text-slate-600,
+.dark [data-radix-dialog-content] .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+.dark [role="dialog"] p.text-slate-500,
+.dark [data-radix-dialog-content] p.text-slate-500,
+.dark [role="dialog"] .text-slate-500,
+.dark [data-radix-dialog-content] .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+.dark [role="dialog"] p.text-slate-400,
+.dark [data-radix-dialog-content] p.text-slate-400,
+.dark [role="dialog"] .text-slate-400,
+.dark [data-radix-dialog-content] .text-slate-400 {
+  color: #94a3b8 !important;
 }
 
 .dark [role="dialog"] .space-y-1 p.text-sm.font-bold,
@@ -1342,3 +1618,17 @@ body:not(.dark) h6:not([class*="text-"]) {
 .dark [role="dialog"] .text-\[10px\].font-bold.text-muted-foreground {
   color: #94a3b8 !important;
 }
+
+/* 6. Images & Document Placeholders in Dark Mode */
+.dark [role="dialog"] img.border-slate-200,
+.dark [data-radix-dialog-content] img.border-slate-200,
+.dark img.border-slate-200 {
+  border-color: #334155 !important;
+}
+
+.dark [role="dialog"] .border-dashed.border-slate-200,
+.dark [data-radix-dialog-content] .border-dashed.border-slate-200,
+.dark .border-dashed.border-slate-200 {
+  border-color: #334155 !important;
+  background-color: rgba(15, 23, 42, 0.5) !important;
+}
