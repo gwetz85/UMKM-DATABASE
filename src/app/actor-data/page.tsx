@@ -287,7 +287,8 @@ function ActorDataContent() {
   useEffect(() => {
     // 1. Immediately read cache on client mount (safe from hydration errors)
     try {
-      const cached = localStorage.getItem('simpu_actors_search_cache');
+      localStorage.removeItem('simpu_actors_search_cache'); // Purge stale legacy cache
+      const cached = localStorage.getItem('simpu_actors_search_cache_v2');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -307,7 +308,7 @@ function ActorDataContent() {
           const list = Object.values(val) as BusinessActor[];
           setLocalIndex(list);
           try {
-            localStorage.setItem('simpu_actors_search_cache', JSON.stringify(list));
+            localStorage.setItem('simpu_actors_search_cache_v2', JSON.stringify(list));
           } catch {}
           return;
         }
@@ -319,7 +320,7 @@ function ActorDataContent() {
           if (data.success && Array.isArray(data.results) && data.results.length > 0) {
             setLocalIndex(prev => (prev && prev.length > 0 ? prev : data.results));
             try {
-              localStorage.setItem('simpu_actors_search_cache', JSON.stringify(data.results));
+              localStorage.setItem('simpu_actors_search_cache_v2', JSON.stringify(data.results));
             } catch {}
           }
         })
@@ -331,7 +332,7 @@ function ActorDataContent() {
           if (data.success && Array.isArray(data.results) && data.results.length > 0) {
             setLocalIndex(prev => (prev && prev.length > 0 ? prev : data.results));
             try {
-              localStorage.setItem('simpu_actors_search_cache', JSON.stringify(data.results));
+              localStorage.setItem('simpu_actors_search_cache_v2', JSON.stringify(data.results));
             } catch {}
           }
         })
@@ -881,12 +882,17 @@ function ActorDataContent() {
       })
     }
 
-    // 2. Add names from live data if any (just in case they aren't in kuotaData)
+    // 2. Add names from systemStats if available
+    if (systemStats?.coordinator) {
+      Object.keys(systemStats.coordinator).forEach(name => allNames.add(name))
+    }
+
+    // 3. Add names from live data if loaded
     Object.keys(groupedActors).forEach(name => allNames.add(name))
 
-    // 3. Add names from localIndex for 0ms instant display
+    // 4. Add names from localIndex ONLY when systemStats is NOT loaded yet
     const localIndexCounts: Record<string, number> = {}
-    if (localIndex && localIndex.length > 0) {
+    if (!systemStats && localIndex && localIndex.length > 0) {
       localIndex.forEach(a => {
         if (a && a.coordinator) {
           const c = String(a.coordinator).toUpperCase().trim()
@@ -907,11 +913,12 @@ function ActorDataContent() {
       // 2. Fallback to systemStats
       // 3. Fallback to localIndex
       let verifiedCount = (groupedActors[name] || []).length;
-      if (!allActorsRaw && systemStats) {
-        verifiedCount = (systemStats as any)?.coordinator?.[name] || 0;
-      }
-      if (verifiedCount === 0 && localIndexCounts[name]) {
-        verifiedCount = localIndexCounts[name];
+      if (!allActorsRaw) {
+        if (systemStats) {
+          verifiedCount = (systemStats as any)?.coordinator?.[name] || 0;
+        } else if (localIndexCounts[name]) {
+          verifiedCount = localIndexCounts[name];
+        }
       }
       
       // Rejected count is for statistics only
@@ -931,7 +938,9 @@ function ActorDataContent() {
         remaining,
         isFull
       }
-    }).sort((a: any, b: any) => a.name.localeCompare(b.name))
+    })
+    .filter((s: any) => s.quota > 0 || s.count > 0)
+    .sort((a: any, b: any) => a.name.localeCompare(b.name))
   }, [groupedActors, kuotaData, systemStats, localIndex, allActorsRaw])
 
   const coordinatorOptions = useMemo(() => {
@@ -974,8 +983,9 @@ function ActorDataContent() {
   }, [coordinatorStats])
 
   const totalVerifiedCount = useMemo(() => {
+    if (systemStats?.status?.verified) return Number(systemStats.status.verified)
     return coordinatorStats.reduce((acc, curr) => acc + curr.count, 0)
-  }, [coordinatorStats])
+  }, [systemStats?.status?.verified, coordinatorStats])
 
   const fullQuotaCount = useMemo(() => {
     return coordinatorStats.filter(s => s.count > 0 && s.isFull).length

@@ -81,7 +81,8 @@ export default function VerifikasiDinasBerkasPage() {
 
   useEffect(() => {
     try {
-      const cached = localStorage.getItem('simpu_actors_search_cache');
+      localStorage.removeItem('simpu_actors_search_cache');
+      const cached = localStorage.getItem('simpu_actors_search_cache_v2');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -101,7 +102,7 @@ export default function VerifikasiDinasBerkasPage() {
             const list = Object.values(val) as BusinessActor[];
             setLocalIndex(list);
             try {
-              localStorage.setItem('simpu_actors_search_cache', JSON.stringify(list));
+              localStorage.setItem('simpu_actors_search_cache_v2', JSON.stringify(list));
             } catch {}
           }
         }

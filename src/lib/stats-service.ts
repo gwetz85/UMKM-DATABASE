@@ -462,6 +462,8 @@ export async function recalculateAndSaveSystemStats(database: Database) {
     lastUpdated: new Date().toISOString()
   };
 
+  const searchIndexMap: Record<string, any> = {};
+
   snap.forEach((child) => {
     const actor = child.val();
     if (!actor || (!actor.fullName && !actor.nik && !actor.status)) return;
@@ -498,6 +500,44 @@ export async function recalculateAndSaveSystemStats(database: Database) {
         const k = actor.kelurahan.toUpperCase().trim();
         stats.kelurahan[k] = (stats.kelurahan[k] || 0) + 1;
       }
+
+      // Add to search index map with clean, up-to-date coordinator
+      searchIndexMap[child.key] = {
+        id: child.key,
+        fullName: actor.fullName || '',
+        businessName: actor.businessName || '',
+        address: actor.address || '',
+        businessLocation: actor.businessLocation || '',
+        coordinator: actor.coordinator || '',
+        nik: actor.nik || '',
+        noKK: actor.noKK || '',
+        phone: actor.phone || '',
+        status: actor.status || '',
+        businessCategory: actor.businessCategory || '',
+        petugasSurvey: actor.petugasSurvey || (actor.surveyData?.pejabatData?.petugas?.nama) || '',
+        verifikatorDinas: actor.verifikatorDinas || '',
+        hasilVerifikasiDinas: actor.hasilVerifikasiDinas || '',
+        alasanCancelDinas: actor.alasanCancelDinas || '',
+        registrationCode: actor.registrationCode || '',
+        gender: actor.gender || '',
+        pobDob: actor.pobDob || '',
+        dob: actor.dob || '',
+        bankNumber: actor.bankNumber || '',
+        bankOwner: actor.bankOwner || '',
+        bankName: actor.bankName || '',
+        berkasDinasVerified: Boolean(actor.berkasDinasVerified),
+        readyForLPJ: Boolean(actor.readyForLPJ),
+        lpjNominal: actor.lpjNominal || '',
+        createdAt: actor.createdAt || '',
+        ...(actor.surveyData ? { surveyData: { hasSurvey: true, tanggalSurvey: actor.surveyData.tanggalSurvey || '' } } : {}),
+        pejabatData: actor.pejabatData || actor.surveyData?.pejabatData || null,
+        dikembalikanKeVerifikatorReason: actor.dikembalikanKeVerifikatorReason || '',
+        dikembalikanKeVerifikatorBy: actor.dikembalikanKeVerifikatorBy || '',
+        dikembalikanKeVerifikatorAt: actor.dikembalikanKeVerifikatorAt || '',
+        dikembalikanKePetugasReason: actor.dikembalikanKePetugasReason || '',
+        dikembalikanKePetugasBy: actor.dikembalikanKePetugasBy || '',
+        dikembalikanKePetugasAt: actor.dikembalikanKePetugasAt || '',
+      };
     } else if (isRejected) {
       stats.status.rejected++;
     } else {
@@ -506,6 +546,9 @@ export async function recalculateAndSaveSystemStats(database: Database) {
   });
 
   await set(ref(database, 'system_stats'), stats);
+  if (Object.keys(searchIndexMap).length > 0) {
+    await set(ref(database, 'settings/actors_search'), searchIndexMap);
+  }
   return stats;
 }
 
