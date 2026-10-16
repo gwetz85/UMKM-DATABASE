@@ -66,6 +66,8 @@ export default function VerifikasiDinasPage() {
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
   const deferredSearch = useDeferredValue(searchQuery)
+  const [displayLimit, setDisplayLimit] = useState(24)
+
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [verifyingActor, setVerifyingActor] = useState<BusinessActor | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -822,10 +824,11 @@ export default function VerifikasiDinasPage() {
   }, [isPetugas, userProfile?.id, user?.uid, userProfile])
 
   // Always query by indexed 'status: lpj_pending' to avoid downloading entire businessActors collection
+  // NOTE: Don't gate on isProfileLoading/userProfile — start query immediately, filter client-side
   const memoQuery = useMemoFirebase(() => {
-    if (!database || isProfileLoading || !userProfile) return null
+    if (!database) return null
     return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('lpj_pending'))
-  }, [database, isProfileLoading, userProfile])
+  }, [database])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
@@ -937,6 +940,11 @@ export default function VerifikasiDinasPage() {
       return canonical === 'BELUM ADA'
     }).length
   }, [actors, systemUsersRaw])
+
+  // Reset pagination saat search/filter berubah agar data selalu muncul dari atas
+  useEffect(() => {
+    setDisplayLimit(24)
+  }, [deferredSearch, selectedPetugasFilter])
 
   const filteredActors = useMemo(() => {
     if (!actors) return []
@@ -1721,9 +1729,23 @@ export default function VerifikasiDinasPage() {
             </Button>
           )}
         </Card>
-      ) : (
+      ) : (() => {
+        // Flatten semua actors dengan tracking kelurahan untuk pagination global
+        const allGrouped = Object.entries(groupedActors).sort()
+        const totalActors = filteredActors?.length || 0
+        const showLoadMore = totalActors > displayLimit
+        let cumulativeCount = 0
+
+        return (
         <div className="space-y-12">
-          {Object.entries(groupedActors).sort().map(([kelurahan, groupActors]) => (
+          {allGrouped.map(([kelurahan, groupActors]) => {
+            // Hitung berapa yang bisa ditampilkan di group ini berdasarkan sisa limit
+            const remaining = Math.max(0, displayLimit - cumulativeCount)
+            const visibleActors = groupActors.slice(0, remaining)
+            cumulativeCount += groupActors.length
+            if (visibleActors.length === 0) return null
+
+            return (
             <div key={kelurahan} className="space-y-6">
               <div className="flex items-center gap-4">
                 <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
@@ -1737,7 +1759,7 @@ export default function VerifikasiDinasPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {groupActors.map((actor) => {
+                {visibleActors.map((actor) => {
                   const coordPhone = kuotaMap.get((actor.coordinator || "").toUpperCase().trim()) || "";
                   const actorProg = verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0);
                   const isNeedsRevision = Boolean(actor.dikembalikanKePetugasReason || (actor.hasilVerifikasiDinas === 'Dikembalikan' && actor.keteranganDinas));
@@ -1745,13 +1767,14 @@ export default function VerifikasiDinasPage() {
                   const cardTheme = isNeedsRevision ? '#ea580c' : isComplete ? '#059669' : '#c026d3';
 
                   return (
-                    <Card 
-                      key={actor.id} 
+                    <Card
+                      key={actor.id}
                       style={{
                         borderColor: `${cardTheme}45`,
                         boxShadow: `0 4px 20px -2px ${cardTheme}20`
                       }}
                       className="group relative overflow-hidden border-2 hover:shadow-2xl transition-all duration-300 ease-out rounded-[2rem] bg-white dark:bg-slate-900 hover:-translate-y-1.5 flex flex-col justify-between"
+
                     >
                       {/* Glowing Top Accent Stripe */}
                       <div 
@@ -2024,7 +2047,7 @@ export default function VerifikasiDinasPage() {
                                  >
                                    <Camera className="w-4 h-4" />
                                  </Button>
-                               )}
+                              )}
 
                               {/* Verifikasi / Tindakan Dinas Trigger */}
                               {(isAdmin || isDinas || isPetugas) && (
@@ -2047,9 +2070,29 @@ export default function VerifikasiDinasPage() {
                 })}
               </div>
             </div>
-          ))}
+            );
+          })}
+
+          {/* ─── LOAD MORE BUTTON ─── */}
+          {showLoadMore && (
+            <div className="flex flex-col items-center gap-2 py-6">
+              <p className="text-xs text-muted-foreground font-medium">
+                Menampilkan <strong>{Math.min(displayLimit, totalActors)}</strong> dari <strong>{totalActors}</strong> data
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => setDisplayLimit(prev => prev + 24)}
+                className="rounded-2xl border-primary/20 text-primary hover:bg-primary/5 font-bold px-8 h-11 shadow-sm"
+              >
+                Tampilkan 24 Data Berikutnya
+              </Button>
+            </div>
+          )}
         </div>
-      )}
+        );
+      })()}
+
+
 
       {/* ─── SINGLE ROOT LEVEL DETAIL VIEWER MODAL ─────────────────────── */}
       <Dialog open={!!viewingActor} onOpenChange={(open) => !open && setViewingActor(null)}>

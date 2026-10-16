@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, useDeferredValue } from "react"
+import { useState, useMemo, useEffect, useDeferredValue, useRef } from "react"
 import { parsePobDob, formatDateTimeIndo } from "@/lib/utils"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, sanitizeForFirebase } from "@/firebase"
 import { ref, query, orderByChild, equalTo, set } from "firebase/database"
@@ -414,8 +414,13 @@ export default function VerifikasiDinasBerkasPage() {
   }
 
   // Auto-generate akun untuk Verifikator Dinas yang terdeteksi pada data (hanya jika Admin yang membuka)
+  // Gunakan ref agar hanya dijalankan SATU KALI per session (tidak berulang setiap allActorsRaw update)
+  const hasEnsuredVerifikatorsRef = useRef(false)
   useEffect(() => {
-    if (!isAdmin || !database || !allActorsRaw) return
+    if (!isAdmin || !database || !allActorsRaw || hasEnsuredVerifikatorsRef.current) return
+    if (allActorsRaw.length === 0) return
+
+    hasEnsuredVerifikatorsRef.current = true
 
     const verifikatorsToEnsure = new Map<string, PejabatItem>()
 
@@ -527,6 +532,15 @@ export default function VerifikasiDinasBerkasPage() {
       )
     })
   }, [actors, deferredSearch, selectedVerifikatorFilter, filterOnlyReturned])
+
+  // ─── PRECOMPUTED DISPLAY LIMIT ──────────────────────────────────────────
+  // Pagination state agar tidak render ratusan card sekaligus (berat di browser)
+  const [displayLimit, setDisplayLimit] = useState(24)
+
+  // Reset limit saat filter/search berubah
+  useEffect(() => {
+    setDisplayLimit(24)
+  }, [deferredSearch, selectedVerifikatorFilter, filterOnlyReturned])
 
   // Mengelompokkan data berdasarkan NIPPPK Verifikator yang diisi oleh Petugas Survey
   const groupedActorsByVerifikator = useMemo(() => {
@@ -1436,9 +1450,17 @@ export default function VerifikasiDinasBerkasPage() {
             </Button>
           )}
         </Card>
-      ) : (
+      ) : (() => {
+        // Pagination global untuk semua grup verifikator
+        const allGroups = Object.entries(groupedActorsByVerifikator).sort()
+        const totalActors = filteredActors?.length || 0
+        const showLoadMore = totalActors > displayLimit
+        let cumulativeCount = 0
+
+        return (
         <div className="space-y-12">
-          {Object.entries(groupedActorsByVerifikator).sort().map(([nipKey, group]) => {
+          {allGroups.map(([nipKey, group]) => {
+
             const vInfo = group.verifikatorInfo
             const isUnassigned = nipKey === "Belum Ditentukan" || nipKey === "Belum Ada Verifikator"
 
@@ -1456,13 +1478,20 @@ export default function VerifikasiDinasBerkasPage() {
               : (foundUser?.fullName || (isUnassigned ? "Belum Ditentukan" : nipKey))
 
             const currentPetugasFilter = selectedPetugasFilterByVerifikator[nipKey] || "ALL"
-            const displayedGroupActors = group.actors.filter(actor => {
+            const allGroupActors = group.actors.filter(actor => {
               if (currentPetugasFilter === "ALL") return true
               const pName = getActorPetugasSurvey(actor)
               const isBelumAda = !pName || pName === '-' || pName.toUpperCase() === 'BELUM ADA'
               if (currentPetugasFilter === "BELUM_ADA") return isBelumAda
               return pName.toUpperCase().trim() === currentPetugasFilter
             })
+
+            // Terapkan pagination global — hitung berapa slot tersisa
+            const remaining = Math.max(0, displayLimit - cumulativeCount)
+            const displayedGroupActors = allGroupActors.slice(0, remaining)
+            cumulativeCount += allGroupActors.length
+            if (displayedGroupActors.length === 0) return null
+
 
             return (
               <div key={nipKey} className="space-y-6">
@@ -2096,8 +2125,25 @@ export default function VerifikasiDinasBerkasPage() {
             </div>
             )
           })}
+
+          {/* Load More Button */}
+          {showLoadMore && (
+            <div className="flex flex-col items-center gap-2 py-6">
+              <p className="text-xs text-muted-foreground font-medium">
+                Menampilkan <strong>{Math.min(displayLimit, totalActors)}</strong> dari <strong>{totalActors}</strong> berkas
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => setDisplayLimit(prev => prev + 24)}
+                className="rounded-2xl border-primary/20 text-primary hover:bg-primary/5 font-bold px-8 h-11 shadow-sm"
+              >
+                Tampilkan 24 Berkas Berikutnya
+              </Button>
+            </div>
+          )}
         </div>
-      )}
+        );
+      })()}
 
       {/* ─── SINGLE ROOT LEVEL VERIFIKASI BERKAS DIALOG ───────────────── */}
       <Dialog open={!!verifyingActor} onOpenChange={(open) => {
