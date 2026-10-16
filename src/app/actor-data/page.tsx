@@ -714,7 +714,7 @@ function ActorDataContent() {
       : (localIndex || allActorsRaw);
 
     if (!rawList) return undefined;
-    return rawList.filter(a => {
+    const filtered = rawList.filter((a: any) => {
       if (!a) return false;
       const s = a.status || "";
       const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
@@ -739,6 +739,14 @@ function ActorDataContent() {
       }
       return true;
     });
+
+    return filtered.sort((a: any, b: any) => {
+      const coordA = String(a.coordinator || "Tanpa Koordinator");
+      const coordB = String(b.coordinator || "Tanpa Koordinator");
+      const coordCompare = coordA.localeCompare(coordB);
+      if (coordCompare !== 0) return coordCompare;
+      return String(a.fullName || "").localeCompare(String(b.fullName || ""));
+    });
   }, [allActorsRaw, localIndex, filterCoordinator, isPetugas, isKoordinator, userProfile?.fullName]);
 
   const [isEditMode, setIsEditMode] = useState(false)
@@ -755,7 +763,7 @@ function ActorDataContent() {
       const lowerQuery = searchQuery.toLowerCase();
       const cleanDigits = searchQuery.replace(/[^0-9]/g, '');
 
-      return sourceList.filter(a => {
+      return sourceList.filter((a: any) => {
         if (filterCoordinator && String(a.coordinator || '').toUpperCase().trim() !== String(filterCoordinator).toUpperCase().trim()) {
           return false;
         }
@@ -776,11 +784,23 @@ function ActorDataContent() {
           (noKK && noKK.includes(searchQuery)) ||
           (cleanDigits.length >= 3 && phone.includes(cleanDigits))
         );
-      }).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""));
+      }).sort((a: any, b: any) => {
+        const coordA = String(a.coordinator || "Tanpa Koordinator");
+        const coordB = String(b.coordinator || "Tanpa Koordinator");
+        const coordCompare = coordA.localeCompare(coordB);
+        if (coordCompare !== 0) return coordCompare;
+        return String(a.fullName || "").localeCompare(String(b.fullName || ""));
+      });
     }
 
     if (!actors) return undefined;
-    return actors;
+    return [...actors].sort((a: any, b: any) => {
+      const coordA = String(a.coordinator || "Tanpa Koordinator");
+      const coordB = String(b.coordinator || "Tanpa Koordinator");
+      const coordCompare = coordA.localeCompare(coordB);
+      if (coordCompare !== 0) return coordCompare;
+      return String(a.fullName || "").localeCompare(String(b.fullName || ""));
+    });
   }, [actors, searchQuery, isSearching, filterCoordinator, searchResults, localIndex]);
 
   const hasAutoOpened = useRef(false)
@@ -821,14 +841,26 @@ function ActorDataContent() {
     const groups: Record<string, BusinessActor[]> = {}
     const indexMap = new Map<string, number>()
     
-    sorted.forEach((actor, index) => {
-      indexMap.set(actor.id, index + 1)
+    sorted.forEach((actor) => {
       const key = String(actor.coordinator || "Tanpa Koordinator").toUpperCase().trim()
       if (!groups[key]) groups[key] = []
       groups[key].push(actor)
     })
+
+    if (filterCoordinator || isKoordinator) {
+      const activeKey = String(filterCoordinator || userProfile?.fullName || "").toUpperCase().trim()
+      const list = groups[activeKey] || sorted
+      list.forEach((actor, index) => {
+        indexMap.set(actor.id, index + 1)
+      })
+    } else {
+      sorted.forEach((actor, index) => {
+        indexMap.set(actor.id, index + 1)
+      })
+    }
+
     return { groupedActors: groups, globalIndexMap: indexMap }
-  }, [filteredActors])
+  }, [filteredActors, filterCoordinator, isKoordinator, userProfile?.fullName])
 
   // Automatically select all coordinators when export dialog opens or when data finishes loading
   useEffect(() => {
@@ -1662,17 +1694,26 @@ function ActorDataContent() {
     });
   }, [filteredActors, database]);
 
-  const rawDataToDisplay = (isInspektorat || isKoordinator || isSearching || filterCoordinator) 
-    ? (filteredActors || []) 
-    : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []);
-
   const currentDataToDisplay = useMemo(() => {
-    if (filterMenu === "all") return rawDataToDisplay;
-    return rawDataToDisplay.filter(a => {
-      const info = getActorCurrentMenu(a);
-      return info.menuName === filterMenu || info.displayLabel === filterMenu || info.menuPath === filterMenu;
+    let list = (isInspektorat || isKoordinator || isSearching || filterCoordinator) 
+      ? (filteredActors || []) 
+      : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []);
+
+    if (filterMenu !== "all") {
+      list = list.filter((a: any) => {
+        const info = getActorCurrentMenu(a);
+        return info.menuName === filterMenu || info.displayLabel === filterMenu || info.menuPath === filterMenu;
+      });
+    }
+
+    return [...list].sort((a: any, b: any) => {
+      const coordA = String(a.coordinator || "Tanpa Koordinator");
+      const coordB = String(b.coordinator || "Tanpa Koordinator");
+      const coordCompare = coordA.localeCompare(coordB);
+      if (coordCompare !== 0) return coordCompare;
+      return String(a.fullName || "").localeCompare(String(b.fullName || ""));
     });
-  }, [rawDataToDisplay, filterMenu]);
+  }, [isInspektorat, isKoordinator, isSearching, filteredActors, groupedActors, filterCoordinator, filterMenu]);
 
   return (
     <div className="p-0 space-y-4">

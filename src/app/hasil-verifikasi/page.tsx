@@ -75,14 +75,61 @@ function HasilVerifikasiContent() {
   const database = useDatabase()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const filterCoordinator = searchParams.get('coordinator')
+  const filterCoordinatorParam = searchParams.get('coordinator')
 
+  const [selectedCoordinator, setSelectedCoordinator] = useState<string | null>(filterCoordinatorParam || null)
+  const filterCoordinator = (selectedCoordinator && selectedCoordinator !== 'ALL' && selectedCoordinator !== 'BELUM_REKENING') ? selectedCoordinator : null
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || "")
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || "")
   const [pageLimit, setPageLimit] = useState(50)
 
   // Instant local cache for 0ms initial load
   const [localIndex, setLocalIndex] = useState<BusinessActor[] | null>(null);
+
+  // Sync state if URL search parameters change externally
+  useEffect(() => {
+    const coord = searchParams.get('coordinator')
+    setSelectedCoordinator(coord || null)
+  }, [searchParams])
+
+  // Sync state if user clicks browser back / forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search)
+      setSelectedCoordinator(params.get('coordinator') || null)
+      setSearchInput(params.get('search') || "")
+      setSearchQuery(params.get('search') || "")
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  const handleSelectCoordinator = (coordName: string) => {
+    setSelectedCoordinator(coordName)
+    setPageLimit(50)
+    try {
+      const url = new URL(window.location.href)
+      url.searchParams.set('coordinator', coordName)
+      window.history.pushState({}, '', url.toString())
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const handleBackToOverview = () => {
+    setSelectedCoordinator(null)
+    setSearchInput("")
+    setSearchQuery("")
+    setPageLimit(50)
+    try {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('coordinator')
+      url.searchParams.delete('search')
+      window.history.pushState({}, '', url.toString())
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
@@ -150,7 +197,7 @@ function HasilVerifikasiContent() {
 
   useEffect(() => {
     setPageLimit(50)
-  }, [searchQuery, filterCoordinator])
+  }, [searchQuery, selectedCoordinator])
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -227,14 +274,21 @@ function HasilVerifikasiContent() {
   const filteredActors = useMemo(() => {
     if (!actors) return undefined
     const lower = searchQuery.toLowerCase().trim()
-    if (!lower) return actors
-    return actors.filter(a =>
+    const list = lower ? actors.filter(a =>
       (a.fullName || "").toLowerCase().includes(lower) ||
       (a.nik || "").includes(lower) ||
       (a.businessName || "").toLowerCase().includes(lower) ||
       (a.coordinator || "").toLowerCase().includes(lower) ||
       (a.kelurahan || "").toLowerCase().includes(lower)
-    ).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""))
+    ) : actors
+
+    return [...list].sort((a, b) => {
+      const coordA = String(a.coordinator || "Tanpa Koordinator")
+      const coordB = String(b.coordinator || "Tanpa Koordinator")
+      const coordCompare = coordA.localeCompare(coordB)
+      if (coordCompare !== 0) return coordCompare
+      return String(a.fullName || "").localeCompare(String(b.fullName || ""))
+    })
   }, [actors, searchQuery])
 
   const { groupedActors, globalIndexMap } = useMemo(() => {
@@ -250,14 +304,26 @@ function HasilVerifikasiContent() {
     const groups: Record<string, BusinessActor[]> = {}
     const indexMap = new Map<string, number>()
 
-    sorted.forEach((actor, index) => {
-      indexMap.set(actor.id, index + 1)
+    sorted.forEach((actor) => {
       const key = String(actor.coordinator || "Tanpa Koordinator").toUpperCase().trim()
       if (!groups[key]) groups[key] = []
       groups[key].push(actor)
     })
+
+    if (selectedCoordinator && selectedCoordinator !== 'ALL' && selectedCoordinator !== 'BELUM_REKENING') {
+      const activeKey = String(selectedCoordinator).toUpperCase().trim()
+      const list = groups[activeKey] || sorted
+      list.forEach((actor, index) => {
+        indexMap.set(actor.id, index + 1)
+      })
+    } else {
+      sorted.forEach((actor, index) => {
+        indexMap.set(actor.id, index + 1)
+      })
+    }
+
     return { groupedActors: groups, globalIndexMap: indexMap }
-  }, [filteredActors])
+  }, [filteredActors, selectedCoordinator])
 
   const coordinatorStats = useMemo(() => {
     const allNames = new Set<string>()
@@ -303,16 +369,28 @@ function HasilVerifikasiContent() {
   }, [filteredActors])
 
   const currentDataToDisplay = useMemo(() => {
-    if (isKoordinator) return filteredActors || []
-    if (filterCoordinator) {
-      const targetCoord = String(filterCoordinator).toUpperCase().trim()
-      return (groupedActors[targetCoord] || [])
+    let list: BusinessActor[] = []
+    if (isKoordinator) {
+      list = filteredActors || []
+    } else if (selectedCoordinator === 'ALL') {
+      list = filteredActors || []
+    } else if (selectedCoordinator === 'BELUM_REKENING') {
+      list = (filteredActors || []).filter(a => !a.bankNumber)
+    } else if (selectedCoordinator) {
+      const targetCoord = String(selectedCoordinator).toUpperCase().trim()
+      list = (groupedActors[targetCoord] || [])
+    } else if (searchQuery.trim().length > 0) {
+      list = filteredActors || []
     }
-    if (searchQuery.trim().length > 0) {
-      return filteredActors || []
-    }
-    return []
-  }, [isKoordinator, filterCoordinator, searchQuery, groupedActors, filteredActors])
+
+    return [...list].sort((a, b) => {
+      const coordA = String(a.coordinator || "Tanpa Koordinator")
+      const coordB = String(b.coordinator || "Tanpa Koordinator")
+      const coordCompare = coordA.localeCompare(coordB)
+      if (coordCompare !== 0) return coordCompare
+      return String(a.fullName || "").localeCompare(String(b.fullName || ""))
+    })
+  }, [isKoordinator, selectedCoordinator, searchQuery, groupedActors, filteredActors])
 
   const handleInputBank = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -432,9 +510,13 @@ function HasilVerifikasiContent() {
 
   const handleExportExcel = async (sheetsToExport?: string[]) => {
     try {
-      const dataToExport = filterCoordinator
-        ? (groupedActors[String(filterCoordinator).toUpperCase().trim()] || [])
-        : (filteredActors || [])
+      const dataToExport = selectedCoordinator === 'ALL'
+        ? (filteredActors || [])
+        : selectedCoordinator === 'BELUM_REKENING'
+          ? (filteredActors || []).filter(a => !a.bankNumber)
+          : selectedCoordinator
+            ? (groupedActors[String(selectedCoordinator).toUpperCase().trim()] || [])
+            : (filteredActors || [])
 
       if (dataToExport.length === 0) {
         toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk diekspor." })
@@ -538,7 +620,7 @@ function HasilVerifikasiContent() {
     )
   }
 
-  const isShowingTable = isKoordinator || !!filterCoordinator || searchQuery.trim().length > 0
+  const isShowingTable = isKoordinator || !!selectedCoordinator || searchQuery.trim().length > 0
 
   return (
     <div className="p-4 md:p-8 space-y-6">
@@ -601,7 +683,15 @@ function HasilVerifikasiContent() {
           {/* Overview Stats Ribbon (when showing coordinator cards) */}
           {!isShowingTable && (
             <div className="grid grid-cols-3 gap-2 sm:gap-4 print:hidden pt-1">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3.5 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-indigo-50/80 to-blue-50/50 dark:from-indigo-950/20 dark:to-blue-950/10 border border-indigo-100/80 dark:border-indigo-900/30 shadow-sm">
+              {/* Card 1: Koordinator */}
+              <div 
+                onClick={handleBackToOverview}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleBackToOverview() }}
+                className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3.5 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-indigo-50/80 to-blue-50/50 dark:from-indigo-950/20 dark:to-blue-950/10 border border-indigo-100/80 dark:border-indigo-900/30 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.01] active:scale-95 transition-all select-none"
+                title="Daftar Koordinator Penanggung Jawab"
+              >
                 <div className="w-7 h-7 sm:w-11 sm:h-11 rounded-lg sm:rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20 shrink-0">
                   <Users className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                 </div>
@@ -614,7 +704,15 @@ function HasilVerifikasiContent() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3.5 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-50/80 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/10 border border-emerald-100/80 dark:border-emerald-900/30 shadow-sm">
+              {/* Card 2: Total Lolos Dinas */}
+              <div 
+                onClick={() => handleSelectCoordinator('ALL')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSelectCoordinator('ALL') }}
+                className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3.5 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-50/80 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/10 border border-emerald-100/80 dark:border-emerald-900/30 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.01] active:scale-95 transition-all select-none"
+                title="Klik untuk melihat seluruh data pelaku usaha lolos"
+              >
                 <div className="w-7 h-7 sm:w-11 sm:h-11 rounded-lg sm:rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20 shrink-0">
                   <CheckCircle2 className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                 </div>
@@ -627,7 +725,31 @@ function HasilVerifikasiContent() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3.5 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/10 border border-amber-100/80 dark:border-amber-900/30 shadow-sm">
+              {/* Card 3: Langkah Lanjut - Input Rekening */}
+              <div 
+                onClick={() => {
+                  const waiting = (filteredActors || []).filter(a => !a.bankNumber)
+                  if (waiting.length > 0) {
+                    handleSelectCoordinator('BELUM_REKENING')
+                  } else {
+                    router.push('/data-rekening')
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    const waiting = (filteredActors || []).filter(a => !a.bankNumber)
+                    if (waiting.length > 0) {
+                      handleSelectCoordinator('BELUM_REKENING')
+                    } else {
+                      router.push('/data-rekening')
+                    }
+                  }
+                }}
+                className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3.5 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/10 border border-amber-100/80 dark:border-amber-900/30 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.01] active:scale-95 transition-all select-none"
+                title="Klik untuk melihat data lolos yang menunggu input rekening"
+              >
                 <div className="w-7 h-7 sm:w-11 sm:h-11 rounded-lg sm:rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
                   <CreditCard className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                 </div>
@@ -649,12 +771,8 @@ function HasilVerifikasiContent() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      setSearchInput("")
-                      setSearchQuery("")
-                      router.push('/hasil-verifikasi')
-                    }}
-                    className="font-bold border-primary text-primary hover:bg-primary/5 shadow-sm rounded-xl h-9 text-xs sm:text-sm"
+                    onClick={handleBackToOverview}
+                    className="font-bold border-primary text-primary hover:bg-primary/5 shadow-sm rounded-xl h-9 text-xs sm:text-sm cursor-pointer"
                   >
                     <ArrowLeft className="w-4 h-4 mr-1.5" /> Kembali
                   </Button>
@@ -662,9 +780,13 @@ function HasilVerifikasiContent() {
                 <h2 className="text-base sm:text-xl font-black text-primary uppercase tracking-tight truncate max-w-[240px] sm:max-w-none">
                   {isKoordinator
                     ? `DATA: ${userProfile?.fullName || "KOORDINATOR"}`
-                    : filterCoordinator
-                      ? `DATA: ${filterCoordinator}`
-                      : `HASIL PENCARIAN (${currentDataToDisplay.length})`}
+                    : selectedCoordinator === 'ALL'
+                      ? `DATA: SEMUA LOLOS VERIFIKASI (${currentDataToDisplay.length})`
+                      : selectedCoordinator === 'BELUM_REKENING'
+                        ? `DATA: MENUNGGU INPUT REKENING (${currentDataToDisplay.length})`
+                        : selectedCoordinator
+                          ? `DATA: ${selectedCoordinator}`
+                          : `HASIL PENCARIAN (${currentDataToDisplay.length})`}
                 </h2>
               </div>
               <Badge className="bg-emerald-600 text-white font-bold rounded-xl px-3 py-1 text-xs shrink-0">
@@ -985,12 +1107,20 @@ function HasilVerifikasiContent() {
             return (
             <div
               key={stat.name}
-              onClick={() => router.push(`/hasil-verifikasi?coordinator=${encodeURIComponent(stat.name)}`)}
+              onClick={() => handleSelectCoordinator(stat.name)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  handleSelectCoordinator(stat.name)
+                }
+              }}
               style={{
                 borderColor: `${themeColor}50`,
                 boxShadow: `0 4px 18px -2px ${themeColor}20`
               }}
-              className="group relative flex flex-col justify-between p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all duration-300 ease-out overflow-hidden cursor-pointer active:scale-95 min-h-[165px] border-2 bg-white dark:bg-slate-900 hover:shadow-xl hover:-translate-y-1.5 animate-in fade-in slide-in-from-bottom-3"
+              className="group relative flex flex-col justify-between p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all duration-300 ease-out overflow-hidden cursor-pointer active:scale-95 min-h-[165px] border-2 bg-white dark:bg-slate-900 hover:shadow-xl hover:-translate-y-1.5 animate-in fade-in slide-in-from-bottom-3 select-none"
             >
               {/* Glowing Top Accent Stripe */}
               <div 
@@ -1066,8 +1196,12 @@ function HasilVerifikasiContent() {
 
               {/* Bottom Action Cue */}
               <div 
-                className="relative z-10 pt-2 border-t flex items-center justify-between text-[10px] sm:text-[11px] font-bold transition-colors"
+                className="relative z-10 pt-2 border-t flex items-center justify-between text-[10px] sm:text-[11px] font-bold transition-colors cursor-pointer"
                 style={{ borderColor: `${themeColor}25` }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleSelectCoordinator(stat.name)
+                }}
               >
                 <span 
                   className="font-bold transition-colors"
