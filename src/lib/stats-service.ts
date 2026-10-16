@@ -550,7 +550,14 @@ export async function syncActorToSearchIndex(database: Database, actorData: any)
       readyForLPJ: Boolean(actorData.readyForLPJ),
       lpjNominal: actorData.lpjNominal || '',
       createdAt: actorData.createdAt || '',
-      ...(actorData.surveyData ? { surveyData: { hasSurvey: true, tanggalSurvey: actorData.surveyData.tanggalSurvey || '' } } : {})
+      ...(actorData.surveyData ? { surveyData: { hasSurvey: true, tanggalSurvey: actorData.surveyData.tanggalSurvey || '' } } : {}),
+      pejabatData: actorData.pejabatData || actorData.surveyData?.pejabatData || null,
+      dikembalikanKeVerifikatorReason: actorData.dikembalikanKeVerifikatorReason || '',
+      dikembalikanKeVerifikatorBy: actorData.dikembalikanKeVerifikatorBy || '',
+      dikembalikanKeVerifikatorAt: actorData.dikembalikanKeVerifikatorAt || '',
+      dikembalikanKePetugasReason: actorData.dikembalikanKePetugasReason || '',
+      dikembalikanKePetugasBy: actorData.dikembalikanKePetugasBy || '',
+      dikembalikanKePetugasAt: actorData.dikembalikanKePetugasAt || '',
     };
 
     await set(searchActorRef, cleanItem);

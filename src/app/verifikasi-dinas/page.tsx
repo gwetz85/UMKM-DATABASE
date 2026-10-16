@@ -87,6 +87,39 @@ export default function VerifikasiDinasPage() {
   // Filter Petugas Survey
   const [selectedPetugasFilter, setSelectedPetugasFilter] = useState<string>("ALL")
 
+  // Instant local cache for 0ms initial load
+  const [localIndex, setLocalIndex] = useState<BusinessActor[] | null>(null)
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('simpu_actors_search_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setLocalIndex(parsed);
+        }
+      }
+    } catch {}
+
+    if (!database) return;
+    if (localIndex && localIndex.length > 0) return;
+
+    import("firebase/database").then(({ ref, get }) => {
+      get(ref(database, 'settings/actors_search')).then(snap => {
+        if (snap.exists()) {
+          const val = snap.val();
+          if (val) {
+            const list = Object.values(val) as BusinessActor[];
+            setLocalIndex(list);
+            try {
+              localStorage.setItem('simpu_actors_search_cache', JSON.stringify(list));
+            } catch {}
+          }
+        }
+      }).catch(() => {});
+    });
+  }, [database]);
+
   // Admin Quick Reassign Petugas Survey
   const [reassignActor, setReassignActor] = useState<BusinessActor | null>(null)
   const [selectedNewPetugas, setSelectedNewPetugas] = useState<string>("")
@@ -815,8 +848,12 @@ export default function VerifikasiDinasPage() {
   }, [kuotaData]);
 
   const actors = useMemo(() => {
-    if (!allActorsRaw) return []
-    return allActorsRaw.filter(a => {
+    const rawList = (allActorsRaw && allActorsRaw.length > 0)
+      ? allActorsRaw
+      : (localIndex || allActorsRaw);
+
+    if (!rawList) return []
+    return rawList.filter(a => {
       if (!a) return false;
       // Jangan tampilkan data yang sudah berstatus verified_dinas, finish, atau lolos
       if (a.status === 'verified_dinas' || a.status === 'finish' || a.hasilVerifikasiDinas === 'Lolos') {
@@ -831,7 +868,7 @@ export default function VerifikasiDinasPage() {
       }
       return a.status === 'lpj_pending';
     })
-  }, [allActorsRaw, isPetugas, userProfile?.fullName])
+  }, [allActorsRaw, localIndex, isPetugas, userProfile?.fullName])
 
   // Auto-open modal survey jika parameter URL actorId diberikan (misal dari Portal SIMPU)
   const autoOpenedParamRef = useRef(false)
@@ -1628,7 +1665,7 @@ export default function VerifikasiDinasPage() {
         </div>
       )}
 
-      {(isLoading || isProfileLoading) ? (
+      {((isLoading || isProfileLoading) && (!actors || actors.length === 0)) ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-2">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="rounded-[2rem] border border-slate-200/60 bg-white/80 p-6 space-y-4 animate-pulse">

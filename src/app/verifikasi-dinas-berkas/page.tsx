@@ -75,6 +75,39 @@ export default function VerifikasiDinasBerkasPage() {
   const [selectedPetugasFilterByVerifikator, setSelectedPetugasFilterByVerifikator] = useState<Record<string, string>>({})
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [verifyingActor, setVerifyingActor] = useState<BusinessActor | null>(null)
+
+  // Instant local cache for 0ms initial load
+  const [localIndex, setLocalIndex] = useState<BusinessActor[] | null>(null)
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('simpu_actors_search_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setLocalIndex(parsed);
+        }
+      }
+    } catch {}
+
+    if (!database) return;
+    if (localIndex && localIndex.length > 0) return;
+
+    import("firebase/database").then(({ ref, get }) => {
+      get(ref(database, 'settings/actors_search')).then(snap => {
+        if (snap.exists()) {
+          const val = snap.val();
+          if (val) {
+            const list = Object.values(val) as BusinessActor[];
+            setLocalIndex(list);
+            try {
+              localStorage.setItem('simpu_actors_search_cache', JSON.stringify(list));
+            } catch {}
+          }
+        }
+      }).catch(() => {});
+    });
+  }, [database]);
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null)
   const [isFetchingLocation, setIsFetchingLocation] = useState(false)
@@ -401,7 +434,11 @@ export default function VerifikasiDinasBerkasPage() {
 
   // Filter hanya data yang lolos survey dinas dan belum diverifikasi berkas
   const actors = useMemo(() => {
-    const raw = allActorsRaw?.filter(a => a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Lolos' && !(a as any).berkasDinasVerified)
+    const rawList = (allActorsRaw && allActorsRaw.length > 0)
+      ? allActorsRaw
+      : (localIndex || allActorsRaw)
+
+    const raw = rawList?.filter(a => a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Lolos' && !(a as any).berkasDinasVerified)
     if (!raw) return []
 
     // ISOLASI DATA: Jika login sebagai Verifikator Dinas spesifik (dan bukan Admin/Dinas umum), HANYA tampilkan data di bawah verifikator ini
@@ -423,7 +460,7 @@ export default function VerifikasiDinasBerkasPage() {
     }
 
     return raw
-  }, [allActorsRaw, isVerifikatorDinas, isAdmin, userProfile, systemUsersMap])
+  }, [allActorsRaw, localIndex, isVerifikatorDinas, isAdmin, userProfile, systemUsersMap])
 
   // Daftar opsi Verifikator (berdasarkan NIPPPK & Nama) yang ada pada data
   const verifikatorOptions = useMemo(() => {
@@ -1212,12 +1249,12 @@ export default function VerifikasiDinasBerkasPage() {
             <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold border border-primary/20 shadow-sm flex items-center gap-2">
               <span>Total Berkas:</span>
               <span className="bg-primary text-white px-2 py-0.5 rounded-full min-w-[24px] inline-flex items-center justify-center text-center">
-                {isLoading ? (
+                {(isLoading && (!actors || actors.length === 0)) ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
                 ) : (
                   filteredActors.length
                 )}
-                {!isLoading && (selectedVerifikatorFilter !== "ALL" || searchQuery || filterOnlyReturned) && actors && ` / ${actors.length}`}
+                {!(isLoading && (!actors || actors.length === 0)) && (selectedVerifikatorFilter !== "ALL" || searchQuery || filterOnlyReturned) && actors && ` / ${actors.length}`}
               </span>
             </div>
 
@@ -1354,7 +1391,7 @@ export default function VerifikasiDinasBerkasPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {(isLoading && (!actors || actors.length === 0)) ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-2">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="rounded-2xl border border-slate-200/60 bg-white/80 p-5 space-y-4 animate-pulse">

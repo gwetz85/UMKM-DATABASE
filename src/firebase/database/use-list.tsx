@@ -16,10 +16,14 @@ function getRefKey(refOrQuery: any): string {
   try {
     if (typeof refOrQuery.queryIdentifier === 'function') {
       params = refOrQuery.queryIdentifier();
+    } else if (typeof refOrQuery._query?.getIdentifier === 'function') {
+      params = refOrQuery._query.getIdentifier();
     } else if (refOrQuery._queryIdentifier) {
       params = String(refOrQuery._queryIdentifier);
     } else if (refOrQuery._queryParams) {
       params = JSON.stringify(refOrQuery._queryParams);
+    } else if (refOrQuery._query?._queryParams) {
+      params = JSON.stringify(refOrQuery._query._queryParams);
     }
   } catch {}
   return `${url}::${params}`;
@@ -74,7 +78,7 @@ async function setIndexedDBCache(key: string, data: any[]): Promise<void> {
   try {
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
-    store.put(data, key);
+    store.put(stripHeavyFields(data), key);
   } catch {
     // Ignore quota errors
   }
@@ -91,11 +95,38 @@ function getLocalCache(key: string): any[] | null {
   }
 }
 
+function stripHeavyFields(data: any[]): any[] {
+  if (!Array.isArray(data)) return [];
+  return data.map(item => {
+    if (!item || typeof item !== 'object') return item;
+    const clean: any = {};
+    for (const [k, v] of Object.entries(item)) {
+      if (typeof v === 'string' && v.length > 500 && v.startsWith('data:')) {
+        continue;
+      }
+      if (k === 'surveyData' && v && typeof v === 'object') {
+        const sClean: any = {};
+        for (const [sk, sv] of Object.entries(v as any)) {
+          if (typeof sv === 'string' && sv.length > 500 && sv.startsWith('data:')) {
+            continue;
+          }
+          sClean[sk] = sv;
+        }
+        clean[k] = sClean;
+        continue;
+      }
+      clean[k] = v;
+    }
+    return clean;
+  });
+}
+
 function setLocalCache(key: string, data: any[]): void {
   if (typeof window === 'undefined' || !key || !Array.isArray(data)) return;
   try {
-    const str = JSON.stringify(data);
-    if (str.length < 800000) { // < 800KB
+    const stripped = stripHeavyFields(data);
+    const str = JSON.stringify(stripped);
+    if (str.length < 1500000) { // < 1.5MB
       try {
         localStorage.setItem(`rtdb_list_${key}`, str);
       } catch (err: any) {
