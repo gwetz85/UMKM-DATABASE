@@ -28,6 +28,13 @@ import { ActorMenuBadge } from "@/components/actor-menu-badge"
 import { getActorCurrentMenu } from "@/lib/actor-menu-status"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ConfirmDialog } from "@/components/confirm-dialog"
+import { cn, extractDobFromNik, parsePobDob, calculateAge, formatCurrency, formatDateTimeIndo, AGAMA_INDONESIA, STATUS_KELUARGA_LIST, PEKERJAAN_DUKCAPIL } from "@/lib/utils"
+import { normalizeCoordinator } from "@/lib/coordinator-utils"
+import { resolveSurveyorCanonicalName, buildSurveyorMaps } from "@/lib/surveyor-utils"
+import { generateRegistrationForm, generateCoordinatorReport, generateAllCoordinatorsReport } from "@/lib/pdf-generator"
+import { formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
+import { getSurveyPhoto } from "@/lib/survey-photo-service"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 
 const normalizeGender = (g: string, nik?: string) => {
@@ -171,14 +178,6 @@ const getActorMapUrl = (actor: BusinessActor) => {
 };
 
 
-import { cn, extractDobFromNik, parsePobDob, calculateAge, formatCurrency, formatDateTimeIndo, AGAMA_INDONESIA, STATUS_KELUARGA_LIST, PEKERJAAN_DUKCAPIL } from "@/lib/utils"
-import { normalizeCoordinator } from "@/lib/coordinator-utils"
-import { resolveSurveyorCanonicalName, buildSurveyorMaps } from "@/lib/surveyor-utils"
-import { generateRegistrationForm, generateCoordinatorReport, generateAllCoordinatorsReport } from "@/lib/pdf-generator"
-import { formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
-import { getSurveyPhoto } from "@/lib/survey-photo-service"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
 const BANK_LIST = [
   "BCA", "BNI", "BRI", "BRK", "MANDIRI", "BSI", "BTN", "OCBC", "PANIN", "MUAMALAT", "MAYBANK", "BUKOPIN", "DANAMON", "PERMATA", "CIMB NIAGA"
 ]
@@ -269,17 +268,7 @@ function ActorDataContent() {
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || "")
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || "")
   const viewId = searchParams.get('viewId')
-  const [localIndex, setLocalIndex] = useState<BusinessActor[] | null>(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const cached = localStorage.getItem('simpu_actors_search_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return null;
-  });
+  const [localIndex, setLocalIndex] = useState<BusinessActor[] | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [filterMenu, setFilterMenu] = useState<string>("all")
 
@@ -296,6 +285,17 @@ function ActorDataContent() {
 
   // Pre-fetch lightweight search index in background for instant 0ms mobile search & coordinator view
   useEffect(() => {
+    // 1. Immediately read cache on client mount (safe from hydration errors)
+    try {
+      const cached = localStorage.getItem('simpu_actors_search_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setLocalIndex(parsed);
+        }
+      }
+    } catch {}
+
     if (!database) return;
     if (localIndex && localIndex.length > 0) return;
 
@@ -460,6 +460,8 @@ function ActorDataContent() {
     // Koordinator cards are rendered INSTANTLY (<0.1s) from systemStats & kuotaData without downloading 200MB+ of raw data!
     return null
   }, [database, isProfileLoading, isPetugas, isKoordinator, filterCoordinator, userProfile?.fullName, isInspektorat])
+
+  const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
 
   // Lazy-load BPJS comparison data only when viewing actor list, searching, or modal is open (saves ~5MB on overview)
   const shouldLoadBpjs = Boolean(filterCoordinator || isSearching || isKoordinator || isPetugas || viewingActor || editingActor)

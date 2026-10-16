@@ -82,17 +82,7 @@ function HasilVerifikasiContent() {
   const [pageLimit, setPageLimit] = useState(50)
 
   // Instant local cache for 0ms initial load
-  const [localIndex, setLocalIndex] = useState<BusinessActor[] | null>(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const cached = localStorage.getItem('simpu_actors_search_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return null;
-  });
+  const [localIndex, setLocalIndex] = useState<BusinessActor[] | null>(null);
 
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
@@ -112,6 +102,16 @@ function HasilVerifikasiContent() {
 
   // Pre-fetch lightweight search index if not cached yet
   useEffect(() => {
+    try {
+      const cached = localStorage.getItem('simpu_actors_search_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setLocalIndex(parsed);
+        }
+      }
+    } catch {}
+
     if (!database) return;
     if (localIndex && localIndex.length > 0) return;
 
