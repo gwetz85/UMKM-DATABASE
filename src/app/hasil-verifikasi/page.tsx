@@ -88,8 +88,8 @@ function HasilVerifikasiContent() {
 
   // Sync state if URL search parameters change externally
   useEffect(() => {
-    const coord = searchParams.get('coordinator')
-    setSelectedCoordinator(coord || null)
+    const coord = searchParams.get('coordinator') || null
+    setSelectedCoordinator(prev => (prev === coord ? prev : coord))
   }, [searchParams])
 
   // Sync state if user clicks browser back / forward buttons
@@ -155,13 +155,12 @@ function HasilVerifikasiContent() {
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setLocalIndex(parsed);
+          setLocalIndex(prev => prev || parsed);
         }
       }
     } catch {}
 
     if (!database) return;
-    if (localIndex && localIndex.length > 0) return;
 
     import("firebase/database").then(({ ref, get }) => {
       get(ref(database, 'settings/actors_search')).then(snap => {
@@ -177,7 +176,7 @@ function HasilVerifikasiContent() {
         }
       }).catch(() => {});
     });
-  }, [database, localIndex]);
+  }, [database]);
 
   const [inputtingBankActor, setInputtingBankActor] = useState<BusinessActor | null>(null)
   const [isSubmittingBank, setIsSubmittingBank] = useState(false)
@@ -197,7 +196,7 @@ function HasilVerifikasiContent() {
   }, [searchInput])
 
   useEffect(() => {
-    setPageLimit(50)
+    setPageLimit(prev => (prev === 50 ? prev : 50))
   }, [searchQuery, selectedCoordinator])
 
   const adminRef = useMemoFirebase(() => {

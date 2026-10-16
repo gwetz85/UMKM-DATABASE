@@ -97,7 +97,7 @@ export default function VerifikasiDinasPage() {
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setLocalIndex(parsed);
+          setLocalIndex(prev => prev || parsed);
         }
       }
     } catch {}
