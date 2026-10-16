@@ -153,10 +153,9 @@ export function useList<T = any>(
   options: UseListOptions = {}
 ) {
   const refKey = getRefKey(memoizedRefOrQuery);
-  const cachedData = refKey ? (memoryCache.get(refKey) || getLocalCache(refKey)) : undefined;
 
-  const [data, setData] = useState<T[] | null>(Array.isArray(cachedData) ? (cachedData as T[]) : null);
-  const [isLoading, setIsLoading] = useState<boolean>(!cachedData && !!memoizedRefOrQuery);
+  const [data, setData] = useState<T[] | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(!!memoizedRefOrQuery);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {

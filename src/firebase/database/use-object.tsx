@@ -61,10 +61,9 @@ export function useObject<T = any>(
   memoizedRef: DatabaseReference | null | undefined
 ) {
   const refKey = getRefKey(memoizedRef);
-  const cachedData = refKey ? (objectMemoryCache.get(refKey) || getLocalObjectCache(refKey)) : undefined;
 
-  const [data, setData] = useState<(T & {id: string}) | null>(cachedData ? (cachedData as (T & {id: string})) : null);
-  const [isLoading, setIsLoading] = useState<boolean>(!cachedData && !!memoizedRef);
+  const [data, setData] = useState<(T & {id: string}) | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(!!memoizedRef);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {

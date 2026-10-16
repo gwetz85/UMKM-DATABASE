@@ -1750,7 +1750,7 @@ function RejectedContent() {
 
           {/* Lembar Tanda Tangan */}
           <div className="mt-6">
-            <p className="text-right text-[10px] font-medium">Tanjungpinang, {printDate || new Date().toLocaleString('id-ID')}</p>
+            <p suppressHydrationWarning className="text-right text-[10px] font-medium">Tanjungpinang, {printDate || new Date().toLocaleString('id-ID')}</p>
           </div>
         </div>
       )}

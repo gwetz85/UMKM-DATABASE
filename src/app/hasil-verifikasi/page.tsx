@@ -214,7 +214,7 @@ function HasilVerifikasiContent() {
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
   const { data: systemStats } = useObject(statsRef)
 
-  // Only query full records when inside a specific coordinator or for specific role, keeping overview instant (0MB download)
+  // Query full records when inside a coordinator, viewing ALL, BELUM_REKENING, or searching
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
     if (filterCoordinator) {
@@ -231,8 +231,15 @@ function HasilVerifikasiContent() {
         equalTo(String(userProfile.fullName).toUpperCase().trim())
       )
     }
+    if (selectedCoordinator === 'ALL' || selectedCoordinator === 'BELUM_REKENING' || searchQuery.trim().length > 0) {
+      return query(
+        ref(database, 'businessActors'),
+        orderByChild('status'),
+        equalTo('verified_dinas')
+      )
+    }
     return null
-  }, [database, filterCoordinator, isKoordinator, userProfile?.fullName])
+  }, [database, filterCoordinator, selectedCoordinator, searchQuery, isKoordinator, userProfile?.fullName])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
 
@@ -365,8 +372,18 @@ function HasilVerifikasiContent() {
   }, [coordinatorStats])
 
   const totalLolosCount = useMemo(() => {
-    return filteredActors?.length || 0
-  }, [filteredActors])
+    if (systemStats?.verifiedDinasCount) return Number(systemStats.verifiedDinasCount)
+    if (filteredActors && filteredActors.length > 0) return filteredActors.length
+    if (localIndex && localIndex.length > 0) {
+      return localIndex.filter(a => a && a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Lolos' && (a as any).berkasDinasVerified).length
+    }
+    return 0
+  }, [systemStats?.verifiedDinasCount, filteredActors, localIndex])
+
+  const waitingBankCount = useMemo(() => {
+    const sourceList = (filteredActors && filteredActors.length > 0) ? filteredActors : (localIndex || [])
+    return sourceList.filter(a => a && a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Lolos' && (a as any).berkasDinasVerified && !a.bankNumber).length
+  }, [filteredActors, localIndex])
 
   const currentDataToDisplay = useMemo(() => {
     let list: BusinessActor[] = []
@@ -727,24 +744,12 @@ function HasilVerifikasiContent() {
 
               {/* Card 3: Langkah Lanjut - Input Rekening */}
               <div 
-                onClick={() => {
-                  const waiting = (filteredActors || []).filter(a => !a.bankNumber)
-                  if (waiting.length > 0) {
-                    handleSelectCoordinator('BELUM_REKENING')
-                  } else {
-                    router.push('/data-rekening')
-                  }
-                }}
+                onClick={() => handleSelectCoordinator('BELUM_REKENING')}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
-                    const waiting = (filteredActors || []).filter(a => !a.bankNumber)
-                    if (waiting.length > 0) {
-                      handleSelectCoordinator('BELUM_REKENING')
-                    } else {
-                      router.push('/data-rekening')
-                    }
+                    handleSelectCoordinator('BELUM_REKENING')
                   }
                 }}
                 className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3.5 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/10 border border-amber-100/80 dark:border-amber-900/30 shadow-sm cursor-pointer hover:shadow-md hover:scale-[1.01] active:scale-95 transition-all select-none"
@@ -755,8 +760,13 @@ function HasilVerifikasiContent() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-[9px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">Langkah Lanjut</p>
-                  <div className="flex items-baseline gap-1">
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
                     <span className="text-xs sm:text-sm font-black text-amber-700 dark:text-amber-400 truncate">Input Rekening</span>
+                    {waitingBankCount > 0 && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-200/90 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200 font-mono">
+                        {waitingBankCount} Menunggu
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -869,8 +879,22 @@ function HasilVerifikasiContent() {
 
           {currentDataToDisplay.length === 0 ? (
             <Card className="border-dashed border-2 flex flex-col items-center justify-center py-20 text-muted-foreground bg-slate-50/50 rounded-3xl">
-              <BadgeCheck className="w-12 h-12 mb-4 opacity-20" />
-              <p className="font-bold uppercase tracking-widest text-xs">Belum ada data hasil verifikasi Dinas yang lolos</p>
+              <BadgeCheck className="w-12 h-12 mb-4 opacity-20 text-emerald-600" />
+              <p className="font-bold uppercase tracking-widest text-xs text-center max-w-md">
+                {selectedCoordinator === 'BELUM_REKENING'
+                  ? "Semua data hasil verifikasi yang lolos sudah terisi nomor rekeningnya"
+                  : "Belum ada data hasil verifikasi Dinas yang lolos"}
+              </p>
+              {selectedCoordinator === 'BELUM_REKENING' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push('/data-rekening')}
+                  className="mt-4 font-bold border-amber-300 text-amber-700 hover:bg-amber-50 rounded-xl cursor-pointer"
+                >
+                  <CreditCard className="w-4 h-4 mr-1.5" /> Lihat di Menu Data Rekening
+                </Button>
+              )}
             </Card>
           ) : (
             <div className="space-y-6">

@@ -42,7 +42,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { normalizeCoordinator } from "@/lib/coordinator-utils"
@@ -285,6 +285,7 @@ function DataRekeningContent() {
   const { user, userProfile } = useUser()
   const database = useDatabase()
   const { toast } = useToast()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const filterCoordinatorParam = searchParams.get("coordinator")
   const filterBankParam = searchParams.get("bank")
@@ -813,18 +814,28 @@ function DataRekeningContent() {
             </div>
           </div>
 
-          {isAdmin && (
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
             <Button
               size="sm"
-              variant="outline"
-              onClick={handleExportExcel}
-              className="border-emerald-500 text-emerald-700 font-bold hover:bg-emerald-50 text-xs w-full sm:w-auto h-9 shadow-sm shrink-0"
-              disabled={!actors || actors.length === 0}
+              onClick={() => router.push('/hasil-verifikasi?coordinator=BELUM_REKENING')}
+              className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs h-9 shadow-sm shrink-0 cursor-pointer"
             >
-              <FileSpreadsheet className="w-4 h-4 mr-1.5" />
-              Export Excel
+              <CreditCard className="w-4 h-4 mr-1.5" />
+              Input Rekening Baru
             </Button>
-          )}
+            {isAdmin && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleExportExcel}
+                className="border-emerald-500 text-emerald-700 font-bold hover:bg-emerald-50 text-xs h-9 shadow-sm shrink-0 cursor-pointer"
+                disabled={!actors || actors.length === 0}
+              >
+                <FileSpreadsheet className="w-4 h-4 mr-1.5" />
+                Export Excel
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Search & Filters Grid */}

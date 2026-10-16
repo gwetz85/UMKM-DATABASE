@@ -246,14 +246,12 @@ export default function PortalSurveyPage() {
   // =========================================================================
   
   // 1. Instant Profile resolution (from React context or localStorage cache for 0ms initial render)
-  const cachedProfile = useMemo(() => {
-    if (typeof window === 'undefined') return null
+  const [cachedProfile, setCachedProfile] = useState<any>(null)
+  useEffect(() => {
     try {
       const p = localStorage.getItem('simpu_cached_profile')
-      return p ? JSON.parse(p) : null
-    } catch {
-      return null
-    }
+      if (p) setCachedProfile(JSON.parse(p))
+    } catch {}
   }, [])
 
   const activeProfile = userProfile || cachedProfile

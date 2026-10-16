@@ -428,7 +428,7 @@ function RekeningBankContent() {
             BANK {selectedBank || 'SEMUA BANK'}
           </h2>
           <div className="w-full h-1 bg-black my-2" />
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+          <p suppressHydrationWarning className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
             Dicetak pada: {new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
           </p>
         </div>
