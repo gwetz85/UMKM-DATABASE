@@ -60,11 +60,12 @@ function RekeningBankContent() {
 
     // Filter actors who are verified (lpj_pending or finish)
     const verifiedActors = allData.filter(a => {
+      if (!a) return false;
       const basicFilter = (a.status === 'finish') &&
         (
-          a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          a.bankNumber?.includes(searchQuery) ||
-          a.businessName?.toLowerCase().includes(searchQuery.toLowerCase())
+          (a.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (a.bankNumber || "").includes(searchQuery) ||
+          (a.businessName || "").toLowerCase().includes(searchQuery.toLowerCase())
         );
       
       if (!basicFilter) return false;

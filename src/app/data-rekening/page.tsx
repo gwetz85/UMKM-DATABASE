@@ -369,17 +369,18 @@ function DataRekeningContent() {
 
     return allActorsRaw
       .filter(a => {
+        if (!a) return false
         // Harus memiliki nomor rekening yang telah terinput
-        const hasBank = !!(a.bankNumber && a.bankNumber.trim() !== "")
+        const hasBank = !!(a.bankNumber && String(a.bankNumber).trim() !== "")
         if (!hasBank) return false
 
         const matchesSearch =
-          a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          a.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          a.nik?.includes(searchQuery) ||
-          a.bankNumber?.includes(searchQuery) ||
-          a.bankName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          a.coordinator?.toLowerCase().includes(searchQuery.toLowerCase())
+          (a.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (a.businessName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (a.nik || "").includes(searchQuery) ||
+          (a.bankNumber || "").includes(searchQuery) ||
+          (a.bankName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (a.coordinator || "").toLowerCase().includes(searchQuery.toLowerCase())
 
         const matchesCategory = !category || a.businessCategory === category
 
@@ -407,7 +408,7 @@ function DataRekeningContent() {
     if (!allActorsRaw) return []
     const set = new Set<string>()
     allActorsRaw.forEach(a => {
-      if (a.coordinator && a.bankNumber) set.add(a.coordinator)
+      if (a && a.coordinator && a.bankNumber) set.add(a.coordinator)
     })
     return Array.from(set).sort()
   }, [allActorsRaw])
@@ -416,7 +417,8 @@ function DataRekeningContent() {
   const statsSummary = useMemo(() => {
     if (!allActorsRaw) return { total: 0, lpjSelesai: 0, lpjProses: 0, belumLpj: 0 }
     const withBank = allActorsRaw.filter(a => {
-      const hasBank = !!(a.bankNumber && a.bankNumber.trim() !== "")
+      if (!a) return false
+      const hasBank = !!(a.bankNumber && String(a.bankNumber).trim() !== "")
       if (!hasBank) return false
       if (isKoordinator) {
         if (!a.coordinator || !userProfile?.fullName) return false
@@ -443,7 +445,8 @@ function DataRekeningContent() {
   const bankStats = useMemo(() => {
     if (!allActorsRaw) return []
     const withBank = allActorsRaw.filter(a => {
-      const hasBank = !!(a.bankNumber && a.bankNumber.trim() !== "")
+      if (!a) return false
+      const hasBank = !!(a.bankNumber && String(a.bankNumber).trim() !== "")
       if (!hasBank) return false
       if (isKoordinator) {
         if (!a.coordinator || !userProfile?.fullName) return false

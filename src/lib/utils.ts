@@ -176,64 +176,77 @@ export const PEKERJAAN_DUKCAPIL = [
   "LAINNYA",
 ] as const;
 
-export function parsePobDob(pobDob: string): { pob: string; dob: string } {
+export function parsePobDob(pobDob: any): { pob: string; dob: string } {
   if (!pobDob || pobDob === "-") return { pob: "", dob: "" };
-  const parts = pobDob.split(",");
-  if (parts.length >= 2) {
-    const dob = parts.pop()?.trim() || "";
-    const pob = parts.join(",").trim();
-    return { pob, dob };
+  try {
+    const str = String(pobDob).trim();
+    const parts = str.split(",");
+    if (parts.length >= 2) {
+      const dob = parts.pop()?.trim() || "";
+      const pob = parts.join(",").trim();
+      return { pob, dob };
+    }
+    return { pob: "", dob: str };
+  } catch {
+    return { pob: "", dob: "" };
   }
-  return { pob: "", dob: pobDob.trim() };
 }
 
-export function calculateAge(dobStr: string): string {
+export function calculateAge(dobStr: any): string {
   if (!dobStr || dobStr === "-") return "-";
   
-  let day: number, month: number, year: number;
+  try {
+    const raw = String(dobStr).trim();
+    if (!raw || raw === "-") return "-";
 
-  if (dobStr.includes("-")) {
-    const parts = dobStr.split("-");
-    if (parts.length === 3) {
-      if (parts[0].length === 4) {
-        year = parseInt(parts[0], 10);
-        month = parseInt(parts[1], 10) - 1;
-        day = parseInt(parts[2], 10);
-      } else {
-        day = parseInt(parts[0], 10);
-        month = parseInt(parts[1], 10) - 1;
-        year = parseInt(parts[2], 10);
-      }
-    } else return "-";
-  } else if (dobStr.includes("/")) {
-    const parts = dobStr.split("/");
-    if (parts.length === 3) {
-      if (parts[2].length === 4) {
-          day = parseInt(parts[0], 10);
-          month = parseInt(parts[1], 10) - 1;
-          year = parseInt(parts[2], 10);
-      } else {
+    let day: number, month: number, year: number;
+
+    if (raw.includes("-")) {
+      const parts = raw.split("-");
+      if (parts.length === 3) {
+        if (parts[0].length === 4) {
           year = parseInt(parts[0], 10);
           month = parseInt(parts[1], 10) - 1;
           day = parseInt(parts[2], 10);
-      }
-    } else return "-";
-  } else {
+        } else {
+          day = parseInt(parts[0], 10);
+          month = parseInt(parts[1], 10) - 1;
+          year = parseInt(parts[2], 10);
+        }
+      } else return "-";
+    } else if (raw.includes("/")) {
+      const parts = raw.split("/");
+      if (parts.length === 3) {
+        if (parts[2].length === 4) {
+          day = parseInt(parts[0], 10);
+          month = parseInt(parts[1], 10) - 1;
+          year = parseInt(parts[2], 10);
+        } else {
+          year = parseInt(parts[0], 10);
+          month = parseInt(parts[1], 10) - 1;
+          day = parseInt(parts[2], 10);
+        }
+      } else return "-";
+    } else {
+      return "-";
+    }
+
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return "-";
+
+    const dob = new Date(year, month, day);
+    if (isNaN(dob.getTime())) return "-";
+
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    
+    return `${Math.max(0, age)} Tahun`;
+  } catch {
     return "-";
   }
-
-  if (isNaN(day) || isNaN(month) || isNaN(year)) return "-";
-
-  const dob = new Date(year, month, day);
-  const today = new Date();
-  
-  let age = today.getFullYear() - dob.getFullYear();
-  const m = today.getMonth() - dob.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-    age--;
-  }
-  
-  return `${age} Tahun`;
 }
 
 export function maskLast4Digits(val: string | number | undefined | null): string {

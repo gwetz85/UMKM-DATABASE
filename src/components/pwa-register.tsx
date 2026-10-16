@@ -10,7 +10,7 @@ export function PwaRegister() {
     if (typeof caches !== 'undefined') {
       caches.keys().then((keys) => {
         keys.forEach((key) => {
-          if (key !== 'simpu-pwa-v6') {
+          if (key !== 'simpu-pwa-v7') {
             console.log('[PWA] Purging outdated cache storage:', key);
             caches.delete(key);
           }
@@ -20,11 +20,12 @@ export function PwaRegister() {
 
     // Auto-recovery from chunk loading errors and dynamic import failures after deployments
     const handleChunkError = (errorMsg: string) => {
+      const msg = String(errorMsg || '').toLowerCase();
       const isChunkError =
-        errorMsg.includes('Loading chunk') ||
-        errorMsg.includes('ChunkLoadError') ||
-        errorMsg.includes('Failed to fetch dynamically imported module') ||
-        errorMsg.includes('loading tb2026ukm.qzz.io');
+        msg.includes('loading chunk') ||
+        msg.includes('chunkloaderror') ||
+        msg.includes('failed to fetch dynamically imported module') ||
+        msg.includes('is not a valid javascript mime type');
 
       if (isChunkError) {
         console.warn('[PWA] Chunk/deployment mismatch detected. Purging cache and auto-refreshing...');

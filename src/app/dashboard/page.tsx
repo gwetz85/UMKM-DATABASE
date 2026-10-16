@@ -285,7 +285,7 @@ export default function DashboardStatsPage() {
     
     const achievedMap = systemStats?.coordinator || {}
 
-    return kuotaData.map((item: any) => {
+    return kuotaData.filter(Boolean).map((item: any) => {
       const quota = item.quota || 0
       const nameUpper = item.name ? item.name.toUpperCase().trim() : ''
       const achieved = achievedMap[nameUpper] || 0

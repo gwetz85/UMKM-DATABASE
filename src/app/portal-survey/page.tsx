@@ -355,7 +355,7 @@ export default function PortalSurveyPage() {
     if (!actor.coordinator) return ""
     const actorCoord = actor.coordinator.trim().toUpperCase()
     const found = kuotaData?.find((q: any) => {
-      const qName = (q.name || q.coordinator || "").trim().toUpperCase()
+      const qName = (q?.name || q?.coordinator || "").trim().toUpperCase()
       return qName === actorCoord
     })
     return found?.phone || found?.noHp || found?.hp || ""

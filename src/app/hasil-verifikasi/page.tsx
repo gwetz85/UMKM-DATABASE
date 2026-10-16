@@ -215,15 +215,32 @@ function HasilVerifikasiContent() {
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
   const { data: systemStats } = useObject(statsRef)
 
-  // Query all verified_dinas records for instant, real-time live data across all coordinators
+  // Query full records when inside a coordinator, viewing ALL, BELUM_REKENING, or searching
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
-    return query(
-      ref(database, 'businessActors'),
-      orderByChild('status'),
-      equalTo('verified_dinas')
-    )
-  }, [database])
+    if (filterCoordinator) {
+      return query(
+        ref(database, 'businessActors'),
+        orderByChild('coordinator'),
+        equalTo(String(filterCoordinator).toUpperCase().trim())
+      )
+    }
+    if (isKoordinator && userProfile?.fullName) {
+      return query(
+        ref(database, 'businessActors'),
+        orderByChild('coordinator'),
+        equalTo(String(userProfile.fullName).toUpperCase().trim())
+      )
+    }
+    if (selectedCoordinator === 'ALL' || selectedCoordinator === 'BELUM_REKENING' || (searchQuery && searchQuery.trim().length > 0)) {
+      return query(
+        ref(database, 'businessActors'),
+        orderByChild('status'),
+        equalTo('verified_dinas')
+      )
+    }
+    return null
+  }, [database, filterCoordinator, selectedCoordinator, searchQuery, isKoordinator, userProfile?.fullName])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
 
@@ -264,7 +281,7 @@ function HasilVerifikasiContent() {
 
   const filteredActors = useMemo(() => {
     if (!actors) return undefined
-    const lower = searchQuery.toLowerCase().trim()
+    const lower = (searchQuery || "").toLowerCase().trim()
     const list = lower ? actors.filter(a =>
       (a.fullName || "").toLowerCase().includes(lower) ||
       (a.nik || "").includes(lower) ||
@@ -306,11 +323,15 @@ function HasilVerifikasiContent() {
       const activeKey = String(selectedCoordinator).toUpperCase().trim()
       const list = groups[activeKey] || sorted
       list.forEach((actor, index) => {
-        indexMap.set(actor.id, index + 1)
+        if (actor && actor.id) {
+          indexMap.set(actor.id, index + 1)
+        }
       })
     } else {
       sorted.forEach((actor, index) => {
-        indexMap.set(actor.id, index + 1)
+        if (actor && actor.id) {
+          indexMap.set(actor.id, index + 1)
+        }
       })
     }
 
@@ -321,8 +342,11 @@ function HasilVerifikasiContent() {
     const allNames = new Set<string>()
     if (kuotaData) {
       kuotaData.forEach((q: any) => {
-        if (q.name) allNames.add(q.name.toUpperCase().trim())
+        if (q && q.name) allNames.add(String(q.name).toUpperCase().trim())
       })
+    }
+    if (systemStats?.coordinator) {
+      Object.keys(systemStats.coordinator).forEach(name => allNames.add(name))
     }
     Object.keys(groupedActors).forEach(name => allNames.add(name))
 
@@ -349,8 +373,8 @@ function HasilVerifikasiContent() {
         name,
         count
       }
-    }).sort((a, b) => a.name.localeCompare(b.name))
-  }, [groupedActors, kuotaData, localIndex])
+    }).sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
+  }, [groupedActors, kuotaData, localIndex, systemStats])
 
   const activeCoordinatorCount = useMemo(() => {
     return coordinatorStats.filter(s => s.count > 0).length
@@ -1016,7 +1040,7 @@ function HasilVerifikasiContent() {
                               <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Waktu Verifikasi</span>
                               <div className="text-xs text-slate-700 dark:text-slate-300">
                                 <span className="font-bold">
-                                  {actor.verifiedDinasAt ? new Date(actor.verifiedDinasAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : "-"}
+                                  {actor.verifiedDinasAt ? formatDateTimeIndo(actor.verifiedDinasAt) : "-"}
                                 </span>
                                 {actor.verifiedDinasBy && (
                                   <span className="text-[10px] text-slate-400 block truncate">
@@ -1541,7 +1565,7 @@ function HasilVerifikasiContent() {
                     </div>
 
                     {(() => {
-                      const found = kuotaData?.find((q: any) => (q.name || q.coordinator || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim())
+                      const found = kuotaData?.find((q: any) => (q?.name || q?.coordinator || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim())
                       const coordPhone = found?.phone || found?.noHp || found?.hp || ""
                       const coordWaLink = coordPhone ? `https://wa.me/${coordPhone.replace(/\D/g, "").replace(/^0/, "62")}` : ""
                       const isBelumAdaPetugas = !(viewingActor as any).petugasSurvey || (viewingActor as any).petugasSurvey.trim() === "" || (viewingActor as any).petugasSurvey.trim() === "-" || (viewingActor as any).petugasSurvey.toUpperCase().trim() === "BELUM ADA"

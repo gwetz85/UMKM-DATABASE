@@ -69,7 +69,7 @@ export default function KuotaKorlapDewanAktifPage() {
     const achievedMap = systemStats?.coordinator || {}
     const rekeningMap = systemStats?.coordinatorRekening || {}
 
-    return kuotaData.map((item: any) => {
+    return kuotaData.filter(Boolean).map((item: any) => {
       const quota = item.quota || 0
       const rawName = item.name ? String(item.name).trim() : ''
       const nameUpper = rawName.toUpperCase()

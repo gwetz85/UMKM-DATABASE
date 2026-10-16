@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { RefreshCw, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 export default function GlobalError({
@@ -26,26 +26,33 @@ export default function GlobalError({
     }
   };
 
+  const isChunkError = useMemo(() => {
+    const msg = (error?.message || '').toLowerCase();
+    const name = (error?.name || '').toLowerCase();
+    return (
+      name.includes('chunkloaderror') ||
+      msg.includes('loading chunk') ||
+      msg.includes('chunkloaderror') ||
+      msg.includes('failed to fetch dynamically imported module') ||
+      msg.includes('failed to load') ||
+      msg.includes('is not a valid javascript mime type')
+    );
+  }, [error]);
+
   useEffect(() => {
     console.error('SIMPU Global Error Boundary caught:', error);
-
-    // Auto-recover from chunk load errors
-    const isChunkError =
-      error?.message?.includes('Loading chunk') ||
-      error?.message?.includes('ChunkLoadError') ||
-      error?.message?.includes('Failed to fetch dynamically imported module');
 
     if (isChunkError) {
       const lastReload = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('simpu_global_reload') : null;
       const now = Date.now();
-      if (!lastReload || now - Number(lastReload) > 8000) {
+      if (!lastReload || now - Number(lastReload) > 6000) {
         if (typeof sessionStorage !== 'undefined') {
           sessionStorage.setItem('simpu_global_reload', String(now));
         }
         clearAndReload();
       }
     }
-  }, [error]);
+  }, [error, isChunkError]);
 
   return (
     <html lang="id">
@@ -56,16 +63,18 @@ export default function GlobalError({
           </div>
 
           <h1 style={{ fontSize: '18px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.025em', margin: '0 0 8px 0', color: '#ffffff' }}>
-            Pembaruan Versi Terdeteksi
+            {isChunkError ? 'Menyinkronkan Versi Terbaru' : 'Terjadi Kendala Memuat Data'}
           </h1>
 
           <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.5, margin: '0 0 24px 0' }}>
-            Aplikasi SIMPU telah diperbarui dengan versi terbaru. Silakan muat ulang aplikasi untuk menyegarkan data.
+            {isChunkError
+              ? 'Aplikasi sedang memuat pembaruan sistem. Halaman akan termuat ulang otomatis.'
+              : 'Sistem mendeteksi kendala pada memori halaman. Silakan muat ulang halaman untuk melanjutkan.'}
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <button
-              onClick={() => clearAndReload('/')}
+              onClick={() => clearAndReload()}
               style={{
                 width: '100%',
                 height: '46px',
@@ -84,7 +93,7 @@ export default function GlobalError({
               }}
             >
               <RefreshCw style={{ width: '16px', height: '16px' }} />
-              Muat Ulang Aplikasi (Segarkan)
+              Muat Ulang Halaman
             </button>
 
             <button

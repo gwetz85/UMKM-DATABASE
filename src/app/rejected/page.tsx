@@ -1333,7 +1333,7 @@ function RejectedContent() {
                     </div>
 
                     {(() => {
-                      const found = kuotaData?.find((q: any) => (q.name || q.coordinator || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim());
+                      const found = kuotaData?.find((q: any) => (q?.name || q?.coordinator || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim());
                       const coordPhone = found?.phone || found?.noHp || found?.hp || "";
                       
                       const getWaLink = (phoneStr: string) => {

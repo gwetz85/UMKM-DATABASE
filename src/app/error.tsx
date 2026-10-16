@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { RefreshCw, Home, AlertTriangle, ShieldCheck } from 'lucide-react';
+import React, { useEffect, useMemo } from 'react';
+import { RefreshCw, Home, AlertTriangle, ShieldCheck, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function ErrorBoundary({
@@ -27,26 +27,59 @@ export default function ErrorBoundary({
     }
   };
 
+  const isChunkError = useMemo(() => {
+    const msg = (error?.message || '').toLowerCase();
+    const name = (error?.name || '').toLowerCase();
+    return (
+      name.includes('chunkloaderror') ||
+      msg.includes('loading chunk') ||
+      msg.includes('chunkloaderror') ||
+      msg.includes('failed to fetch dynamically imported module') ||
+      msg.includes('failed to load') ||
+      msg.includes('is not a valid javascript mime type')
+    );
+  }, [error]);
+
   useEffect(() => {
     console.error('SIMPU App Error Boundary caught:', error);
-
-    // If it's a chunk loading failure after deployment, auto-recover once
-    const isChunkError =
-      error?.message?.includes('Loading chunk') ||
-      error?.message?.includes('ChunkLoadError') ||
-      error?.message?.includes('Failed to fetch dynamically imported module');
 
     if (isChunkError) {
       const lastReload = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('simpu_error_reload') : null;
       const now = Date.now();
-      if (!lastReload || now - Number(lastReload) > 8000) {
+      if (!lastReload || now - Number(lastReload) > 6000) {
         if (typeof sessionStorage !== 'undefined') {
           sessionStorage.setItem('simpu_error_reload', String(now));
         }
         clearAndReload();
       }
     }
-  }, [error]);
+  }, [error, isChunkError]);
+
+  if (isChunkError) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center shadow-xl space-y-5 animate-in fade-in duration-300">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto text-primary animate-spin">
+            <Loader2 className="w-7 h-7" />
+          </div>
+          <div className="space-y-1.5">
+            <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
+              Menyinkronkan Versi Terbaru
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Aplikasi sedang memperbarui berkas ke versi terkini. Halaman akan termuat ulang otomatis...
+            </p>
+          </div>
+          <Button
+            onClick={() => clearAndReload()}
+            className="w-full h-10 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-md text-xs cursor-pointer"
+          >
+            Segarkan Sekarang
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4">
@@ -57,20 +90,25 @@ export default function ErrorBoundary({
 
         <div className="space-y-2">
           <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-            Pembaruan Versi Terdeteksi
+            Terjadi Kendala Memuat Halaman
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-            Aplikasi telah diperbarui dengan versi terbaru. Silakan klik tombol di bawah untuk menyegarkan data.
+            Sistem mendeteksi kendala saat memuat data. Silakan muat ulang halaman untuk menyegarkan tampilan.
           </p>
+          {error?.message && (
+            <p className="text-[11px] font-mono text-slate-400 bg-slate-50 dark:bg-slate-800/60 p-2 rounded-lg border border-slate-200/50 dark:border-slate-800 truncate max-w-full" title={error.message}>
+              {error.message}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-2.5 pt-2">
           <Button
-            onClick={() => clearAndReload('/')}
+            onClick={() => clearAndReload()}
             className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
-            Muat Ulang Aplikasi (Segarkan)
+            Muat Ulang Halaman
           </Button>
 
           <Button

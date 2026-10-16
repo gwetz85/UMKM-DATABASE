@@ -249,6 +249,7 @@ export default function VerifikasiDinasBerkasPage() {
     const map = new Map<string, string>()
     if (kuotaData) {
       kuotaData.forEach((q: any) => {
+        if (!q) return
         const name = (q.name || q.coordinator || "").toUpperCase().trim()
         const phone = q.phone || q.noHp || q.hp || ""
         if (name && phone) map.set(name, phone)
@@ -263,6 +264,7 @@ export default function VerifikasiDinasBerkasPage() {
     const byUsername = new Map<string, any>()
     if (systemUsers) {
       systemUsers.forEach((u: any) => {
+        if (!u) return
         if (u.fullName) byFullName.set(String(u.fullName).toUpperCase().trim(), u)
         if (u.id) byFullName.set(String(u.id).toUpperCase().trim(), u)
         if (u.nipppk) {

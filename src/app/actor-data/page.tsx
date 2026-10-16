@@ -878,7 +878,7 @@ function ActorDataContent() {
     const allNames = new Set<string>()
     if (kuotaData) {
       kuotaData.forEach((q: any) => {
-        if (q.name) allNames.add(q.name.toUpperCase().trim())
+        if (q && q.name) allNames.add(String(q.name).toUpperCase().trim())
       })
     }
 
@@ -905,7 +905,7 @@ function ActorDataContent() {
     }
 
     return Array.from(allNames).map(name => {
-      const quotaObj = (kuotaData || []).find((q: any) => (q.name || "").toUpperCase().trim() === name)
+      const quotaObj = (kuotaData || []).find((q: any) => (q?.name || "").toUpperCase().trim() === name)
       const quota = quotaObj?.quota || 0
       
       // Verified count is now the primary metric for quota usage (Usage = Verified)

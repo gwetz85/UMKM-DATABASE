@@ -840,6 +840,7 @@ export default function VerifikasiDinasPage() {
     const map = new Map<string, string>();
     if (kuotaData) {
       kuotaData.forEach((q: any) => {
+        if (!q) return;
         const name = (q.name || q.coordinator || "").toUpperCase().trim();
         const phone = q.phone || q.noHp || q.hp || "";
         if (name && phone) map.set(name, phone);

@@ -1049,7 +1049,7 @@ export default function VerifyActorPage() {
                                     <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border">
                                       {(() => {
-                                        const found = kuotaData?.find((q: any) => (q.name || q.coordinator || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim());
+                                        const found = kuotaData?.find((q: any) => (q?.name || q?.coordinator || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim());
                                         const coordPhone = found?.phone || found?.noHp || found?.hp || "";
                                         
                                         const getWaLink = (phoneStr: string) => {
