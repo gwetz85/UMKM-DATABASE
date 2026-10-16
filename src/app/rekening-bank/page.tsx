@@ -9,8 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input"
 import { Loader2, Search, CreditCard, Building2, User, MapPin, ChevronRight, Printer, Send, CheckCircle2, FileSpreadsheet } from "lucide-react"
 import { BusinessActor } from "../lib/types"
-import { cn } from "@/lib/utils"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
@@ -44,6 +43,7 @@ function RekeningBankContent() {
   const [showForwardDialog, setShowForwardDialog] = useState(false)
   const [forwardPending, setForwardPending] = useState<{ bankName: string; actors: BusinessActor[] } | null>(null)
   const searchParams = useSearchParams()
+  const router = useRouter()
   const selectedBank = searchParams.get('bank')
 
   const isKoordinator = userProfile?.role === 'koordinator'
@@ -405,6 +405,13 @@ function RekeningBankContent() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          <button 
+            onClick={() => router.push('/hasil-verifikasi?coordinator=BELUM_REKENING')}
+            className="h-10 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg shadow-amber-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
+            title="Input nomor rekening bagi pelaku usaha yang telah lolos verifikasi"
+          >
+            <CreditCard className="w-4 h-4" /> INPUT REKENING
+          </button>
           <button 
             onClick={() => handleExportExcel()}
             className="h-10 px-5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap"

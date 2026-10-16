@@ -214,32 +214,15 @@ function HasilVerifikasiContent() {
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
   const { data: systemStats } = useObject(statsRef)
 
-  // Query full records when inside a coordinator, viewing ALL, BELUM_REKENING, or searching
+  // Query all verified_dinas records for instant, real-time live data across all coordinators
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
-    if (filterCoordinator) {
-      return query(
-        ref(database, 'businessActors'),
-        orderByChild('coordinator'),
-        equalTo(String(filterCoordinator).toUpperCase().trim())
-      )
-    }
-    if (isKoordinator && userProfile?.fullName) {
-      return query(
-        ref(database, 'businessActors'),
-        orderByChild('coordinator'),
-        equalTo(String(userProfile.fullName).toUpperCase().trim())
-      )
-    }
-    if (selectedCoordinator === 'ALL' || selectedCoordinator === 'BELUM_REKENING' || searchQuery.trim().length > 0) {
-      return query(
-        ref(database, 'businessActors'),
-        orderByChild('status'),
-        equalTo('verified_dinas')
-      )
-    }
-    return null
-  }, [database, filterCoordinator, selectedCoordinator, searchQuery, isKoordinator, userProfile?.fullName])
+    return query(
+      ref(database, 'businessActors'),
+      orderByChild('status'),
+      equalTo('verified_dinas')
+    )
+  }, [database])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
 
@@ -289,29 +272,30 @@ function HasilVerifikasiContent() {
       (a.kelurahan || "").toLowerCase().includes(lower)
     ) : actors
 
-    return [...list].sort((a, b) => {
-      const coordA = String(a.coordinator || "Tanpa Koordinator")
-      const coordB = String(b.coordinator || "Tanpa Koordinator")
+    return [...list].filter(Boolean).sort((a, b) => {
+      const coordA = String(a?.coordinator || "Tanpa Koordinator")
+      const coordB = String(b?.coordinator || "Tanpa Koordinator")
       const coordCompare = coordA.localeCompare(coordB)
       if (coordCompare !== 0) return coordCompare
-      return String(a.fullName || "").localeCompare(String(b.fullName || ""))
+      return String(a?.fullName || "").localeCompare(String(b?.fullName || ""))
     })
   }, [actors, searchQuery])
 
   const { groupedActors, globalIndexMap } = useMemo(() => {
     if (!filteredActors) return { groupedActors: {} as Record<string, BusinessActor[]>, globalIndexMap: new Map<string, number>() }
-    const sorted = [...filteredActors].sort((a, b) => {
-      const coordA = String(a.coordinator || "Tanpa Koordinator")
-      const coordB = String(b.coordinator || "Tanpa Koordinator")
+    const sorted = [...filteredActors].filter(Boolean).sort((a, b) => {
+      const coordA = String(a?.coordinator || "Tanpa Koordinator")
+      const coordB = String(b?.coordinator || "Tanpa Koordinator")
       const coordCompare = coordA.localeCompare(coordB)
       if (coordCompare !== 0) return coordCompare
-      return String(a.fullName || "").localeCompare(String(b.fullName || ""))
+      return String(a?.fullName || "").localeCompare(String(b?.fullName || ""))
     })
 
     const groups: Record<string, BusinessActor[]> = {}
     const indexMap = new Map<string, number>()
 
     sorted.forEach((actor) => {
+      if (!actor) return
       const key = String(actor.coordinator || "Tanpa Koordinator").toUpperCase().trim()
       if (!groups[key]) groups[key] = []
       groups[key].push(actor)
@@ -392,7 +376,7 @@ function HasilVerifikasiContent() {
     } else if (selectedCoordinator === 'ALL') {
       list = filteredActors || []
     } else if (selectedCoordinator === 'BELUM_REKENING') {
-      list = (filteredActors || []).filter(a => !a.bankNumber)
+      list = (filteredActors || []).filter(a => a && !a.bankNumber)
     } else if (selectedCoordinator) {
       const targetCoord = String(selectedCoordinator).toUpperCase().trim()
       list = (groupedActors[targetCoord] || [])
@@ -400,12 +384,12 @@ function HasilVerifikasiContent() {
       list = filteredActors || []
     }
 
-    return [...list].sort((a, b) => {
-      const coordA = String(a.coordinator || "Tanpa Koordinator")
-      const coordB = String(b.coordinator || "Tanpa Koordinator")
+    return [...list].filter(Boolean).sort((a, b) => {
+      const coordA = String(a?.coordinator || "Tanpa Koordinator")
+      const coordB = String(b?.coordinator || "Tanpa Koordinator")
       const coordCompare = coordA.localeCompare(coordB)
       if (coordCompare !== 0) return coordCompare
-      return String(a.fullName || "").localeCompare(String(b.fullName || ""))
+      return String(a?.fullName || "").localeCompare(String(b?.fullName || ""))
     })
   }, [isKoordinator, selectedCoordinator, searchQuery, groupedActors, filteredActors])
 
@@ -417,7 +401,7 @@ function HasilVerifikasiContent() {
     try {
       const formData = new FormData(e.currentTarget)
       const updates = {
-        status: 'finish',
+        status: 'finish' as const,
         readyForLPJ: false,
         bankName: formData.get('bankName') as string,
         bankNumber: formData.get('bankNumber') as string,
@@ -426,6 +410,9 @@ function HasilVerifikasiContent() {
 
       const actorRef = ref(database, `businessActors/${inputtingBankActor.id}`)
       updateDocumentNonBlocking(actorRef, updates)
+
+      // Optimistically update local index for 0ms UI feedback
+      setLocalIndex(prev => prev ? prev.map(a => (a && a.id === inputtingBankActor.id) ? { ...a, ...updates } : a) : null)
 
       // Update global stats (Tahap 3 -> Tahap 4 / Selesai)
       import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
