@@ -153,18 +153,16 @@ function HasilVerifikasiContent() {
       localStorage.removeItem('simpu_actors_search_cache');
       localStorage.removeItem('simpu_actors_search_cache_v2');
       localStorage.removeItem('simpu_actors_search_cache_v3');
-      localStorage.removeItem('simpu_actors_search_cache_v4');
-      const cached = localStorage.getItem('simpu_actors_search_cache_v5');
+      const cached = localStorage.getItem('simpu_actors_search_cache_v5') || localStorage.getItem('simpu_actors_search_cache_v4');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-')) && parsed.some(i => i.surveyData?.modalUsaha || i.surveyData?.status || i.surveyData?.rencanaPenggunaan || i.surveyData?.omset)) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           setLocalIndex(prev => prev || parsed);
         }
       }
     } catch {}
 
     if (!database) return;
-    if (localIndex && localIndex.length > 0 && localIndex.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-')) && localIndex.some(i => i.surveyData?.modalUsaha || i.surveyData?.status || i.surveyData?.rencanaPenggunaan || i.surveyData?.omset)) return;
 
     import("firebase/database").then(({ ref, get }) => {
       get(ref(database, 'settings/actors_search')).then(snap => {
@@ -172,12 +170,24 @@ function HasilVerifikasiContent() {
           const val = snap.val();
           if (val) {
             const list = Object.values(val) as BusinessActor[];
-            const hasCompleteData = list.length > 0 && list.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-')) && list.some(i => i.surveyData?.modalUsaha || i.surveyData?.status || i.surveyData?.rencanaPenggunaan || i.surveyData?.omset);
-            if (hasCompleteData) {
+            if (list.length > 0) {
               setLocalIndex(list);
               try {
                 localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(list));
               } catch {}
+
+              const hasSurveyData = list.some(i => i.surveyData?.modalUsaha || i.surveyData?.status || i.surveyData?.rencanaPenggunaan || i.surveyData?.omset);
+              if (!hasSurveyData) {
+                fetch('/api/actors/search?all=true&refresh=true')
+                  .then(res => res.json())
+                  .then(data => {
+                    if (data.success && Array.isArray(data.results) && data.results.length > 0) {
+                      setLocalIndex(data.results);
+                      try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(data.results)); } catch {}
+                    }
+                  })
+                  .catch(() => {});
+              }
               return;
             }
           }

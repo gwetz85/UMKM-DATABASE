@@ -61,9 +61,9 @@ async function getLightweightActors(forceRefresh: boolean = false): Promise<any[
 
   // 1. First priority: Read from pre-indexed settings/actors_search IF it has complete address and survey data
   if (!forceRefresh) {
-    let snap = await get(ref(database, 'settings/actors_search')).catch(() => null);
-    if (snap && snap.exists()) {
-      const rawVal = snap.val() || {};
+    const searchSnap = await get(ref(database, 'settings/actors_search')).catch(() => null);
+    if (searchSnap && searchSnap.exists()) {
+      const rawVal = searchSnap.val() || {};
       const sampleItems = Object.values(rawVal) as any[];
       // Verify that the cached index contains address data AND survey data details
       const hasSurveyAndAddress = sampleItems.length > 0 && sampleItems.some(item => 
@@ -96,12 +96,12 @@ async function getLightweightActors(forceRefresh: boolean = false): Promise<any[
   }
 
   // 2. Fallback: If settings/actors_search not populated yet, build from raw businessActors
-  snap = await get(ref(database, 'businessActors')).catch(() => null);
-  if (!snap || !snap.exists()) {
+  const businessActorsSnap = await get(ref(database, 'businessActors')).catch(() => null);
+  if (!businessActorsSnap || !businessActorsSnap.exists()) {
     return [];
   }
 
-  const rawVal = snap.val();
+  const rawVal = businessActorsSnap.val();
   const list: any[] = [];
   const searchIndexMap: Record<string, any> = {};
 
