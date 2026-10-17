@@ -28,7 +28,7 @@ import { ActorMenuBadge } from "@/components/actor-menu-badge"
 import { getActorCurrentMenu } from "@/lib/actor-menu-status"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ConfirmDialog } from "@/components/confirm-dialog"
-import { cn, extractDobFromNik, parsePobDob, calculateAge, formatCurrency, formatDateTimeIndo, AGAMA_INDONESIA, STATUS_KELUARGA_LIST, PEKERJAAN_DUKCAPIL, resolveRtRw, resolveKelurahan, resolveKecamatan } from "@/lib/utils"
+import { cn, extractDobFromNik, parsePobDob, calculateAge, formatCurrency, formatDateTimeIndo, AGAMA_INDONESIA, STATUS_KELUARGA_LIST, PEKERJAAN_DUKCAPIL, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob } from "@/lib/utils"
 import { normalizeCoordinator } from "@/lib/coordinator-utils"
 import { resolveSurveyorCanonicalName, buildSurveyorMaps } from "@/lib/surveyor-utils"
 import { generateRegistrationForm, generateCoordinatorReport, generateAllCoordinatorsReport } from "@/lib/pdf-generator"
@@ -1591,40 +1591,36 @@ function ActorDataContent() {
 
   const handleExportExcel = async (sheetsToExport?: string[]) => {
     try {
-      // Use the exact same data source as the displayed table
-      let dataToExport = (isInspektorat || isKoordinator)
-        ? (filteredActors || [])
-        : filterCoordinator
-          ? (groupedActors[String(filterCoordinator).toUpperCase().trim()] || [])
-          : (filteredActors || [])
+      // Determine what to export based on current view/filter
+      let dataToExport: BusinessActor[] = []
 
-      // Hydrate full businessActors if items might be from lightweight search cache lacking full address details
-      if (database && (dataToExport.length === 0 || dataToExport.some(a => !a.rtRw || !a.kelurahan || !a.kecamatan))) {
-        try {
-          const { get, ref } = await import("firebase/database")
-          const snap = await get(ref(database, 'businessActors'))
-          if (snap.exists()) {
-            const rawMap = snap.val() as Record<string, any>
-            if (dataToExport.length === 0 && !filterCoordinator && isAdmin) {
-              const allActors = Object.entries(rawMap).map(([k, v]) => ({ ...(v || {}), id: v?.id || k })) as BusinessActor[]
-              dataToExport = allActors.filter(a => {
-                const s = a.status || "";
-                const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
-                return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) && !isCancelDinas;
-              })
-            } else {
-              dataToExport = dataToExport.map(actor => {
-                const full = rawMap[actor.id]
-                return full ? { ...actor, ...full } : actor
-              })
+      if (filterCoordinator) {
+        const coordKey = String(filterCoordinator).toUpperCase().trim()
+        dataToExport = groupedActors[coordKey] || filteredActors || []
+      } else if (isSearching || filterMenu !== "all") {
+        dataToExport = currentDataToDisplay || filteredActors || []
+      } else if (isInspektorat || isKoordinator) {
+        dataToExport = filteredActors || []
+      } else {
+        // Overview mode (all coordinators)
+        if (localIndex && localIndex.length > 0) {
+          dataToExport = localIndex
+        } else if (filteredActors && filteredActors.length > 0) {
+          dataToExport = filteredActors
+        } else if (database) {
+          try {
+            const { get, ref } = await import("firebase/database")
+            const snap = await get(ref(database, 'settings/actors_search'))
+            if (snap.exists()) {
+              dataToExport = Object.values(snap.val() || {}) as BusinessActor[]
             }
+          } catch (e) {
+            console.error("Error fetching lightweight actors search index:", e)
           }
-        } catch (fetchErr) {
-          console.warn("Could not fetch full businessActors for export:", fetchErr)
         }
       }
 
-      if (dataToExport.length === 0) {
+      if (!dataToExport || dataToExport.length === 0) {
         toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk diekspor." })
         return
       }
@@ -1644,6 +1640,7 @@ function ActorDataContent() {
         const rtRw = resolveRtRw(actor)
         const kel = resolveKelurahan(actor)
         const kec = resolveKecamatan(actor, kel)
+        const pob = resolvePob(actor)
 
         return {
           "NO": index + 1,
@@ -1651,7 +1648,7 @@ function ActorDataContent() {
           "JENIS KELAMIN": actor.gender || "-",
           "NIK": actor.nik || "-",
           "NOMOR KK": actor.noKK || "-",
-          "TEMPAT LAHIR": actor.pob || parsePobDob(actor.pobDob || "").pob || "-",
+          "TEMPAT LAHIR": pob,
           "TANGGAL LAHIR": actor.dob || parsePobDob(actor.pobDob || "").dob || "-",
           "UMUR": calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || "")),
           "NOMOR HP": actor.phone || "-",

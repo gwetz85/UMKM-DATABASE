@@ -9,6 +9,8 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 const database = getDatabase(app);
 const auth = getAuth(app);
 
+import { resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob } from '@/lib/utils';
+
 // In-memory cache for ultra-fast response & low network usage
 interface CacheItem {
   timestamp: number;
@@ -35,7 +37,19 @@ async function getLightweightActors(): Promise<any[]> {
   let snap = await get(ref(database, 'settings/actors_search')).catch(() => null);
   if (snap && snap.exists()) {
     const rawVal = snap.val() || {};
-    const list = Object.values(rawVal) as any[];
+    const list = (Object.values(rawVal) as any[]).map(item => {
+      const kel = resolveKelurahan(item);
+      const kec = resolveKecamatan(item, kel);
+      const rtRw = resolveRtRw(item);
+      const pob = resolvePob(item);
+      return {
+        ...item,
+        rtRw: (item.rtRw && item.rtRw !== '-') ? item.rtRw : (rtRw !== '-' ? rtRw : ''),
+        kelurahan: (item.kelurahan && item.kelurahan !== '-') ? item.kelurahan : (kel !== '-' ? kel : ''),
+        kecamatan: (item.kecamatan && item.kecamatan !== '-') ? item.kecamatan : (kec !== '-' ? kec : ''),
+        pob: (item.pob && item.pob !== '-') ? item.pob : (pob !== '-' ? pob : ''),
+      };
+    });
     cachedActors = {
       timestamp: now,
       actors: list,

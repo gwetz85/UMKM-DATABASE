@@ -395,6 +395,10 @@ export function inferKecamatanFromText(text: string): string {
   return "";
 }
 
+import knownAddressesData from './known-addresses.json';
+
+const KNOWN_ADDRESSES = knownAddressesData as Record<string, { r?: string; k?: string; c?: string; p?: string }>;
+
 export function resolveRtRw(actor: any): string {
   if (!actor) return "-";
   const direct = actor.rtRw ?? actor.rt_rw ?? actor.rtrw ?? actor["RT/RW"] ?? actor["rt/rw"];
@@ -411,6 +415,12 @@ export function resolveRtRw(actor: any): string {
   const surveyRtRw = actor.surveyData?.rtRw || actor.surveyData?.rt_rw;
   if (surveyRtRw && String(surveyRtRw).trim() !== "" && String(surveyRtRw).trim() !== "-") {
     return String(surveyRtRw).trim();
+  }
+
+  // Lookup in known addresses dictionary
+  if (actor.id && KNOWN_ADDRESSES[actor.id]?.r) {
+    const kr = KNOWN_ADDRESSES[actor.id].r!.trim();
+    if (kr && kr !== "-") return kr;
   }
 
   const addr = `${actor.address || ""} ${actor.alamat || ""} ${actor.businessLocation || ""}`;
@@ -436,6 +446,16 @@ export function resolveKelurahan(actor: any): string {
       if (clean === "TANJUNG PINANG KOTA") return "TANJUNGPINANG KOTA";
       if (clean === "KAMBOJA") return "KEMBOJA";
       return clean;
+    }
+  }
+
+  // Lookup in known addresses dictionary
+  if (actor.id && KNOWN_ADDRESSES[actor.id]?.k) {
+    const kk = KNOWN_ADDRESSES[actor.id].k!.trim().toUpperCase();
+    if (kk && kk !== "-" && kk !== "NULL") {
+      if (kk === "BATUIX" || kk === "BATU9") return "BATU IX";
+      if (kk === "KAMBOJA") return "KEMBOJA";
+      return kk;
     }
   }
 
@@ -468,6 +488,16 @@ export function resolveKecamatan(actor: any, resolvedKel?: string): string {
     }
   }
 
+  // Lookup in known addresses dictionary
+  if (actor.id && KNOWN_ADDRESSES[actor.id]?.c) {
+    const kc = KNOWN_ADDRESSES[actor.id].c!.trim().toUpperCase();
+    if (kc && kc !== "-" && kc !== "NULL") {
+      const inferred = inferKecamatanFromText(kc);
+      if (inferred) return inferred;
+      return kc;
+    }
+  }
+
   const kel = resolvedKel || resolveKelurahan(actor);
   if (kel && kel !== "-") {
     const cleanKel = kel.toUpperCase().trim();
@@ -479,6 +509,23 @@ export function resolveKecamatan(actor: any, resolvedKel?: string): string {
   const inferred = inferKecamatanFromText(addr);
   if (inferred) return inferred;
 
+  return "-";
+}
+
+export function resolvePob(actor: any): string {
+  if (!actor) return "-";
+  const direct = actor.pob ?? actor.tempatLahir ?? actor.tempat_lahir;
+  if (direct && String(direct).trim() !== "" && String(direct).trim() !== "-") {
+    return String(direct).trim().toUpperCase();
+  }
+  if (actor.id && KNOWN_ADDRESSES[actor.id]?.p) {
+    const kp = KNOWN_ADDRESSES[actor.id].p!.trim().toUpperCase();
+    if (kp && kp !== "-") return kp;
+  }
+  const parsed = parsePobDob(actor.pobDob || "");
+  if (parsed.pob && parsed.pob !== "-") {
+    return parsed.pob.toUpperCase();
+  }
   return "-";
 }
 

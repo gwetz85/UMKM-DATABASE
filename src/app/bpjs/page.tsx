@@ -40,7 +40,7 @@ import { useToast } from "@/hooks/use-toast"
 import * as XLSX from "xlsx"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
-import { cn, parsePobDob, resolveRtRw, resolveKelurahan, resolveKecamatan } from "@/lib/utils"
+import { cn, parsePobDob, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob } from "@/lib/utils"
 
 // Normalization Helpers
 const normalizeNik = (nik: string): string => String(nik || "").replace(/\D/g, "").replace(/^0+/, "")
@@ -671,7 +671,7 @@ export default function BpjsPage() {
         "NAMA LENGKAP": (actor.fullName || "").toUpperCase(),
         "NIK": actor.nik || "-",
         "NOMOR KK": actor.noKK || "-",
-        "TEMPAT LAHIR": (actor.pob || parsed.pob || "-").toUpperCase(),
+        "TEMPAT LAHIR": resolvePob(actor),
         "TANGGAL LAHIR": actor.dob || parsed.dob || "-",
         "USIA": age,
         "NOMOR PONSEL": actor.phone || "-",

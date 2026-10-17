@@ -52,7 +52,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ActorMenuBadge } from "@/components/actor-menu-badge"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
-import { cn, parsePobDob, calculateAge, extractDobFromNik, formatDateTimeIndo, resolveRtRw, resolveKelurahan, resolveKecamatan } from "@/lib/utils"
+import { cn, parsePobDob, calculateAge, extractDobFromNik, formatDateTimeIndo, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob } from "@/lib/utils"
 import { resolveSurveyorCanonicalName } from "@/lib/surveyor-utils"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -547,23 +547,7 @@ function HasilVerifikasiContent() {
             ? (groupedActors[String(selectedCoordinator).toUpperCase().trim()] || [])
             : (filteredActors || [])
 
-      if (database && (dataToExport.length === 0 || dataToExport.some(a => !a.rtRw || !a.kelurahan || !a.kecamatan))) {
-        try {
-          const { get, ref } = await import("firebase/database")
-          const snap = await get(ref(database, 'businessActors'))
-          if (snap.exists()) {
-            const rawMap = snap.val() as Record<string, any>
-            dataToExport = dataToExport.map(actor => {
-              const full = rawMap[actor.id]
-              return full ? { ...actor, ...full } : actor
-            })
-          }
-        } catch (fetchErr) {
-          console.warn("Could not fetch full businessActors for export:", fetchErr)
-        }
-      }
-
-      if (dataToExport.length === 0) {
+      if (!dataToExport || dataToExport.length === 0) {
         toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk diekspor." })
         return
       }
@@ -580,6 +564,7 @@ function HasilVerifikasiContent() {
         const rtRw = resolveRtRw(actor)
         const kel = resolveKelurahan(actor)
         const kec = resolveKecamatan(actor, kel)
+        const pob = resolvePob(actor)
 
         return {
           "NO": index + 1,
@@ -587,7 +572,7 @@ function HasilVerifikasiContent() {
           "JENIS KELAMIN": actor.gender || "-",
           "NIK": actor.nik || "-",
           "NOMOR KK": actor.noKK || "-",
-          "TEMPAT LAHIR": actor.pob || parsePobDob(actor.pobDob || "").pob || "-",
+          "TEMPAT LAHIR": pob,
           "TANGGAL LAHIR": actor.dob || parsePobDob(actor.pobDob || "").dob || "-",
           "UMUR": calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || "")),
           "NOMOR HP": actor.phone || "-",
