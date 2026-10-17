@@ -25,6 +25,32 @@ async function ensureAuth() {
   }
 }
 
+function extractCleanSurveyData(sd: any) {
+  if (!sd || typeof sd !== 'object') return undefined;
+  return {
+    hasSurvey: true,
+    tanggalSurvey: sd.tanggalSurvey || '',
+    status: sd.status || '',
+    dtks: sd.dtks ? { masuk: Boolean(sd.dtks.masuk), jenis: sd.dtks.jenis || '' } : undefined,
+    modalUsaha: sd.modalUsaha || '',
+    omset: sd.omset || '',
+    peralatan: sd.peralatan || '',
+    hibah: sd.hibah ? { pernah: Boolean(sd.hibah.pernah), dariMana: sd.hibah.dariMana || '', tahun: sd.hibah.tahun || '' } : undefined,
+    rencanaPenggunaan: sd.rencanaPenggunaan || '',
+    hasilSurvey: sd.hasilSurvey || '',
+    bidangUsaha: sd.bidangUsaha || '',
+    tahunBerdiri: sd.tahunBerdiri || '',
+    izin: Array.isArray(sd.izin) ? sd.izin : (sd.izin ? [String(sd.izin)] : []),
+    namaUsaha: sd.namaUsaha || '',
+    alamatUsaha: sd.alamatUsaha || '',
+    alamatRumah: sd.alamatRumah || '',
+    noHp: sd.noHp || '',
+    email: sd.email || '',
+    sosmed: sd.sosmed || '',
+    pejabatData: sd.pejabatData || undefined,
+  };
+}
+
 async function getLightweightActors(forceRefresh: boolean = false): Promise<any[]> {
   const now = Date.now();
   if (!forceRefresh && cachedActors && now - cachedActors.timestamp < CACHE_TTL_MS) {
@@ -33,19 +59,20 @@ async function getLightweightActors(forceRefresh: boolean = false): Promise<any[
 
   await ensureAuth();
 
-  // 1. First priority: Read from pre-indexed settings/actors_search IF it has complete address data
+  // 1. First priority: Read from pre-indexed settings/actors_search IF it has complete address and survey data
   if (!forceRefresh) {
     let snap = await get(ref(database, 'settings/actors_search')).catch(() => null);
     if (snap && snap.exists()) {
       const rawVal = snap.val() || {};
       const sampleItems = Object.values(rawVal) as any[];
-      // Verify that the cached index actually contains populated address data (rtRw or kelurahan)
-      const hasAddressData = sampleItems.length > 0 && sampleItems.some(item => 
-        (item.rtRw && item.rtRw !== '-' && item.rtRw !== '') || 
-        (item.kelurahan && item.kelurahan !== '-' && item.kelurahan !== '')
+      // Verify that the cached index contains address data AND survey data details
+      const hasSurveyAndAddress = sampleItems.length > 0 && sampleItems.some(item => 
+        ((item.rtRw && item.rtRw !== '-' && item.rtRw !== '') || 
+         (item.kelurahan && item.kelurahan !== '-' && item.kelurahan !== '')) &&
+        (item.surveyData?.modalUsaha || item.surveyData?.status || item.surveyData?.rencanaPenggunaan || item.surveyData?.omset)
       );
 
-      if (hasAddressData) {
+      if (hasSurveyAndAddress) {
         const list = sampleItems.map(item => {
           const kel = resolveKelurahan(item);
           const kec = resolveKecamatan(item, kel);
@@ -130,7 +157,7 @@ async function getLightweightActors(forceRefresh: boolean = false): Promise<any[
       readyForLPJ: Boolean(a.readyForLPJ),
       lpjNominal: a.lpjNominal || '',
       createdAt: a.createdAt || '',
-      ...(a.surveyData ? { surveyData: { hasSurvey: true, tanggalSurvey: a.surveyData.tanggalSurvey || '' } } : {}),
+      surveyData: extractCleanSurveyData(a.surveyData) || (a.surveyData ? { hasSurvey: true, tanggalSurvey: a.surveyData.tanggalSurvey || '' } : undefined),
       pejabatData: a.pejabatData || a.surveyData?.pejabatData || null,
       dikembalikanKeVerifikatorReason: a.dikembalikanKeVerifikatorReason || '',
       dikembalikanKeVerifikatorBy: a.dikembalikanKeVerifikatorBy || '',

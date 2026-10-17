@@ -290,17 +290,18 @@ function ActorDataContent() {
       localStorage.removeItem('simpu_actors_search_cache');
       localStorage.removeItem('simpu_actors_search_cache_v2');
       localStorage.removeItem('simpu_actors_search_cache_v3');
-      const cached = localStorage.getItem('simpu_actors_search_cache_v4');
+      localStorage.removeItem('simpu_actors_search_cache_v4');
+      const cached = localStorage.getItem('simpu_actors_search_cache_v5');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-'))) {
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-')) && parsed.some(i => i.surveyData?.modalUsaha || i.surveyData?.status || i.surveyData?.rencanaPenggunaan || i.surveyData?.omset)) {
           setLocalIndex(prev => prev || parsed);
         }
       }
     } catch {}
 
     if (!database) return;
-    if (localIndex && localIndex.length > 0 && localIndex.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-'))) return;
+    if (localIndex && localIndex.length > 0 && localIndex.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-')) && localIndex.some(i => i.surveyData?.modalUsaha || i.surveyData?.status || i.surveyData?.rencanaPenggunaan || i.surveyData?.omset)) return;
 
     // 1. Try Firebase settings/actors_search first
     get(ref(database, 'settings/actors_search')).then(snap => {
@@ -308,24 +309,24 @@ function ActorDataContent() {
         const val = snap.val();
         if (val) {
           const list = Object.values(val) as BusinessActor[];
-          const hasAddressData = list.length > 0 && list.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-'));
-          if (hasAddressData) {
+          const hasCompleteData = list.length > 0 && list.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-')) && list.some(i => i.surveyData?.modalUsaha || i.surveyData?.status || i.surveyData?.rencanaPenggunaan || i.surveyData?.omset);
+          if (hasCompleteData) {
             setLocalIndex(list);
             try {
-              localStorage.setItem('simpu_actors_search_cache_v4', JSON.stringify(list));
+              localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(list));
             } catch {}
             return;
           }
         }
       }
-      // 2. Fallback to API route with refresh if settings/actors_search was missing or lacked complete address fields
+      // 2. Fallback to API route with refresh if settings/actors_search was missing or lacked complete address/survey fields
       fetch('/api/actors/search?all=true&refresh=true')
         .then(res => res.json())
         .then(data => {
           if (data.success && Array.isArray(data.results) && data.results.length > 0) {
             setLocalIndex(data.results);
             try {
-              localStorage.setItem('simpu_actors_search_cache_v4', JSON.stringify(data.results));
+              localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(data.results));
             } catch {}
           }
         })
@@ -337,7 +338,7 @@ function ActorDataContent() {
           if (data.success && Array.isArray(data.results) && data.results.length > 0) {
             setLocalIndex(data.results);
             try {
-              localStorage.setItem('simpu_actors_search_cache_v4', JSON.stringify(data.results));
+              localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(data.results));
             } catch {}
           }
         })
@@ -1629,7 +1630,7 @@ function ActorDataContent() {
           if (json.success && Array.isArray(json.results) && json.results.length > 0) {
             setLocalIndex(json.results);
             try {
-              localStorage.setItem('simpu_actors_search_cache_v4', JSON.stringify(json.results));
+              localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(json.results));
             } catch {}
 
             if (filterCoordinator) {
@@ -1867,6 +1868,21 @@ function ActorDataContent() {
                             return;
                           }
 
+                          // Auto-hydrate survey details if needed
+                          const needsSurveyDetails = coordActors.some(a => a.surveyData && !a.surveyData.modalUsaha && !a.surveyData.status && !a.surveyData.rencanaPenggunaan && !a.surveyData.omset);
+                          if (needsSurveyDetails) {
+                            try {
+                              const res = await fetch(`/api/actors/search?all=true&refresh=true&coordinator=${encodeURIComponent(coordKey)}`);
+                              const json = await res.json();
+                              if (json.success && Array.isArray(json.results) && json.results.length > 0) {
+                                const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
+                                coordActors = coordActors.map(a => freshMap.get(a.id) || a);
+                              }
+                            } catch (e) {
+                              console.warn("Could not re-fetch fresh survey details:", e);
+                            }
+                          }
+
                           await new Promise(r => setTimeout(r, 60));
                           generateCoordinatorReport(coordKey, coordActors, systemUsersRaw || []);
                           toast({ title: "Berhasil", description: `Laporan PDF Koordinator ${coordKey} berhasil diunduh.` });
@@ -1878,11 +1894,12 @@ function ActorDataContent() {
                             let sourceList = (localIndex && localIndex.length > 0) ? localIndex : (filteredActors || []);
                             if (!sourceList || sourceList.length === 0) {
                               try {
-                                const res = await fetch('/api/actors/search?all=true');
+                                const res = await fetch('/api/actors/search?all=true&refresh=true');
                                 const json = await res.json();
                                 if (json.success && Array.isArray(json.results)) {
                                   sourceList = json.results;
                                   setLocalIndex(json.results);
+                                  try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(json.results)); } catch {}
                                 }
                               } catch (err) {
                                 console.error("Error fetching all actors for PDF:", err);
@@ -1900,6 +1917,28 @@ function ActorDataContent() {
                                 builtGroups[coord].push(a);
                               });
                               groupsToPrint = builtGroups;
+                            }
+                          }
+
+                          // Auto-hydrate survey details across all groups if needed
+                          const allPrintActors = Object.values(groupsToPrint || {}).flat();
+                          const needsSurveyDetailsAll = allPrintActors.some(a => a.surveyData && !a.surveyData.modalUsaha && !a.surveyData.status && !a.surveyData.rencanaPenggunaan && !a.surveyData.omset);
+                          if (needsSurveyDetailsAll) {
+                            try {
+                              const res = await fetch('/api/actors/search?all=true&refresh=true');
+                              const json = await res.json();
+                              if (json.success && Array.isArray(json.results) && json.results.length > 0) {
+                                setLocalIndex(json.results);
+                                try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(json.results)); } catch {}
+                                const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
+                                const refreshedGroups: Record<string, BusinessActor[]> = {};
+                                for (const [k, v] of Object.entries(groupsToPrint)) {
+                                  refreshedGroups[k] = v.map(a => freshMap.get(a.id) || a);
+                                }
+                                groupsToPrint = refreshedGroups;
+                              }
+                            } catch (e) {
+                              console.warn("Could not re-fetch fresh survey details for all:", e);
                             }
                           }
 

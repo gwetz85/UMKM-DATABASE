@@ -58,6 +58,32 @@ export const getCategory = (actorData: any) => {
   return null;
 };
 
+export function extractCleanSurveyData(sd: any) {
+  if (!sd || typeof sd !== 'object') return undefined;
+  return {
+    hasSurvey: true,
+    tanggalSurvey: sd.tanggalSurvey || '',
+    status: sd.status || '',
+    dtks: sd.dtks ? { masuk: Boolean(sd.dtks.masuk), jenis: sd.dtks.jenis || '' } : undefined,
+    modalUsaha: sd.modalUsaha || '',
+    omset: sd.omset || '',
+    peralatan: sd.peralatan || '',
+    hibah: sd.hibah ? { pernah: Boolean(sd.hibah.pernah), dariMana: sd.hibah.dariMana || '', tahun: sd.hibah.tahun || '' } : undefined,
+    rencanaPenggunaan: sd.rencanaPenggunaan || '',
+    hasilSurvey: sd.hasilSurvey || '',
+    bidangUsaha: sd.bidangUsaha || '',
+    tahunBerdiri: sd.tahunBerdiri || '',
+    izin: Array.isArray(sd.izin) ? sd.izin : (sd.izin ? [String(sd.izin)] : []),
+    namaUsaha: sd.namaUsaha || '',
+    alamatUsaha: sd.alamatUsaha || '',
+    alamatRumah: sd.alamatRumah || '',
+    noHp: sd.noHp || '',
+    email: sd.email || '',
+    sosmed: sd.sosmed || '',
+    pejabatData: sd.pejabatData || undefined,
+  };
+}
+
 // Helper to get detailed stage for Dinas workflow (Tahap 1, 2, 3, 4)
 export const getDetailedStage = (actorData: any): keyof NonNullable<SystemStats['detailedStatus']> | null => {
   if (!actorData || !isVerifiedStatus(actorData)) return null;
@@ -534,7 +560,7 @@ export async function recalculateAndSaveSystemStats(database: Database) {
         readyForLPJ: Boolean(actor.readyForLPJ),
         lpjNominal: actor.lpjNominal || '',
         createdAt: actor.createdAt || '',
-        ...(actor.surveyData ? { surveyData: { hasSurvey: true, tanggalSurvey: actor.surveyData.tanggalSurvey || '' } } : {}),
+        surveyData: extractCleanSurveyData(actor.surveyData) || (actor.surveyData ? { hasSurvey: true, tanggalSurvey: actor.surveyData.tanggalSurvey || '' } : undefined),
         pejabatData: actor.pejabatData || actor.surveyData?.pejabatData || null,
         dikembalikanKeVerifikatorReason: actor.dikembalikanKeVerifikatorReason || '',
         dikembalikanKeVerifikatorBy: actor.dikembalikanKeVerifikatorBy || '',
@@ -602,7 +628,7 @@ export async function syncActorToSearchIndex(database: Database, actorData: any)
       readyForLPJ: Boolean(actorData.readyForLPJ),
       lpjNominal: actorData.lpjNominal || '',
       createdAt: actorData.createdAt || '',
-      ...(actorData.surveyData ? { surveyData: { hasSurvey: true, tanggalSurvey: actorData.surveyData.tanggalSurvey || '' } } : {}),
+      surveyData: extractCleanSurveyData(actorData.surveyData) || (actorData.surveyData ? { hasSurvey: true, tanggalSurvey: actorData.surveyData.tanggalSurvey || '' } : undefined),
       pejabatData: actorData.pejabatData || actorData.surveyData?.pejabatData || null,
       dikembalikanKeVerifikatorReason: actorData.dikembalikanKeVerifikatorReason || '',
       dikembalikanKeVerifikatorBy: actorData.dikembalikanKeVerifikatorBy || '',
