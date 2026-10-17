@@ -25,36 +25,47 @@ async function ensureAuth() {
   }
 }
 
-async function getLightweightActors(): Promise<any[]> {
+async function getLightweightActors(forceRefresh: boolean = false): Promise<any[]> {
   const now = Date.now();
-  if (cachedActors && now - cachedActors.timestamp < CACHE_TTL_MS) {
+  if (!forceRefresh && cachedActors && now - cachedActors.timestamp < CACHE_TTL_MS) {
     return cachedActors.actors;
   }
 
   await ensureAuth();
 
-  // 1. First priority: Read from pre-indexed settings/actors_search (takes ~60-100ms)
-  let snap = await get(ref(database, 'settings/actors_search')).catch(() => null);
-  if (snap && snap.exists()) {
-    const rawVal = snap.val() || {};
-    const list = (Object.values(rawVal) as any[]).map(item => {
-      const kel = resolveKelurahan(item);
-      const kec = resolveKecamatan(item, kel);
-      const rtRw = resolveRtRw(item);
-      const pob = resolvePob(item);
-      return {
-        ...item,
-        rtRw: (item.rtRw && item.rtRw !== '-') ? item.rtRw : (rtRw !== '-' ? rtRw : ''),
-        kelurahan: (item.kelurahan && item.kelurahan !== '-') ? item.kelurahan : (kel !== '-' ? kel : ''),
-        kecamatan: (item.kecamatan && item.kecamatan !== '-') ? item.kecamatan : (kec !== '-' ? kec : ''),
-        pob: (item.pob && item.pob !== '-') ? item.pob : (pob !== '-' ? pob : ''),
-      };
-    });
-    cachedActors = {
-      timestamp: now,
-      actors: list,
-    };
-    return list;
+  // 1. First priority: Read from pre-indexed settings/actors_search IF it has complete address data
+  if (!forceRefresh) {
+    let snap = await get(ref(database, 'settings/actors_search')).catch(() => null);
+    if (snap && snap.exists()) {
+      const rawVal = snap.val() || {};
+      const sampleItems = Object.values(rawVal) as any[];
+      // Verify that the cached index actually contains populated address data (rtRw or kelurahan)
+      const hasAddressData = sampleItems.length > 0 && sampleItems.some(item => 
+        (item.rtRw && item.rtRw !== '-' && item.rtRw !== '') || 
+        (item.kelurahan && item.kelurahan !== '-' && item.kelurahan !== '')
+      );
+
+      if (hasAddressData) {
+        const list = sampleItems.map(item => {
+          const kel = resolveKelurahan(item);
+          const kec = resolveKecamatan(item, kel);
+          const rtRw = resolveRtRw(item);
+          const pob = resolvePob(item);
+          return {
+            ...item,
+            rtRw: (item.rtRw && item.rtRw !== '-') ? item.rtRw : (rtRw !== '-' ? rtRw : ''),
+            kelurahan: (item.kelurahan && item.kelurahan !== '-') ? item.kelurahan : (kel !== '-' ? kel : ''),
+            kecamatan: (item.kecamatan && item.kecamatan !== '-') ? item.kecamatan : (kec !== '-' ? kec : ''),
+            pob: (item.pob && item.pob !== '-') ? item.pob : (pob !== '-' ? pob : ''),
+          };
+        });
+        cachedActors = {
+          timestamp: now,
+          actors: list,
+        };
+        return list;
+      }
+    }
   }
 
   // 2. Fallback: If settings/actors_search not populated yet, build from raw businessActors
@@ -83,6 +94,11 @@ async function getLightweightActors(): Promise<any[]> {
       continue;
     }
 
+    const resolvedKel = resolveKelurahan(a);
+    const resolvedKec = resolveKecamatan(a, resolvedKel);
+    const resolvedRt = resolveRtRw(a);
+    const resolvedPob = resolvePob(a);
+
     const item = {
       id,
       fullName: a.fullName || '',
@@ -102,11 +118,11 @@ async function getLightweightActors(): Promise<any[]> {
       registrationCode: a.registrationCode || '',
       gender: a.gender || '',
       pobDob: a.pobDob || '',
-      pob: a.pob || '',
-      dob: a.dob || '',
-      rtRw: a.rtRw || a.rt_rw || (a.rt && a.rw ? `${a.rt}/${a.rw}` : a.rt || ''),
-      kelurahan: a.kelurahan || a.kel || a.desa || '',
-      kecamatan: a.kecamatan || a.kec || '',
+      pob: (a.pob || a.tempatLahir || (resolvedPob !== '-' ? resolvedPob : '') || '').toUpperCase(),
+      dob: a.dob || a.tanggalLahir || (parsePobDob(a.pobDob || '').dob) || '',
+      rtRw: a.rtRw || a.rt_rw || (a.rt && a.rw ? `${a.rt}/${a.rw}` : a.rt || '') || (resolvedRt !== '-' ? resolvedRt : ''),
+      kelurahan: (a.kelurahan || a.kel || a.desa || (resolvedKel !== '-' ? resolvedKel : '') || '').toUpperCase(),
+      kecamatan: (a.kecamatan || a.kec || (resolvedKec !== '-' ? resolvedKec : '') || '').toUpperCase(),
       bankNumber: a.bankNumber || '',
       bankOwner: a.bankOwner || '',
       bankName: a.bankName || '',
@@ -150,8 +166,9 @@ export async function GET(req: NextRequest) {
     const query = (searchParams.get('q') || '').trim();
     const coordinator = (searchParams.get('coordinator') || '').trim().toUpperCase();
     const isAll = searchParams.get('all') === 'true';
+    const isRefresh = searchParams.get('refresh') === 'true';
 
-    const actors = await getLightweightActors();
+    const actors = await getLightweightActors(isRefresh);
 
     // If client requested full lightweight index for instant local searching
     if (isAll) {

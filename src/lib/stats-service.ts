@@ -1,5 +1,6 @@
 import { Database, ref, runTransaction } from "firebase/database";
 import { normalizeCoordinator } from "./coordinator-utils";
+import { resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob, parsePobDob } from "./utils";
 
 export interface SystemStats {
   totalActors: number;
@@ -521,11 +522,11 @@ export async function recalculateAndSaveSystemStats(database: Database) {
         registrationCode: actor.registrationCode || '',
         gender: actor.gender || '',
         pobDob: actor.pobDob || '',
-        pob: actor.pob || '',
-        dob: actor.dob || '',
-        rtRw: actor.rtRw || actor.rt_rw || (actor.rt && actor.rw ? `${actor.rt}/${actor.rw}` : actor.rt || ''),
-        kelurahan: actor.kelurahan || actor.kel || actor.desa || '',
-        kecamatan: actor.kecamatan || actor.kec || '',
+        pob: (actor.pob || actor.tempatLahir || (resolvePob(actor) !== '-' ? resolvePob(actor) : '') || '').toUpperCase(),
+        dob: actor.dob || actor.tanggalLahir || (parsePobDob(actor.pobDob || '').dob) || '',
+        rtRw: actor.rtRw || actor.rt_rw || (actor.rt && actor.rw ? `${actor.rt}/${actor.rw}` : actor.rt || '') || (resolveRtRw(actor) !== '-' ? resolveRtRw(actor) : ''),
+        kelurahan: (actor.kelurahan || actor.kel || actor.desa || (resolveKelurahan(actor) !== '-' ? resolveKelurahan(actor) : '') || '').toUpperCase(),
+        kecamatan: (actor.kecamatan || actor.kec || (resolveKecamatan(actor) !== '-' ? resolveKecamatan(actor) : '') || '').toUpperCase(),
         bankNumber: actor.bankNumber || '',
         bankOwner: actor.bankOwner || '',
         bankName: actor.bankName || '',
@@ -589,11 +590,11 @@ export async function syncActorToSearchIndex(database: Database, actorData: any)
       registrationCode: actorData.registrationCode || '',
       gender: actorData.gender || '',
       pobDob: actorData.pobDob || '',
-      pob: actorData.pob || '',
-      dob: actorData.dob || '',
-      rtRw: actorData.rtRw || actorData.rt_rw || (actorData.rt && actorData.rw ? `${actorData.rt}/${actorData.rw}` : actorData.rt || ''),
-      kelurahan: actorData.kelurahan || actorData.kel || actorData.desa || '',
-      kecamatan: actorData.kecamatan || actorData.kec || '',
+      pob: (actorData.pob || actorData.tempatLahir || (resolvePob(actorData) !== '-' ? resolvePob(actorData) : '') || '').toUpperCase(),
+      dob: actorData.dob || actorData.tanggalLahir || (parsePobDob(actorData.pobDob || '').dob) || '',
+      rtRw: actorData.rtRw || actorData.rt_rw || (actorData.rt && actorData.rw ? `${actorData.rt}/${actorData.rw}` : actorData.rt || '') || (resolveRtRw(actorData) !== '-' ? resolveRtRw(actorData) : ''),
+      kelurahan: (actorData.kelurahan || actorData.kel || actorData.desa || (resolveKelurahan(actorData) !== '-' ? resolveKelurahan(actorData) : '') || '').toUpperCase(),
+      kecamatan: (actorData.kecamatan || actorData.kec || (resolveKecamatan(actorData) !== '-' ? resolveKecamatan(actorData) : '') || '').toUpperCase(),
       bankNumber: actorData.bankNumber || '',
       bankOwner: actorData.bankOwner || '',
       bankName: actorData.bankName || '',

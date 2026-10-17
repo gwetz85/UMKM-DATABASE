@@ -412,7 +412,7 @@ export function resolveRtRw(actor: any): string {
   if (actor.rt) return String(actor.rt).trim();
   if (actor.rw) return `RW ${actor.rw}`.trim();
 
-  const surveyRtRw = actor.surveyData?.rtRw || actor.surveyData?.rt_rw;
+  const surveyRtRw = actor.surveyData?.rtRw || actor.surveyData?.rt_rw || actor.surveyData?.dataUsaha?.rtRw || actor.surveyData?.dataUsaha?.rt_rw;
   if (surveyRtRw && String(surveyRtRw).trim() !== "" && String(surveyRtRw).trim() !== "-") {
     return String(surveyRtRw).trim();
   }
@@ -436,7 +436,7 @@ export function resolveRtRw(actor: any): string {
 
 export function resolveKelurahan(actor: any): string {
   if (!actor) return "-";
-  const direct = actor.kelurahan ?? actor.kel ?? actor.desa ?? actor.Kelurahan ?? actor.KELURAHAN ?? actor.surveyData?.kelurahan;
+  const direct = actor.kelurahan ?? actor.kel ?? actor.desa ?? actor.Kelurahan ?? actor.KELURAHAN ?? actor.surveyData?.kelurahan ?? actor.surveyData?.dataUsaha?.kelurahan;
   if (direct !== undefined && direct !== null) {
     const clean = String(direct).trim().toUpperCase();
     if (clean !== "" && clean !== "-" && clean !== "#N/A" && clean !== "N/A" && clean !== "NULL") {
@@ -478,7 +478,7 @@ export function resolveKelurahan(actor: any): string {
 
 export function resolveKecamatan(actor: any, resolvedKel?: string): string {
   if (!actor) return "-";
-  const direct = actor.kecamatan ?? actor.kec ?? actor.Kecamatan ?? actor.KECAMATAN ?? actor.surveyData?.kecamatan;
+  const direct = actor.kecamatan ?? actor.kec ?? actor.Kecamatan ?? actor.KECAMATAN ?? actor.surveyData?.kecamatan ?? actor.surveyData?.dataUsaha?.kecamatan;
   if (direct !== undefined && direct !== null) {
     const clean = String(direct).trim().toUpperCase();
     if (clean !== "" && clean !== "-" && clean !== "#N/A" && clean !== "N/A" && clean !== "NULL") {

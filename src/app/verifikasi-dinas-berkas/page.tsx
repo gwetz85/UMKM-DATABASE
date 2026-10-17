@@ -83,17 +83,18 @@ export default function VerifikasiDinasBerkasPage() {
     try {
       localStorage.removeItem('simpu_actors_search_cache');
       localStorage.removeItem('simpu_actors_search_cache_v2');
-      const cached = localStorage.getItem('simpu_actors_search_cache_v3');
+      localStorage.removeItem('simpu_actors_search_cache_v3');
+      const cached = localStorage.getItem('simpu_actors_search_cache_v4');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-'))) {
           setLocalIndex(prev => prev || parsed);
         }
       }
     } catch {}
 
     if (!database) return;
-    if (localIndex && localIndex.length > 0) return;
+    if (localIndex && localIndex.length > 0 && localIndex.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-'))) return;
 
     import("firebase/database").then(({ ref, get }) => {
       get(ref(database, 'settings/actors_search')).then(snap => {
@@ -101,12 +102,27 @@ export default function VerifikasiDinasBerkasPage() {
           const val = snap.val();
           if (val) {
             const list = Object.values(val) as BusinessActor[];
-            setLocalIndex(list);
-            try {
-              localStorage.setItem('simpu_actors_search_cache_v3', JSON.stringify(list));
-            } catch {}
+            const hasAddressData = list.length > 0 && list.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-'));
+            if (hasAddressData) {
+              setLocalIndex(list);
+              try {
+                localStorage.setItem('simpu_actors_search_cache_v4', JSON.stringify(list));
+              } catch {}
+              return;
+            }
           }
         }
+        fetch('/api/actors/search?all=true&refresh=true')
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && Array.isArray(data.results) && data.results.length > 0) {
+              setLocalIndex(data.results);
+              try {
+                localStorage.setItem('simpu_actors_search_cache_v4', JSON.stringify(data.results));
+              } catch {}
+            }
+          })
+          .catch(() => {});
       }).catch(() => {});
     });
   }, [database]);

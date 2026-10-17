@@ -152,16 +152,18 @@ function HasilVerifikasiContent() {
     try {
       localStorage.removeItem('simpu_actors_search_cache');
       localStorage.removeItem('simpu_actors_search_cache_v2');
-      const cached = localStorage.getItem('simpu_actors_search_cache_v3');
+      localStorage.removeItem('simpu_actors_search_cache_v3');
+      const cached = localStorage.getItem('simpu_actors_search_cache_v4');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-'))) {
           setLocalIndex(prev => prev || parsed);
         }
       }
     } catch {}
 
     if (!database) return;
+    if (localIndex && localIndex.length > 0 && localIndex.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-'))) return;
 
     import("firebase/database").then(({ ref, get }) => {
       get(ref(database, 'settings/actors_search')).then(snap => {
@@ -169,13 +171,41 @@ function HasilVerifikasiContent() {
           const val = snap.val();
           if (val) {
             const list = Object.values(val) as BusinessActor[];
-            setLocalIndex(list);
-            try {
-              localStorage.setItem('simpu_actors_search_cache_v3', JSON.stringify(list));
-            } catch {}
+            const hasAddressData = list.length > 0 && list.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-'));
+            if (hasAddressData) {
+              setLocalIndex(list);
+              try {
+                localStorage.setItem('simpu_actors_search_cache_v4', JSON.stringify(list));
+              } catch {}
+              return;
+            }
           }
         }
-      }).catch(() => {});
+        // Fallback to API route with refresh
+        fetch('/api/actors/search?all=true&refresh=true')
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && Array.isArray(data.results) && data.results.length > 0) {
+              setLocalIndex(data.results);
+              try {
+                localStorage.setItem('simpu_actors_search_cache_v4', JSON.stringify(data.results));
+              } catch {}
+            }
+          })
+          .catch(() => {});
+      }).catch(() => {
+        fetch('/api/actors/search?all=true&refresh=true')
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && Array.isArray(data.results) && data.results.length > 0) {
+              setLocalIndex(data.results);
+              try {
+                localStorage.setItem('simpu_actors_search_cache_v4', JSON.stringify(data.results));
+              } catch {}
+            }
+          })
+          .catch(() => {});
+      });
     });
   }, [database]);
 
@@ -539,13 +569,38 @@ function HasilVerifikasiContent() {
 
   const handleExportExcel = async (sheetsToExport?: string[]) => {
     try {
-      const dataToExport = selectedCoordinator === 'ALL'
+      let dataToExport = selectedCoordinator === 'ALL'
         ? (filteredActors || [])
         : selectedCoordinator === 'BELUM_REKENING'
           ? (filteredActors || []).filter(a => !a.bankNumber)
           : selectedCoordinator
             ? (groupedActors[String(selectedCoordinator).toUpperCase().trim()] || [])
             : (filteredActors || [])
+
+      // Check if dataToExport is missing address details (RT/RW or Kelurahan)
+      const needsAddressHydration = !dataToExport || dataToExport.length === 0 || !dataToExport.some(a => 
+        (a.rtRw && a.rtRw !== '-' && a.rtRw !== '') || 
+        (a.kelurahan && a.kelurahan !== '-' && a.kelurahan !== '')
+      );
+
+      if (needsAddressHydration) {
+        toast({ title: "Menyiapkan Data Lengkap...", description: "Memuat rincian RT/RW, Kelurahan, dan Kecamatan..." });
+        try {
+          const res = await fetch('/api/actors/search?all=true&refresh=true');
+          const json = await res.json();
+          if (json.success && Array.isArray(json.results) && json.results.length > 0) {
+            setLocalIndex(json.results);
+            try {
+              localStorage.setItem('simpu_actors_search_cache_v4', JSON.stringify(json.results));
+            } catch {}
+
+            const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
+            dataToExport = (dataToExport || []).map(a => freshMap.get(a.id) || a);
+          }
+        } catch (fetchErr) {
+          console.warn("Could not fetch full actors for export:", fetchErr);
+        }
+      }
 
       if (!dataToExport || dataToExport.length === 0) {
         toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk diekspor." })

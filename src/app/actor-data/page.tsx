@@ -287,19 +287,20 @@ function ActorDataContent() {
   useEffect(() => {
     // 1. Immediately read cache on client mount (safe from hydration errors)
     try {
-      localStorage.removeItem('simpu_actors_search_cache'); // Purge stale legacy cache
-      localStorage.removeItem('simpu_actors_search_cache_v2'); // Purge stale v2 cache
-      const cached = localStorage.getItem('simpu_actors_search_cache_v3');
+      localStorage.removeItem('simpu_actors_search_cache');
+      localStorage.removeItem('simpu_actors_search_cache_v2');
+      localStorage.removeItem('simpu_actors_search_cache_v3');
+      const cached = localStorage.getItem('simpu_actors_search_cache_v4');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-'))) {
           setLocalIndex(prev => prev || parsed);
         }
       }
     } catch {}
 
     if (!database) return;
-    if (localIndex && localIndex.length > 0) return;
+    if (localIndex && localIndex.length > 0 && localIndex.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-'))) return;
 
     // 1. Try Firebase settings/actors_search first
     get(ref(database, 'settings/actors_search')).then(snap => {
@@ -307,33 +308,36 @@ function ActorDataContent() {
         const val = snap.val();
         if (val) {
           const list = Object.values(val) as BusinessActor[];
-          setLocalIndex(list);
-          try {
-            localStorage.setItem('simpu_actors_search_cache_v3', JSON.stringify(list));
-          } catch {}
-          return;
+          const hasAddressData = list.length > 0 && list.some(i => (i.rtRw && i.rtRw !== '-') || (i.kelurahan && i.kelurahan !== '-'));
+          if (hasAddressData) {
+            setLocalIndex(list);
+            try {
+              localStorage.setItem('simpu_actors_search_cache_v4', JSON.stringify(list));
+            } catch {}
+            return;
+          }
         }
       }
-      // 2. Only fallback to API route if settings/actors_search was not present
-      fetch('/api/actors/search?all=true')
+      // 2. Fallback to API route with refresh if settings/actors_search was missing or lacked complete address fields
+      fetch('/api/actors/search?all=true&refresh=true')
         .then(res => res.json())
         .then(data => {
           if (data.success && Array.isArray(data.results) && data.results.length > 0) {
-            setLocalIndex(prev => (prev && prev.length > 0 ? prev : data.results));
+            setLocalIndex(data.results);
             try {
-              localStorage.setItem('simpu_actors_search_cache_v3', JSON.stringify(data.results));
+              localStorage.setItem('simpu_actors_search_cache_v4', JSON.stringify(data.results));
             } catch {}
           }
         })
         .catch(() => {});
     }).catch(() => {
-      fetch('/api/actors/search?all=true')
+      fetch('/api/actors/search?all=true&refresh=true')
         .then(res => res.json())
         .then(data => {
           if (data.success && Array.isArray(data.results) && data.results.length > 0) {
-            setLocalIndex(prev => (prev && prev.length > 0 ? prev : data.results));
+            setLocalIndex(data.results);
             try {
-              localStorage.setItem('simpu_actors_search_cache_v3', JSON.stringify(data.results));
+              localStorage.setItem('simpu_actors_search_cache_v4', JSON.stringify(data.results));
             } catch {}
           }
         })
@@ -1607,17 +1611,44 @@ function ActorDataContent() {
           dataToExport = localIndex
         } else if (filteredActors && filteredActors.length > 0) {
           dataToExport = filteredActors
-        } else if (database) {
-          try {
-            const { get, ref } = await import("firebase/database")
-            const snap = await get(ref(database, 'settings/actors_search'))
-            if (snap.exists()) {
-              dataToExport = Object.values(snap.val() || {}) as BusinessActor[]
-            }
-          } catch (e) {
-            console.error("Error fetching lightweight actors search index:", e)
-          }
         }
+      }
+
+      // Check if dataToExport is missing address details (RT/RW or Kelurahan)
+      const needsAddressHydration = !dataToExport || dataToExport.length === 0 || !dataToExport.some(a => 
+        (a.rtRw && a.rtRw !== '-' && a.rtRw !== '') || 
+        (a.kelurahan && a.kelurahan !== '-' && a.kelurahan !== '')
+      );
+
+      if (needsAddressHydration) {
+        toast({ title: "Menyiapkan Data Lengkap...", description: "Memuat rincian RT/RW, Kelurahan, dan Kecamatan..." });
+        try {
+          const res = await fetch('/api/actors/search?all=true&refresh=true');
+          const json = await res.json();
+          if (json.success && Array.isArray(json.results) && json.results.length > 0) {
+            setLocalIndex(json.results);
+            try {
+              localStorage.setItem('simpu_actors_search_cache_v4', JSON.stringify(json.results));
+            } catch {}
+
+            if (filterCoordinator) {
+              const coordKey = String(filterCoordinator).toUpperCase().trim();
+              dataToExport = json.results.filter((a: any) => String(a.coordinator || '').toUpperCase().trim() === coordKey);
+            } else if (isSearching || filterMenu !== "all") {
+              const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
+              dataToExport = (dataToExport || []).map(a => freshMap.get(a.id) || a);
+            } else {
+              dataToExport = json.results;
+            }
+          }
+        } catch (fetchErr) {
+          console.warn("Could not fetch full actors for export:", fetchErr);
+        }
+      }
+
+      if (sheetsToExport && sheetsToExport.length > 0) {
+        const allowed = new Set(sheetsToExport.map(s => s.toUpperCase().trim()));
+        dataToExport = dataToExport.filter(a => allowed.has(String(a.coordinator || "Tanpa Koordinator").toUpperCase().trim()));
       }
 
       if (!dataToExport || dataToExport.length === 0) {
