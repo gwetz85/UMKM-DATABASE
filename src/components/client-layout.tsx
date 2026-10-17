@@ -150,17 +150,10 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           // where Firebase Auth restores the user but profile data hasn't loaded yet
           const timer = setTimeout(() => {
             signOut(auth).then(() => {
-              if (typeof window !== 'undefined') sessionStorage.removeItem('simpu_2fa_passed');
               router.push('/login');
             });
           }, 3000);
           return () => clearTimeout(timer);
-       } else if (profile.twoFactorEnabled && profile.twoFactorSecret) {
-          // Cek apakah 2FA sudah diverifikasi dalam sesi browser ini
-          const passed = typeof window !== 'undefined' && sessionStorage.getItem('simpu_2fa_passed') === user.uid;
-          if (!passed) {
-            router.replace('/login');
-          }
        }
     }
   }, [user, isUserLoading, isProfileLoading, profile, auth, router, isPublicPage])
@@ -396,9 +389,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                                   lastSeen: Date.now()
                                 }).catch(() => {});
                               }
-                              if (typeof window !== 'undefined') {
-                                sessionStorage.removeItem('simpu_2fa_passed');
-                              }
                               signOut(auth).then(() => router.push('/login'));
                             }}
                           />
@@ -483,9 +473,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     isOnline: false,
                     lastSeen: Date.now()
                   }).catch(() => {});
-                }
-                if (typeof window !== 'undefined') {
-                  sessionStorage.removeItem('simpu_2fa_passed');
                 }
                 signOut(auth).then(() => router.push('/login'))
               }}
