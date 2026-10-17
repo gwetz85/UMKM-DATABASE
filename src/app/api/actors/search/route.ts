@@ -21,7 +21,11 @@ const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes in-memory cache
 
 async function ensureAuth() {
   if (!auth.currentUser) {
-    await signInAnonymously(auth);
+    try {
+      await signInAnonymously(auth);
+    } catch {
+      // Ignored: RTDB security rules permit public read for businessActors and settings
+    }
   }
 }
 
@@ -59,46 +63,37 @@ async function getLightweightActors(forceRefresh: boolean = false): Promise<any[
 
   await ensureAuth();
 
-  // 1. First priority: Read from pre-indexed settings/actors_search IF it has complete address and survey data
-  if (!forceRefresh) {
-    const searchSnap = await get(ref(database, 'settings/actors_search')).catch(() => null);
-    if (searchSnap && searchSnap.exists()) {
-      const rawVal = searchSnap.val() || {};
-      const sampleItems = Object.values(rawVal) as any[];
-      // Verify that the cached index contains address data AND survey data details
-      const hasSurveyAndAddress = sampleItems.length > 0 && sampleItems.some(item => 
-        ((item.rtRw && item.rtRw !== '-' && item.rtRw !== '') || 
-         (item.kelurahan && item.kelurahan !== '-' && item.kelurahan !== '')) &&
-        (item.surveyData?.modalUsaha || item.surveyData?.status || item.surveyData?.rencanaPenggunaan || item.surveyData?.omset)
-      );
-
-      if (hasSurveyAndAddress) {
-        const list = sampleItems.map(item => {
-          const kel = resolveKelurahan(item);
-          const kec = resolveKecamatan(item, kel);
-          const rtRw = resolveRtRw(item);
-          const pob = resolvePob(item);
-          return {
-            ...item,
-            rtRw: (item.rtRw && item.rtRw !== '-') ? item.rtRw : (rtRw !== '-' ? rtRw : ''),
-            kelurahan: (item.kelurahan && item.kelurahan !== '-') ? item.kelurahan : (kel !== '-' ? kel : ''),
-            kecamatan: (item.kecamatan && item.kecamatan !== '-') ? item.kecamatan : (kec !== '-' ? kec : ''),
-            pob: (item.pob && item.pob !== '-') ? item.pob : (pob !== '-' ? pob : ''),
-          };
-        });
-        cachedActors = {
-          timestamp: now,
-          actors: list,
+  // 1. First priority: Read from pre-indexed settings/actors_search
+  const searchSnap = await get(ref(database, 'settings/actors_search')).catch(() => null);
+  if (searchSnap && searchSnap.exists()) {
+    const rawVal = searchSnap.val() || {};
+    const sampleItems = Object.values(rawVal) as any[];
+    if (sampleItems.length > 0) {
+      const list = sampleItems.map(item => {
+        const kel = resolveKelurahan(item);
+        const kec = resolveKecamatan(item, kel);
+        const rtRw = resolveRtRw(item);
+        const pob = resolvePob(item);
+        return {
+          ...item,
+          rtRw: (item.rtRw && item.rtRw !== '-') ? item.rtRw : (rtRw !== '-' ? rtRw : ''),
+          kelurahan: (item.kelurahan && item.kelurahan !== '-') ? item.kelurahan : (kel !== '-' ? kel : ''),
+          kecamatan: (item.kecamatan && item.kecamatan !== '-') ? item.kecamatan : (kec !== '-' ? kec : ''),
+          pob: (item.pob && item.pob !== '-') ? item.pob : (pob !== '-' ? pob : ''),
         };
-        return list;
-      }
+      });
+      cachedActors = {
+        timestamp: now,
+        actors: list,
+      };
+      return list;
     }
   }
 
   // 2. Fallback: If settings/actors_search not populated yet, build from raw businessActors
   const businessActorsSnap = await get(ref(database, 'businessActors')).catch(() => null);
   if (!businessActorsSnap || !businessActorsSnap.exists()) {
-    return [];
+    return cachedActors ? cachedActors.actors : [];
   }
 
   const rawVal = businessActorsSnap.val();

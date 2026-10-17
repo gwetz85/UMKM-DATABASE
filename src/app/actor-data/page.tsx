@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, Suspense, useMemo, useRef, memo } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
-import { ref, query, equalTo, limitToFirst, orderByChild, startAt, get } from "firebase/database"
+import { ref, query, equalTo, limitToFirst, orderByChild, startAt, get, set } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -302,7 +302,7 @@ function ActorDataContent() {
     if (!database) return;
 
     // 1. Try Firebase settings/actors_search first
-    get(ref(database, 'settings/actors_search')).then(snap => {
+    get(ref(database, 'settings/actors_search')).then(async snap => {
       if (snap.exists()) {
         const val = snap.val();
         if (val) {
@@ -312,26 +312,54 @@ function ActorDataContent() {
             try {
               localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(list));
             } catch {}
-
-            // Background self-heal if survey data details are not yet present in Firebase settings/actors_search
-            const hasSurveyData = list.some(i => i.surveyData?.modalUsaha || i.surveyData?.status || i.surveyData?.rencanaPenggunaan || i.surveyData?.omset);
-            if (!hasSurveyData) {
-              fetch('/api/actors/search?all=true&refresh=true')
-                .then(res => res.json())
-                .then(data => {
-                  if (data.success && Array.isArray(data.results) && data.results.length > 0) {
-                    setLocalIndex(data.results);
-                    try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(data.results)); } catch {}
-                  }
-                })
-                .catch(() => {});
-            }
             return;
           }
         }
       }
-      // 2. Fallback to API route with refresh if settings/actors_search was missing
-      fetch('/api/actors/search?all=true&refresh=true')
+
+      // 2. Direct fallback from businessActors if settings/actors_search is empty/missing
+      try {
+        const baSnap = await get(ref(database, 'businessActors'));
+        if (baSnap.exists()) {
+          const raw = baSnap.val() || {};
+          const list: BusinessActor[] = [];
+          const searchMap: Record<string, any> = {};
+          for (const [id, a] of Object.entries(raw as Record<string, any>)) {
+            if (!a) continue;
+            const s = (a.status || '').toLowerCase();
+            const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
+            if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) continue;
+
+            const kel = resolveKelurahan(a);
+            const kec = resolveKecamatan(a, kel);
+            const rtRw = resolveRtRw(a);
+            const pob = resolvePob(a);
+
+            const item = {
+              ...a,
+              id,
+              pob: (a.pob || a.tempatLahir || (pob !== '-' ? pob : '') || '').toUpperCase(),
+              rtRw: a.rtRw || (rtRw !== '-' ? rtRw : ''),
+              kelurahan: (a.kelurahan || (kel !== '-' ? kel : '') || '').toUpperCase(),
+              kecamatan: (a.kecamatan || (kec !== '-' ? kec : '') || '').toUpperCase(),
+            };
+            list.push(item as BusinessActor);
+            searchMap[id] = item;
+          }
+
+          if (list.length > 0) {
+            setLocalIndex(list);
+            try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(list)); } catch {}
+            set(ref(database, 'settings/actors_search'), searchMap).catch(() => {});
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Direct businessActors read fallback error:", err);
+      }
+
+      // 3. Fallback to API route if direct read failed
+      fetch('/api/actors/search?all=true')
         .then(res => res.json())
         .then(data => {
           if (data.success && Array.isArray(data.results) && data.results.length > 0) {
@@ -342,8 +370,29 @@ function ActorDataContent() {
           }
         })
         .catch(() => {});
-    }).catch(() => {
-      fetch('/api/actors/search?all=true&refresh=true')
+    }).catch(async () => {
+      // Direct businessActors fallback
+      try {
+        const baSnap = await get(ref(database, 'businessActors'));
+        if (baSnap.exists()) {
+          const raw = baSnap.val() || {};
+          const list: BusinessActor[] = [];
+          for (const [id, a] of Object.entries(raw as Record<string, any>)) {
+            if (!a) continue;
+            const s = (a.status || '').toLowerCase();
+            const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
+            if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) continue;
+            list.push({ ...a, id } as BusinessActor);
+          }
+          if (list.length > 0) {
+            setLocalIndex(list);
+            try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(list)); } catch {}
+            return;
+          }
+        }
+      } catch {}
+
+      fetch('/api/actors/search?all=true')
         .then(res => res.json())
         .then(data => {
           if (data.success && Array.isArray(data.results) && data.results.length > 0) {
@@ -1645,16 +1694,62 @@ function ActorDataContent() {
         }
       }
 
+      // If dataToExport is still empty, load directly from settings/actors_search or businessActors in Firebase
+      if (!dataToExport || dataToExport.length === 0) {
+        if (database) {
+          try {
+            const snap = await get(ref(database, 'settings/actors_search'));
+            if (snap.exists() && snap.val()) {
+              const list = Object.values(snap.val()) as BusinessActor[];
+              if (list.length > 0) {
+                setLocalIndex(list);
+                if (filterCoordinator) {
+                  const coordKey = String(filterCoordinator).toUpperCase().trim();
+                  dataToExport = list.filter((a: any) => String(a.coordinator || '').toUpperCase().trim() === coordKey);
+                } else {
+                  dataToExport = list;
+                }
+              }
+            } else {
+              // Direct businessActors fallback
+              const baSnap = await get(ref(database, 'businessActors'));
+              if (baSnap.exists() && baSnap.val()) {
+                const raw = baSnap.val();
+                const list: BusinessActor[] = [];
+                for (const [id, a] of Object.entries(raw as Record<string, any>)) {
+                  if (!a) continue;
+                  const s = (a.status || '').toLowerCase();
+                  const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
+                  if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) continue;
+                  list.push({ ...a, id } as BusinessActor);
+                }
+                if (list.length > 0) {
+                  setLocalIndex(list);
+                  if (filterCoordinator) {
+                    const coordKey = String(filterCoordinator).toUpperCase().trim();
+                    dataToExport = list.filter((a: any) => String(a.coordinator || '').toUpperCase().trim() === coordKey);
+                  } else {
+                    dataToExport = list;
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.error("Direct fallback error for export:", e);
+          }
+        }
+      }
+
       // Check if dataToExport is missing address details (RT/RW or Kelurahan)
-      const needsAddressHydration = !dataToExport || dataToExport.length === 0 || !dataToExport.some(a => 
+      const needsAddressHydration = Boolean(dataToExport && dataToExport.length > 0 && !dataToExport.some(a => 
         (a.rtRw && a.rtRw !== '-' && a.rtRw !== '') || 
         (a.kelurahan && a.kelurahan !== '-' && a.kelurahan !== '')
-      );
+      ));
 
       if (needsAddressHydration) {
         toast({ title: "Menyiapkan Data Lengkap...", description: "Memuat rincian RT/RW, Kelurahan, dan Kecamatan..." });
         try {
-          const res = await fetch('/api/actors/search?all=true&refresh=true');
+          const res = await fetch('/api/actors/search?all=true');
           const json = await res.json();
           if (json.success && Array.isArray(json.results) && json.results.length > 0) {
             setLocalIndex(json.results);
@@ -1881,14 +1976,34 @@ function ActorDataContent() {
                           } else if (localIndex && localIndex.length > 0) {
                             coordActors = localIndex.filter((a) => String(a.coordinator || "").toUpperCase().trim() === coordKey);
                           } else {
-                            try {
-                              const res = await fetch(`/api/actors/search?all=true&coordinator=${encodeURIComponent(coordKey)}`);
-                              const json = await res.json();
-                              if (json.success && Array.isArray(json.results)) {
-                                coordActors = json.results;
+                            if (database) {
+                              try {
+                                const snap = await get(ref(database, 'settings/actors_search'));
+                                if (snap.exists() && snap.val()) {
+                                  const list = Object.values(snap.val()) as BusinessActor[];
+                                  coordActors = list.filter((a: any) => String(a.coordinator || "").toUpperCase().trim() === coordKey);
+                                }
+                              } catch {}
+                            }
+                            if (!coordActors || coordActors.length === 0) {
+                              try {
+                                const res = await fetch(`/api/actors/search?all=true&coordinator=${encodeURIComponent(coordKey)}`);
+                                const json = await res.json();
+                                if (json.success && Array.isArray(json.results)) {
+                                  coordActors = json.results;
+                                }
+                              } catch (e) {
+                                console.error("Error fetching coordinator actors for PDF:", e);
                               }
-                            } catch (e) {
-                              console.error("Error fetching coordinator actors for PDF:", e);
+                            }
+                            if ((!coordActors || coordActors.length === 0) && database) {
+                              try {
+                                const baSnap = await get(query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(coordKey)));
+                                if (baSnap.exists() && baSnap.val()) {
+                                  const raw = baSnap.val();
+                                  coordActors = Object.entries(raw).map(([id, a]: any) => ({ ...a, id }));
+                                }
+                              } catch {}
                             }
                           }
 
@@ -1901,7 +2016,7 @@ function ActorDataContent() {
                           const needsSurveyDetails = coordActors.some(a => a.surveyData && !a.surveyData.modalUsaha && !a.surveyData.status && !a.surveyData.rencanaPenggunaan && !a.surveyData.omset);
                           if (needsSurveyDetails) {
                             try {
-                              const res = await fetch(`/api/actors/search?all=true&refresh=true&coordinator=${encodeURIComponent(coordKey)}`);
+                              const res = await fetch(`/api/actors/search?all=true&coordinator=${encodeURIComponent(coordKey)}`);
                               const json = await res.json();
                               if (json.success && Array.isArray(json.results) && json.results.length > 0) {
                                 const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
@@ -1921,14 +2036,50 @@ function ActorDataContent() {
 
                           if (!groupsToPrint || Object.keys(groupsToPrint).length === 0) {
                             let sourceList = (localIndex && localIndex.length > 0) ? localIndex : (filteredActors || []);
+                            
+                            // If sourceList is empty, load from settings/actors_search
+                            if ((!sourceList || sourceList.length === 0) && database) {
+                              try {
+                                const snap = await get(ref(database, 'settings/actors_search'));
+                                if (snap.exists() && snap.val()) {
+                                  sourceList = Object.values(snap.val()) as BusinessActor[];
+                                  if (sourceList.length > 0) {
+                                    setLocalIndex(sourceList);
+                                  }
+                                }
+                              } catch (e) {}
+                            }
+
+                            // If still empty, load from businessActors
+                            if ((!sourceList || sourceList.length === 0) && database) {
+                              try {
+                                const baSnap = await get(ref(database, 'businessActors'));
+                                if (baSnap.exists() && baSnap.val()) {
+                                  const raw = baSnap.val();
+                                  const list: BusinessActor[] = [];
+                                  for (const [id, a] of Object.entries(raw as Record<string, any>)) {
+                                    if (!a) continue;
+                                    const s = (a.status || '').toLowerCase();
+                                    const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
+                                    if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) continue;
+                                    list.push({ ...a, id } as BusinessActor);
+                                  }
+                                  if (list.length > 0) {
+                                    sourceList = list;
+                                    setLocalIndex(list);
+                                  }
+                                }
+                              } catch (e) {}
+                            }
+
+                            // Fallback to API route
                             if (!sourceList || sourceList.length === 0) {
                               try {
-                                const res = await fetch('/api/actors/search?all=true&refresh=true');
+                                const res = await fetch('/api/actors/search?all=true');
                                 const json = await res.json();
                                 if (json.success && Array.isArray(json.results)) {
                                   sourceList = json.results;
                                   setLocalIndex(json.results);
-                                  try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(json.results)); } catch {}
                                 }
                               } catch (err) {
                                 console.error("Error fetching all actors for PDF:", err);
@@ -1938,7 +2089,7 @@ function ActorDataContent() {
                             if (sourceList && sourceList.length > 0) {
                               const builtGroups: Record<string, BusinessActor[]> = {};
                               sourceList.forEach((a: any) => {
-                                const s = a.status || "";
+                                const s = (a.status || "").toLowerCase();
                                 const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
                                 if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) return;
                                 const coord = String(a.coordinator || "Tanpa Koordinator").toUpperCase().trim();
@@ -1954,7 +2105,7 @@ function ActorDataContent() {
                           const needsSurveyDetailsAll = allPrintActors.some(a => a.surveyData && !a.surveyData.modalUsaha && !a.surveyData.status && !a.surveyData.rencanaPenggunaan && !a.surveyData.omset);
                           if (needsSurveyDetailsAll) {
                             try {
-                              const res = await fetch('/api/actors/search?all=true&refresh=true');
+                              const res = await fetch('/api/actors/search?all=true');
                               const json = await res.json();
                               if (json.success && Array.isArray(json.results) && json.results.length > 0) {
                                 setLocalIndex(json.results);
