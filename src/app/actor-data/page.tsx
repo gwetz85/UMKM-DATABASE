@@ -33,7 +33,7 @@ import { normalizeCoordinator } from "@/lib/coordinator-utils"
 import { resolveSurveyorCanonicalName, buildSurveyorMaps } from "@/lib/surveyor-utils"
 import { generateRegistrationForm, generateCoordinatorReport, generateAllCoordinatorsReport } from "@/lib/pdf-generator"
 import { formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
-import { getSurveyPhoto } from "@/lib/survey-photo-service"
+import { getSurveyPhoto, isValidPhotoString } from "@/lib/survey-photo-service"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 
@@ -384,7 +384,7 @@ function ActorDataContent() {
       return
     }
     const directPhoto = surveyViewActor.surveyData?.fotoSurveyUrl || surveyViewActor.photoSurveyUrl
-    if (directPhoto && directPhoto.startsWith("data:")) {
+    if (directPhoto && isValidPhotoString(directPhoto)) {
       setSurveyPhotoUrl(directPhoto)
       setIsSurveyPhotoLoading(false)
       return
@@ -1033,17 +1033,43 @@ function ActorDataContent() {
     }
   }, [viewingActor, isEditMode])
 
-  // Hydrate full actor record from Firebase when detail modal opens (in case viewingActor came from lightweight search index)
+  // Hydrate full actor record and load survey photo concurrently when detail modal opens
   useEffect(() => {
     if (!viewingActor?.id || !database) {
       setDetailSurveyPhotoUrl(null)
+      setIsDetailPhotoLoading(false)
       return
     }
     const actorId = viewingActor.id
     let cancelled = false
     setActiveDetailGroup("all")
-    setIsDetailPhotoLoading(true)
 
+    // 1. Instantly check if photo is already in memory on viewingActor
+    const initialPhoto =
+      viewingActor.surveyData?.fotoSurveyUrl ||
+      (viewingActor as any).photoSurveyUrl ||
+      (viewingActor.surveyData as any)?.photoSurvey;
+
+    if (initialPhoto && isValidPhotoString(initialPhoto)) {
+      setDetailSurveyPhotoUrl(initialPhoto)
+      setIsDetailPhotoLoading(false)
+    } else {
+      setIsDetailPhotoLoading(true)
+      // 2. Fetch survey photo IMMEDIATELY in parallel!
+      // Do NOT wait for the heavy full actor node (KTP, KK, NIB base64) to download first!
+      getSurveyPhoto(database, actorId, viewingActor)
+        .then((photoUrl) => {
+          if (!cancelled) {
+            setDetailSurveyPhotoUrl(photoUrl)
+            setIsDetailPhotoLoading(false)
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setIsDetailPhotoLoading(false)
+        })
+    }
+
+    // 3. In parallel, hydrate full actor record from Firebase for NIK/KK/KTP aux data
     get(ref(database, `businessActors/${actorId}`))
       .then(async (snap) => {
         if (cancelled) return
@@ -1052,31 +1078,23 @@ function ActorDataContent() {
           const fullData = snap.val()
           targetActor = { ...viewingActor, ...fullData, id: actorId }
           setViewingActor(prev => (prev && prev.id === actorId ? targetActor : prev))
+
+          // If photo was not yet loaded or was missing, check snap as fallback
+          const snapPhoto =
+            targetActor.surveyData?.fotoSurveyUrl ||
+            (targetActor as any).photoSurveyUrl ||
+            (targetActor.surveyData as any)?.photoSurvey;
+          if (snapPhoto && isValidPhotoString(snapPhoto)) {
+            if (!cancelled) {
+              setDetailSurveyPhotoUrl(prev => prev || snapPhoto)
+              setIsDetailPhotoLoading(false)
+            }
+          }
         }
         // Re-fetch aux data with full actor (ensuring both NIK and No. KK are checked)
         fetchAuxData(targetActor)
-
-        // Load survey photo if available
-        const directPhoto = targetActor.surveyData?.fotoSurveyUrl || (targetActor as any).photoSurveyUrl || (targetActor.surveyData as any)?.photoSurvey
-        if (directPhoto && typeof directPhoto === "string" && directPhoto.startsWith("data:")) {
-          if (!cancelled) {
-            setDetailSurveyPhotoUrl(directPhoto)
-            setIsDetailPhotoLoading(false)
-          }
-          return
-        }
-        try {
-          const photoUrl = await getSurveyPhoto(database, actorId, targetActor)
-          if (!cancelled) setDetailSurveyPhotoUrl(photoUrl)
-        } catch {
-          if (!cancelled) setDetailSurveyPhotoUrl(directPhoto || null)
-        } finally {
-          if (!cancelled) setIsDetailPhotoLoading(false)
-        }
       })
-      .catch(() => {
-        if (!cancelled) setIsDetailPhotoLoading(false)
-      })
+      .catch(() => {})
 
     return () => {
       cancelled = true

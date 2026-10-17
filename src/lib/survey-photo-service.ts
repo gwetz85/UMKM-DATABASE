@@ -16,6 +16,20 @@ function getDb(db?: Database | null): Database | null {
   return fallbackDb;
 }
 
+export function isValidPhotoString(val: any): boolean {
+  if (typeof val !== "string") return false;
+  const s = val.trim();
+  if (!s || s === "-" || s === "undefined" || s === "null") return false;
+  return (
+    s.startsWith("data:image/") ||
+    s.startsWith("data:") ||
+    s.startsWith("http://") ||
+    s.startsWith("https://") ||
+    s.startsWith("blob:") ||
+    s.length > 50
+  );
+}
+
 /**
  * Check whether an actor has a survey photo without needing to load the heavy base64 data
  */
@@ -23,17 +37,16 @@ export function hasSurveyPhoto(actor?: BusinessActor | null): boolean {
   if (!actor) return false;
   if (actor.hasSurveyPhoto) return true;
   if (actor.surveyData?.hasPhoto) return true;
-  if (actor.surveyData?.fotoSurveyUrl && actor.surveyData.fotoSurveyUrl !== actor.comparisonPhotoUrl) return true;
-  if (actor.photoSurveyUrl && actor.photoSurveyUrl !== actor.comparisonPhotoUrl) return true;
+  if (actor.surveyData?.fotoSurveyUrl && actor.surveyData.fotoSurveyUrl !== actor.comparisonPhotoUrl && isValidPhotoString(actor.surveyData.fotoSurveyUrl)) return true;
+  if (actor.photoSurveyUrl && actor.photoSurveyUrl !== actor.comparisonPhotoUrl && isValidPhotoString(actor.photoSurveyUrl)) return true;
   return false;
 }
 
 /**
  * Fetch a survey photo on-demand for a single actor
- * 1. Checks memory cache
- * 2. Checks in-memory properties on the actor (fallback)
- * 3. Fetches from 'survey_photos/${actorId}/fotoSurveyUrl'
- * 4. Fetches from 'businessActors/${actorId}/surveyData/fotoSurveyUrl' as legacy fallback
+ * 1. Checks memory cache (instant)
+ * 2. Checks in-memory properties on the actor (instant)
+ * 3. Concurrently queries primary leaf locations for ultra-fast loading without downloading full actor
  */
 export async function getSurveyPhoto(
   database: Database | null | undefined,
@@ -44,13 +57,17 @@ export async function getSurveyPhoto(
 
   // 1. Check in-memory cache
   if (photoMemoryCache.has(actorId)) {
-    return photoMemoryCache.get(actorId) || null;
+    const cached = photoMemoryCache.get(actorId);
+    if (cached) return cached;
   }
 
   // 2. Check actor fallback object if already loaded in memory
   if (actorFallback) {
-    const directPhoto = actorFallback.surveyData?.fotoSurveyUrl || actorFallback.photoSurveyUrl;
-    if (directPhoto && directPhoto !== actorFallback.comparisonPhotoUrl && directPhoto.startsWith("data:")) {
+    const directPhoto =
+      actorFallback.surveyData?.fotoSurveyUrl ||
+      actorFallback.photoSurveyUrl ||
+      (actorFallback.surveyData as any)?.photoSurvey;
+    if (directPhoto && directPhoto !== actorFallback.comparisonPhotoUrl && isValidPhotoString(directPhoto)) {
       photoMemoryCache.set(actorId, directPhoto);
       return directPhoto;
     }
@@ -60,54 +77,37 @@ export async function getSurveyPhoto(
   if (!db) return null;
 
   try {
-    // 3. Try settings/survey_photos node (primary decoupled location)
-    const settingsPhotoSnap = await get(ref(db, `settings/survey_photos/${actorId}/fotoSurveyUrl`));
-    if (settingsPhotoSnap.exists()) {
-      const val = settingsPhotoSnap.val();
-      if (typeof val === "string" && val.startsWith("data:")) {
-        photoMemoryCache.set(actorId, val);
-        return val;
-      }
-    }
+    // 3. Fast parallel fetch: Query known candidate locations concurrently
+    // Prioritize direct leaf paths so Firebase only transfers the photo string (<300KB)
+    // instead of downloading the entire businessActors node (5-10MB).
+    const candidatePaths = [
+      `businessActors/${actorId}/surveyData/fotoSurveyUrl`,
+      `businessActors/${actorId}/photoSurveyUrl`,
+      `settings/survey_photos/${actorId}/fotoSurveyUrl`,
+      `settings/survey_photos/${actorId}`,
+      `survey_photos/${actorId}/fotoSurveyUrl`,
+    ];
 
-    const settingsRootSnap = await get(ref(db, `settings/survey_photos/${actorId}`));
-    if (settingsRootSnap.exists()) {
-      const rVal = settingsRootSnap.val();
-      if (typeof rVal === "string" && rVal.startsWith("data:")) {
-        photoMemoryCache.set(actorId, rVal);
-        return rVal;
-      } else if (rVal && typeof rVal.fotoSurveyUrl === "string" && rVal.fotoSurveyUrl.startsWith("data:")) {
-        photoMemoryCache.set(actorId, rVal.fotoSurveyUrl);
-        return rVal.fotoSurveyUrl;
+    const fetchPromises = candidatePaths.map(async (path) => {
+      try {
+        const snap = await get(ref(db, path));
+        if (!snap.exists()) return null;
+        const val = snap.val();
+        if (isValidPhotoString(val)) return val as string;
+        if (val && typeof val === "object" && isValidPhotoString(val.fotoSurveyUrl)) {
+          return val.fotoSurveyUrl as string;
+        }
+        return null;
+      } catch {
+        return null;
       }
-    }
+    });
 
-    // 3b. Try legacy survey_photos node
-    const photoSnap = await get(ref(db, `survey_photos/${actorId}/fotoSurveyUrl`));
-    if (photoSnap.exists()) {
-      const val = photoSnap.val();
-      if (typeof val === "string" && val.startsWith("data:")) {
-        photoMemoryCache.set(actorId, val);
-        return val;
-      }
-    }
-
-    // 4. Fallback to legacy businessActors node
-    const legacySnap = await get(ref(db, `businessActors/${actorId}/surveyData/fotoSurveyUrl`));
-    if (legacySnap.exists()) {
-      const lVal = legacySnap.val();
-      if (typeof lVal === "string" && lVal.startsWith("data:")) {
-        photoMemoryCache.set(actorId, lVal);
-        return lVal;
-      }
-    }
-
-    const legacyPhotoRef = await get(ref(db, `businessActors/${actorId}/photoSurveyUrl`));
-    if (legacyPhotoRef.exists()) {
-      const pVal = legacyPhotoRef.val();
-      if (typeof pVal === "string" && pVal.startsWith("data:")) {
-        photoMemoryCache.set(actorId, pVal);
-        return pVal;
+    const results = await Promise.all(fetchPromises);
+    for (const photo of results) {
+      if (photo) {
+        photoMemoryCache.set(actorId, photo);
+        return photo;
       }
     }
   } catch (err) {
