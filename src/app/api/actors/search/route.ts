@@ -63,30 +63,36 @@ async function getLightweightActors(forceRefresh: boolean = false): Promise<any[
 
   await ensureAuth();
 
-  // 1. First priority: Read from pre-indexed settings/actors_search
-  const searchSnap = await get(ref(database, 'settings/actors_search')).catch(() => null);
-  if (searchSnap && searchSnap.exists()) {
-    const rawVal = searchSnap.val() || {};
-    const sampleItems = Object.values(rawVal) as any[];
-    if (sampleItems.length > 0) {
-      const list = sampleItems.map(item => {
-        const kel = resolveKelurahan(item);
-        const kec = resolveKecamatan(item, kel);
-        const rtRw = resolveRtRw(item);
-        const pob = resolvePob(item);
-        return {
-          ...item,
-          rtRw: (item.rtRw && item.rtRw !== '-') ? item.rtRw : (rtRw !== '-' ? rtRw : ''),
-          kelurahan: (item.kelurahan && item.kelurahan !== '-') ? item.kelurahan : (kel !== '-' ? kel : ''),
-          kecamatan: (item.kecamatan && item.kecamatan !== '-') ? item.kecamatan : (kec !== '-' ? kec : ''),
-          pob: (item.pob && item.pob !== '-') ? item.pob : (pob !== '-' ? pob : ''),
+  // 1. First priority: Read from pre-indexed settings/actors_search IF it has complete survey details
+  if (!forceRefresh) {
+    const searchSnap = await get(ref(database, 'settings/actors_search')).catch(() => null);
+    if (searchSnap && searchSnap.exists()) {
+      const rawVal = searchSnap.val() || {};
+      const sampleItems = Object.values(rawVal) as any[];
+      const hasSurveyDetails = sampleItems.length > 0 && sampleItems.some(item =>
+        item.surveyData?.modalUsaha || item.surveyData?.status || item.surveyData?.rencanaPenggunaan || item.surveyData?.omset
+      );
+
+      if (hasSurveyDetails) {
+        const list = sampleItems.map(item => {
+          const kel = resolveKelurahan(item);
+          const kec = resolveKecamatan(item, kel);
+          const rtRw = resolveRtRw(item);
+          const pob = resolvePob(item);
+          return {
+            ...item,
+            rtRw: (item.rtRw && item.rtRw !== '-') ? item.rtRw : (rtRw !== '-' ? rtRw : ''),
+            kelurahan: (item.kelurahan && item.kelurahan !== '-') ? item.kelurahan : (kel !== '-' ? kel : ''),
+            kecamatan: (item.kecamatan && item.kecamatan !== '-') ? item.kecamatan : (kec !== '-' ? kec : ''),
+            pob: (item.pob && item.pob !== '-') ? item.pob : (pob !== '-' ? pob : ''),
+          };
+        });
+        cachedActors = {
+          timestamp: now,
+          actors: list,
         };
-      });
-      cachedActors = {
-        timestamp: now,
-        actors: list,
-      };
-      return list;
+        return list;
+      }
     }
   }
 

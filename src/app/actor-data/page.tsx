@@ -35,6 +35,7 @@ import { generateRegistrationForm, generateCoordinatorReport, generateAllCoordin
 import { formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 import { getSurveyPhoto, isValidPhotoString } from "@/lib/survey-photo-service"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { extractCleanSurveyData } from "@/lib/stats-service"
 
 
 const normalizeGender = (g: string, nik?: string) => {
@@ -301,13 +302,14 @@ function ActorDataContent() {
 
     if (!database) return;
 
-    // 1. Try Firebase settings/actors_search first
+    // 1. Try Firebase settings/actors_search first IF it has complete survey details
     get(ref(database, 'settings/actors_search')).then(async snap => {
       if (snap.exists()) {
         const val = snap.val();
         if (val) {
           const list = Object.values(val) as BusinessActor[];
-          if (list.length > 0) {
+          const hasSurveyData = list.length > 0 && list.some(i => i.surveyData?.modalUsaha || i.surveyData?.status || i.surveyData?.rencanaPenggunaan || i.surveyData?.omset);
+          if (list.length > 0 && hasSurveyData) {
             setLocalIndex(list);
             try {
               localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(list));
@@ -317,7 +319,7 @@ function ActorDataContent() {
         }
       }
 
-      // 2. Direct fallback from businessActors if settings/actors_search is empty/missing
+      // 2. Direct fallback from businessActors if settings/actors_search is empty/missing or lacks survey details
       try {
         const baSnap = await get(ref(database, 'businessActors'));
         if (baSnap.exists()) {
@@ -342,6 +344,7 @@ function ActorDataContent() {
               rtRw: a.rtRw || (rtRw !== '-' ? rtRw : ''),
               kelurahan: (a.kelurahan || (kel !== '-' ? kel : '') || '').toUpperCase(),
               kecamatan: (a.kecamatan || (kec !== '-' ? kec : '') || '').toUpperCase(),
+              surveyData: extractCleanSurveyData(a.surveyData) || (a.surveyData ? { hasSurvey: true, tanggalSurvey: a.surveyData.tanggalSurvey || '' } : undefined),
             };
             list.push(item as BusinessActor);
             searchMap[id] = item;
@@ -1721,7 +1724,7 @@ function ActorDataContent() {
                   const s = (a.status || '').toLowerCase();
                   const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
                   if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) continue;
-                  list.push({ ...a, id } as BusinessActor);
+                  list.push({ ...a, id, surveyData: extractCleanSurveyData(a.surveyData) || a.surveyData } as BusinessActor);
                 }
                 if (list.length > 0) {
                   setLocalIndex(list);
@@ -2015,15 +2018,38 @@ function ActorDataContent() {
                           // Auto-hydrate survey details if needed
                           const needsSurveyDetails = coordActors.some(a => a.surveyData && !a.surveyData.modalUsaha && !a.surveyData.status && !a.surveyData.rencanaPenggunaan && !a.surveyData.omset);
                           if (needsSurveyDetails) {
-                            try {
-                              const res = await fetch(`/api/actors/search?all=true&coordinator=${encodeURIComponent(coordKey)}`);
-                              const json = await res.json();
-                              if (json.success && Array.isArray(json.results) && json.results.length > 0) {
-                                const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
-                                coordActors = coordActors.map(a => freshMap.get(a.id) || a);
+                            if (database) {
+                              try {
+                                const baSnap = await get(query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(coordKey)));
+                                if (baSnap.exists() && baSnap.val()) {
+                                  const raw = baSnap.val();
+                                  coordActors = coordActors.map(a => {
+                                    const rawItem = raw[a.id];
+                                    if (rawItem && rawItem.surveyData) {
+                                      return {
+                                        ...a,
+                                        surveyData: extractCleanSurveyData(rawItem.surveyData) || rawItem.surveyData
+                                      };
+                                    }
+                                    return a;
+                                  });
+                                }
+                              } catch (e) {
+                                console.warn("Direct RTDB coordinator survey hydration error:", e);
                               }
-                            } catch (e) {
-                              console.warn("Could not re-fetch fresh survey details:", e);
+                            }
+                            const stillNeedsDetails = coordActors.some(a => a.surveyData && !a.surveyData.modalUsaha && !a.surveyData.status && !a.surveyData.rencanaPenggunaan && !a.surveyData.omset);
+                            if (stillNeedsDetails) {
+                              try {
+                                const res = await fetch(`/api/actors/search?all=true&coordinator=${encodeURIComponent(coordKey)}`);
+                                const json = await res.json();
+                                if (json.success && Array.isArray(json.results) && json.results.length > 0) {
+                                  const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
+                                  coordActors = coordActors.map(a => freshMap.get(a.id) || a);
+                                }
+                              } catch (e) {
+                                console.warn("Could not re-fetch fresh survey details:", e);
+                              }
                             }
                           }
 
@@ -2062,7 +2088,7 @@ function ActorDataContent() {
                                     const s = (a.status || '').toLowerCase();
                                     const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
                                     if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) continue;
-                                    list.push({ ...a, id } as BusinessActor);
+                                    list.push({ ...a, id, surveyData: extractCleanSurveyData(a.surveyData) || a.surveyData } as BusinessActor);
                                   }
                                   if (list.length > 0) {
                                     sourceList = list;
@@ -2104,21 +2130,64 @@ function ActorDataContent() {
                           const allPrintActors = Object.values(groupsToPrint || {}).flat();
                           const needsSurveyDetailsAll = allPrintActors.some(a => a.surveyData && !a.surveyData.modalUsaha && !a.surveyData.status && !a.surveyData.rencanaPenggunaan && !a.surveyData.omset);
                           if (needsSurveyDetailsAll) {
-                            try {
-                              const res = await fetch('/api/actors/search?all=true');
-                              const json = await res.json();
-                              if (json.success && Array.isArray(json.results) && json.results.length > 0) {
-                                setLocalIndex(json.results);
-                                try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(json.results)); } catch {}
-                                const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
-                                const refreshedGroups: Record<string, BusinessActor[]> = {};
-                                for (const [k, v] of Object.entries(groupsToPrint)) {
-                                  refreshedGroups[k] = v.map(a => freshMap.get(a.id) || a);
+                            if (database) {
+                              try {
+                                toast({ title: "Memuat Rincian Survey...", description: "Menyiapkan rincian hasil survey & rencana penggunaan..." });
+                                const baSnap = await get(ref(database, 'businessActors'));
+                                if (baSnap.exists() && baSnap.val()) {
+                                  const rawActors = baSnap.val();
+                                  const searchMap: Record<string, any> = {};
+                                  const refreshedGroups: Record<string, BusinessActor[]> = {};
+                                  for (const [k, v] of Object.entries(groupsToPrint)) {
+                                    refreshedGroups[k] = v.map(a => {
+                                      const raw = rawActors[a.id];
+                                      if (raw && raw.surveyData) {
+                                        const cleanSd = extractCleanSurveyData(raw.surveyData) || raw.surveyData;
+                                        const updatedActor = {
+                                          ...a,
+                                          surveyData: cleanSd
+                                        };
+                                        searchMap[a.id] = { ...updatedActor, surveyData: cleanSd };
+                                        return updatedActor;
+                                      }
+                                      return a;
+                                    });
+                                  }
+                                  groupsToPrint = refreshedGroups;
+
+                                  const allRefreshed = Object.values(refreshedGroups).flat();
+                                  setLocalIndex(allRefreshed);
+                                  try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(allRefreshed)); } catch {}
+
+                                  // Background save clean searchMap to settings/actors_search
+                                  if (Object.keys(searchMap).length > 0) {
+                                    set(ref(database, 'settings/actors_search'), searchMap).catch(() => {});
+                                  }
                                 }
-                                groupsToPrint = refreshedGroups;
+                              } catch (e) {
+                                console.warn("Direct RTDB survey hydration error for all:", e);
                               }
-                            } catch (e) {
-                              console.warn("Could not re-fetch fresh survey details for all:", e);
+                            }
+
+                            // Fallback to API if groupsToPrint still missing details
+                            const stillNeeds = Object.values(groupsToPrint || {}).flat().some(a => a.surveyData && !a.surveyData.modalUsaha && !a.surveyData.status && !a.surveyData.rencanaPenggunaan && !a.surveyData.omset);
+                            if (stillNeeds) {
+                              try {
+                                const res = await fetch('/api/actors/search?all=true');
+                                const json = await res.json();
+                                if (json.success && Array.isArray(json.results) && json.results.length > 0) {
+                                  setLocalIndex(json.results);
+                                  try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(json.results)); } catch {}
+                                  const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
+                                  const refreshedGroups: Record<string, BusinessActor[]> = {};
+                                  for (const [k, v] of Object.entries(groupsToPrint)) {
+                                    refreshedGroups[k] = v.map(a => freshMap.get(a.id) || a);
+                                  }
+                                  groupsToPrint = refreshedGroups;
+                                }
+                              } catch (e) {
+                                console.warn("Could not re-fetch fresh survey details for all:", e);
+                              }
                             }
                           }
 
