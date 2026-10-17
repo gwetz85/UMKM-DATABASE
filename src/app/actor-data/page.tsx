@@ -761,6 +761,7 @@ function ActorDataContent() {
   const [isSyncing, setIsSyncing] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [selectedExportSheets, setSelectedExportSheets] = useState<string[]>([])
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
 
   const filteredActors = useMemo(() => {
     if (isSearching) {
@@ -1828,74 +1829,107 @@ function ActorDataContent() {
                 )}
                 {!isMonitoring && (
                   <Button
+                    disabled={isGeneratingPdf}
                     onClick={async () => {
-                      const targetCoordinator = filterCoordinator || (isKoordinator ? userProfile?.fullName : null);
-                      if (targetCoordinator) {
-                        const coordKey = String(targetCoordinator).toUpperCase().trim();
-                        let coordActors: BusinessActor[] = [];
+                      setIsGeneratingPdf(true);
+                      toast({ title: "Menyiapkan PDF...", description: "Sedang memproses dokumen, mohon tunggu sebentar..." });
+                      try {
+                        const targetCoordinator = filterCoordinator || (isKoordinator ? userProfile?.fullName : null);
+                        if (targetCoordinator) {
+                          const coordKey = String(targetCoordinator).toUpperCase().trim();
+                          let coordActors: BusinessActor[] = [];
 
-                        if (actors && actors.length > 0) {
-                          if (filterMenu !== "all" || isSearching) {
-                            const displayIds = new Set(currentDataToDisplay.map((a) => a.id));
-                            coordActors = actors.filter((a) => displayIds.has(a.id));
-                          } else {
-                            coordActors = groupedActors[coordKey] || actors;
-                          }
-                        } else if (database) {
-                          toast({ title: "Menyiapkan PDF", description: `Mengambil data lengkap untuk Koordinator ${coordKey}...` });
-                          try {
-                            const { get, ref, query, orderByChild, equalTo } = await import("firebase/database");
-                            const q = query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(coordKey));
-                            const snap = await get(q);
-                            if (snap.exists()) {
-                              const rawList = Object.entries(snap.val()).map(([k, v]: [string, any]) => ({ ...v, id: v?.id || k })) as BusinessActor[];
-                              coordActors = rawList.filter((a) => {
-                                const s = a.status || "";
-                                const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
-                                return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) && !isCancelDinas;
-                              });
+                          if (groupedActors[coordKey] && groupedActors[coordKey].length > 0) {
+                            if (filterMenu !== "all" || isSearching) {
+                              const displayIds = new Set(currentDataToDisplay.map((a) => a.id));
+                              coordActors = groupedActors[coordKey].filter((a) => displayIds.has(a.id));
+                            } else {
+                              coordActors = groupedActors[coordKey];
                             }
-                          } catch (e) {
-                            console.error("Error fetching coordinator actors for PDF:", e);
+                          } else if (actors && actors.length > 0) {
+                            coordActors = actors.filter((a) => String(a.coordinator || "").toUpperCase().trim() === coordKey);
+                          } else if (localIndex && localIndex.length > 0) {
+                            coordActors = localIndex.filter((a) => String(a.coordinator || "").toUpperCase().trim() === coordKey);
+                          } else {
+                            try {
+                              const res = await fetch(`/api/actors/search?all=true&coordinator=${encodeURIComponent(coordKey)}`);
+                              const json = await res.json();
+                              if (json.success && Array.isArray(json.results)) {
+                                coordActors = json.results;
+                              }
+                            } catch (e) {
+                              console.error("Error fetching coordinator actors for PDF:", e);
+                            }
                           }
-                        }
 
-                        if (!coordActors || coordActors.length === 0) {
-                          toast({ variant: "destructive", title: "Tidak Ada Data", description: `Belum ada data pelaku usaha untuk koordinator ${coordKey}.` });
-                          return;
-                        }
+                          if (!coordActors || coordActors.length === 0) {
+                            toast({ variant: "destructive", title: "Tidak Ada Data", description: `Belum ada data pelaku usaha untuk koordinator ${coordKey}.` });
+                            return;
+                          }
 
-                        generateCoordinatorReport(coordKey, coordActors, systemUsersRaw || []);
-                      } else {
-                        if (!allActorsRaw || Object.keys(groupedActors).length === 0) {
-                          toast({ title: "Menyiapkan Dokumen", description: "Sedang mengambil data lengkap seluruh koordinator untuk cetak PDF..." });
-                          try {
-                            const { get, ref } = await import("firebase/database");
-                            const snap = await get(ref(database!, 'businessActors'));
-                            if (snap.exists()) {
-                              const allActors = Object.entries(snap.val()).map(([k, v]: [string, any]) => ({ ...v, id: v?.id || k })) as BusinessActor[];
-                              const groups: Record<string, BusinessActor[]> = {};
-                              allActors.forEach((a) => {
+                          await new Promise(r => setTimeout(r, 60));
+                          generateCoordinatorReport(coordKey, coordActors, systemUsersRaw || []);
+                          toast({ title: "Berhasil", description: `Laporan PDF Koordinator ${coordKey} berhasil diunduh.` });
+                        } else {
+                          // Overview mode: Print all coordinators
+                          let groupsToPrint = groupedActors;
+
+                          if (!groupsToPrint || Object.keys(groupsToPrint).length === 0) {
+                            let sourceList = (localIndex && localIndex.length > 0) ? localIndex : (filteredActors || []);
+                            if (!sourceList || sourceList.length === 0) {
+                              try {
+                                const res = await fetch('/api/actors/search?all=true');
+                                const json = await res.json();
+                                if (json.success && Array.isArray(json.results)) {
+                                  sourceList = json.results;
+                                  setLocalIndex(json.results);
+                                }
+                              } catch (err) {
+                                console.error("Error fetching all actors for PDF:", err);
+                              }
+                            }
+
+                            if (sourceList && sourceList.length > 0) {
+                              const builtGroups: Record<string, BusinessActor[]> = {};
+                              sourceList.forEach((a: any) => {
                                 const s = a.status || "";
                                 const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
                                 if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) return;
-                                const coord = (a.coordinator || "Tanpa Koordinator").toUpperCase().trim();
-                                if (!groups[coord]) groups[coord] = [];
-                                groups[coord].push(a);
+                                const coord = String(a.coordinator || "Tanpa Koordinator").toUpperCase().trim();
+                                if (!builtGroups[coord]) builtGroups[coord] = [];
+                                builtGroups[coord].push(a);
                               });
-                              generateAllCoordinatorsReport(groups, systemUsersRaw || []);
+                              groupsToPrint = builtGroups;
                             }
-                          } catch (e) {
-                            toast({ variant: "destructive", title: "Gagal", description: "Gagal memuat data PDF." });
                           }
-                        } else {
-                          generateAllCoordinatorsReport(groupedActors, systemUsersRaw || []);
+
+                          if (!groupsToPrint || Object.keys(groupsToPrint).length === 0) {
+                            toast({ variant: "destructive", title: "Tidak Ada Data", description: "Belum ada data pelaku usaha yang dapat dicetak." });
+                            return;
+                          }
+
+                          await new Promise(r => setTimeout(r, 60));
+                          generateAllCoordinatorsReport(groupsToPrint, systemUsersRaw || []);
+                          toast({ title: "Berhasil", description: "Laporan PDF Seluruh Koordinator berhasil diunduh." });
                         }
+                      } catch (err: any) {
+                        console.error("PDF generation error:", err);
+                        toast({ variant: "destructive", title: "Gagal Mencetak PDF", description: err?.message || "Terjadi kesalahan saat menyusun dokumen PDF." });
+                      } finally {
+                        setIsGeneratingPdf(false);
                       }
                     }}
                     className="bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-md shadow-rose-600/20 hover:shadow-lg h-11 rounded-2xl text-xs sm:text-sm transition-all"
                   >
-                    <Printer className="w-4 h-4 mr-1.5" /> CETAK PDF
+                    {isGeneratingPdf ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> MENYIAPKAN PDF...
+                      </>
+                    ) : (
+                      <>
+                        <Printer className="w-4 h-4 mr-1.5" /> CETAK PDF
+                      </>
+                    )}
                   </Button>
                 )}
 

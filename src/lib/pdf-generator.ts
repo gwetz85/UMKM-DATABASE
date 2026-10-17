@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { BusinessActor } from '@/app/lib/types';
 import { generateBarcodeBase64, generateQRCodeBase64 } from './barcode-utils';
-import { parsePobDob, calculateAge, extractDobFromNik, formatCurrency } from './utils';
+import { parsePobDob, calculateAge, extractDobFromNik, formatCurrency, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob } from './utils';
 import { getActorCurrentMenu } from './actor-menu-status';
 
 export const addTunasBangsaHeader = (doc: jsPDF, hasLogo = false) => {
@@ -452,7 +452,7 @@ const renderCoordinatorSectionTable = (
   const tableData = sortedActors.map((actor, index) => {
     const sd = (actor as any).surveyData || {};
     const parsedPobDob = parsePobDob(actor.pobDob || '');
-    const pob = (actor.pob || parsedPobDob.pob || '-').toUpperCase();
+    const pob = resolvePob(actor);
     const dob = actor.dob || parsedPobDob.dob || extractDobFromNik(actor.nik || '') || '-';
     const age = calculateAge(dob);
     const gender = actor.gender || sd.jenisKelamin || '-';
@@ -480,11 +480,14 @@ const renderCoordinatorSectionTable = (
 
     // Col 3: Alamat Domisili Lengkap
     const addressVal = (actor.address || sd.alamatRumah || '-').toUpperCase();
+    const rtRw = resolveRtRw(actor);
+    const kel = resolveKelurahan(actor);
+    const kec = resolveKecamatan(actor, kel);
     const colAlamat = [
       addressVal,
-      `RT/RW: ${actor.rtRw || '-'}`,
-      `Kel: ${(actor.kelurahan || '-').toUpperCase()}`,
-      `Kec: ${(actor.kecamatan || '-').toUpperCase()}`,
+      `RT/RW: ${rtRw}`,
+      `Kel: ${kel}`,
+      `Kec: ${kec}`,
     ].join('\n');
 
     // Col 4: Data Usaha & Lokasi
