@@ -28,7 +28,7 @@ import { ActorMenuBadge } from "@/components/actor-menu-badge"
 import { getActorCurrentMenu } from "@/lib/actor-menu-status"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ConfirmDialog } from "@/components/confirm-dialog"
-import { cn, extractDobFromNik, parsePobDob, calculateAge, formatCurrency, formatDateTimeIndo, AGAMA_INDONESIA, STATUS_KELUARGA_LIST, PEKERJAAN_DUKCAPIL } from "@/lib/utils"
+import { cn, extractDobFromNik, parsePobDob, calculateAge, formatCurrency, formatDateTimeIndo, AGAMA_INDONESIA, STATUS_KELUARGA_LIST, PEKERJAAN_DUKCAPIL, resolveRtRw, resolveKelurahan, resolveKecamatan } from "@/lib/utils"
 import { normalizeCoordinator } from "@/lib/coordinator-utils"
 import { resolveSurveyorCanonicalName, buildSurveyorMaps } from "@/lib/surveyor-utils"
 import { generateRegistrationForm, generateCoordinatorReport, generateAllCoordinatorsReport } from "@/lib/pdf-generator"
@@ -288,7 +288,8 @@ function ActorDataContent() {
     // 1. Immediately read cache on client mount (safe from hydration errors)
     try {
       localStorage.removeItem('simpu_actors_search_cache'); // Purge stale legacy cache
-      const cached = localStorage.getItem('simpu_actors_search_cache_v2');
+      localStorage.removeItem('simpu_actors_search_cache_v2'); // Purge stale v2 cache
+      const cached = localStorage.getItem('simpu_actors_search_cache_v3');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -308,7 +309,7 @@ function ActorDataContent() {
           const list = Object.values(val) as BusinessActor[];
           setLocalIndex(list);
           try {
-            localStorage.setItem('simpu_actors_search_cache_v2', JSON.stringify(list));
+            localStorage.setItem('simpu_actors_search_cache_v3', JSON.stringify(list));
           } catch {}
           return;
         }
@@ -320,7 +321,7 @@ function ActorDataContent() {
           if (data.success && Array.isArray(data.results) && data.results.length > 0) {
             setLocalIndex(prev => (prev && prev.length > 0 ? prev : data.results));
             try {
-              localStorage.setItem('simpu_actors_search_cache_v2', JSON.stringify(data.results));
+              localStorage.setItem('simpu_actors_search_cache_v3', JSON.stringify(data.results));
             } catch {}
           }
         })
@@ -332,7 +333,7 @@ function ActorDataContent() {
           if (data.success && Array.isArray(data.results) && data.results.length > 0) {
             setLocalIndex(prev => (prev && prev.length > 0 ? prev : data.results));
             try {
-              localStorage.setItem('simpu_actors_search_cache_v2', JSON.stringify(data.results));
+              localStorage.setItem('simpu_actors_search_cache_v3', JSON.stringify(data.results));
             } catch {}
           }
         })
@@ -1597,21 +1598,29 @@ function ActorDataContent() {
           ? (groupedActors[String(filterCoordinator).toUpperCase().trim()] || [])
           : (filteredActors || [])
 
-      if (dataToExport.length === 0 && !filterCoordinator && isAdmin) {
-        toast({ title: "Mengambil data...", description: "Mohon tunggu sebentar." })
-        const { get, ref } = await import("firebase/database")
-        if (!database) {
-          toast({ variant: "destructive", title: "Error", description: "Database belum siap." })
-          return
-        }
-        const snap = await get(ref(database, 'businessActors'))
-        if (snap.exists()) {
-          const allActors = Object.values(snap.val()) as BusinessActor[]
-          dataToExport = allActors.filter(a => {
-            const s = a.status || "";
-            const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
-            return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) && !isCancelDinas;
-          })
+      // Hydrate full businessActors if items might be from lightweight search cache lacking full address details
+      if (database && (dataToExport.length === 0 || dataToExport.some(a => !a.rtRw || !a.kelurahan || !a.kecamatan))) {
+        try {
+          const { get, ref } = await import("firebase/database")
+          const snap = await get(ref(database, 'businessActors'))
+          if (snap.exists()) {
+            const rawMap = snap.val() as Record<string, any>
+            if (dataToExport.length === 0 && !filterCoordinator && isAdmin) {
+              const allActors = Object.entries(rawMap).map(([k, v]) => ({ ...(v || {}), id: v?.id || k })) as BusinessActor[]
+              dataToExport = allActors.filter(a => {
+                const s = a.status || "";
+                const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
+                return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) && !isCancelDinas;
+              })
+            } else {
+              dataToExport = dataToExport.map(actor => {
+                const full = rawMap[actor.id]
+                return full ? { ...actor, ...full } : actor
+              })
+            }
+          }
+        } catch (fetchErr) {
+          console.warn("Could not fetch full businessActors for export:", fetchErr)
         }
       }
 
@@ -1632,6 +1641,10 @@ function ActorDataContent() {
       // Build all rows in 1 combined sheet with sequential numbering (1, 2, 3, ...)
       const exportData = sortedData.map((actor, index) => {
         const petugas = (actor.petugasSurvey || (actor.surveyData as any)?.pejabatData?.petugas?.nama || "").trim().toUpperCase()
+        const rtRw = resolveRtRw(actor)
+        const kel = resolveKelurahan(actor)
+        const kec = resolveKecamatan(actor, kel)
+
         return {
           "NO": index + 1,
           "NAMA LENGKAP": (actor.fullName || "").toUpperCase(),
@@ -1643,8 +1656,9 @@ function ActorDataContent() {
           "UMUR": calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || "")),
           "NOMOR HP": actor.phone || "-",
           "ALAMAT": (actor.address || "").toUpperCase(),
-          "RT/RW": actor.rtRw || "-",
-          "KELURAHAN": (actor.kelurahan || "").toUpperCase(),
+          "RT/RW": rtRw,
+          "KELURAHAN": kel,
+          "KECAMATAN": kec,
           "JENIS USAHA": (actor.businessCategory || "").toUpperCase(),
           "USAHA": (actor.businessName || "").toUpperCase(),
           "LOKASI USAHA": (actor.businessLocation || "").toUpperCase(),

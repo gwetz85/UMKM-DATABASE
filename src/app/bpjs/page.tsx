@@ -40,8 +40,7 @@ import { useToast } from "@/hooks/use-toast"
 import * as XLSX from "xlsx"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
-import { BusinessActor } from "../lib/types"
-import { cn, parsePobDob } from "@/lib/utils"
+import { cn, parsePobDob, resolveRtRw, resolveKelurahan, resolveKecamatan } from "@/lib/utils"
 
 // Normalization Helpers
 const normalizeNik = (nik: string): string => String(nik || "").replace(/\D/g, "").replace(/^0+/, "")
@@ -663,6 +662,9 @@ export default function BpjsPage() {
       const parsed = parsePobDob(actor.pobDob || "")
       const matchInfo = matchedActorsMap.get(actor.id)
       const actorAny = actor as any
+      const rtRw = resolveRtRw(actor)
+      const kel = resolveKelurahan(actor)
+      const kec = resolveKecamatan(actor, kel)
 
       return {
         "NO": idx + 1,
@@ -674,8 +676,9 @@ export default function BpjsPage() {
         "USIA": age,
         "NOMOR PONSEL": actor.phone || "-",
         "ALAMAT": (actor.address || "").toUpperCase(),
-        "RT/RW": actor.rtRw || "-",
-        "KELURAHAN": (actor.kelurahan || "").toUpperCase(),
+        "RT/RW": rtRw,
+        "KELURAHAN": kel,
+        "KECAMATAN": kec,
         "KOORDINATOR": (actor.coordinator || "").toUpperCase(),
         "STATUS CEK BPJS": matchInfo ? "SESUAI BPJS (EXCEL)" : (actorAny.bpjsCheckStatus === 'sesuai' ? "TERVERIFIKASI DATABASE" : (age < 65 ? "Bisa Didaftarkan" : "Tidak Bisa Didaftarkan")),
         "CATATAN / KET BPJS": matchInfo?.excelStatus || actorAny.bpjsCheckNote || "-",

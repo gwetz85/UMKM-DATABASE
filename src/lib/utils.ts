@@ -286,3 +286,199 @@ export function formatDateTimeIndo(isoString?: string | null): string {
   }
 }
 
+export const KELURAHAN_TO_KECAMATAN: Record<string, string> = {
+  // Bukit Bestari
+  "SEIJANG": "BUKIT BESTARI",
+  "SEI JANG": "BUKIT BESTARI",
+  "DOMPAK": "BUKIT BESTARI",
+  "TANJUNG UNGGAT": "BUKIT BESTARI",
+  "TUNGGAT": "BUKIT BESTARI",
+  "TANJUNG AYUN SAKTI": "BUKIT BESTARI",
+  "TJ AYUN SAKTI": "BUKIT BESTARI",
+  "AYUN SAKTI": "BUKIT BESTARI",
+  "BUKIT BESTARI": "BUKIT BESTARI",
+
+  // Tanjungpinang Timur
+  "TANJUNGPINANG TIMUR": "TANJUNGPINANG TIMUR",
+  "TANJUNJGPINANG TIMUR": "TANJUNGPINANG TIMUR",
+  "TANJUNGPINNAG TIMUR": "TANJUNGPINANG TIMUR",
+  "TANJUNG PINANG TIMUR": "TANJUNGPINANG TIMUR",
+  "AIR RAJA": "TANJUNGPINANG TIMUR",
+  "AIRRAJA": "TANJUNGPINANG TIMUR",
+  "PINANG KENCANA": "TANJUNGPINANG TIMUR",
+  "PINANGKENCANA": "TANJUNGPINANG TIMUR",
+  "BATU IX": "TANJUNGPINANG TIMUR",
+  "BATUIX": "TANJUNGPINANG TIMUR",
+  "BATU 9": "TANJUNGPINANG TIMUR",
+  "BATU9": "TANJUNGPINANG TIMUR",
+  "KAMPUNG BULANG": "TANJUNGPINANG TIMUR",
+  "KP BULANG": "TANJUNGPINANG TIMUR",
+  "BULANG": "TANJUNGPINANG TIMUR",
+  "MELAYU KOTA PIRING": "TANJUNGPINANG TIMUR",
+  "MKP": "TANJUNGPINANG TIMUR",
+  "KOTA PIRING": "TANJUNGPINANG TIMUR",
+
+  // Tanjungpinang Kota
+  "KAMPUNG BUGIS": "TANJUNGPINANG KOTA",
+  "KP BUGIS": "TANJUNGPINANG KOTA",
+  "SENGGARANG": "TANJUNGPINANG KOTA",
+  "TANJUNGPINANG KOTA": "TANJUNGPINANG KOTA",
+  "TANJUNG PINANG KOTA": "TANJUNGPINANG KOTA",
+  "PENYENGAT": "TANJUNGPINANG KOTA",
+
+  // Tanjungpinang Barat
+  "TANJUNGPINANG BARAT": "TANJUNGPINANG BARAT",
+  "TANJUNG PINANG BARAT": "TANJUNGPINANG BARAT",
+  "KEMBOJA": "TANJUNGPINANG BARAT",
+  "KAMBOJA": "TANJUNGPINANG BARAT",
+  "KAMPUNG BARU": "TANJUNGPINANG BARAT",
+  "KP BARU": "TANJUNGPINANG BARAT",
+  "BUKIT CERMIN": "TANJUNGPINANG BARAT",
+  "BKT CERMIN": "TANJUNGPINANG BARAT",
+};
+
+export function inferKecamatanFromText(text: string): string {
+  if (!text) return "";
+  const clean = text.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+  if (
+    clean.includes("BARAT") ||
+    clean.includes("KEMBOJA") ||
+    clean.includes("KAMBOJA") ||
+    clean.includes("BUKITCERMIN") ||
+    clean.includes("BKTCERMIN") ||
+    clean.includes("KAMPUNGBARU") ||
+    clean.includes("KPBARU")
+  ) {
+    return "TANJUNGPINANG BARAT";
+  }
+
+  if (
+    clean.includes("BESTARI") ||
+    clean.includes("SEIJANG") ||
+    clean.includes("DOMPAK") ||
+    clean.includes("TANJUNGUNGGAT") ||
+    clean.includes("TUNGGAT") ||
+    clean.includes("AYUNSAKTI")
+  ) {
+    return "BUKIT BESTARI";
+  }
+
+  if (
+    clean.includes("BUGIS") ||
+    clean.includes("KPBUGIS") ||
+    clean.includes("SENGGARANG") ||
+    clean.includes("PENYENGAT")
+  ) {
+    return "TANJUNGPINANG KOTA";
+  }
+
+  if (
+    clean.includes("TIMUR") ||
+    clean.includes("BATUIX") ||
+    clean.includes("BATU9") ||
+    clean.includes("PINANGKENCANA") ||
+    clean.includes("AIRRAJA") ||
+    clean.includes("BULANG") ||
+    clean.includes("MELAYUKOTAPIRING") ||
+    clean.includes("KOTAPIRING") ||
+    clean.includes("TANJUNJGPINANG") ||
+    clean.includes("TANJUNGPINNAG")
+  ) {
+    return "TANJUNGPINANG TIMUR";
+  }
+
+  if (clean.includes("KOTA")) {
+    return "TANJUNGPINANG KOTA";
+  }
+
+  return "";
+}
+
+export function resolveRtRw(actor: any): string {
+  if (!actor) return "-";
+  const direct = actor.rtRw ?? actor.rt_rw ?? actor.rtrw ?? actor["RT/RW"] ?? actor["rt/rw"];
+  if (direct !== undefined && direct !== null) {
+    const s = String(direct).trim();
+    if (s !== "" && s !== "-") return s;
+  }
+  if (actor.rt && actor.rw) {
+    return `${actor.rt}/${actor.rw}`;
+  }
+  if (actor.rt) return String(actor.rt).trim();
+  if (actor.rw) return `RW ${actor.rw}`.trim();
+
+  const surveyRtRw = actor.surveyData?.rtRw || actor.surveyData?.rt_rw;
+  if (surveyRtRw && String(surveyRtRw).trim() !== "" && String(surveyRtRw).trim() !== "-") {
+    return String(surveyRtRw).trim();
+  }
+
+  const addr = `${actor.address || ""} ${actor.alamat || ""} ${actor.businessLocation || ""}`;
+  const match1 = addr.match(/RT\s*[:.]?\s*(\d+)[,\s/-]+RW\s*[:.]?\s*(\d+)/i);
+  if (match1) return `${match1[1]}/${match1[2]}`;
+  const match2 = addr.match(/RT[\s/]*RW\s*[:.]?\s*(\d+)[/\s-]+(\d+)/i);
+  if (match2) return `${match2[1]}/${match2[2]}`;
+  const match3 = addr.match(/RT\s*[:.]?\s*(\d+)/i);
+  if (match3) return `RT ${match3[1]}`;
+
+  return "-";
+}
+
+export function resolveKelurahan(actor: any): string {
+  if (!actor) return "-";
+  const direct = actor.kelurahan ?? actor.kel ?? actor.desa ?? actor.Kelurahan ?? actor.KELURAHAN ?? actor.surveyData?.kelurahan;
+  if (direct !== undefined && direct !== null) {
+    const clean = String(direct).trim().toUpperCase();
+    if (clean !== "" && clean !== "-" && clean !== "#N/A" && clean !== "N/A" && clean !== "NULL") {
+      if (clean === "BATUIX" || clean === "BATU9") return "BATU IX";
+      if (clean === "TANJUNJGPINANG TIMUR" || clean === "TANJUNGPINNAG TIMUR" || clean === "TANJUNG PINANG TIMUR") return "TANJUNGPINANG TIMUR";
+      if (clean === "TANJUNG PINANG BARAT") return "TANJUNGPINANG BARAT";
+      if (clean === "TANJUNG PINANG KOTA") return "TANJUNGPINANG KOTA";
+      if (clean === "KAMBOJA") return "KEMBOJA";
+      return clean;
+    }
+  }
+
+  const addr = `${actor.address || ""} ${actor.alamat || ""} ${actor.businessLocation || ""}`.toUpperCase();
+  for (const kel of [
+    "MELAYU KOTA PIRING", "PINANG KENCANA", "AIR RAJA", "BATU IX", "BATU 9", "KAMPUNG BULANG",
+    "TANJUNG UNGGAT", "SEI JANG", "DOMPAK", "TANJUNG AYUN SAKTI", "TANJUNGPINANG TIMUR",
+    "KAMPUNG BUGIS", "SENGGARANG", "PENYENGAT", "TANJUNGPINANG KOTA",
+    "KEMBOJA", "KAMBOJA", "KAMPUNG BARU", "BUKIT CERMIN", "TANJUNGPINANG BARAT"
+  ]) {
+    if (addr.includes(kel)) {
+      if (kel === "BATU 9") return "BATU IX";
+      if (kel === "KAMBOJA") return "KEMBOJA";
+      return kel;
+    }
+  }
+
+  return "-";
+}
+
+export function resolveKecamatan(actor: any, resolvedKel?: string): string {
+  if (!actor) return "-";
+  const direct = actor.kecamatan ?? actor.kec ?? actor.Kecamatan ?? actor.KECAMATAN ?? actor.surveyData?.kecamatan;
+  if (direct !== undefined && direct !== null) {
+    const clean = String(direct).trim().toUpperCase();
+    if (clean !== "" && clean !== "-" && clean !== "#N/A" && clean !== "N/A" && clean !== "NULL") {
+      const inferred = inferKecamatanFromText(clean);
+      if (inferred) return inferred;
+      return clean;
+    }
+  }
+
+  const kel = resolvedKel || resolveKelurahan(actor);
+  if (kel && kel !== "-") {
+    const cleanKel = kel.toUpperCase().trim();
+    const mappedKec = KELURAHAN_TO_KECAMATAN[cleanKel];
+    if (mappedKec) return mappedKec;
+  }
+
+  const addr = `${actor.address || ""} ${actor.alamat || ""} ${actor.businessLocation || ""}`;
+  const inferred = inferKecamatanFromText(addr);
+  if (inferred) return inferred;
+
+  return "-";
+}
+

@@ -52,7 +52,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ActorMenuBadge } from "@/components/actor-menu-badge"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
-import { cn, parsePobDob, calculateAge, extractDobFromNik, formatDateTimeIndo } from "@/lib/utils"
+import { cn, parsePobDob, calculateAge, extractDobFromNik, formatDateTimeIndo, resolveRtRw, resolveKelurahan, resolveKecamatan } from "@/lib/utils"
 import { resolveSurveyorCanonicalName } from "@/lib/surveyor-utils"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -151,7 +151,8 @@ function HasilVerifikasiContent() {
   useEffect(() => {
     try {
       localStorage.removeItem('simpu_actors_search_cache');
-      const cached = localStorage.getItem('simpu_actors_search_cache_v2');
+      localStorage.removeItem('simpu_actors_search_cache_v2');
+      const cached = localStorage.getItem('simpu_actors_search_cache_v3');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -170,7 +171,7 @@ function HasilVerifikasiContent() {
             const list = Object.values(val) as BusinessActor[];
             setLocalIndex(list);
             try {
-              localStorage.setItem('simpu_actors_search_cache_v2', JSON.stringify(list));
+              localStorage.setItem('simpu_actors_search_cache_v3', JSON.stringify(list));
             } catch {}
           }
         }
@@ -546,6 +547,22 @@ function HasilVerifikasiContent() {
             ? (groupedActors[String(selectedCoordinator).toUpperCase().trim()] || [])
             : (filteredActors || [])
 
+      if (database && (dataToExport.length === 0 || dataToExport.some(a => !a.rtRw || !a.kelurahan || !a.kecamatan))) {
+        try {
+          const { get, ref } = await import("firebase/database")
+          const snap = await get(ref(database, 'businessActors'))
+          if (snap.exists()) {
+            const rawMap = snap.val() as Record<string, any>
+            dataToExport = dataToExport.map(actor => {
+              const full = rawMap[actor.id]
+              return full ? { ...actor, ...full } : actor
+            })
+          }
+        } catch (fetchErr) {
+          console.warn("Could not fetch full businessActors for export:", fetchErr)
+        }
+      }
+
       if (dataToExport.length === 0) {
         toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk diekspor." })
         return
@@ -559,29 +576,36 @@ function HasilVerifikasiContent() {
         return String(a.fullName || "").localeCompare(String(b.fullName || ""))
       })
 
-      const toRow = (actor: BusinessActor, index: number) => ({
-        "NO": index + 1,
-        "NAMA LENGKAP": (actor.fullName || "").toUpperCase(),
-        "JENIS KELAMIN": actor.gender || "-",
-        "NIK": actor.nik || "-",
-        "NOMOR KK": actor.noKK || "-",
-        "TEMPAT LAHIR": actor.pob || parsePobDob(actor.pobDob || "").pob || "-",
-        "TANGGAL LAHIR": actor.dob || parsePobDob(actor.pobDob || "").dob || "-",
-        "UMUR": calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || "")),
-        "NOMOR HP": actor.phone || "-",
-        "ALAMAT": (actor.address || "").toUpperCase(),
-        "RT/RW": actor.rtRw || "-",
-        "KELURAHAN": (actor.kelurahan || "").toUpperCase(),
-        "JENIS USAHA": (actor.businessCategory || "").toUpperCase(),
-        "USAHA": (actor.businessName || "").toUpperCase(),
-        "LOKASI USAHA": (actor.businessLocation || "").toUpperCase(),
-        "KOORDINATOR": (actor.coordinator || "").toUpperCase(),
-        "KEPUTUSAN": "LOLOS",
-        "WAKTU LOLOS VERIFIKASI": actor.berkasDinasVerifiedAt
-          ? formatDateTimeIndo(actor.berkasDinasVerifiedAt)
-          : (actor.verifiedDinasAt ? formatDateTimeIndo(actor.verifiedDinasAt) : "-"),
-        "PETUGAS VERIFIKATOR": actor.berkasDinasVerifiedBy || actor.verifikatorDinas || "-",
-      })
+      const toRow = (actor: BusinessActor, index: number) => {
+        const rtRw = resolveRtRw(actor)
+        const kel = resolveKelurahan(actor)
+        const kec = resolveKecamatan(actor, kel)
+
+        return {
+          "NO": index + 1,
+          "NAMA LENGKAP": (actor.fullName || "").toUpperCase(),
+          "JENIS KELAMIN": actor.gender || "-",
+          "NIK": actor.nik || "-",
+          "NOMOR KK": actor.noKK || "-",
+          "TEMPAT LAHIR": actor.pob || parsePobDob(actor.pobDob || "").pob || "-",
+          "TANGGAL LAHIR": actor.dob || parsePobDob(actor.pobDob || "").dob || "-",
+          "UMUR": calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || "")),
+          "NOMOR HP": actor.phone || "-",
+          "ALAMAT": (actor.address || "").toUpperCase(),
+          "RT/RW": rtRw,
+          "KELURAHAN": kel,
+          "KECAMATAN": kec,
+          "JENIS USAHA": (actor.businessCategory || "").toUpperCase(),
+          "USAHA": (actor.businessName || "").toUpperCase(),
+          "LOKASI USAHA": (actor.businessLocation || "").toUpperCase(),
+          "KOORDINATOR": (actor.coordinator || "").toUpperCase(),
+          "KEPUTUSAN": "LOLOS",
+          "WAKTU LOLOS VERIFIKASI": actor.berkasDinasVerifiedAt
+            ? formatDateTimeIndo(actor.berkasDinasVerifiedAt)
+            : (actor.verifiedDinasAt ? formatDateTimeIndo(actor.verifiedDinasAt) : "-"),
+          "PETUGAS VERIFIKATOR": actor.berkasDinasVerifiedBy || actor.verifikatorDinas || "-",
+        }
+      }
 
       const setColWidths = (ws: any, rows: ReturnType<typeof toRow>[]) => {
         if (rows.length === 0) return
