@@ -18,8 +18,10 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Maximize2
 } from 'lucide-react'
+import { WeatherDetailDialog } from '@/components/weather-detail-dialog'
 
 // Tanjungpinang, Kepulauan Riau coordinates
 const LATITUDE = 0.9186
@@ -477,6 +479,7 @@ export function WeatherWidget({ className }: { className?: string }) {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [nextUpdate, setNextUpdate] = useState(300)
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
 
   const fetchWeather = useCallback(async (manual = false) => {
     if (manual) setIsRefreshing(true)
@@ -598,13 +601,24 @@ export function WeatherWidget({ className }: { className?: string }) {
   const meterPos = Math.min(Math.max((aqiValue / 300) * 100, 4), 96)
 
   return (
+    <>
     <div
+      onClick={() => setIsDetailOpen(true)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          setIsDetailOpen(true)
+        }
+      }}
       className={cn(
-        "w-full bg-white dark:bg-[#0B132B] backdrop-blur-2xl rounded-[28px] border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col justify-between transition-all duration-700 relative group shadow-sm",
+        "w-full bg-white dark:bg-[#0B132B] backdrop-blur-2xl rounded-[28px] border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col justify-between transition-all duration-500 relative group shadow-sm cursor-pointer hover:shadow-xl hover:scale-[1.008] active:scale-[0.995]",
         tier.cardBorder,
         tier.cardShadow,
         className
       )}
+      title="Klik untuk membuka jendela detail lengkap informasi cuaca"
       style={{
         ['--aqi-rgb' as any]: tier.rgbValues
       }}
@@ -653,27 +667,38 @@ export function WeatherWidget({ className }: { className?: string }) {
           </div>
         </div>
 
-        <div 
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[9px] font-bold uppercase tracking-wider transition-all duration-500 shadow-2xs"
-          style={{
-            backgroundColor: `${tier.accentHex}14`,
-            borderColor: `${tier.accentHex}40`,
-            color: tier.accentHex
-          }}
-        >
-          <span className="relative flex h-2 w-2">
-            <span 
-              className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-              style={{ backgroundColor: tier.accentHex }}
-            />
-            <span 
-              className="relative inline-flex rounded-full h-2 w-2"
-              style={{ backgroundColor: tier.accentHex }}
-            />
-          </span>
-          <span>
-            {updateMin}:{updateSec.toString().padStart(2, '0')}
-          </span>
+        <div className="flex items-center gap-2">
+          {/* Visual cue to open detail window */}
+          <div 
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-white/80 dark:bg-slate-800/80 hover:bg-white text-slate-600 dark:text-slate-300 border border-slate-200/90 dark:border-slate-700 transition-all shadow-2xs group-hover:border-primary/50 group-hover:text-primary"
+            title="Klik widget untuk melihat perkiraan per jam, kondisi udara, dan angin lengkap"
+          >
+            <Maximize2 className="w-2.5 h-2.5 text-primary" />
+            <span>Detail Cuaca</span>
+          </div>
+
+          <div 
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[9px] font-bold uppercase tracking-wider transition-all duration-500 shadow-2xs"
+            style={{
+              backgroundColor: `${tier.accentHex}14`,
+              borderColor: `${tier.accentHex}40`,
+              color: tier.accentHex
+            }}
+          >
+            <span className="relative flex h-2 w-2">
+              <span 
+                className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                style={{ backgroundColor: tier.accentHex }}
+              />
+              <span 
+                className="relative inline-flex rounded-full h-2 w-2"
+                style={{ backgroundColor: tier.accentHex }}
+              />
+            </span>
+            <span>
+              {updateMin}:{updateSec.toString().padStart(2, '0')}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -898,16 +923,33 @@ export function WeatherWidget({ className }: { className?: string }) {
           </span>
         </div>
 
-        <button 
-          onClick={() => fetchWeather(true)} 
-          disabled={isRefreshing}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-all active:scale-95 shrink-0" 
-          title="Perbarui Cuaca & Kualitas Udara"
-        >
-          <RefreshCw className={cn("w-3 h-3", isRefreshing && "animate-spin text-primary")} />
-          <span className="text-[8.5px] font-bold">Sinkronisasi</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 hidden md:inline group-hover:text-primary transition-colors">
+            • Klik untuk Detail Lengkap ↗
+          </span>
+
+          <button 
+            onClick={(e) => {
+              e.stopPropagation()
+              fetchWeather(true)
+            }} 
+            disabled={isRefreshing}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-all active:scale-95 shrink-0" 
+            title="Perbarui Cuaca & Kualitas Udara"
+          >
+            <RefreshCw className={cn("w-3 h-3", isRefreshing && "animate-spin text-primary")} />
+            <span className="text-[8.5px] font-bold">Sinkronisasi</span>
+          </button>
+        </div>
       </div>
     </div>
+
+    {/* Weather Detail Modal Window */}
+    <WeatherDetailDialog
+      open={isDetailOpen}
+      onOpenChange={setIsDetailOpen}
+      onRefresh={() => fetchWeather(true)}
+    />
+    </>
   )
 }
