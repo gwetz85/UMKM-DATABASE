@@ -1,93 +1,34 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth, useDatabase, useUser } from "@/firebase"
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth"
 import { ref, get, set, update } from "firebase/database"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
 import { 
-  Key, 
-  User, 
   Loader2, 
-  ArrowRight, 
-  MonitorOff, 
-  SearchCheck, 
+  Eye, 
+  EyeOff, 
   UserPlus, 
-  ArrowLeft,
-  CheckCircle2,
-  CalendarDays,
-  Phone, 
-  MapPin, 
-  Building2, 
-  Code2,
-  X,
-  Lock,
-  ShieldCheck
+  SearchCheck, 
+  CheckCircle2, 
+  ArrowLeft 
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { cn } from "@/lib/utils"
-import { OfficeHoursTimer } from "@/components/OfficeHoursTimer"
-import { EventCountdown } from "@/components/event-countdown"
-import { RealtimeClock } from "@/components/realtime-clock"
-import { useActiveEvent } from "@/hooks/use-active-event"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog"
-import { Separator } from "@/components/ui/separator"
-import { PublicCheckData } from "@/components/public-check-data"
 import { logActivity, getDeviceType } from "@/lib/logger"
-function base64ToBlobUrl(base64Data: string, mimeType: string = "video/mp4"): string {
-  try {
-    const pureBase64 = base64Data.includes(",") ? base64Data.split(",")[1] : base64Data;
-    const binaryString = window.atob(pureBase64);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    const blob = new Blob([bytes], { type: mimeType });
-    return URL.createObjectURL(blob);
-  } catch (err) {
-    console.error("Error creating blob URL:", err);
-    return "";
-  }
-}
-
-function parseGoogleDriveUrl(url: string): string {
-  if (!url) return "";
-  const trimmed = url.trim();
-  const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)|docs\.google\.com\/file\/d\/|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]+)/;
-  const match = trimmed.match(driveRegex);
-  if (match && match[1]) {
-    return `https://drive.usercontent.google.com/download?id=${match[1]}&export=download`;
-  }
-  return trimmed;
-}
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [registering, setRegistering] = useState(false)
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   
   // Register States
   const [regName, setRegName] = useState("")
   const [regPass, setRegPass] = useState("")
   const [isRegisteringView, setIsRegisteringView] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
-  const [isFormOpen, setIsFormOpen] = useState(true)
-  const formRef = useRef<HTMLDivElement>(null)
-  const [showInfoModal, setShowInfoModal] = useState(false)
-  const [showCheckDataModal, setShowCheckDataModal] = useState(false)
-  const [showFullEvent, setShowFullEvent] = useState(false)
 
   const auth = useAuth()
   const database = useDatabase()
@@ -113,135 +54,17 @@ export default function LoginPage() {
     }
   }, [existingUser, existingProfile, isUserLoading, isProfileLoading, router])
 
-  const [slides, setSlides] = useState<{ id: string, base64: string }[]>([])
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
-  const [backgroundMode, setBackgroundMode] = useState<"slideshow" | "video">("slideshow")
-  const [videoUrl, setVideoUrl] = useState<string | null>(null)
-  const [videoLoadError, setVideoLoadError] = useState(false)
-
-  const [eventInfo, setEventInfo] = useState<any>(null)
-  
-  useEffect(() => {
-    if (!database) return;
-    const evRef = ref(database, 'settings/event_info');
-    get(evRef).then(snap => {
-      if (snap.exists()) {
-        setEventInfo(snap.val());
-      }
-    });
-
-    // Fetch Background Mode
-    const bgRef = ref(database, 'settings/login_background');
-    get(bgRef).then(snap => {
-      if (snap.exists()) {
-        const bgData = snap.val();
-        if (bgData.mode) setBackgroundMode(bgData.mode);
-      }
-    });
-
-    // Fetch Video Metadata (Prioritize chunked storage in database)
-    const metaRef = ref(database, 'settings/login_video_meta');
-    get(metaRef).then(async snap => {
-      if (snap.exists()) {
-        const meta = snap.val();
-        if (meta.active !== false) {
-          // 1. If video is chunked in database, load chunks directly into Blob URL (zero CORS issues)
-          if (meta.totalChunks && meta.totalChunks > 0) {
-            try {
-              const chunksRef = ref(database, 'settings/login_video_chunks');
-              const chunksSnap = await get(chunksRef);
-              if (chunksSnap.exists()) {
-                const chunkObj = chunksSnap.val();
-                const chunkArr: string[] = [];
-                for (let i = 0; i < meta.totalChunks; i++) {
-                  if (chunkObj[i]) chunkArr.push(chunkObj[i]);
-                }
-                const fullBase64 = chunkArr.join('');
-                if (fullBase64) {
-                  const blobUrl = base64ToBlobUrl(fullBase64, meta.mimeType || 'video/mp4');
-                  if (blobUrl) {
-                    setVideoUrl(blobUrl);
-                    setVideoLoadError(false);
-                    setBackgroundMode('video');
-                    return;
-                  }
-                }
-              }
-            } catch (chunkErr) {
-              console.warn("Error loading video chunks:", chunkErr);
-            }
-          }
-
-          // 2. Direct URL fallback (if no chunks available)
-          if (meta.url) {
-            const resolved = parseGoogleDriveUrl(meta.url);
-            setVideoUrl(resolved);
-            setVideoLoadError(false);
-            setBackgroundMode('video');
-          }
-        }
-      }
-    });
-
-    // Fetch Slideshow
-    const slidesRef = ref(database, 'settings/login_slideshow');
-    get(slidesRef).then(snap => {
-      if (snap.exists()) {
-        const data = snap.val();
-        let arr: any[] = [];
-        if (Array.isArray(data)) {
-           arr = data.filter(Boolean);
-        } else {
-           arr = Object.values(data);
-        }
-        if (arr.length > 0) {
-          setSlides(arr);
-        }
-      }
-    });
-  }, [database]);
-
-  useEffect(() => {
-    if (slides.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentSlideIndex(prev => (prev + 1) % slides.length);
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [slides]);
-  
-
-
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowFullEvent(false);
-    };
-    const handleClickOutside = (e: MouseEvent) => {
-      // Keep form open on mobile screens to prevent accidental dismiss while tapping
-      if (typeof window !== 'undefined' && window.innerWidth < 768) return;
-      if (formRef.current && !formRef.current.contains(e.target as Node)) {
-        setIsFormOpen(false);
-      }
-    };
-    window.addEventListener("keydown", handleEsc);
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      window.removeEventListener("keydown", handleEsc);
-      document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, []);
-
-  const activeEvent = useActiveEvent(eventInfo);
-
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!identifier.trim() || !password) return
     setLoading(true)
 
     const username = identifier.toLowerCase().trim().replace(/\s+/g, '_')
     const email = `${username}@umkm.id`
 
     try {
-      let user;
-      let finalUserRole = ''; // Track role for single-device enforcement
+      let user: any;
+      let finalUserRole = '';
       let userNodeExists = false;
 
       try {
@@ -256,8 +79,6 @@ export default function LoginPage() {
           const userData = userSnap.val()
           finalUserRole = userData.role || ''
 
-          // Admin bypass: jika email adalah agus@umkm.id atau ada di roles_admin,
-          // lewati semua pengecekan status/role — langsung lolos
           const isHardcodedAdmin = email === 'agus@umkm.id'
           let isRolesAdmin = false
           if (!isHardcodedAdmin && user.uid) {
@@ -317,7 +138,6 @@ export default function LoginPage() {
             await update(userRef, { uid: user.uid })
           }
         } else {
-          // Record tidak ada di system_users — cek admin bypass
           const isHardcodedAdmin = email === 'agus@umkm.id'
           let hasAdminBypass = isHardcodedAdmin
           if (!hasAdminBypass && user.uid) {
@@ -340,10 +160,14 @@ export default function LoginPage() {
           }
         }
 
-        
         toast({ title: "Login Berhasil", description: "Selamat datang kembali." })
       } catch (loginError: any) {
-        if (loginError.code === 'auth/user-not-found' || loginError.code === 'auth/invalid-credential' || loginError.code === 'auth/invalid-email' || loginError.message === 'auth/password-changed-by-admin') {
+        if (
+          loginError.code === 'auth/user-not-found' || 
+          loginError.code === 'auth/invalid-credential' || 
+          loginError.code === 'auth/invalid-email' || 
+          loginError.message === 'auth/password-changed-by-admin'
+        ) {
           const tempUserRef = ref(database, `system_users/${username}`)
           const tempUserSnap = await get(tempUserRef)
 
@@ -438,7 +262,6 @@ export default function LoginPage() {
         }
       }
 
-      // Pastikan HANYA mengupdate akun yang benar-benar ada di system_users.
       let targetUserKey: string | null = null;
       if (userNodeExists) {
         targetUserKey = username;
@@ -449,7 +272,6 @@ export default function LoginPage() {
         }
       }
 
-      // Log Login Activity
       await logActivity({
         query: `LOGIN: ${username.toUpperCase()}`,
         results: "Berhasil Masuk",
@@ -459,7 +281,6 @@ export default function LoginPage() {
         userId: username.toUpperCase()
       }, database || undefined)
 
-      // Single-device login enforcement & presence update:
       const sessionId = typeof crypto !== 'undefined' && crypto.randomUUID
         ? crypto.randomUUID()
         : Math.random().toString(36).substring(2) + Date.now().toString(36)
@@ -494,11 +315,13 @@ export default function LoginPage() {
       }
     } catch (error: any) {
       let message = `Kesalahan: ${error.message || String(error)}`
-      if (error.code === 'auth/invalid-credential' || error.message === 'auth/wrong-password' || error.code === 'auth/email-already-in-use') message = "Username atau kata sandi salah."
+      if (error.code === 'auth/invalid-credential' || error.message === 'auth/wrong-password' || error.code === 'auth/email-already-in-use') {
+        message = "Username atau kata sandi salah."
+      }
       
       toast({
         variant: "destructive",
-        title: "Gagal",
+        title: "Gagal Masuk",
         description: message,
       })
     } finally {
@@ -509,7 +332,7 @@ export default function LoginPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    if (!regName || !regPass) return
+    if (!regName.trim() || !regPass) return
     
     setRegistering(true)
     const username = regName.toLowerCase().trim().replace(/\s+/g, '_')
@@ -518,13 +341,17 @@ export default function LoginPage() {
     try {
       const snap = await get(userRef)
       if (snap.exists()) {
-        toast({ variant: "destructive", title: "Username Sudah Ada", description: "Silakan gunakan nama lain atau hubungi Admin." })
+        toast({ 
+          variant: "destructive", 
+          title: "Username Sudah Digunakan", 
+          description: "Silakan gunakan nama lain atau hubungi Admin." 
+        })
         setRegistering(false)
         return
       }
 
       await set(userRef, {
-        fullName: regName,
+        fullName: regName.trim(),
         password: regPass,
         role: "pending",
         uid: null,
@@ -535,339 +362,252 @@ export default function LoginPage() {
       setRegName("")
       setRegPass("")
     } catch (error) {
-      toast({ variant: "destructive", title: "Gagal Mendaftar", description: "Terjadi kesalahan koneksi." })
+      toast({ 
+        variant: "destructive", 
+        title: "Gagal Mendaftar", 
+        description: "Terjadi kesalahan koneksi saat registrasi." 
+      })
     } finally {
       setRegistering(false)
     }
   }
 
   return (
-    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center relative overflow-x-hidden overflow-y-auto md:overflow-hidden font-sans bg-slate-950 p-4 sm:p-6 md:p-0">
-      {/* Background Media: Video or Slideshow */}
-      <div className="fixed inset-0 z-0 bg-slate-950 overflow-hidden pointer-events-none">
-        {backgroundMode === 'video' && videoUrl && !videoLoadError ? (
-          <video
-            key={videoUrl}
-            src={parseGoogleDriveUrl(videoUrl)}
-            autoPlay
-            loop
-            muted
-            playsInline
-            onLoadedData={(e) => {
-              e.currentTarget.play().catch(() => {});
-            }}
-            onTimeUpdate={(e) => {
-              if (e.currentTarget.currentTime >= 10.5) {
-                e.currentTarget.currentTime = 0;
-                e.currentTarget.play().catch(() => {});
-              }
-            }}
-            onError={(e) => {
-              console.warn("Video failed to play:", e);
-              if (!videoUrl?.startsWith("blob:")) {
-                setVideoLoadError(true);
-              }
-            }}
-            className="w-full h-full object-cover object-center"
-          />
-        ) : slides.length > 0 ? (
-          slides.map((slide, idx) => {
-            const isActive = idx === currentSlideIndex;
-            // Only render active slide to prevent massive memory and GPU load
-            if (!isActive && Math.abs(idx - currentSlideIndex) > 1 && idx !== 0) return null;
-            return (
-              <div 
-                key={slide.id}
-                className={`absolute inset-0 transition-opacity duration-1000 ${
-                  isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
-                }`}
-              >
-                {/* Gambar latar dengan overlay ringan */}
-                <img 
-                  src={slide.base64} 
-                  alt={`Slide ${idx + 1}`} 
-                  className="relative z-10 w-full h-full object-cover md:object-contain object-center"
-                  loading={idx === 0 ? "eager" : "lazy"}
-                />
-              </div>
-            );
-          })
-        ) : (
-          <img 
-            src="/bg-umkm-animasi.png" 
-            alt="Background" 
-            className="w-full h-full object-cover"
-            loading="eager"
-            fetchPriority="high"
-          />
-        )}
-        <div className="absolute inset-0 bg-black/40 z-20 backdrop-blur-[2px]" />
+    <div className="min-h-[100dvh] w-full relative flex flex-col justify-between overflow-x-hidden font-sans bg-[#0087D9]">
+      {/* Background Graphic Layer */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none">
+        <img 
+          src="/bg-simpu-clean.png" 
+          alt="Background SIMPU" 
+          className="w-full h-full object-cover object-left md:object-center"
+          loading="eager"
+        />
+        {/* Soft responsive overlay for mobile readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-[#0087D9]/80 md:hidden" />
       </div>
 
-      {/* Center — Logo & Title */}
-      <div className="relative z-10 flex flex-col items-center gap-4 sm:gap-6 w-full max-w-sm px-4 animate-in zoom-in-95 fade-in duration-1000 md:my-0">
-        {/* Logo */}
-        <div className="group relative">
-          <div className="absolute inset-0 bg-white/20 rounded-full blur-2xl group-hover:bg-white/30 transition-all duration-500" />
-          <div className="relative w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full border-[6px] md:border-[10px] border-white/20 bg-white/10 backdrop-blur-md shadow-2xl overflow-hidden hover:scale-105 transition-transform duration-500 flex items-center justify-center">
+      {/* TOP LEFT HEADER: Official Application Logo & Title */}
+      <header className="relative z-30 pt-6 px-6 sm:pt-8 sm:px-10 flex items-center justify-between w-full">
+        <div className="flex items-center gap-3 md:gap-4 select-none">
+          <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-white/20 backdrop-blur-md border border-white/40 p-1.5 shadow-xl flex items-center justify-center transition-transform hover:scale-105 duration-300">
             <img 
-              src="/icon-512.png" 
-              alt="Logo" 
-              className="w-[110%] h-[110%] object-cover"
+              src="/logo.png" 
+              alt="Logo SIMPU" 
+              className="w-full h-full object-contain drop-shadow"
             />
           </div>
-        </div>
-
-        <div className="text-center space-y-1">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tighter drop-shadow-2xl uppercase">
-            SIMPU
-          </h1>
-          <p className="text-white/80 text-[9px] sm:text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] drop-shadow-lg">
-            ( Sistem Informasi Manajemen Pelaku Usaha )
-          </p>
-        </div>
-      </div>
-
-      {/* Auth Forms: Flow naturally below logo on mobile, pinned to bottom-left on desktop */}
-      <div 
-        ref={formRef}
-        className="relative z-20 w-full max-w-sm mt-6 md:mt-0 md:absolute md:bottom-10 md:left-12 animate-in slide-in-from-bottom-10 fade-in duration-1000"
-      >
-        {!isFormOpen ? (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsFormOpen(true)
-            }}
-            className="w-14 h-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl flex items-center justify-center hover:bg-white/20 transition-all active:scale-95 group animate-in zoom-in-95 duration-300"
-            title="Buka Form Login"
-          >
-            <Lock className="w-6 h-6 text-white/80 group-hover:text-white transition-colors" />
-          </button>
-        ) : (
-          <div className="w-full space-y-6 min-w-[280px] sm:min-w-[320px] animate-in slide-in-from-bottom-2 fade-in duration-300">
-            {isRegistered ? (
-            <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2rem] p-8 shadow-2xl space-y-6 animate-in slide-in-from-bottom-4 duration-500 text-center">
-              <h2 className="text-2xl font-black text-white uppercase tracking-tight">Pendaftaran Berhasil</h2>
-              <div className="bg-emerald-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto border border-emerald-500/30">
-                <CheckCircle2 className="w-8 h-8 text-emerald-400" />
-              </div>
-              <p className="text-xs font-bold text-white/90 leading-relaxed uppercase tracking-wider">
-                PENDAFTARAN BERHASIL. SILAKAN LOGIN DALAM 24 JAM SEBELUM AKUN DIHAPUS OTOMATIS JIKA TIDAK AKTIF.
-              </p>
-              <Button 
-                variant="ghost" 
-                className="w-full text-white hover:bg-white/10 rounded-xl font-bold uppercase tracking-widest text-[10px]"
-                onClick={() => {
-                  setIsRegistered(false);
-                  setIsRegisteringView(false);
-                }}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke Login
-              </Button>
-            </div>
-          ) : isRegisteringView ? (
-            <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
-              <h2 className="text-2xl font-black text-white uppercase tracking-tight ml-2">Daftar Akun Baru</h2>
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div className="space-y-3">
-                  <div className="relative group flex items-center shadow-lg rounded-2xl bg-white/95 dark:bg-[#0B132B]/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/80 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
-                    <div className="pl-6 pr-3 flex items-center justify-center text-slate-400 dark:text-slate-400 group-focus-within:text-primary transition-colors">
-                      <User className="w-5 h-5" />
-                    </div>
-                    <Input 
-                      placeholder="Username" 
-                      value={regName}
-                      onChange={(e) => setRegName(e.target.value)}
-                      className="h-14 border-0 dark:border-0 bg-transparent dark:bg-transparent rounded-none shadow-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 px-2 font-bold focus-visible:ring-0 focus-visible:ring-offset-0"
-                      required 
-                    />
-                  </div>
-                  <div className="relative group flex items-center shadow-lg rounded-2xl bg-white/95 dark:bg-[#0B132B]/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/80 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
-                    <div className="pl-6 pr-3 flex items-center justify-center text-slate-400 dark:text-slate-400 group-focus-within:text-primary transition-colors">
-                      <Key className="w-5 h-5" />
-                    </div>
-                    <Input 
-                      type="password" 
-                      placeholder="Kata Sandi" 
-                      value={regPass}
-                      onChange={(e) => setRegPass(e.target.value)}
-                      className="h-14 border-0 dark:border-0 bg-transparent dark:bg-transparent rounded-none shadow-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 px-2 font-bold focus-visible:ring-0 focus-visible:ring-offset-0"
-                      required 
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3 pt-2">
-                  <Button 
-                    type="submit" 
-                    disabled={registering}
-                    className="w-full h-12 bg-white text-slate-900 hover:bg-white/90 rounded-2xl font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all"
-                  >
-                    {registering ? <Loader2 className="w-5 h-5 animate-spin" /> : "SIMPAN PENDAFTARAN"}
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    type="button"
-                    className="w-full text-white/60 hover:text-white hover:bg-white/10 rounded-2xl font-bold"
-                    onClick={() => setIsRegisteringView(false)}
-                  >
-                    BATAL
-                  </Button>
-                </div>
-              </form>
-            </div>
-          ) : (
-            <form onSubmit={handleAuth} className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
-              <div className="space-y-0 relative">
-                <div className="relative group flex items-center shadow-xl rounded-2xl bg-white/85 dark:bg-[#0B132B]/90 backdrop-blur-2xl border border-white/60 dark:border-slate-700/80 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all z-20">
-                  <div className="pl-5 pr-3 flex items-center justify-center text-slate-400 dark:text-slate-400 group-focus-within:text-primary transition-colors">
-                    <User className="w-5 h-5" />
-                  </div>
-                  <Input
-                    id="identifier"
-                    type="text"
-                    placeholder="Username"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    className="h-12 md:h-14 border-0 dark:border-0 bg-transparent dark:bg-transparent rounded-none shadow-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 px-2 font-bold text-base focus-visible:ring-0 focus-visible:ring-offset-0"
-                    required
-                  />
-                </div>
-                
-                <div className={cn(
-                  "grid transition-all duration-500 ease-in-out",
-                  identifier.trim().length > 0 ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                )}>
-                  <div className="overflow-hidden">
-                    <div className="relative group flex items-center mt-3 shadow-xl rounded-2xl bg-white/85 dark:bg-[#0B132B]/90 backdrop-blur-2xl border border-white/60 dark:border-slate-700/80 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
-                      <div className="pl-5 pr-3 flex items-center justify-center text-slate-400 dark:text-slate-400 group-focus-within:text-primary transition-colors">
-                        <Key className="w-5 h-5" />
-                      </div>
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="Kata Sandi"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="h-12 md:h-14 border-0 dark:border-0 bg-transparent dark:bg-transparent rounded-none shadow-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 px-2 font-bold text-base focus-visible:ring-0 focus-visible:ring-offset-0 pr-14"
-                        required={identifier.trim().length > 0}
-                      />
-                      <button 
-                        type="submit"
-                        disabled={loading || identifier.trim().length === 0}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 md:w-10 md:h-10 bg-primary hover:bg-primary/90 text-white rounded-xl flex items-center justify-center transition-all active:scale-90 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-white" />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-3 pt-4 px-1">
-                <button 
-                  type="button"
-                  onClick={() => router.push('/pendaftaran')}
-                  className="px-3.5 py-2 rounded-2xl bg-emerald-500/25 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-400/30 backdrop-blur-md text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md active:scale-95"
-                >
-                  <UserPlus className="w-3.5 h-3.5" />
-                  <span>Daftar Pelaku Usaha</span>
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => router.push('/cek-data')}
-                  className="px-3.5 py-2 rounded-2xl bg-white/15 hover:bg-white/25 text-white border border-white/25 backdrop-blur-md text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md active:scale-95"
-                >
-                  <SearchCheck className="w-3.5 h-3.5" />
-                  <span>Cek Data Publik</span>
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-        )}
-      </div>
-
-      {/* Footer Removed */}
-
-      {/* Modals & Dialogs */}
-      <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border border-slate-100 dark:border-slate-800 shadow-2xl bg-white/95 dark:bg-[#0B132B] backdrop-blur-xl rounded-[2.5rem]">
-          <div className="bg-slate-50/50 dark:bg-slate-900/50 p-8 flex flex-col items-center justify-center border-b border-slate-100 dark:border-slate-800">
-            <div className="mb-4 text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-[0.2em]">Waktu Operasional Kantor</div>
-            <OfficeHoursTimer large />
+          <div className="flex flex-col text-white drop-shadow-md">
+            <span className="text-xl sm:text-2xl font-black tracking-wider leading-none uppercase">
+              SIMPU
+            </span>
+            <span className="text-[9px] sm:text-[10px] font-semibold text-white/95 uppercase tracking-widest leading-tight mt-1">
+              Sistem Informasi Manajemen Pelaku Usaha
+            </span>
           </div>
-          <div className="p-8 space-y-8">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-xl text-primary"><Building2 className="w-5 h-5" /></div>
-                <h3 className="font-black text-lg text-slate-800 dark:text-slate-100 uppercase tracking-tight">Sekretariat</h3>
-              </div>
-              <div className="pl-11 space-y-2">
-                <p className="text-xs font-bold text-slate-600 dark:text-slate-300 leading-relaxed uppercase">{eventInfo?.address || "JALAN GATOT SUBROTO ( DEPAN RAWASARI )"}</p>
-                <p className="text-sm font-black text-primary">KONTAK : 0823-2880-4478</p>
-              </div>
-            </div>
-            <Separator className="bg-slate-100 dark:bg-slate-800" />
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-900/10 dark:bg-white/10 rounded-xl text-slate-900 dark:text-white"><Code2 className="w-5 h-5" /></div>
-                <h3 className="font-black text-lg text-slate-800 dark:text-slate-100 uppercase tracking-tight">Pengembang</h3>
-              </div>
-              <div className="pl-11 space-y-2">
-                <p className="text-sm font-black text-slate-900 dark:text-white uppercase">AGUS SURIYADI</p>
-                <p className="text-sm font-black text-slate-700 dark:text-slate-300">KONTAK : 0817319885</p>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </header>
 
-      <Dialog open={showCheckDataModal} onOpenChange={setShowCheckDataModal}>
-        <DialogContent className="sm:max-w-[800px] w-[95vw] max-h-[90vh] overflow-hidden p-0 border border-slate-100 dark:border-slate-800 shadow-2xl rounded-[2.5rem] bg-white/95 dark:bg-[#0B132B] backdrop-blur-xl flex flex-col">
-           <div className="p-8 overflow-y-auto flex-1">
-             <PublicCheckData />
-           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Full Screen Event View overlay */}
-      {showFullEvent && activeEvent && (
-        <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-2xl p-8 animate-in fade-in duration-500"
-          onClick={() => setShowFullEvent(false)}
-        >
-          <button 
-            className="absolute top-10 right-10 text-white/40 hover:text-white transition-colors"
-            onClick={() => setShowFullEvent(false)}
-          >
-            <X className="w-10 h-10" />
-          </button>
-          <div className="flex flex-col items-center gap-12 max-w-4xl w-full text-center animate-in zoom-in-95 duration-500">
-            <div className="space-y-4">
-              <div className="inline-flex p-4 bg-white/10 rounded-3xl border border-white/20 mb-4">
-                <CalendarDays className="w-12 h-12 text-white animate-pulse" />
-              </div>
-              <h2 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter leading-tight drop-shadow-2xl">
-                {activeEvent.description}
-              </h2>
-              <div className="h-1.5 w-24 bg-white/20 mx-auto rounded-full" />
-            </div>
-            <div className="py-6 w-full flex justify-center">
-              <EventCountdown 
-                targetDate={activeEvent.endDate || activeEvent.date} 
-                startDate={activeEvent.startDate} 
-                title={activeEvent.description}
-                size="lg"
-              />
-            </div>
-            <p className="text-white/60 text-lg md:text-xl font-bold uppercase tracking-[0.2em] max-w-2xl leading-relaxed">
-              Persiapkan diri Anda untuk agenda penting ini. Pastikan data sudah terverifikasi di sistem SIMPU.
+      {/* MAIN CONTENT: Right-aligned Login Section */}
+      <main className="relative z-20 w-full flex-1 flex flex-col items-center justify-center px-4 py-8 md:py-12 lg:pr-16 xl:pr-24 lg:items-end">
+        <div className="w-full max-w-[360px] sm:max-w-[380px] flex flex-col items-center">
+          {/* Greeting text above card */}
+          <div className="text-center mb-6 sm:mb-7 select-none">
+            <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-medium text-white leading-tight tracking-tight drop-shadow-md">
+              Selamat Datang
+            </h1>
+            <p className="text-xl sm:text-2xl lg:text-[26px] font-normal text-white/95 leading-tight tracking-tight drop-shadow-md mt-1">
+              di Aplikasi SIMPU
             </p>
           </div>
+
+          {/* White Card Container */}
+          <div className="w-full bg-white rounded-2xl sm:rounded-[22px] shadow-[0_20px_50px_rgba(0,0,0,0.22)] p-6 sm:p-7 border border-white/60">
+            {isRegistered ? (
+              /* Success State */
+              <div className="text-center py-4 space-y-4 animate-in fade-in zoom-in-95 duration-300">
+                <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600 shadow-inner">
+                  <CheckCircle2 className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
+                    Pendaftaran Berhasil
+                  </h3>
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                    Akun Anda telah terdaftar dalam sistem. Menunggu aktivasi role oleh Administrator sebelum dapat digunakan.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRegistered(false)
+                    setIsRegisteringView(false)
+                  }}
+                  className="w-full h-11 rounded-lg bg-[#0087D9] hover:bg-[#0076BF] text-white font-semibold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Kembali ke Login</span>
+                </button>
+              </div>
+            ) : isRegisteringView ? (
+              /* Registration Form */
+              <form onSubmit={handleRegister} className="space-y-4 animate-in fade-in duration-300">
+                <div className="text-left mb-2">
+                  <h3 className="text-lg font-bold text-slate-800">
+                    Daftar Akun Petugas
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Silakan isi identitas username dan kata sandi baru.
+                  </p>
+                </div>
+
+                <div>
+                  <input
+                    type="text"
+                    value={regName}
+                    onChange={(e) => setRegName(e.target.value)}
+                    placeholder="Username Baru"
+                    required
+                    className="w-full h-11 sm:h-12 px-4 rounded-lg bg-[#EEF3F9] border border-[#D5E1EE] text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0087D9]/40 focus:border-[#0087D9] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <input
+                    type="password"
+                    value={regPass}
+                    onChange={(e) => setRegPass(e.target.value)}
+                    placeholder="Kata Sandi Baru"
+                    required
+                    className="w-full h-11 sm:h-12 px-4 rounded-lg bg-[#EEF3F9] border border-[#D5E1EE] text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0087D9]/40 focus:border-[#0087D9] transition-all"
+                  />
+                </div>
+
+                <div className="pt-2 space-y-2">
+                  <button
+                    type="submit"
+                    disabled={registering}
+                    className="w-full h-11 sm:h-12 rounded-lg bg-[#0087D9] hover:bg-[#0076BF] active:scale-[0.99] text-white font-semibold text-sm sm:text-base shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {registering ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Mendaftarkan...</span>
+                      </>
+                    ) : (
+                      "Simpan Pendaftaran"
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsRegisteringView(false)}
+                    className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors"
+                  >
+                    Batal & Kembali
+                  </button>
+                </div>
+              </form>
+            ) : (
+              /* Standard Login Form (No Captcha) */
+              <form onSubmit={handleAuth} className="space-y-4 animate-in fade-in duration-300">
+                {/* Username Input */}
+                <div>
+                  <input
+                    id="identifier"
+                    type="text"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="Username / ID"
+                    autoComplete="username"
+                    required
+                    className="w-full h-11 sm:h-12 px-4 rounded-lg bg-[#EEF3F9] border border-[#D5E1EE] text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0087D9]/40 focus:border-[#0087D9] transition-all"
+                  />
+                </div>
+
+                {/* Password Input */}
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    required
+                    className="w-full h-11 sm:h-12 px-4 pr-11 rounded-lg bg-[#EEF3F9] border border-[#D5E1EE] text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0087D9]/40 focus:border-[#0087D9] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                    title={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {/* Login Action Button */}
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={loading || !identifier.trim() || !password}
+                    className="w-full h-11 sm:h-12 rounded-lg bg-[#0087D9] hover:bg-[#0076BF] active:scale-[0.99] text-white font-semibold text-sm sm:text-base shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Memproses...</span>
+                      </>
+                    ) : (
+                      "Login"
+                    )}
+                  </button>
+                </div>
+
+                {/* Secondary navigation & register link */}
+                <div className="pt-3 border-t border-slate-100 flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                    <button
+                      type="button"
+                      onClick={() => router.push('/pendaftaran')}
+                      className="hover:text-[#0087D9] transition-colors flex items-center gap-1.5"
+                    >
+                      <UserPlus className="w-3.5 h-3.5 text-[#0087D9]" />
+                      <span>Daftar Pelaku Usaha</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => router.push('/cek-data')}
+                      className="hover:text-[#0087D9] transition-colors flex items-center gap-1.5"
+                    >
+                      <SearchCheck className="w-3.5 h-3.5 text-[#0087D9]" />
+                      <span>Cek Data Publik</span>
+                    </button>
+                  </div>
+
+                  <div className="text-center pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsRegisteringView(true)}
+                      className="text-[11px] text-slate-400 hover:text-[#0087D9] transition-colors"
+                    >
+                      Belum punya akun petugas? <span className="font-semibold text-slate-600 underline hover:text-[#0087D9]">Daftar di sini</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
-      )}
+      </main>
+
+      {/* FOOTER: Subtle copyright / info */}
+      <footer className="relative z-30 pb-4 px-6 text-center lg:text-right lg:pr-16 xl:pr-24 select-none">
+        <p className="text-[11px] text-white/80 font-medium drop-shadow">
+          © {new Date().getFullYear()} SIMPU. All rights reserved.
+        </p>
+      </footer>
     </div>
-  );
+  )
 }
