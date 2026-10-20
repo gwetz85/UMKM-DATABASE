@@ -386,21 +386,21 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-[#0B3D21]/95 md:hidden" />
       </div>
 
-      {/* TOP LEFT HEADER: Official Application Logo & Title */}
-      <header className="relative z-30 pt-6 px-6 sm:pt-8 sm:px-10 flex items-center justify-between w-full">
-        <div className="flex items-center gap-3 md:gap-4 select-none">
-          <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-white/20 backdrop-blur-md border border-amber-400/60 p-1.5 shadow-xl flex items-center justify-center transition-transform hover:scale-105 duration-300">
+      {/* TOP LEFT HEADER: Official Application Logo & Title (Enlarged & High Contrast) */}
+      <header className="relative z-30 pt-5 px-5 sm:pt-8 sm:px-10 flex items-center justify-between w-full">
+        <div className="flex items-center gap-3.5 sm:gap-4.5 bg-[#062816]/85 backdrop-blur-xl border-2 border-amber-400/90 px-4 py-2.5 sm:px-5 sm:py-3.5 rounded-2xl sm:rounded-3xl shadow-[0_15px_35px_rgba(0,0,0,0.55)] select-none hover:border-amber-400 transition-all">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-xl sm:rounded-2xl md:rounded-3xl bg-white p-2 sm:p-2.5 shadow-2xl border-2 border-amber-400 flex items-center justify-center shrink-0 transition-transform hover:scale-105 duration-300">
             <img 
               src="/logo.png" 
               alt="Logo SIMPU" 
-              className="w-full h-full object-contain drop-shadow"
+              className="w-full h-full object-contain"
             />
           </div>
-          <div className="flex flex-col text-white drop-shadow-md">
-            <span className="text-xl sm:text-2xl font-black tracking-wider leading-none uppercase text-white">
+          <div className="flex flex-col justify-center">
+            <span className="text-2xl sm:text-3xl md:text-4xl font-black tracking-wider leading-none uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
               SIMPU
             </span>
-            <span className="text-[9px] sm:text-[10px] font-semibold text-amber-300 uppercase tracking-widest leading-tight mt-1">
+            <span className="text-[11px] sm:text-xs md:text-sm font-bold text-amber-300 tracking-wider uppercase leading-tight mt-1 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
               Sistem Informasi Manajemen Pelaku Usaha
             </span>
           </div>
