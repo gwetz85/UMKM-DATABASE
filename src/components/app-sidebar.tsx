@@ -339,10 +339,10 @@ export function AppSidebar() {
       </SidebarHeader>
 
       {/* ─── NAVIGATION GROUPS ─── */}
-      <SidebarContent className="px-2.5 py-3 space-y-4 custom-scrollbar bg-[#0B132B]">
+      <SidebarContent className="px-2.5 py-3 space-y-4 custom-scrollbar bg-white text-slate-900 border-r border-slate-200">
         {categorizedNavigation.map((group) => (
           <SidebarGroup key={group.label} className="p-0">
-            <SidebarGroupLabel className="px-3 mb-1.5 group-data-[collapsible=icon]:hidden text-slate-300/80 font-black text-[10.5px] uppercase tracking-[0.16em]">
+            <SidebarGroupLabel className="px-3 mb-1.5 group-data-[collapsible=icon]:hidden text-slate-600 font-black text-[10.5px] uppercase tracking-[0.16em]">
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -361,8 +361,8 @@ export function AppSidebar() {
                             className={cn(
                               "h-10 px-3 rounded-2xl transition-all duration-200 text-xs font-bold",
                               item.items.some((sub: any) => pathname === sub.href)
-                                ? "bg-[#162238] text-white"
-                                : "text-slate-100 hover:bg-white/10 hover:text-white",
+                                ? "bg-slate-100 text-slate-950 border border-slate-300/80 shadow-xs"
+                                : "text-slate-900 hover:bg-slate-100 hover:text-black",
                               "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
                               "active:scale-95"
                             )}
@@ -373,23 +373,23 @@ export function AppSidebar() {
                                 onClick={() => playSound('click')}
                               >
                                 <div 
-                                  className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 border border-white/10 shadow-2xs"
+                                  className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 border border-slate-200/90 shadow-2xs"
                                   style={{ 
-                                    backgroundColor: `${itemColor}25`,
+                                    backgroundColor: `${itemColor}18`,
                                     color: itemColor 
                                   }}
                                 >
                                   <item.icon className="w-4 h-4" />
                                 </div>
-                                <span className="font-bold text-xs text-slate-100 tracking-tight truncate group-data-[collapsible=icon]:hidden">
+                                <span className="font-bold text-xs text-slate-900 uppercase tracking-tight truncate group-data-[collapsible=icon]:hidden">
                                   {item.name}
                                 </span>
-                                <ChevronRight className="ml-auto w-3.5 h-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden text-slate-300" />
+                                <ChevronRight className="ml-auto w-3.5 h-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden text-slate-500" />
                               </div>
                             </CollapsibleTrigger>
                           </SidebarMenuButton>
                           <CollapsibleContent className="animate-in slide-in-from-top-1 duration-200">
-                            <SidebarMenuSub className="border-white/10 ml-6 mr-1 mt-1 gap-1">
+                            <SidebarMenuSub className="border-slate-200 ml-6 mr-1 mt-1 gap-1">
                               {item.items.map((subItem: any) => {
                                 const isSubActive = pathname === subItem.href
                                 return (
@@ -400,8 +400,8 @@ export function AppSidebar() {
                                       className={cn(
                                         "rounded-xl transition-all h-8.5 font-bold text-[11px]",
                                         isSubActive
-                                          ? "bg-sky-600 text-white shadow-xs font-extrabold"
-                                          : "text-slate-200 hover:bg-white/10 hover:text-white font-medium"
+                                          ? "bg-slate-200 text-slate-950 font-black shadow-xs"
+                                          : "text-slate-800 hover:bg-slate-100 hover:text-black font-semibold"
                                       )}
                                     >
                                       <Link
@@ -412,8 +412,8 @@ export function AppSidebar() {
                                           if (isMobile) setOpenMobile(false)
                                         }}
                                       >
-                                        <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isSubActive ? "bg-white" : "bg-slate-500")} />
-                                        <span className="uppercase tracking-wider truncate">{subItem.name}</span>
+                                        <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isSubActive ? "bg-slate-950" : "bg-slate-400")} />
+                                        <span className="uppercase tracking-wider truncate font-bold">{subItem.name}</span>
                                       </Link>
                                     </SidebarMenuSubButton>
                                   </SidebarMenuSubItem>
@@ -434,8 +434,8 @@ export function AppSidebar() {
                           className={cn(
                             "h-10 px-3 rounded-2xl transition-all duration-200 text-xs font-bold",
                             isActive
-                              ? "bg-[#162238] text-white hover:bg-[#1b2a47] hover:text-white shadow-md border border-white/15"
-                              : "text-slate-100 hover:bg-white/10 hover:text-white",
+                              ? "bg-slate-100 text-slate-950 hover:bg-slate-200/80 hover:text-black shadow-xs border border-slate-300/80"
+                              : "text-slate-900 hover:bg-slate-100 hover:text-black",
                             "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
                             "active:scale-95"
                           )}
@@ -448,19 +448,19 @@ export function AppSidebar() {
                               className={cn(
                                 "w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-transform shadow-2xs",
                                 isActive 
-                                  ? "bg-sky-500/30 text-sky-300 border border-sky-400/40" 
-                                  : "border border-white/10"
+                                  ? "border border-slate-300" 
+                                  : "border border-slate-200/90"
                               )}
                               style={{ 
-                                backgroundColor: isActive ? undefined : `${itemColor}20`,
-                                color: isActive ? '#38bdf8' : itemColor 
+                                backgroundColor: `${itemColor}18`,
+                                color: itemColor 
                               }}
                             >
                               <item.icon className="w-4 h-4" />
                             </div>
                             <span className={cn(
-                              "truncate group-data-[collapsible=icon]:hidden font-bold text-xs tracking-tight",
-                              isActive ? "text-white font-extrabold" : "text-slate-100"
+                              "truncate group-data-[collapsible=icon]:hidden font-bold text-xs tracking-tight uppercase",
+                              isActive ? "text-slate-950 font-black" : "text-slate-900"
                             )}>
                               {item.name}
                             </span>
