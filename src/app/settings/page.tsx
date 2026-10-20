@@ -46,7 +46,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog"
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { user } = useUser()
+  const { user, userProfile: ctxProfile } = useUser()
   const { toast } = useToast()
   const database = useDatabase()
   const auth = useAuth()
@@ -85,11 +85,16 @@ export default function SettingsPage() {
     return ref(database, 'system_users')
   }, [user, database])
   const { data: allUsersForProfile } = useList(userProfileRef)
-  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
+  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid) || ctxProfile
 
   const userTargetKey = userProfile?.id || (user?.email ? user.email.split('@')[0].toLowerCase() : '')
 
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
+  const roleStr = String(userProfile?.role || '').toLowerCase().trim()
+  const isAdmin = !!adminRole || 
+    (user?.email?.toLowerCase() === 'agus@umkm.id') || 
+    roleStr === 'admin' || 
+    roleStr === 'administrator' || 
+    roleStr === 'superadmin'
   const isKoordinator = userProfile?.role === 'koordinator'
   const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
   const isMonitoring = userProfile?.role === 'monitoring'

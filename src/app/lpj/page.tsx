@@ -53,10 +53,14 @@ export default function LPJPage() {
     setPageLimit(50)
   }, [filterCoordinator])
 
-  const isAdmin = userProfile?.role === 'admin'
-  const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
-  const isMonitoring = userProfile?.role === 'monitoring'
-  const isKoordinator = userProfile?.role === 'koordinator'
+  const roleStr = String(userProfile?.role || '').toLowerCase().trim()
+  const isAdmin = (user?.email?.toLowerCase() === 'agus@umkm.id') || 
+    roleStr === 'admin' || 
+    roleStr === 'administrator' || 
+    roleStr === 'superadmin'
+  const isPetugas = roleStr === 'petugas_survey' || roleStr === 'petugas'
+  const isMonitoring = roleStr === 'monitoring'
+  const isKoordinator = roleStr === 'koordinator'
   const canAccess = isAdmin || isPetugas || isMonitoring || isKoordinator
   const canModify = isAdmin || isPetugas
 

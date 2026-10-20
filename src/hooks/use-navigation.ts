@@ -40,7 +40,12 @@ export function useNavigation() {
   }, [user, database])
   const { data: adminRole } = useObject(adminRef)
 
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
+  const roleStr = String(userProfile?.role || '').toLowerCase().trim()
+  const isAdmin = !!adminRole || 
+    (user?.email?.toLowerCase() === 'agus@umkm.id') || 
+    roleStr === 'admin' || 
+    roleStr === 'administrator' || 
+    roleStr === 'superadmin'
   const isMonitoring = userProfile?.role === 'monitoring'
   const isKoordinator = userProfile?.role === 'koordinator'
   const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useDatabase, useUser, useObject, useMemoFirebase } from "@/firebase"
+import { useDatabase } from "@/firebase"
+import { useAdmin } from "@/hooks/use-admin"
 import { ref, get, set, update } from "firebase/database"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -13,7 +14,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Info, Plus, Trash2, Loader2, Save, Send, Zap } from "lucide-react"
 
 export default function SettingsInfoPage() {
-  const { user, isUserLoading } = useUser()
+  const { user, isAdmin, isAdminLoading } = useAdmin()
   const database = useDatabase()
   const router = useRouter()
   const { toast } = useToast()
@@ -33,16 +34,9 @@ export default function SettingsInfoPage() {
   const [updates, setUpdates] = useState<string[]>([])
   const [newUpdate, setNewUpdate] = useState("")
 
-  // Verify Admin Access
-  const adminRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, `roles_admin/${user.uid}`)
-  }, [user, database])
-  const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
-
   useEffect(() => {
-    if (!isUserLoading && !user) router.push('/login')
-  }, [user, isUserLoading, router])
+    if (!isAdminLoading && !user) router.push('/login')
+  }, [user, isAdminLoading, router])
 
   useEffect(() => {
     if (database) {
@@ -98,11 +92,11 @@ export default function SettingsInfoPage() {
     }
   }
 
-  if (isUserLoading || isAdminLoading || isLoading) {
+  if (isAdminLoading || isLoading) {
     return <div className="p-20 flex justify-center"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>
   }
 
-  if (!adminRole && user?.email !== 'agus@umkm.id') {
+  if (!isAdmin) {
     return <div className="p-20 text-center font-black text-2xl text-red-500">Akses Ditolak. Khusus Administrator.</div>
   }
 

@@ -183,7 +183,12 @@ export default function UserManagementPage() {
   }, [user, database])
 
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
+  const roleStr = String(userProfile?.role || '').toLowerCase().trim()
+  const isAdmin = !!adminRole || 
+    (user?.email?.toLowerCase() === 'agus@umkm.id') || 
+    roleStr === 'admin' || 
+    roleStr === 'administrator' || 
+    roleStr === 'superadmin'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null

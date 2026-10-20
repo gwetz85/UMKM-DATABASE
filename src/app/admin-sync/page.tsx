@@ -10,7 +10,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { normalizeCoordinator } from "@/lib/coordinator-utils"
 
 export default function AdminSyncPage() {
-  const { user } = useUser()
+  const { user, userProfile } = useUser()
   const database = useDatabase()
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [log, setLog] = useState<string[]>([])
@@ -23,7 +23,12 @@ export default function AdminSyncPage() {
   }, [user, database])
   const { data: adminRole } = useObject(adminRef)
   
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
+  const roleStr = String(userProfile?.role || '').toLowerCase().trim()
+  const isAdmin = !!adminRole || 
+    (user?.email?.toLowerCase() === 'agus@umkm.id') || 
+    roleStr === 'admin' || 
+    roleStr === 'administrator' || 
+    roleStr === 'superadmin'
 
   const addLog = (msg: string) => setLog(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`])
 

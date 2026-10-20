@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useDatabase, useObject, useMemoFirebase, useUser, useList } from '@/firebase';
+import { useDatabase, useObject, useMemoFirebase } from '@/firebase';
+import { useAdmin } from '@/hooks/use-admin';
 import { ref, set } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -93,13 +94,7 @@ export default function SettingsMaintenance() {
   };
 
   // Cek Role Admin
-  const usersRef = useMemoFirebase(() => {
-    if (!database) return null;
-    return ref(database, 'system_users');
-  }, [database]);
-  const { data: allUsers, isLoading: usersLoading } = useList(usersRef);
-  const myProfile = allUsers?.find((u: any) => u.uid === user?.uid);
-  const isAdmin = myProfile?.role === 'admin' || (user?.email?.toLowerCase() === 'agus@umkm.id');
+  const { isAdmin, isAdminLoading } = useAdmin();
 
   const maintenanceRef = useMemoFirebase(() => {
     if (!database) return null;
@@ -181,7 +176,7 @@ export default function SettingsMaintenance() {
     handleEditorInput();
   };
 
-  if (usersLoading || dataLoading) {
+  if (isAdminLoading || dataLoading) {
     return (
       <div className="flex h-[400px] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

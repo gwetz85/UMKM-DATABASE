@@ -122,7 +122,12 @@ export default function PembagianPetugasSurveyPage() {
   }, [user, database])
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
 
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
+  const roleStr = String(userProfile?.role || '').toLowerCase().trim()
+  const isAdmin = !!adminRole || 
+    (user?.email?.toLowerCase() === 'agus@umkm.id') || 
+    roleStr === 'admin' || 
+    roleStr === 'administrator' || 
+    roleStr === 'superadmin'
 
   // Fetch all system users
   const systemUsersRef = useMemoFirebase(() => {

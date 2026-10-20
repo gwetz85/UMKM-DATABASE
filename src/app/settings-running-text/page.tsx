@@ -1,31 +1,23 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useDatabase, useObject, useMemoFirebase, useUser, useList } from '@/firebase';
+import { useDatabase, useObject, useMemoFirebase } from '@/firebase';
 import { ref, set } from 'firebase/database';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Type, RotateCcw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useAdmin } from '@/hooks/use-admin';
 
 export default function SettingsRunningText() {
   const database = useDatabase();
-  const { user } = useUser();
+  const { isAdmin, isAdminLoading, user } = useAdmin();
   const { toast } = useToast();
   const router = useRouter();
   const [newText, setNewText] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-
-  // Periksa Role Admin
-  const usersRef = useMemoFirebase(() => {
-    if (!database) return null;
-    return ref(database, 'system_users');
-  }, [database]);
-  const { data: allUsers, isLoading: usersLoading } = useList(usersRef);
-  const myProfile = allUsers?.find((u: any) => u.uid === user?.uid);
 
   const textRef = useMemoFirebase(() => {
     if (!database) return null;
@@ -40,7 +32,7 @@ export default function SettingsRunningText() {
     }
   }, [currentData]);
 
-  if (usersLoading || dataLoading) {
+  if (isAdminLoading || dataLoading) {
     return (
       <div className="flex h-[400px] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -48,7 +40,7 @@ export default function SettingsRunningText() {
     );
   }
 
-  if (myProfile?.role !== 'admin') {
+  if (!isAdmin) {
     return (
       <div className="p-8 text-center">
         <h1 className="text-2xl font-bold text-red-600">Akses Ditolak</h1>

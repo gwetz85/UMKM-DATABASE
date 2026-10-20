@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useDatabase, useUser, useObject, useMemoFirebase } from "@/firebase"
+import { useDatabase, useObject, useMemoFirebase } from "@/firebase"
+import { useAdmin } from "@/hooks/use-admin"
 import { ref, update } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -22,20 +23,12 @@ interface EventItem {
 }
 
 export default function EventSettingsPage() {
-  const { user } = useUser()
+  const { user, isAdmin, isAdminLoading } = useAdmin()
   const { toast } = useToast()
   const database = useDatabase()
   const [loading, setLoading] = useState(false)
   
   const [events, setEvents] = useState<EventItem[]>([])
-
-  const adminRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, `roles_admin/${user.uid}`)
-  }, [user, database])
-
-  const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
   const eventSettingsRef = database ? ref(database, 'settings/event_info') : null
   const { data: eventInfo, isLoading: isEventLoading } = useObject(eventSettingsRef)

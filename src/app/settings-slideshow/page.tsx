@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useDatabase, useUser, useObject, useMemoFirebase } from "@/firebase"
+import { useDatabase, useObject, useMemoFirebase } from "@/firebase"
+import { useAdmin } from "@/hooks/use-admin"
 import { ref, get, set, update, remove } from "firebase/database"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -72,7 +73,7 @@ function parseGoogleDriveUrl(url: string): { finalUrl: string; isGoogleDrive: bo
 }
 
 export default function SettingsSlideshowPage() {
-  const { user, isUserLoading } = useUser()
+  const { user, isAdmin, isAdminLoading } = useAdmin()
   const database = useDatabase()
   const router = useRouter()
   const { toast } = useToast()
@@ -96,16 +97,9 @@ export default function SettingsSlideshowPage() {
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
   const videoInputRef = useRef<HTMLInputElement>(null)
 
-  // Verify Admin Access
-  const adminRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, `roles_admin/${user.uid}`)
-  }, [user, database])
-  const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
-
   useEffect(() => {
-    if (!isUserLoading && !user) router.push('/login')
-  }, [user, isUserLoading, router])
+    if (!isAdminLoading && !user) router.push('/login')
+  }, [user, isAdminLoading, router])
 
   // Fetch initial data
   useEffect(() => {
@@ -617,11 +611,11 @@ export default function SettingsSlideshowPage() {
     }
   }
 
-  if (isUserLoading || isAdminLoading || isLoading) {
+  if (isAdminLoading || isLoading) {
     return <div className="p-20 flex justify-center"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>
   }
 
-  if (!adminRole && user?.email !== 'agus@umkm.id') {
+  if (!isAdmin) {
     return <div className="p-20 text-center font-black text-2xl text-red-500">Akses Ditolak. Khusus Administrator.</div>
   }
 
