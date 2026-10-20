@@ -66,7 +66,7 @@ const toDatetimeLocal = (d: Date): string => {
 
 export default function SettingsMaintenance() {
   const database = useDatabase();
-  const { user } = useUser();
+  const { user } = useAdmin();
   const { toast } = useToast();
   const router = useRouter();
   
