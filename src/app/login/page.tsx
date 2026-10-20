@@ -373,7 +373,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full relative flex flex-col justify-between overflow-x-hidden font-sans bg-[#0087D9]">
+    <div className="min-h-[100dvh] w-full relative flex flex-col justify-between overflow-x-hidden font-sans bg-gradient-to-br from-[#881337] via-[#9a3412] to-[#14532d]">
       {/* Background Graphic Layer */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none">
         <img 
@@ -383,13 +383,13 @@ export default function LoginPage() {
           loading="eager"
         />
         {/* Soft responsive overlay for mobile readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-[#0087D9]/80 md:hidden" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-[#881337]/90 md:hidden" />
       </div>
 
       {/* TOP LEFT HEADER: Official Application Logo & Title */}
       <header className="relative z-30 pt-6 px-6 sm:pt-8 sm:px-10 flex items-center justify-between w-full">
         <div className="flex items-center gap-3 md:gap-4 select-none">
-          <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-white/20 backdrop-blur-md border border-white/40 p-1.5 shadow-xl flex items-center justify-center transition-transform hover:scale-105 duration-300">
+          <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-white/20 backdrop-blur-md border border-amber-300/40 p-1.5 shadow-xl flex items-center justify-center transition-transform hover:scale-105 duration-300">
             <img 
               src="/logo.png" 
               alt="Logo SIMPU" 
@@ -400,7 +400,7 @@ export default function LoginPage() {
             <span className="text-xl sm:text-2xl font-black tracking-wider leading-none uppercase">
               SIMPU
             </span>
-            <span className="text-[9px] sm:text-[10px] font-semibold text-white/95 uppercase tracking-widest leading-tight mt-1">
+            <span className="text-[9px] sm:text-[10px] font-semibold text-amber-200 uppercase tracking-widest leading-tight mt-1">
               Sistem Informasi Manajemen Pelaku Usaha
             </span>
           </div>
@@ -412,16 +412,16 @@ export default function LoginPage() {
         <div className="w-full max-w-[360px] sm:max-w-[380px] flex flex-col items-center">
           {/* Greeting text above card */}
           <div className="text-center mb-6 sm:mb-7 select-none">
-            <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-medium text-white leading-tight tracking-tight drop-shadow-md">
+            <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-semibold text-white leading-tight tracking-tight drop-shadow-lg">
               Selamat Datang
             </h1>
-            <p className="text-xl sm:text-2xl lg:text-[26px] font-normal text-white/95 leading-tight tracking-tight drop-shadow-md mt-1">
+            <p className="text-xl sm:text-2xl lg:text-[26px] font-medium text-amber-100/95 leading-tight tracking-tight drop-shadow-md mt-1">
               di Aplikasi SIMPU
             </p>
           </div>
 
           {/* White Card Container */}
-          <div className="w-full bg-white rounded-2xl sm:rounded-[22px] shadow-[0_20px_50px_rgba(0,0,0,0.22)] p-6 sm:p-7 border border-white/60">
+          <div className="w-full bg-white/98 backdrop-blur-md rounded-2xl sm:rounded-[24px] shadow-[0_25px_60px_rgba(0,0,0,0.3)] p-6 sm:p-7 border border-white/80 ring-1 ring-amber-500/10">
             {isRegistered ? (
               /* Success State */
               <div className="text-center py-4 space-y-4 animate-in fade-in zoom-in-95 duration-300">
@@ -442,7 +442,7 @@ export default function LoginPage() {
                     setIsRegistered(false)
                     setIsRegisteringView(false)
                   }}
-                  className="w-full h-11 rounded-lg bg-[#0087D9] hover:bg-[#0076BF] text-white font-semibold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-11 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#D97706] hover:from-[#B91C1C] hover:to-[#B45309] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Kembali ke Login</span>
@@ -467,7 +467,7 @@ export default function LoginPage() {
                     onChange={(e) => setRegName(e.target.value)}
                     placeholder="Username Baru"
                     required
-                    className="w-full h-11 sm:h-12 px-4 rounded-lg bg-[#EEF3F9] border border-[#D5E1EE] text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0087D9]/40 focus:border-[#0087D9] transition-all"
+                    className="w-full h-11 sm:h-12 px-4 rounded-xl bg-[#F8FAFC] border border-slate-200 text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 transition-all"
                   />
                 </div>
 
@@ -478,7 +478,7 @@ export default function LoginPage() {
                     onChange={(e) => setRegPass(e.target.value)}
                     placeholder="Kata Sandi Baru"
                     required
-                    className="w-full h-11 sm:h-12 px-4 rounded-lg bg-[#EEF3F9] border border-[#D5E1EE] text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0087D9]/40 focus:border-[#0087D9] transition-all"
+                    className="w-full h-11 sm:h-12 px-4 rounded-xl bg-[#F8FAFC] border border-slate-200 text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 transition-all"
                   />
                 </div>
 
@@ -486,7 +486,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={registering}
-                    className="w-full h-11 sm:h-12 rounded-lg bg-[#0087D9] hover:bg-[#0076BF] active:scale-[0.99] text-white font-semibold text-sm sm:text-base shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full h-11 sm:h-12 rounded-xl bg-gradient-to-r from-[#16A34A] to-[#15803D] hover:from-[#15803D] hover:to-[#166534] active:scale-[0.99] text-white font-bold text-sm sm:text-base shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                   >
                     {registering ? (
                       <>
@@ -520,7 +520,7 @@ export default function LoginPage() {
                     placeholder="Username / ID"
                     autoComplete="username"
                     required
-                    className="w-full h-11 sm:h-12 px-4 rounded-lg bg-[#EEF3F9] border border-[#D5E1EE] text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0087D9]/40 focus:border-[#0087D9] transition-all"
+                    className="w-full h-11 sm:h-12 px-4 rounded-xl bg-[#F8FAFC] border border-slate-200 text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 transition-all"
                   />
                 </div>
 
@@ -534,7 +534,7 @@ export default function LoginPage() {
                     placeholder="••••••••"
                     autoComplete="current-password"
                     required
-                    className="w-full h-11 sm:h-12 px-4 pr-11 rounded-lg bg-[#EEF3F9] border border-[#D5E1EE] text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0087D9]/40 focus:border-[#0087D9] transition-all"
+                    className="w-full h-11 sm:h-12 px-4 pr-11 rounded-xl bg-[#F8FAFC] border border-slate-200 text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 transition-all"
                   />
                   <button
                     type="button"
@@ -547,12 +547,12 @@ export default function LoginPage() {
                   </button>
                 </div>
 
-                {/* Login Action Button */}
+                {/* Login Action Button with Kemerahan - Kuning Keemasan gradient */}
                 <div className="pt-2">
                   <button
                     type="submit"
                     disabled={loading || !identifier.trim() || !password}
-                    className="w-full h-11 sm:h-12 rounded-lg bg-[#0087D9] hover:bg-[#0076BF] active:scale-[0.99] text-white font-semibold text-sm sm:text-base shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full h-11 sm:h-12 rounded-xl bg-gradient-to-r from-[#DC2626] via-[#EA580C] to-[#D97706] hover:from-[#B91C1C] hover:via-[#C2410C] hover:to-[#B45309] active:scale-[0.99] text-white font-bold text-sm sm:text-base shadow-lg shadow-orange-950/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <>
@@ -567,21 +567,21 @@ export default function LoginPage() {
 
                 {/* Secondary navigation & register link */}
                 <div className="pt-3 border-t border-slate-100 flex flex-col gap-2.5">
-                  <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                  <div className="flex items-center justify-between text-xs font-semibold">
                     <button
                       type="button"
                       onClick={() => router.push('/pendaftaran')}
-                      className="hover:text-[#0087D9] transition-colors flex items-center gap-1.5"
+                      className="text-emerald-700 hover:text-emerald-800 transition-colors flex items-center gap-1.5"
                     >
-                      <UserPlus className="w-3.5 h-3.5 text-[#0087D9]" />
+                      <UserPlus className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Daftar Pelaku Usaha</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => router.push('/cek-data')}
-                      className="hover:text-[#0087D9] transition-colors flex items-center gap-1.5"
+                      className="text-amber-700 hover:text-amber-800 transition-colors flex items-center gap-1.5"
                     >
-                      <SearchCheck className="w-3.5 h-3.5 text-[#0087D9]" />
+                      <SearchCheck className="w-3.5 h-3.5 text-amber-600" />
                       <span>Cek Data Publik</span>
                     </button>
                   </div>
@@ -590,9 +590,9 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setIsRegisteringView(true)}
-                      className="text-[11px] text-slate-400 hover:text-[#0087D9] transition-colors"
+                      className="text-[11px] text-slate-400 hover:text-red-600 transition-colors"
                     >
-                      Belum punya akun petugas? <span className="font-semibold text-slate-600 underline hover:text-[#0087D9]">Daftar di sini</span>
+                      Belum punya akun petugas? <span className="font-semibold text-slate-600 underline hover:text-red-600">Daftar di sini</span>
                     </button>
                   </div>
                 </div>
