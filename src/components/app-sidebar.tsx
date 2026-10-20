@@ -8,7 +8,15 @@ import {
   ChevronRight,
   ChevronLeft,
   ChevronsUpDown,
+  User,
 } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
 
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
@@ -481,64 +489,93 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
 
-      {/* ─── BOTTOM PROFILE & LOGOUT FOOTER matching Growly LMS ─── */}
+      {/* ─── BOTTOM PROFILE & LOGOUT FOOTER ─── */}
       <SidebarFooter className="p-3 border-t border-white/10 mt-auto bg-[#070D1D]/90">
-        <div className="flex flex-col gap-2">
-          {user && (
-            <div className="group-data-[collapsible=icon]:hidden flex flex-col gap-1.5">
-              <Link
-                href="/profile"
-                className="flex items-center gap-2.5 p-2 rounded-2xl bg-[#162238]/80 hover:bg-[#162238] border border-white/10 transition-all cursor-pointer w-full group/profile"
-              >
-                <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-tr from-sky-500 to-teal-400 p-[1.5px] shrink-0">
-                  <div className="w-full h-full rounded-full bg-[#0B132B] flex items-center justify-center overflow-hidden">
-                    {userProfile?.photoURL ? (
-                      <img src={userProfile.photoURL} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="font-black text-xs text-sky-400">
-                        {userProfile?.fullName?.[0]?.toUpperCase() || 'U'}
+        {user ? (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton
+                    size="lg"
+                    className="h-auto p-2 rounded-2xl bg-[#162238]/80 hover:bg-[#162238] border border-white/10 transition-all cursor-pointer w-full text-left data-[state=open]:bg-[#162238] group/profile"
+                  >
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-tr from-sky-500 to-teal-400 p-[1.5px] shrink-0">
+                      <div className="w-full h-full rounded-full bg-[#0B132B] flex items-center justify-center overflow-hidden">
+                        {userProfile?.photoURL ? (
+                          <img src={userProfile.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="font-black text-xs text-sky-400">
+                            {userProfile?.fullName?.[0]?.toUpperCase() || 'U'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+                      <span className="text-xs font-bold text-white truncate">
+                        {userProfile?.fullName || user.email?.split('@')[0]}
                       </span>
-                    )}
+                      <span className="text-[9px] text-slate-400 font-medium truncate">
+                        {isAdmin ? "Administrator" : isStaff ? "Staff Pelaksana" : isMonitoring ? "Monitoring" : isKoordinator ? "Koordinator Wilayah" : isPetugas ? "Petugas Survey" : isDinas ? "Verifikator Dinas" : "Pengguna"}
+                      </span>
+                    </div>
+                    <ChevronsUpDown className="w-3.5 h-3.5 text-slate-400 group-hover/profile:text-white shrink-0 ml-auto group-data-[collapsible=icon]:hidden" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side={isMobile ? "bottom" : "right"}
+                  align="end"
+                  sideOffset={8}
+                  className="w-56 p-2 rounded-2xl bg-[#0B132B] border border-white/15 text-white shadow-2xl backdrop-blur-xl z-[100]"
+                >
+                  <div className="px-2.5 py-2 border-b border-white/10 mb-1">
+                    <p className="text-xs font-bold text-white truncate">
+                      {userProfile?.fullName || user.email?.split('@')[0]}
+                    </p>
+                    <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                      {user.email}
+                    </p>
                   </div>
-                </div>
-                <div className="flex flex-col min-w-0 flex-1">
-                  <span className="text-xs font-bold text-white truncate">
-                    {userProfile?.fullName || user.email?.split('@')[0]}
-                  </span>
-                  <span className="text-[9px] text-slate-400 font-medium truncate">
-                    {isAdmin ? "Administrator" : isStaff ? "Staff Pelaksana" : isMonitoring ? "Monitoring" : isKoordinator ? "Koordinator Wilayah" : isPetugas ? "Petugas Survey" : isDinas ? "Verifikator Dinas" : "Pengguna"}
-                  </span>
-                </div>
-                <ChevronsUpDown className="w-3.5 h-3.5 text-slate-400 group-hover/profile:text-white shrink-0 ml-auto" />
-              </Link>
-            </div>
-          )}
-
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/profile"
+                      className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-slate-200 hover:text-white hover:bg-white/10 cursor-pointer font-semibold text-xs"
+                      onClick={() => {
+                        playSound('click')
+                        if (isMobile) setOpenMobile(false)
+                      }}
+                    >
+                      <User className="w-4 h-4 text-sky-400" />
+                      <span>Profil Saya</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-white/10 my-1" />
+                  <DropdownMenuItem
+                    onClick={handleAuthAction}
+                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 cursor-pointer font-bold text-xs"
+                  >
+                    <LogOut className="w-4 h-4 text-rose-400" />
+                    <span>Keluar</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        ) : (
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={handleAuthAction}
-                className="h-8.5 rounded-xl hover:bg-rose-950/40 text-rose-400 font-bold transition-colors group-data-[collapsible=icon]:justify-center text-xs"
+                className="h-8.5 rounded-xl hover:bg-sky-950/40 text-sky-400 font-bold transition-colors group-data-[collapsible=icon]:justify-center text-xs"
               >
-                {user ? (
-                  <>
-                    <LogOut className="w-3.5 h-3.5 shrink-0" />
-                    <span className="group-data-[collapsible=icon]:hidden">
-                      Keluar
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="w-3.5 h-3.5 shrink-0" />
-                    <span className="group-data-[collapsible=icon]:hidden">
-                      Masuk
-                    </span>
-                  </>
-                )}
+                <LogIn className="w-3.5 h-3.5 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden">
+                  Masuk
+                </span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
-        </div>
+        )}
       </SidebarFooter>
     </Sidebar>
   )
