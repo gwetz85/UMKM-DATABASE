@@ -373,7 +373,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full relative flex flex-col justify-between overflow-x-hidden font-sans bg-gradient-to-br from-[#881337] via-[#9a3412] to-[#14532d]">
+    <div className="min-h-[100dvh] w-full relative flex flex-col justify-between overflow-x-hidden font-sans bg-[#0B3D21]">
       {/* Background Graphic Layer */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none">
         <img 
@@ -383,13 +383,13 @@ export default function LoginPage() {
           loading="eager"
         />
         {/* Soft responsive overlay for mobile readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-[#881337]/90 md:hidden" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-[#0B3D21]/95 md:hidden" />
       </div>
 
       {/* TOP LEFT HEADER: Official Application Logo & Title */}
       <header className="relative z-30 pt-6 px-6 sm:pt-8 sm:px-10 flex items-center justify-between w-full">
         <div className="flex items-center gap-3 md:gap-4 select-none">
-          <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-white/20 backdrop-blur-md border border-amber-300/40 p-1.5 shadow-xl flex items-center justify-center transition-transform hover:scale-105 duration-300">
+          <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-white/20 backdrop-blur-md border border-amber-400/60 p-1.5 shadow-xl flex items-center justify-center transition-transform hover:scale-105 duration-300">
             <img 
               src="/logo.png" 
               alt="Logo SIMPU" 
@@ -397,10 +397,10 @@ export default function LoginPage() {
             />
           </div>
           <div className="flex flex-col text-white drop-shadow-md">
-            <span className="text-xl sm:text-2xl font-black tracking-wider leading-none uppercase">
+            <span className="text-xl sm:text-2xl font-black tracking-wider leading-none uppercase text-white">
               SIMPU
             </span>
-            <span className="text-[9px] sm:text-[10px] font-semibold text-amber-200 uppercase tracking-widest leading-tight mt-1">
+            <span className="text-[9px] sm:text-[10px] font-semibold text-amber-300 uppercase tracking-widest leading-tight mt-1">
               Sistem Informasi Manajemen Pelaku Usaha
             </span>
           </div>
@@ -409,27 +409,27 @@ export default function LoginPage() {
 
       {/* MAIN CONTENT: Right-aligned Login Section */}
       <main className="relative z-20 w-full flex-1 flex flex-col items-center justify-center px-4 py-8 md:py-12 lg:pr-16 xl:pr-24 lg:items-end">
-        <div className="w-full max-w-[360px] sm:max-w-[380px] flex flex-col items-center">
+        <div className="w-full max-w-[360px] sm:max-w-[385px] flex flex-col items-center">
           {/* Greeting text above card */}
           <div className="text-center mb-6 sm:mb-7 select-none">
-            <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-semibold text-white leading-tight tracking-tight drop-shadow-lg">
+            <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-bold text-white leading-tight tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
               Selamat Datang
             </h1>
-            <p className="text-xl sm:text-2xl lg:text-[26px] font-medium text-amber-100/95 leading-tight tracking-tight drop-shadow-md mt-1">
+            <p className="text-xl sm:text-2xl lg:text-[26px] font-semibold text-amber-300 leading-tight tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] mt-1">
               di Aplikasi SIMPU
             </p>
           </div>
 
-          {/* White Card Container */}
-          <div className="w-full bg-white/98 backdrop-blur-md rounded-2xl sm:rounded-[24px] shadow-[0_25px_60px_rgba(0,0,0,0.3)] p-6 sm:p-7 border border-white/80 ring-1 ring-amber-500/10">
+          {/* Solid White Card: Tampak Sangat Jelas & Tegas */}
+          <div className="w-full bg-white rounded-2xl sm:rounded-[24px] shadow-[0_25px_60px_rgba(0,0,0,0.4)] p-6 sm:p-8 border border-slate-100 ring-1 ring-slate-900/5">
             {isRegistered ? (
               /* Success State */
               <div className="text-center py-4 space-y-4 animate-in fade-in zoom-in-95 duration-300">
-                <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600 shadow-inner">
+                <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-700 shadow-inner">
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
+                  <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">
                     Pendaftaran Berhasil
                   </h3>
                   <p className="text-xs text-slate-600 mt-1 leading-relaxed">
@@ -442,7 +442,7 @@ export default function LoginPage() {
                     setIsRegistered(false)
                     setIsRegisteringView(false)
                   }}
-                  className="w-full h-11 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#D97706] hover:from-[#B91C1C] hover:to-[#B45309] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-11 sm:h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Kembali ke Login</span>
@@ -452,7 +452,7 @@ export default function LoginPage() {
               /* Registration Form */
               <form onSubmit={handleRegister} className="space-y-4 animate-in fade-in duration-300">
                 <div className="text-left mb-2">
-                  <h3 className="text-lg font-bold text-slate-800">
+                  <h3 className="text-lg font-bold text-slate-900">
                     Daftar Akun Petugas
                   </h3>
                   <p className="text-xs text-slate-500">
@@ -467,7 +467,7 @@ export default function LoginPage() {
                     onChange={(e) => setRegName(e.target.value)}
                     placeholder="Username Baru"
                     required
-                    className="w-full h-11 sm:h-12 px-4 rounded-xl bg-[#F8FAFC] border border-slate-200 text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 transition-all"
+                    className="w-full h-11 sm:h-12 px-4 rounded-xl bg-[#F1F5F9] border border-[#CBD5E1] text-slate-900 placeholder:text-slate-400 font-semibold text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 transition-all"
                   />
                 </div>
 
@@ -478,7 +478,7 @@ export default function LoginPage() {
                     onChange={(e) => setRegPass(e.target.value)}
                     placeholder="Kata Sandi Baru"
                     required
-                    className="w-full h-11 sm:h-12 px-4 rounded-xl bg-[#F8FAFC] border border-slate-200 text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 transition-all"
+                    className="w-full h-11 sm:h-12 px-4 rounded-xl bg-[#F1F5F9] border border-[#CBD5E1] text-slate-900 placeholder:text-slate-400 font-semibold text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 transition-all"
                   />
                 </div>
 
@@ -486,7 +486,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={registering}
-                    className="w-full h-11 sm:h-12 rounded-xl bg-gradient-to-r from-[#16A34A] to-[#15803D] hover:from-[#15803D] hover:to-[#166534] active:scale-[0.99] text-white font-bold text-sm sm:text-base shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full h-11 sm:h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold text-sm sm:text-base shadow-lg shadow-emerald-950/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                   >
                     {registering ? (
                       <>
@@ -501,7 +501,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setIsRegisteringView(false)}
-                    className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors"
+                    className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
                   >
                     Batal & Kembali
                   </button>
@@ -520,7 +520,7 @@ export default function LoginPage() {
                     placeholder="Username / ID"
                     autoComplete="username"
                     required
-                    className="w-full h-11 sm:h-12 px-4 rounded-xl bg-[#F8FAFC] border border-slate-200 text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 transition-all"
+                    className="w-full h-11 sm:h-12 px-4 rounded-xl bg-[#F1F5F9] border border-[#CBD5E1] text-slate-900 placeholder:text-slate-400 font-semibold text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 transition-all"
                   />
                 </div>
 
@@ -534,7 +534,7 @@ export default function LoginPage() {
                     placeholder="••••••••"
                     autoComplete="current-password"
                     required
-                    className="w-full h-11 sm:h-12 px-4 pr-11 rounded-xl bg-[#F8FAFC] border border-slate-200 text-slate-800 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 transition-all"
+                    className="w-full h-11 sm:h-12 px-4 pr-11 rounded-xl bg-[#F1F5F9] border border-[#CBD5E1] text-slate-900 placeholder:text-slate-400 font-semibold text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 transition-all"
                   />
                   <button
                     type="button"
@@ -547,12 +547,12 @@ export default function LoginPage() {
                   </button>
                 </div>
 
-                {/* Login Action Button with Kemerahan - Kuning Keemasan gradient */}
+                {/* Login Action Button (Hanya Kuning & Hijau Theme: Solid Vibrant Emerald Green) */}
                 <div className="pt-2">
                   <button
                     type="submit"
                     disabled={loading || !identifier.trim() || !password}
-                    className="w-full h-11 sm:h-12 rounded-xl bg-gradient-to-r from-[#DC2626] via-[#EA580C] to-[#D97706] hover:from-[#B91C1C] hover:via-[#C2410C] hover:to-[#B45309] active:scale-[0.99] text-white font-bold text-sm sm:text-base shadow-lg shadow-orange-950/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full h-11 sm:h-12 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 active:scale-[0.99] text-white font-bold text-base shadow-lg shadow-emerald-950/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <>
@@ -567,7 +567,7 @@ export default function LoginPage() {
 
                 {/* Secondary navigation & register link */}
                 <div className="pt-3 border-t border-slate-100 flex flex-col gap-2.5">
-                  <div className="flex items-center justify-between text-xs font-semibold">
+                  <div className="flex items-center justify-between text-xs font-bold">
                     <button
                       type="button"
                       onClick={() => router.push('/pendaftaran')}
@@ -590,9 +590,9 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setIsRegisteringView(true)}
-                      className="text-[11px] text-slate-400 hover:text-red-600 transition-colors"
+                      className="text-[11px] text-slate-400 hover:text-emerald-700 transition-colors"
                     >
-                      Belum punya akun petugas? <span className="font-semibold text-slate-600 underline hover:text-red-600">Daftar di sini</span>
+                      Belum punya akun petugas? <span className="font-semibold text-slate-700 underline hover:text-emerald-700">Daftar di sini</span>
                     </button>
                   </div>
                 </div>
