@@ -1256,7 +1256,7 @@ function HasilVerifikasiContent() {
 
               {/* Large Decorative Watermark Icon (Bottom-Right) */}
               <div 
-                className="absolute -bottom-2.5 -right-2.5 pointer-events-none transition-all duration-500 ease-out opacity-[0.08] dark:opacity-[0.14] group-hover:opacity-[0.24] group-hover:scale-125 group-hover:-rotate-12"
+                className="absolute -bottom-2.5 -right-2.5 pointer-events-none transition-all duration-500 ease-out opacity-[0.08] dark:opacity-[0.14] group-hover:opacity-[0.14] group-hover:scale-110"
                 style={{ color: themeColor }}
               >
                 <CheckCircle2 className="w-24 h-24 stroke-[1.5]" />
@@ -1287,7 +1287,7 @@ function HasilVerifikasiContent() {
                     style={{ backgroundColor: themeColor }} 
                   />
                   <h3
-                    className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1 group-hover:text-primary transition-colors"
+                    className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors"
                     title={stat.name}
                   >
                     {stat.name}
