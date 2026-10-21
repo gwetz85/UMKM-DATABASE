@@ -9,7 +9,7 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 const database = getDatabase(app);
 const auth = getAuth(app);
 
-const CRON_SECRET = "simpu_auto_verify_2026";
+const CRON_SECRET = process.env.CRON_SECRET || "simpu_auto_verify_2026";
 
 export async function GET(req: NextRequest) {
   try {
