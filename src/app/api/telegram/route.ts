@@ -212,7 +212,7 @@ export async function POST(req: NextRequest) {
                       `📍 /alamat [kata] - Cari berdasar Alamat\n` +
                       `📱 /hp [nomor] - Cari berdasar No. HP\n` +
                       `🏢 /koor [nama] - Cari berdasar Koordinator\n` +
-                      `✅ /cekdata [kata] - Cek NIK/KK/Nama (SIMPU, Master & Blacklist)\n` +
+                      `✅ /cekdata [kata] - Cek Nama, NIK, No. KK (Sheet 1-4 & Data 2026)\n` +
                       `📝 /inputdata - Form input pendaftaran baru\n` +
                       `ℹ️ /about - Informasi Aplikasi SIMPU`;
         await sendMessage(chatId, reply);
@@ -597,148 +597,203 @@ export async function POST(req: NextRequest) {
       else if (text.startsWith('/cekdata')) {
         const keyword = text.replace('/cekdata', '').trim();
         if (!keyword) {
-          await sendMessage(chatId, "📌 *Cara Cek Data:*\nKetikkan NIK, No. KK, atau Nama setelah perintah.\nContoh: `/cekdata 12345` atau `/cekdata AGUS` ");
+          const helpReply = `📌 *PANDUAN PERINTAH /cekdata*\n\n` +
+                            `Perintah ini mengecek data berdasarkan *Nama*, *NIK*, atau *Nomor KK* di seluruh database pembanding:\n` +
+                            `1️⃣ Data Pelaku Usaha 2026 (SIMPU)\n` +
+                            `2️⃣ Sheet 1 : Data Pembanding 2024\n` +
+                            `3️⃣ Sheet 2 : Data Pembanding 2023\n` +
+                            `4️⃣ Sheet 3 : Data Pembanding 2025\n` +
+                            `5️⃣ Sheet 4 : Data Blacklist\n\n` +
+                            `*Contoh Penggunaan:*\n` +
+                            `▫️ Berdasarkan NIK: \`/cekdata 2171012304900001\`\n` +
+                            `▫️ Berdasarkan No. KK: \`/cekdata 2171011205120002\`\n` +
+                            `▫️ Berdasarkan Nama: \`/cekdata AGUS SURIYADI\``;
+          await sendMessage(chatId, helpReply);
           return NextResponse.json({ ok: true });
         }
-        await sendMessage(chatId, `⏳ _Mengecek "${keyword}" di SIMPU, Master Data & Blacklist..._`);
+        await sendMessage(chatId, `⏳ _Mengecek "${keyword}" di Sheet Pembanding & Data SIMPU 2026..._`);
         
         try {
-          const [actorsSnap, m2023Snap, m2024Snap, m2025Snap, blacklistSnap] = await Promise.all([
+          const [actorsSnap, m2024Snap, m2023Snap, m2025Snap, blacklistSnap] = await Promise.all([
             get(ref(database, 'businessActors')),
-            get(ref(database, 'master_data_2023')),
             get(ref(database, 'master_data_2024')),
+            get(ref(database, 'master_data_2023')),
             get(ref(database, 'master_data_2025')),
             get(ref(database, 'blacklist_data'))
           ]);
           
-          const kw = keyword.toLowerCase();
+          const kwLower = keyword.toLowerCase();
           const cleanKw = keyword.replace(/[^0-9]/g, '');
 
-          let foundResults: any[] = [];
+          // Helper to check match for Nama, NIK, or Nomor KK
+          const matchTarget = (itemNama?: string, itemNik?: string, itemKk?: string) => {
+            const nama = String(itemNama || '').toLowerCase();
+            const nik = String(itemNik || '').replace(/[^0-9]/g, '');
+            const kk = String(itemKk || '').replace(/[^0-9]/g, '');
 
-          // 1. Check in SIMPU Active Business Actors
+            const matchNama = kwLower.length >= 2 && nama.includes(kwLower);
+            const matchNik = cleanKw.length >= 4 && (nik === cleanKw || nik.includes(cleanKw) || (cleanKw.length >= 10 && cleanKw.includes(nik)));
+            const matchKk = cleanKw.length >= 4 && (kk === cleanKw || kk.includes(cleanKw) || (cleanKw.length >= 10 && cleanKw.includes(kk)));
+
+            return matchNama || matchNik || matchKk;
+          };
+
+          // 1. Data Pelaku Usaha 2026 (SIMPU)
+          const results2026: any[] = [];
           if (actorsSnap.exists()) {
             const raw = actorsSnap.val();
             Object.keys(raw).forEach(key => {
               const r = raw[key];
               if (!r) return;
-              const nik = String(r.nik || '').trim();
-              const kk = String(r.noKK || r.kk || '').trim();
-              const nama = String(r.fullName || r.nama || r.name || '').toLowerCase();
-              const matchNik = cleanKw && nik.replace(/[^0-9]/g, '').includes(cleanKw);
-              const matchKk = cleanKw && kk.replace(/[^0-9]/g, '').includes(cleanKw);
-              const matchNama = nama.includes(kw);
-
-              if (matchNik || matchKk || matchNama) {
+              const nama = r.fullName || r.nama || r.name || '';
+              const nik = r.nik || '';
+              const kk = r.noKK || r.kk || '';
+              if (matchTarget(nama, nik, kk)) {
                 const statusInfo = getStatusDetails(r);
-                foundResults.push({
-                  ...r,
-                  _id: key,
-                  _source: 'DATA SIMPU (Aktif)',
-                  _isSimpu: true,
-                  _statusLabel: statusInfo.label,
-                  _menu: statusInfo.menu,
-                  nama: r.fullName || r.nama || r.name || '-',
+                results2026.push({
+                  source: 'Data Pelaku Usaha 2026',
+                  nama: nama || '-',
+                  nik: nik || '-',
+                  noKK: kk || '-',
                   usaha: r.businessName || r.namaUsaha || r.usaha || '-',
-                  nik: r.nik || '-',
-                  noKK: r.noKK || r.kk || '-',
+                  alamat: r.address || r.alamat || '-',
+                  coordinator: normalizeCoordinator(r.coordinator || r.koordinator || '-'),
+                  status: statusInfo.label,
+                  detailStatus: statusInfo.detail,
+                  menu: statusInfo.menu,
                   nominal: r.lpjNominal || r.nominal || 0,
-                  coordinator: normalizeCoordinator(r.coordinator || r.koordinator || '-')
+                  isSimpu: true
                 });
               }
             });
           }
 
-          // 2. Search helper for Master & Blacklist sheets
-          const searchInSnap = (snap: any, label: string) => {
+          // Search in an array/object snapshot
+          const extractFromSnap = (snap: any, sourceLabel: string, defaultNominal: number = 0) => {
             if (!snap || !snap.exists()) return [];
             const data = Object.values(snap.val()) as any[];
-            return data.filter(r => {
-              if (!r) return false;
-              const nik = String(r.nik || '').trim();
-              const kk = String(r.noKK || r.kk || '').trim();
-              const nama = String(r.nama || r.fullName || '').toLowerCase();
-              const matchNik = cleanKw && nik.replace(/[^0-9]/g, '').includes(cleanKw);
-              const matchKk = cleanKw && kk.replace(/[^0-9]/g, '').includes(cleanKw);
-              const matchNama = nama.includes(kw);
-              return matchNik || matchKk || matchNama;
-            }).map(r => ({
-              ...r,
-              _source: label,
-              nama: r.nama || r.fullName || '-',
-              usaha: r.usaha || r.businessName || '-',
-              nik: r.nik || '-',
-              noKK: r.noKK || r.kk || '-',
-              coordinator: normalizeCoordinator(r.coordinator || r.koordinator || '-')
-            }));
+            const matches: any[] = [];
+            data.forEach((r: any) => {
+              if (!r) return;
+              const nama = r.nama || r.fullName || r.name || '';
+              const nik = r.nik || '';
+              const kk = r.noKK || r.kk || '';
+              if (matchTarget(nama, nik, kk)) {
+                matches.push({
+                  source: sourceLabel,
+                  nama: nama || '-',
+                  nik: nik || '-',
+                  noKK: kk || '-',
+                  usaha: r.usaha || r.businessName || r.namaUsaha || '-',
+                  alamat: r.alamat || r.address || '-',
+                  coordinator: normalizeCoordinator(r.coordinator || r.koordinator || '-'),
+                  status: r.status || r.statusLpj || r.alasan || r.keterangan || '-',
+                  nominal: r.nominal || defaultNominal,
+                  tahun: r.tahunPengajuan || '',
+                  lpj: r.statusLpj || '',
+                  isBlacklist: sourceLabel.includes('Blacklist')
+                });
+              }
+            });
+            return matches;
           };
 
-          foundResults.push(
-            ...searchInSnap(blacklistSnap, 'Sheet Blacklist (DITOLAK)'),
-            ...searchInSnap(m2025Snap, 'Sheet 2025 (Penerima/Hold)'),
-            ...searchInSnap(m2024Snap, 'Sheet 2024 (Penerima 3 Juta)'),
-            ...searchInSnap(m2023Snap, 'Sheet 2023 (Penerima 1 Juta)')
-          );
+          // 2. Sheet 1 : Data Pembanding 2024
+          const results2024 = extractFromSnap(m2024Snap, 'Sheet 1 : Data Pembanding 2024', 3000000);
 
-          if (foundResults.length > 0) {
-            let reply = `🔍 *HASIL PENGECEKAN GANDA DATA* (${foundResults.length} data ditemukan)\n` +
-                        `Kata Kunci: \`${keyword}\`\n\n`;
+          // 3. Sheet 2 : Data Pembanding 2023
+          const results2023 = extractFromSnap(m2023Snap, 'Sheet 2 : Data Pembanding 2023', 1000000);
 
-            foundResults.slice(0, 15).forEach((r, i) => {
-              const isBlacklist = r._source?.includes('Blacklist');
-              const isSimpu = Boolean(r._isSimpu);
-              const icon = isBlacklist ? "🚫" : (isSimpu ? "🏬" : "📅");
-              
-              reply += `${icon} *${i+1}. ${r.nama}*\n`;
-              reply += `■ SUMBER: *${r._source}*\n`;
-              if (isSimpu) {
-                reply += `■ Posisi Data: *${r._statusLabel}*\n`;
-                reply += `■ Menu SIMPU: *${r._menu}*\n`;
-              }
+          // 4. Sheet 3 : Data Pembanding 2025
+          const results2025 = extractFromSnap(m2025Snap, 'Sheet 3 : Data Pembanding 2025', 0);
+
+          // 5. Sheet 4 : Data Blacklist
+          const resultsBlacklist = extractFromSnap(blacklistSnap, 'Sheet 4 : Data Blacklist', 0);
+
+          const totalFound = results2026.length + results2024.length + results2023.length + results2025.length + resultsBlacklist.length;
+
+          if (totalFound > 0) {
+            let reply = `🔍 *HASIL PENGECEKAN DATA GANDA*\n` +
+                        `🎯 Kata Kunci: \`${keyword}\`\n\n` +
+                        `📊 *REKAP DATA DITEMUKAN:* (*${totalFound} record*)\n` +
+                        `▫️ Data Pelaku Usaha 2026: *${results2026.length} data*\n` +
+                        `▫️ Sheet 1 : Data Pembanding 2024: *${results2024.length} data*\n` +
+                        `▫️ Sheet 2 : Data Pembanding 2023: *${results2023.length} data*\n` +
+                        `▫️ Sheet 3 : Data Pembanding 2025: *${results2025.length} data*\n` +
+                        `▫️ Sheet 4 : Data Blacklist: *${resultsBlacklist.length} data*\n\n`;
+
+            if (resultsBlacklist.length > 0) {
+              reply += `🚨 *PERINGATAN:* Data ini terdaftar di *SHEET 4 : DATA BLACKLIST / DITOLAK*!\n\n`;
+            } else if (results2024.length > 0 || results2023.length > 0) {
+              reply += `⚠️ *CATATAN:* Data/KK ini pernah menerima bantuan di *Sheet 1 (2024)* atau *Sheet 2 (2023)*.\n\n`;
+            }
+
+            reply += `📋 *RINCIAN HASIL TEMUAN:*\n\n`;
+
+            const allResults = [
+              ...resultsBlacklist,
+              ...results2026,
+              ...results2024,
+              ...results2023,
+              ...results2025
+            ];
+
+            allResults.slice(0, 15).forEach((r, i) => {
+              const icon = r.isBlacklist ? "🚫" : (r.isSimpu ? "🏬" : "📅");
+              reply += `${icon} *${i + 1}. ${r.nama}*\n`;
+              reply += `■ SUMBER: *${r.source}*\n`;
               reply += `■ NIK: \`${r.nik}\`\n`;
-              reply += `■ KK: \`${r.noKK}\`\n`;
+              reply += `■ Nomor KK: \`${r.noKK}\`\n`;
               reply += `■ Usaha: ${r.usaha}\n`;
-              reply += `■ Koordinator: ${r.coordinator}\n`;
-              if (r.nominal) {
-                reply += `■ Nominal: ${formatCurrency(r.nominal)}\n`;
-              }
-              if (r.status && !isSimpu) {
-                reply += `■ Status Sheet: ${r.status}\n`;
-              }
-              if (r.statusLpj) {
-                reply += `■ Status LPJ: ${r.statusLpj}\n`;
+              reply += `■ Koordinator: *${r.coordinator}*\n`;
+
+              if (r.isSimpu) {
+                reply += `■ Posisi Berkas: *${r.status}*\n`;
+                reply += `■ Menu di Web: *${r.menu}*\n`;
+              } else {
+                reply += `■ Status: *${r.status}*\n`;
+                if (r.lpj) reply += `■ Status LPJ: ${r.lpj}\n`;
+                if (r.nominal) reply += `■ Nominal: ${formatCurrency(r.nominal)}\n`;
               }
               reply += `\n`;
             });
 
-            if (foundResults.length > 15) {
-              reply += `_Menampilkan 15 dari ${foundResults.length} data. Persempit kata kunci jika perlu._`;
+            if (totalFound > 15) {
+              reply += `_Menampilkan 15 dari ${totalFound} record data yang ditemukan._`;
             }
-            
+
             await sendMessage(chatId, reply);
 
             await logActivity({
-              query: `CEK MASTER: ${keyword}`,
-              results: `Ditemukan ${foundResults.length} record`,
+              query: `CEKDATA: ${keyword}`,
+              results: `Ditemukan ${totalFound} record (2026:${results2026.length}, S1:${results2024.length}, S2:${results2023.length}, S3:${results2025.length}, S4:${resultsBlacklist.length})`,
               device: 'Bot',
               source: 'Telegram',
-              method: 'CEK MASTER',
+              method: 'CEK DATA GANDA',
               chatId: String(chatId)
             });
           } else {
-            await sendMessage(chatId, `❌ *DATA TIDAK DITEMUKAN*\n\nKata kunci \`${keyword}\` tidak terdaftar dalam SIMPU, Database Master 2023-2025, maupun Blacklist.`);
+            const cleanReply = `✅ *DATA BERSIH / TIDAK DITEMUKAN*\n\n` +
+                               `Kata kunci \`${keyword}\` tidak ditemukan dalam:\n` +
+                               `▫️ Data Pelaku Usaha 2026\n` +
+                               `▫️ Sheet 1 : Data Pembanding 2024\n` +
+                               `▫️ Sheet 2 : Data Pembanding 2023\n` +
+                               `▫️ Sheet 3 : Data Pembanding 2025\n` +
+                               `▫️ Sheet 4 : Data Blacklist\n\n` +
+                               `_Calon penerima/NIK/KK ini belum pernah terdata atau menerima bantuan pada database pembanding._`;
+            await sendMessage(chatId, cleanReply);
 
             await logActivity({
-              query: `CEK MASTER: ${keyword}`,
-              results: `Tidak ditemukan`,
+              query: `CEKDATA: ${keyword}`,
+              results: `Tidak ditemukan (Bersih)`,
               device: 'Bot',
               source: 'Telegram',
-              method: 'CEK MASTER',
+              method: 'CEK DATA GANDA',
               chatId: String(chatId)
             });
           }
         } catch (error) {
-          console.error("Master/Blacklist data query error:", error);
+          console.error("Cek data query error:", error);
           await sendMessage(chatId, `❌ *Error:* Terjadi kesalahan koneksi database.`);
         }
       } 
