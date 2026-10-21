@@ -422,13 +422,15 @@ function HasilVerifikasiContent() {
   }, [coordinatorStats])
 
   const totalLolosCount = useMemo(() => {
-    if (systemStats?.verifiedDinasCount) return Number(systemStats.verifiedDinasCount)
+    if ((!selectedCoordinator || selectedCoordinator === 'ALL') && systemStats?.detailedStatus?.hasilVerifikasi !== undefined) {
+      return Number(systemStats.detailedStatus.hasilVerifikasi)
+    }
     if (filteredActors && filteredActors.length > 0) return filteredActors.length
     if (localIndex && localIndex.length > 0) {
       return localIndex.filter(a => a && a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Lolos' && (a as any).berkasDinasVerified).length
     }
     return 0
-  }, [systemStats?.verifiedDinasCount, filteredActors, localIndex])
+  }, [systemStats?.detailedStatus?.hasilVerifikasi, selectedCoordinator, filteredActors, localIndex])
 
   const waitingBankCount = useMemo(() => {
     const sourceList = (filteredActors && filteredActors.length > 0) ? filteredActors : (localIndex || [])
