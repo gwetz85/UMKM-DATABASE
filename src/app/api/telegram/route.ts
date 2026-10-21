@@ -5,14 +5,114 @@ import { getAuth, signInAnonymously } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
 import { logActivity } from '@/lib/logger';
 import { normalizeCoordinator } from '@/lib/coordinator-utils';
-
+import { 
+  isCancelDinas, 
+  isVerifiedStatus, 
+  recalculateAndSaveSystemStats, 
+  updateStatsOnNewActor,
+  SystemStats 
+} from '@/lib/stats-service';
+import { formatCurrency, resolveRtRw, resolveKelurahan, resolveKecamatan } from '@/lib/utils';
 
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const database = getDatabase(app);
 const auth = getAuth(app);
 
-// Helper function to send message back to Telegram
+// Helper function to resolve actor status cleanly & accurately matching SIMPU Web
+function getStatusDetails(r: any) {
+  const isCancel = isCancelDinas(r);
+  if (isCancel) {
+    return {
+      emoji: "🚫",
+      label: "CANCEL DINAS",
+      detail: r.alasanCancelDinas ? `Tidak Lolos (${r.alasanCancelDinas})` : "Tidak Lolos Verifikasi Dinas",
+      menu: "🚫 Cancel Dinas"
+    };
+  }
+
+  const s = (r.status || 'pending').toLowerCase();
+  if (s === 'rejected') {
+    return {
+      emoji: "❌",
+      label: "DITOLAK ADMIN",
+      detail: r.rejectionReason || "Ditolak saat Verifikasi Pendaftaran",
+      menu: "❌ Ditolak / Cancell"
+    };
+  }
+  if (s === 'pending') {
+    return {
+      emoji: "⏳",
+      label: "PENDING",
+      detail: "Menunggu Verifikasi Admin",
+      menu: "📥 Verifikasi Admin"
+    };
+  }
+  if (s === 'verified_actor' || s === 'lpj_pending') {
+    return {
+      emoji: "📋",
+      label: "TAHAP 1: SURVEY LAPANGAN",
+      detail: r.petugasSurvey ? `Petugas: ${r.petugasSurvey}` : "Menunggu Survey Petugas",
+      menu: "📋 Portal Survey"
+    };
+  }
+  if (s === 'verified_dinas') {
+    if (r.berkasDinasVerified) {
+      return {
+        emoji: "🎉",
+        label: "TAHAP 3: HASIL VERIFIKASI (LOLOS FINAL)",
+        detail: "Berkas Dinas Lengkap & Terverifikasi",
+        menu: "📑 Hasil Verifikasi"
+      };
+    }
+    return {
+      emoji: "🔍",
+      label: "TAHAP 2: VERIFIKASI BERKAS DINAS",
+      detail: "Survey Lolos, Menunggu Cek Berkas Fisik",
+      menu: "📋 Verifikasi Dinas"
+    };
+  }
+  if (s === 'bank_pending') {
+    return {
+      emoji: "🏦",
+      label: "VERIFIKASI BANK",
+      detail: r.bankNumber ? `Rek: ${r.bankName || ''} ${r.bankNumber}` : "Menunggu Penginputan Buku Tabungan",
+      menu: "🏦 Data Rekening"
+    };
+  }
+  if (s === 'finish') {
+    if (r.readyForLPJ && !r.lpjNominal) {
+      return {
+        emoji: "📄",
+        label: "MENUNGGU LPJ",
+        detail: "Bantuan Telah Cair, Menunggu Dokumen LPJ",
+        menu: "📄 LPJ"
+      };
+    }
+    return {
+      emoji: "🏁",
+      label: "TAHAP 4: PROSES SELESAI (FINISH)",
+      detail: "Seluruh Tahapan Berhasil Selesai",
+      menu: "🏁 Selesai"
+    };
+  }
+  if (s === 'dihapus_dinas') {
+    return {
+      emoji: "🗑️",
+      label: "DIHAPUS DINAS",
+      detail: "Data dihapus dari antrean dinas",
+      menu: "📂 Arsip"
+    };
+  }
+  return {
+    emoji: "⚪",
+    label: s.toUpperCase().replace(/_/g, ' '),
+    detail: "-",
+    menu: "📂 Menu Terkait"
+  };
+}
+
+// Helper function to safely send message back to Telegram with chunking and Markdown error fallback
 async function sendMessage(chatId: number, text: string) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) {
@@ -20,24 +120,58 @@ async function sendMessage(chatId: number, text: string) {
     return;
   }
 
-  const url = `https://api.telegram.org/bot${token}/sendMessage`;
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: text,
-        parse_mode: 'Markdown'
-      })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Telegram API Error:", errorData);
+  // Telegram limit is 4096 characters. Chunk around ~3800 chars safely.
+  const MAX_LEN = 3800;
+  const chunks: string[] = [];
+  let remaining = text;
+
+  while (remaining.length > 0) {
+    if (remaining.length <= MAX_LEN) {
+      chunks.push(remaining);
+      break;
     }
-  } catch (error) {
-    console.error("Error sending message to Telegram:", error);
+    let splitIdx = remaining.lastIndexOf('\n\n', MAX_LEN);
+    if (splitIdx === -1 || splitIdx < 1000) {
+      splitIdx = remaining.lastIndexOf('\n', MAX_LEN);
+    }
+    if (splitIdx === -1 || splitIdx < 1000) {
+      splitIdx = MAX_LEN;
+    }
+    chunks.push(remaining.substring(0, splitIdx));
+    remaining = remaining.substring(splitIdx).trim();
+  }
+
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+  for (const chunk of chunks) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: chunk,
+          parse_mode: 'Markdown'
+        })
+      });
+
+      if (!response.ok) {
+        // Fallback without parse_mode if Markdown parsing failed (e.g. unescaped characters in names/addresses)
+        const fallbackRes = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: chunk
+          })
+        });
+        if (!fallbackRes.ok) {
+          const errorData = await fallbackRes.json();
+          console.error("Telegram API Error:", errorData);
+        }
+      }
+    } catch (error) {
+      console.error("Error sending message to Telegram:", error);
+    }
   }
 }
 
@@ -66,25 +200,24 @@ export async function POST(req: NextRequest) {
       });
 
       if (text.startsWith('/start') || text.startsWith('/help')) {
-        const reply = `Selamat datang di *Bot UMKM Database* 🏬\n\n` +
-                      `Bot ini melayani pemantauan & input data.\n\n` +
+        const reply = `Selamat datang di *Bot UMKM Database SIMPU* 🏬\n\n` +
+                      `Bot ini terhubung langsung secara real-time dengan database aplikasi SIMPU.\n\n` +
                       `✅ *Menu Perintah:*\n` +
-                      `📊 /stats - Ringkasan data\n` +
-                      `📊 /kuota - Cek kuota koordinator\n` +
-                      `🔍 /search [kata] - Cari umum\n` +
+                      `📊 /stats - Ringkasan statistik resmi SIMPU\n` +
+                      `📊 /kuota - Cek kuota koordinator (Sinkron Web)\n` +
+                      `🔍 /search [kata] - Pencarian umum\n` +
                       `🆔 /code [nomor] - Cek Kode Registrasi\n` +
                       `📌 /nik [nomor] - Cari berdasar NIK\n` +
                       `👤 /nama [nama] - Cari berdasar Nama\n` +
                       `📍 /alamat [kata] - Cari berdasar Alamat\n` +
                       `📱 /hp [nomor] - Cari berdasar No. HP\n` +
                       `🏢 /koor [nama] - Cari berdasar Koordinator\n` +
-                      `✅ /cekdata [kata] - Cek NIK/KK/Nama di Master\n` +
-                      `📝 /inputdata - Input data baru via Bot\n` +
-                      `ℹ️ /about - Informasi Aplikasi`;
+                      `✅ /cekdata [kata] - Cek NIK/KK/Nama (SIMPU, Master & Blacklist)\n` +
+                      `📝 /inputdata - Form input pendaftaran baru\n` +
+                      `ℹ️ /about - Informasi Aplikasi SIMPU`;
         await sendMessage(chatId, reply);
       } 
       else if (text.startsWith('/about')) {
-        // Fetch dynamic system config
         const configRef = ref(database, 'settings/system_config');
         const configSnap = await get(configRef);
         const config = configSnap.exists() ? configSnap.val() : {};
@@ -97,13 +230,11 @@ export async function POST(req: NextRequest) {
                       `Selamat datang di Aplikasi *SIMPU*\n` +
                       `_SISTEM INFORMASI MANAJEMEN PELAKU USAHA_\n\n` +
                       `"Aplikasi ini dikembangkan secara Mandiri dan Independent oleh Tim Admin yang bekerja. Hak Cipta Sepenuhnya dimiliki oleh *${copyright}* sebagai Pembuat dan Pengembang Aplikasi."\n\n` +
-                      `🚀 *Pembaruan Terbaru:*\n` +
-                      `▫️ Penambahan Fitur Pesan\n` +
-                      `▫️ Penambahan Event Card\n` +
-                      `▫️ Penambahan Music Backsound\n` +
-                      `▫️ Penambahan Fitur Bot Telegram\n` +
-                      `▫️ Penambahan Fitur Cek Data Kolektif\n` +
-                      `▫️ Sinkronisasi 4.045 data baru\n\n` +
+                      `🚀 *Fitur Integrasi Bot:*\n` +
+                      `▫️ Sinkronisasi statistik real-time dengan web dashboard\n` +
+                      `▫️ Pengecekan kuota koordinator otomatis\n` +
+                      `▫️ Pencarian data pelaku usaha terintegrasi\n` +
+                      `▫️ Pengecekan ganda NIK/KK terhadap SIMPU & Database Master\n\n` +
                       `✉️ *Kontak Pengembang:*\n` +
                       `👤 *${copyright}*\n` +
                       `📧 agussuriyadipunya@gmail.com\n` +
@@ -112,31 +243,48 @@ export async function POST(req: NextRequest) {
         await sendMessage(chatId, reply);
       } 
       else if (text.startsWith('/stats')) {
-        await sendMessage(chatId, "⏳ _Sedang mengambil data dari server..._");
+        await sendMessage(chatId, "⏳ _Sedang mengambil data statistik resmi SIMPU..._");
         
-        const actorsRef = ref(database, 'businessActors');
-        const snapshot = await get(actorsRef);
-        
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          const actors = Object.values(data) as any[];
-          
-          const isVerifiedStatus = (s: string) => ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
-          
-          let verified = actors.filter(a => isVerifiedStatus(a.status)).length;
-          let rejected = actors.filter(a => a.status === 'rejected').length;
-          let total = verified + rejected;
-          let pending = actors.filter(a => !isVerifiedStatus(a.status) && a.status !== 'rejected').length;
-          
-          const reply = `📈 *STATISTIK DATA UMKM*\n\n` +
-                        `📊 Total Data: *${total}*\n` +
-                        `_(Verified + Cancell)_\n\n` +
-                        `✅ Terverifikasi: *${verified}*\n` +
-                        `❌ Cancell/Ditolak: *${rejected}*\n` +
-                        `⏳ Pending/Lainnya: *${pending}*\n`;
+        let statsSnap = await get(ref(database, 'system_stats'));
+        let stats: SystemStats | null = statsSnap.exists() ? statsSnap.val() : null;
+
+        if (!stats || !stats.totalActors) {
+          stats = await recalculateAndSaveSystemStats(database);
+        }
+
+        if (stats) {
+          const total = stats.totalActors || 0;
+          const verified = stats.status?.verified || 0;
+          const rejected = stats.status?.rejected || 0;
+          const pending = stats.status?.pending || 0;
+
+          const detailed = stats.detailedStatus || { survey: 0, verifikasi: 0, hasilVerifikasi: 0, lpj: 0, selesai: 0 };
+          const verifiedGender = stats.verifiedGender || { 'Laki-laki': 0, 'Perempuan': 0 };
+
+          const updatedDate = stats.lastUpdated 
+            ? new Date(stats.lastUpdated).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ' WIB'
+            : '-';
+
+          const reply = `📈 *STATISTIK RESMI SISTEM SIMPU*\n` +
+                        `🕒 _Pembaruan: ${updatedDate}_\n\n` +
+                        `📊 *Total Data Diproses:* *${total}*\n` +
+                        `_(Total Terverifikasi + Cancell/Ditolak)_\n\n` +
+                        `✅ *Terverifikasi:* *${verified}*\n` +
+                        `❌ *Cancell / Ditolak:* *${rejected}*\n` +
+                        `⏳ *Pending (Baru):* *${pending}*\n\n` +
+                        `📋 *Rincian Tahapan Verifikasi:*\n` +
+                        `▫️ Tahap 1 (Survey Lapangan): *${detailed.survey || 0}*\n` +
+                        `▫️ Tahap 2 (Verifikasi Berkas): *${detailed.verifikasi || 0}*\n` +
+                        `▫️ Tahap 3 (Hasil Verifikasi): *${detailed.hasilVerifikasi || 0}*\n` +
+                        `▫️ Tahap 4 (Selesai / Finish): *${detailed.selesai || 0}*\n` +
+                        `▫️ Menunggu LPJ: *${detailed.lpj || 0}*\n\n` +
+                        `👥 *Gender Pelaku Terverifikasi:*\n` +
+                        `▫️ Laki-laki: *${verifiedGender['Laki-laki'] || 0}*\n` +
+                        `▫️ Perempuan: *${verifiedGender['Perempuan'] || 0}*\n\n` +
+                        `_Data tersinkronisasi 100% dengan Dashboard Web SIMPU._`;
+
           await sendMessage(chatId, reply);
 
-          // Log Activity
           await logActivity({
             query: 'Cek Statistik',
             results: `Total: ${total}`,
@@ -146,11 +294,122 @@ export async function POST(req: NextRequest) {
             chatId: String(chatId)
           });
         } else {
-          await sendMessage(chatId, "Belum ada data pendaftar UMKM.");
+          await sendMessage(chatId, "⚠️ Gagal memuat statistik database.");
+        }
+      }
+      else if (text.startsWith('/kuota')) {
+        await sendMessage(chatId, `⏳ _Mengambil data kuota koordinator..._`);
+        
+        const [quotaSnap, statsSnap] = await Promise.all([
+          get(ref(database, 'koordinator_kuotas')),
+          get(ref(database, 'system_stats'))
+        ]);
+
+        let stats = statsSnap.exists() ? statsSnap.val() : null;
+        if (!stats || !stats.coordinator) {
+          stats = await recalculateAndSaveSystemStats(database);
+        }
+
+        const achievedMap: Record<string, number> = stats?.coordinator || {};
+        const rekeningMap: Record<string, number> = stats?.coordinatorRekening || {};
+
+        if (quotaSnap.exists()) {
+          const quotaData = Object.values(quotaSnap.val()) as any[];
+          
+          const combined = quotaData.filter(Boolean).map((q: any) => {
+            const rawName = q.name ? String(q.name).trim() : 'Unnamed';
+            const nameUpper = rawName.toUpperCase();
+            const nameNormalized = normalizeCoordinator(rawName).toUpperCase().trim();
+
+            const limit = Number(q.quota ?? 0);
+            const used = (achievedMap[nameNormalized] !== undefined) 
+              ? achievedMap[nameNormalized] 
+              : (achievedMap[nameUpper] || 0);
+            const rek = (rekeningMap[nameNormalized] !== undefined)
+              ? rekeningMap[nameNormalized]
+              : (rekeningMap[nameUpper] || 0);
+            const remaining = limit - used;
+
+            return {
+              name: rawName,
+              limit,
+              used,
+              rek,
+              remaining
+            };
+          }).sort((a, b) => a.name.localeCompare(b.name));
+
+          const habis = combined.filter(c => c.remaining <= 0);
+          const belumHabis = combined.filter(c => c.remaining > 0 && c.used > 0);
+          const belumTerinput = combined.filter(c => c.remaining > 0 && c.used === 0);
+
+          const now = new Date();
+          const hari = now.toLocaleDateString('id-ID', { weekday: 'long', timeZone: 'Asia/Jakarta' });
+          const tanggal = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' });
+          const jam = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' }).replace(/\./g, ':') + ' WIB';
+
+          let reply = `📊 *PENGECEKKAN KUOTA KOORDINATOR*\n` +
+                      `📅 ${hari}, ${tanggal} - ${jam}\n\n`;
+
+          reply += `🔴 *Koordinator Yang Kuotanya Habis:*\n`;
+          if (habis.length > 0) {
+            habis.forEach((c) => {
+              reply += `▫️ ${c.name} (${c.used} / ${c.limit})\n`;
+            });
+            const totalHabisQuota = habis.reduce((acc, c) => acc + c.limit, 0);
+            reply += `*Total: ${habis.length} Koordinator (${totalHabisQuota} Kuota)*\n\n`;
+          } else {
+            reply += `_Tidak ada_\n\n`;
+          }
+
+          reply += `🟡 *Koordinator Kuota Belum Habis:*\n`;
+          if (belumHabis.length > 0) {
+            belumHabis.forEach((c) => {
+              reply += `▫️ ${c.name} (Terpakai: ${c.used} / Kuota: ${c.limit} | Sisa: ${c.remaining})\n`;
+            });
+            const totalBelumHabisUsed = belumHabis.reduce((acc, c) => acc + c.used, 0);
+            const totalBelumHabisQuota = belumHabis.reduce((acc, c) => acc + c.limit, 0);
+            reply += `*Total: ${belumHabis.length} Koordinator (${totalBelumHabisUsed} / ${totalBelumHabisQuota} Kuota)*\n\n`;
+          } else {
+            reply += `_Tidak ada_\n\n`;
+          }
+
+          reply += `⚪ *Koordinator Belum Ada Input:*\n`;
+          if (belumTerinput.length > 0) {
+            belumTerinput.forEach((c) => {
+              reply += `▫️ ${c.name} (Kuota: ${c.limit})\n`;
+            });
+            const totalBelumTerinputQuota = belumTerinput.reduce((acc, c) => acc + c.limit, 0);
+            reply += `*Total: ${belumTerinput.length} Koordinator (${totalBelumTerinputQuota} Kuota)*\n\n`;
+          } else {
+            reply += `_Tidak ada_\n\n`;
+          }
+
+          const grandTotalQuota = combined.reduce((acc, c) => acc + c.limit, 0);
+          const grandTotalUsed = combined.reduce((acc, c) => acc + c.used, 0);
+          const grandTotalRemaining = grandTotalQuota - grandTotalUsed;
+
+          reply += `📈 *TOTAL KESELURUHAN:*\n` +
+                   `▫️ Total Kuota: *${grandTotalQuota}*\n` +
+                   `▫️ Total Terpakai: *${grandTotalUsed}*\n` +
+                   `▫️ Sisa Kuota: *${grandTotalRemaining}*\n\n` +
+                   `_Sinkron 100% dengan menu Kuota Koordinator SIMPU._`;
+
+          await sendMessage(chatId, reply);
+
+          await logActivity({
+            query: 'Cek Kuota Koordinator',
+            results: `Berhasil Tampil (${grandTotalUsed}/${grandTotalQuota})`,
+            device: 'Bot',
+            source: 'Telegram',
+            method: 'CEK KUOTA',
+            chatId: String(chatId)
+          });
+        } else {
+          await sendMessage(chatId, "⚠️ Tidak ada data kuota yang terdaftar.");
         }
       }
       else if (text.startsWith('/search') || text.startsWith('/nik') || text.startsWith('/nama') || text.startsWith('/alamat') || text.startsWith('/hp') || text.startsWith('/koor') || text.startsWith('/code')) {
-        
         let keyword = '';
         let type = '';
         if (text.startsWith('/search')) { keyword = text.replace('/search', '').trim().toLowerCase(); type = 'search'; }
@@ -163,7 +422,7 @@ export async function POST(req: NextRequest) {
 
         if (!keyword) {
           let example = type === 'search' ? 'bengkel' : (type === 'nik' || type === 'hp') ? '08123' : type === 'alamat' ? 'pemuda' : 'agus';
-          await sendMessage(chatId, `Ketikkan kata kunci di sebelah perintah. Contoh: \\\`/${type} ${example}\\\``);
+          await sendMessage(chatId, `Ketikkan kata kunci di sebelah perintah. Contoh: \`/${type} ${example}\``);
           return NextResponse.json({ ok: true });
         }
         
@@ -173,24 +432,67 @@ export async function POST(req: NextRequest) {
         const snapshot = await get(actorsRef);
         
         if (snapshot.exists()) {
-          const data = snapshot.val();
-          const actors = Object.values(data) as any[];
-          
-          const results = actors.filter(a => {
-            if (type === 'nik') return a.nik && a.nik.includes(keyword);
-            if (type === 'nama') return a.fullName && a.fullName.toLowerCase().includes(keyword);
-            if (type === 'alamat') return a.address && a.address.toLowerCase().includes(keyword);
-            if (type === 'hp') return a.phone && a.phone.includes(keyword);
-            if (type === 'koor') return a.coordinator && a.coordinator.toLowerCase().includes(keyword);
-            if (type === 'code') return a.registrationCode && a.registrationCode === keyword;
-            
-            return (a.fullName && a.fullName.toLowerCase().includes(keyword)) ||
-                   (a.nik && a.nik.includes(keyword)) ||
-                   (a.businessName && a.businessName.toLowerCase().includes(keyword)) ||
-                   (a.address && a.address.toLowerCase().includes(keyword)) ||
-                   (a.phone && a.phone.includes(keyword)) ||
-                   (a.coordinator && a.coordinator.toLowerCase().includes(keyword));
-          }).slice(0, 50); // Increased limit to 50 instead of 5 for safety while respecting "semua" as much as possible within Telegram limits
+          const raw = snapshot.val();
+          const cleanKw = keyword.replace(/[^0-9]/g, '');
+          const normalizedTargetKoor = normalizeCoordinator(keyword).toLowerCase();
+
+          const results: any[] = [];
+          Object.keys(raw).forEach(key => {
+            const a = raw[key];
+            if (!a) return;
+
+            const fullName = String(a.fullName || a.nama || a.name || '').trim();
+            const nik = String(a.nik || '').trim();
+            const noKK = String(a.noKK || a.kk || '').trim();
+            const phone = String(a.phone || a.noHp || a.hp || a.wa || '').trim();
+            const address = String(a.address || a.alamat || '').trim();
+            const businessName = String(a.businessName || a.namaUsaha || a.usaha || '').trim();
+            const rawKoor = String(a.coordinator || a.koordinator || '').trim();
+            const coordNormalized = normalizeCoordinator(rawKoor);
+            const regCode = String(a.registrationCode || key).trim();
+
+            let matched = false;
+            if (type === 'nik') {
+              matched = cleanKw ? nik.replace(/[^0-9]/g, '').includes(cleanKw) : nik.toLowerCase().includes(keyword);
+            } else if (type === 'nama') {
+              matched = fullName.toLowerCase().includes(keyword);
+            } else if (type === 'alamat') {
+              matched = address.toLowerCase().includes(keyword);
+            } else if (type === 'hp') {
+              matched = cleanKw ? phone.replace(/[^0-9]/g, '').includes(cleanKw) : phone.toLowerCase().includes(keyword);
+            } else if (type === 'koor') {
+              matched = rawKoor.toLowerCase().includes(keyword) || 
+                        coordNormalized.toLowerCase().includes(normalizedTargetKoor) ||
+                        coordNormalized.toLowerCase().includes(keyword);
+            } else if (type === 'code') {
+              matched = regCode.toLowerCase() === keyword || regCode.toLowerCase().includes(keyword);
+            } else {
+              // General search
+              matched = fullName.toLowerCase().includes(keyword) ||
+                        (cleanKw && nik.replace(/[^0-9]/g, '').includes(cleanKw)) ||
+                        (cleanKw && noKK.replace(/[^0-9]/g, '').includes(cleanKw)) ||
+                        businessName.toLowerCase().includes(keyword) ||
+                        address.toLowerCase().includes(keyword) ||
+                        (cleanKw && phone.replace(/[^0-9]/g, '').includes(cleanKw)) ||
+                        coordNormalized.toLowerCase().includes(normalizedTargetKoor) ||
+                        regCode.toLowerCase().includes(keyword);
+            }
+
+            if (matched) {
+              results.push({
+                ...a,
+                _id: key,
+                _fullName: fullName,
+                _nik: nik,
+                _noKK: noKK,
+                _phone: phone,
+                _address: address,
+                _businessName: businessName,
+                _coordinator: coordNormalized,
+                _registrationCode: regCode
+              });
+            }
+          });
           
           // Load master data sheets for KK cross-reference
           const [m2023Snap, m2024Snap, m2025Snap] = await Promise.all([
@@ -198,6 +500,7 @@ export async function POST(req: NextRequest) {
             get(ref(database, 'master_data_2024')),
             get(ref(database, 'master_data_2025'))
           ]);
+
           const masterSheets: { label: string; data: any[] }[] = [
             { label: '2023', data: m2023Snap.exists() ? Object.values(m2023Snap.val()) as any[] : [] },
             { label: '2024', data: m2024Snap.exists() ? Object.values(m2024Snap.val()) as any[] : [] },
@@ -205,104 +508,68 @@ export async function POST(req: NextRequest) {
           ];
 
           if (results.length > 0) {
-            let reply = `🔍 *Hasil Pencarian [${type.toUpperCase()}]:*\n\n`;
-            results.forEach((r, i) => {
-              reply += `*${i+1}. ${r.businessName || "TANPA NAMA USAHA"}*\n`;
-              reply += `■ Reg ID: *${r.registrationCode || "PENDING"}*\n`;
-              reply += `■ Nama: ${r.fullName}\n`;
-              reply += `■ NIK: \`${r.nik || "-"}\`\n`;
-              reply += `■ KK: \`${r.noKK || "-"}\`\n`;
-              reply += `■ HP: \`${r.phone || "-"}\`\n`;
-              reply += `■ Usaha: ${r.businessName || "-"}\n`;
-              reply += `■ Alamat: ${r.address || "-"}\n`;
-              reply += `■ RT/RW: ${r.rtRw || "-"}\n`;
+            let reply = `🔍 *HASIL PENCARIAN [${type.toUpperCase()}]:*\n` +
+                        `Ditemukan: *${results.length} data*\n\n`;
+
+            const displayList = results.slice(0, 15);
+            displayList.forEach((r, i) => {
+              const statusInfo = getStatusDetails(r);
+
+              reply += `${statusInfo.emoji} *${i+1}. ${r._businessName || "TANPA NAMA USAHA"}*\n`;
+              reply += `■ Reg ID: \`${r._registrationCode || r._id}\`\n`;
+              reply += `■ Nama: *${r._fullName || "-"}*\n`;
+              reply += `■ NIK: \`${r._nik || "-"}\`\n`;
+              reply += `■ KK: \`${r._noKK || "-"}\`\n`;
+              reply += `■ HP: \`${r._phone || "-"}\`\n`;
+              reply += `■ Usaha: ${r._businessName || "-"}\n`;
+              reply += `■ Alamat: ${r._address || "-"}\n`;
               
-              let kel = r.kelurahan ? `Kel. ${r.kelurahan}` : "";
-              let kec = r.kecamatan ? `Kec. ${r.kecamatan}` : "";
-              reply += `■ Wilayah: ${kel}${kel && kec ? ', ' : ''}${kec || "-"}\n`;
-              reply += `■ Kategori: ${r.businessCategory || "-"}\n`;
-              reply += `■ Lokasi Usaha: ${r.businessLocation || "-"}\n`;
-              reply += `■ Koordinator: ${r.coordinator || "-"}\n`;
+              const rtRw = resolveRtRw(r);
+              const kel = resolveKelurahan(r);
+              const kec = resolveKecamatan(r, kel);
+              reply += `■ RT/RW: ${rtRw !== '-' ? rtRw : (r.rtRw || "-")}\n`;
+              reply += `■ Wilayah: Kel. ${kel !== '-' ? kel : (r.kelurahan || "-")}, Kec. ${kec !== '-' ? kec : (r.kecamatan || "-")}\n`;
+              reply += `■ Koordinator: *${r._coordinator || "-"}*\n`;
 
-              // Status: tampilkan posisi terakhir data dengan label lengkap
-              let statusRaw = r.status || "unknown";
-              let statusEmoji = "⚪";
-              let statusLabel = "";
-              if (statusRaw === 'pending') { statusEmoji = "⏳"; statusLabel = "PENDING - Menunggu Verifikasi Admin"; }
-              else if (statusRaw === 'verified_actor') { statusEmoji = "✅"; statusLabel = "VERIFIED ACTOR - Sudah Verifikasi Admin"; }
-              else if (statusRaw === 'verified_dinas') {
-                if (r.hasilVerifikasiDinas === 'Tidak Lolos' || r.alasanCancelDinas) {
-                  statusEmoji = "🚫"; statusLabel = "CANCEL DINAS - Tidak Lolos Verifikasi Dinas";
-                } else {
-                  statusEmoji = "✅"; statusLabel = "VERIFIED DINAS - Sudah Verifikasi Dinas";
-                }
-              }
-              else if (statusRaw === 'bank_pending') { statusEmoji = "🏦"; statusLabel = "BANK PENDING - Menunggu Verifikasi Bank"; }
-              else if (statusRaw === 'lpj_pending') { statusEmoji = "📄"; statusLabel = "LPJ PENDING - Menunggu LPJ"; }
-              else if (statusRaw === 'finish') { statusEmoji = "🏁"; statusLabel = "FINISH - Proses Selesai"; }
-              else if (statusRaw === 'rejected') { statusEmoji = "❌"; statusLabel = "REJECTED - Ditolak / Cancell"; }
-              else { statusEmoji = "⚪"; statusLabel = statusRaw.toUpperCase().replace(/_/g, ' '); }
+              reply += `■ *Posisi Data:* *${statusInfo.label}*\n`;
+              reply += `■ Status Detail: _${statusInfo.detail}_\n`;
+              reply += `■ Menu di Web: *${statusInfo.menu}*\n`;
 
-              reply += `■ Status: ${statusEmoji} *${statusLabel}*\n`;
+              const timestamp = r.createdAt ? new Date(r.createdAt).toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}) : "-";
+              reply += `■ Waktu Daftar: ${timestamp}\n`;
 
-              let timestamp = r.createdAt ? new Date(r.createdAt).toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}) : "-";
-              reply += `■ Input: ${timestamp}\n`;
-              
-              // Menu: nama menu di aplikasi sesuai posisi terakhir data
-              let menuSource = "";
-              if (statusRaw === 'pending') menuSource = "📥 Verifikasi Admin";
-              else if (statusRaw === 'verified_actor') menuSource = "👥 Data Pelaku";
-              else if (statusRaw === 'verified_dinas') {
-                if (r.hasilVerifikasiDinas === 'Tidak Lolos' || r.alasanCancelDinas) menuSource = "🚫 Cancel Dinas";
-                else menuSource = "📋 Verifikasi Dinas";
-              }
-              else if (statusRaw === 'bank_pending') menuSource = "🏦 Verifikasi Bank";
-              else if (statusRaw === 'lpj_pending') menuSource = "📄 LPJ";
-              else if (statusRaw === 'finish') menuSource = "🏁 Finish / Selesai";
-              else if (statusRaw === 'rejected') menuSource = "❌ Ditolak / Cancell";
-              else menuSource = "📂 Menu Lainnya";
-              
-              reply += `■ Menu: ${menuSource}\n`;
-              reply += `\n`;
-
-              // Cek data di sheet 2023, 2024, 2025 berdasarkan Nomor KK
-              const kkTarget = (r.noKK || "").trim();
+              // Cross-reference KK
+              const kkTarget = (r._noKK || "").trim();
               if (kkTarget) {
-                let kkMatches: string[] = [];
+                const kkMatches: string[] = [];
                 masterSheets.forEach(({ label, data }) => {
                   const found = data.filter(m =>
-                    m.noKK && String(m.noKK).trim() === kkTarget
+                    m && m.noKK && String(m.noKK).trim() === kkTarget
                   );
                   if (found.length > 0) {
                     found.forEach(m => {
-                      const formatCurrency = (val: any) => {
-                        if (!val) return "Rp 0";
-                        const num = typeof val === "string" ? parseFloat(val.replace(/[^0-9.-]+/g, "")) : val;
-                        return isNaN(num) ? val : new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(num);
-                      };
                       kkMatches.push(
-                        `   📅 *Sheet ${label}*: ${m.nama || m.fullName || "-"} | Usaha: ${m.usaha || "-"} | Nominal: ${formatCurrency(m.nominal)} | Status: ${m.status || "-"} | LPJ: ${m.statusLpj || "-"}`
+                        `   📅 *Sheet ${label}*: ${m.nama || m.fullName || "-"} | Nominal: ${formatCurrency(m.nominal)} | Status: ${m.status || "-"}`
                       );
                     });
                   }
                 });
                 if (kkMatches.length > 0) {
-                  reply += `■ *Cek KK di Sheet Penerima:*\n${kkMatches.join('\n')}\n`;
+                  reply += `■ *Riwayat Bantuan KK Sebelumnya:*\n${kkMatches.join('\n')}\n`;
                 } else {
-                  reply += `■ *Cek KK di Sheet Penerima:* _Tidak ditemukan di 2023/2024/2025_\n`;
+                  reply += `■ *Riwayat Bantuan KK:* _Tidak ada di Sheet 2023/2024/2025_\n`;
                 }
-              } else {
-                reply += `■ *Cek KK di Sheet Penerima:* _No KK kosong_\n`;
               }
 
               reply += `\n`;
             });
-            if (results.length === 50) {
-              reply += `_Hanya menampilkan 50 data pertama (Batas Keamanan Telegram)._`;
+
+            if (results.length > 15) {
+              reply += `_Menampilkan 15 dari ${results.length} hasil. Persempit kata kunci pencarian Anda jika perlu._`;
             }
+
             await sendMessage(chatId, reply);
             
-            // Log the activity
             await logActivity({
               query: `CARI [${type.toUpperCase()}]: ${keyword}`,
               results: `Ditemukan ${results.length} data`,
@@ -312,9 +579,8 @@ export async function POST(req: NextRequest) {
               chatId: String(chatId)
             });
           } else {
-            await sendMessage(chatId, `Tidak ditemukan data untuk pencarian "${keyword}".`);
+            await sendMessage(chatId, `❌ *Tidak Ditemukan*\n\nTidak ditemukan data untuk pencarian: \`${keyword}\`.`);
             
-            // Log the activity
             await logActivity({
               query: `CARI [${type.toUpperCase()}]: ${keyword}`,
               results: `Tidak ditemukan`,
@@ -325,19 +591,20 @@ export async function POST(req: NextRequest) {
             });
           }
         } else {
-           await sendMessage(chatId, "Belum ada data pendaftar UMKM.");
+          await sendMessage(chatId, "Belum ada data pendaftar UMKM.");
         }
-      } else if (text.startsWith('/cekdata')) {
+      } 
+      else if (text.startsWith('/cekdata')) {
         const keyword = text.replace('/cekdata', '').trim();
         if (!keyword) {
           await sendMessage(chatId, "📌 *Cara Cek Data:*\nKetikkan NIK, No. KK, atau Nama setelah perintah.\nContoh: `/cekdata 12345` atau `/cekdata AGUS` ");
           return NextResponse.json({ ok: true });
         }
-        await sendMessage(chatId, `⏳ _Mengecek "${keyword}" di Database Master & Blacklist..._`);
+        await sendMessage(chatId, `⏳ _Mengecek "${keyword}" di SIMPU, Master Data & Blacklist..._`);
         
-        let foundResults: any[] = [];
         try {
-          const [m2023Snap, m2024Snap, m2025Snap, blacklistSnap] = await Promise.all([
+          const [actorsSnap, m2023Snap, m2024Snap, m2025Snap, blacklistSnap] = await Promise.all([
+            get(ref(database, 'businessActors')),
             get(ref(database, 'master_data_2023')),
             get(ref(database, 'master_data_2024')),
             get(ref(database, 'master_data_2025')),
@@ -345,83 +612,137 @@ export async function POST(req: NextRequest) {
           ]);
           
           const kw = keyword.toLowerCase();
+          const cleanKw = keyword.replace(/[^0-9]/g, '');
 
+          let foundResults: any[] = [];
+
+          // 1. Check in SIMPU Active Business Actors
+          if (actorsSnap.exists()) {
+            const raw = actorsSnap.val();
+            Object.keys(raw).forEach(key => {
+              const r = raw[key];
+              if (!r) return;
+              const nik = String(r.nik || '').trim();
+              const kk = String(r.noKK || r.kk || '').trim();
+              const nama = String(r.fullName || r.nama || r.name || '').toLowerCase();
+              const matchNik = cleanKw && nik.replace(/[^0-9]/g, '').includes(cleanKw);
+              const matchKk = cleanKw && kk.replace(/[^0-9]/g, '').includes(cleanKw);
+              const matchNama = nama.includes(kw);
+
+              if (matchNik || matchKk || matchNama) {
+                const statusInfo = getStatusDetails(r);
+                foundResults.push({
+                  ...r,
+                  _id: key,
+                  _source: 'DATA SIMPU (Aktif)',
+                  _isSimpu: true,
+                  _statusLabel: statusInfo.label,
+                  _menu: statusInfo.menu,
+                  nama: r.fullName || r.nama || r.name || '-',
+                  usaha: r.businessName || r.namaUsaha || r.usaha || '-',
+                  nik: r.nik || '-',
+                  noKK: r.noKK || r.kk || '-',
+                  nominal: r.lpjNominal || r.nominal || 0,
+                  coordinator: normalizeCoordinator(r.coordinator || r.koordinator || '-')
+                });
+              }
+            });
+          }
+
+          // 2. Search helper for Master & Blacklist sheets
           const searchInSnap = (snap: any, label: string) => {
-            if (!snap.exists()) return [];
+            if (!snap || !snap.exists()) return [];
             const data = Object.values(snap.val()) as any[];
-            return data.filter(r => 
-              (r.nik && String(r.nik).trim() === keyword) || 
-              (r.noKK && String(r.noKK).trim() === keyword) || 
-              (r.nama && String(r.nama).toLowerCase().includes(kw)) ||
-              (r.fullName && String(r.fullName).toLowerCase().includes(kw))
-            ).map(r => ({ ...r, source: label }));
+            return data.filter(r => {
+              if (!r) return false;
+              const nik = String(r.nik || '').trim();
+              const kk = String(r.noKK || r.kk || '').trim();
+              const nama = String(r.nama || r.fullName || '').toLowerCase();
+              const matchNik = cleanKw && nik.replace(/[^0-9]/g, '').includes(cleanKw);
+              const matchKk = cleanKw && kk.replace(/[^0-9]/g, '').includes(cleanKw);
+              const matchNama = nama.includes(kw);
+              return matchNik || matchKk || matchNama;
+            }).map(r => ({
+              ...r,
+              _source: label,
+              nama: r.nama || r.fullName || '-',
+              usaha: r.usaha || r.businessName || '-',
+              nik: r.nik || '-',
+              noKK: r.noKK || r.kk || '-',
+              coordinator: normalizeCoordinator(r.coordinator || r.koordinator || '-')
+            }));
           };
 
-          foundResults = [
-            ...searchInSnap(blacklistSnap, 'Sheet 4 (Blacklist - REJECT)'),
-            ...searchInSnap(m2025Snap, 'Sheet 3 (2025 - HOLD)'),
-            ...searchInSnap(m2023Snap, 'Sheet 2 (2023 - 1m)'),
-            ...searchInSnap(m2024Snap, 'Sheet 1 (2024 - 3m)')
-          ];
+          foundResults.push(
+            ...searchInSnap(blacklistSnap, 'Sheet Blacklist (DITOLAK)'),
+            ...searchInSnap(m2025Snap, 'Sheet 2025 (Penerima/Hold)'),
+            ...searchInSnap(m2024Snap, 'Sheet 2024 (Penerima 3 Juta)'),
+            ...searchInSnap(m2023Snap, 'Sheet 2023 (Penerima 1 Juta)')
+          );
+
+          if (foundResults.length > 0) {
+            let reply = `🔍 *HASIL PENGECEKAN GANDA DATA* (${foundResults.length} data ditemukan)\n` +
+                        `Kata Kunci: \`${keyword}\`\n\n`;
+
+            foundResults.slice(0, 15).forEach((r, i) => {
+              const isBlacklist = r._source?.includes('Blacklist');
+              const isSimpu = Boolean(r._isSimpu);
+              const icon = isBlacklist ? "🚫" : (isSimpu ? "🏬" : "📅");
+              
+              reply += `${icon} *${i+1}. ${r.nama}*\n`;
+              reply += `■ SUMBER: *${r._source}*\n`;
+              if (isSimpu) {
+                reply += `■ Posisi Data: *${r._statusLabel}*\n`;
+                reply += `■ Menu SIMPU: *${r._menu}*\n`;
+              }
+              reply += `■ NIK: \`${r.nik}\`\n`;
+              reply += `■ KK: \`${r.noKK}\`\n`;
+              reply += `■ Usaha: ${r.usaha}\n`;
+              reply += `■ Koordinator: ${r.coordinator}\n`;
+              if (r.nominal) {
+                reply += `■ Nominal: ${formatCurrency(r.nominal)}\n`;
+              }
+              if (r.status && !isSimpu) {
+                reply += `■ Status Sheet: ${r.status}\n`;
+              }
+              if (r.statusLpj) {
+                reply += `■ Status LPJ: ${r.statusLpj}\n`;
+              }
+              reply += `\n`;
+            });
+
+            if (foundResults.length > 15) {
+              reply += `_Menampilkan 15 dari ${foundResults.length} data. Persempit kata kunci jika perlu._`;
+            }
+            
+            await sendMessage(chatId, reply);
+
+            await logActivity({
+              query: `CEK MASTER: ${keyword}`,
+              results: `Ditemukan ${foundResults.length} record`,
+              device: 'Bot',
+              source: 'Telegram',
+              method: 'CEK MASTER',
+              chatId: String(chatId)
+            });
+          } else {
+            await sendMessage(chatId, `❌ *DATA TIDAK DITEMUKAN*\n\nKata kunci \`${keyword}\` tidak terdaftar dalam SIMPU, Database Master 2023-2025, maupun Blacklist.`);
+
+            await logActivity({
+              query: `CEK MASTER: ${keyword}`,
+              results: `Tidak ditemukan`,
+              device: 'Bot',
+              source: 'Telegram',
+              method: 'CEK MASTER',
+              chatId: String(chatId)
+            });
+          }
         } catch (error) {
           console.error("Master/Blacklist data query error:", error);
           await sendMessage(chatId, `❌ *Error:* Terjadi kesalahan koneksi database.`);
-          return NextResponse.json({ ok: true });
         }
-
-        if (foundResults.length > 0) {
-          let reply = `🔍 *HASIL PENGECEKKAN GANDA* (${foundResults.length} record)\n\n`;
-          const formatCurrency = (val: any) => {
-            if (!val) return "Rp 0";
-            const num = typeof val === "string" ? parseFloat(val.replace(/[^0-9.-]+/g, "")) : val;
-            return isNaN(num) ? val : new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(num);
-          };
-
-          foundResults.slice(0, 50).forEach((r, i) => {
-            const isBlacklist = r.source.includes('Blacklist') || r.source.includes('Sheet 4');
-            const icon = isBlacklist ? "🚫" : "✅";
-            
-            reply += `${icon} *${i+1}. ${r.nama || "-"}*\n`;
-            reply += `■ SUMBER: *${r.source}*\n`;
-            reply += `■ No: ${r.nomor || "-"}\n`;
-            reply += `■ NIK: \`${r.nik || "-"}\`\n`;
-            reply += `■ KK: \`${r.noKK || "-"}\`\n`;
-            reply += `■ Usaha: ${r.usaha || "-"}\n`;
-            reply += `■ Status: ${r.status || "-"}\n`;
-            reply += `■ LPJ: ${r.statusLpj || "-"}\n`;
-            reply += `■ Nominal: ${formatCurrency(r.nominal)}\n`;
-            reply += `■ Tahun: ${r.tahunPengajuan || "-"}\n`;
-            reply += `■ Alamat: ${r.alamat || "-"}\n`;
-            reply += `■ Wilayah: ${r.kelurahan || "-"}, ${r.kecamatan || "-"}\n`;
-            reply += `■ Koordinator: ${r.coordinator || "-"}\n\n`;
-          });
-
-          if (foundResults.length > 50) reply += `_Hanya menampilkan 50 data pertama._`;
-          await sendMessage(chatId, reply);
-
-          // Log the activity
-          await logActivity({
-            query: `CEK MASTER: ${keyword}`,
-            results: `Ditemukan ${foundResults.length} record`,
-            device: 'Bot',
-            source: 'Telegram',
-            method: 'CEK MASTER',
-            chatId: String(chatId)
-          });
-        } else {
-          await sendMessage(chatId, `❌ *DATA TIDAK DITEMUKAN*\n\nKata kunci \`${keyword}\` tidak terdaftar dalam Database Master maupun Blacklist.`);
-
-          // Log the activity
-          await logActivity({
-            query: `CEK MASTER: ${keyword}`,
-            results: `Tidak ditemukan`,
-            device: 'Bot',
-            source: 'Telegram',
-            method: 'CEK MASTER',
-            chatId: String(chatId)
-          });
-        }
-      } else if (text.startsWith('/inputdata')) {
+      } 
+      else if (text.startsWith('/inputdata')) {
         const reply = `📝 *FORM INPUT DATA BARU*\n\n` +
                       `Silakan *Salin (Copy)* template di bawah ini, isi data dengan lengkap, lalu kirim kembali ke bot:\n\n` +
                       `\`/simpandata\n` +
@@ -446,8 +767,8 @@ export async function POST(req: NextRequest) {
                       `▫️ *Jenis Usaha:* Kuliner / Bukan Kuliner.\n` +
                       `▫️ *Nama Usaha:* Nama warung/toko/produk Anda.`;
         await sendMessage(chatId, reply);
-      } else if (text.startsWith('/simpandata')) {
-        // Handle both actual newlines and literal \n characters
+      } 
+      else if (text.startsWith('/simpandata')) {
         const lines = text.split(/\n|\\n/);
         let parsedData: any = {};
         lines.forEach((line: string) => {
@@ -528,16 +849,20 @@ export async function POST(req: NextRequest) {
           const quotaSnapshot = await get(quotaRef);
           if (quotaSnapshot.exists()) {
             const quotaData = Object.values(quotaSnapshot.val()) as any[];
-            const coordQuota = quotaData.find(q => (q.name || "").toUpperCase().trim() === selectedCoordinator);
+            const coordQuota = quotaData.find(q => {
+              const qNorm = normalizeCoordinator(q.name || "").toUpperCase().trim();
+              return qNorm === selectedCoordinator;
+            });
             if (coordQuota) {
               const limit = coordQuota.quota || 0;
               let achieved = 0;
               if (snapshot.exists()) {
                 snapshot.forEach((child) => {
                   const val = child.val();
-                  const isCancelDinas = (val.status === 'verified_dinas' && val.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(val.alasanCancelDinas);
-                  const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(val.status) && !isCancelDinas;
-                  if (isVerified && (val.coordinator || "").toUpperCase().trim() === selectedCoordinator) {
+                  const isCancel = isCancelDinas(val);
+                  const isVerified = isVerifiedStatus(val) && !isCancel;
+                  const cNorm = normalizeCoordinator(val.coordinator || "").toUpperCase().trim();
+                  if (isVerified && cNorm === selectedCoordinator) {
                     achieved++;
                   }
                 });
@@ -573,41 +898,16 @@ export async function POST(req: NextRequest) {
           const newActorRef = push(actorsRef);
           await set(newActorRef, newData);
           
-          // Update stats automatically (Server-side implementation of stats-service logic)
-          const statsRef = ref(database, 'system_stats');
-          const { runTransaction } = await import("firebase/database");
-          await runTransaction(statsRef, (current: any) => {
-            if (!current) return current;
-            const s = newData.status || 'pending';
-            const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
-            const isRejected = s === 'rejected';
-            
-            if (isVerified || isRejected) {
-              current.totalActors = (current.totalActors || 0) + 1;
-              const g = (newData.gender || "").toLowerCase().trim();
-              const genderKey = (g === 'perempuan' || g === 'p') ? 'perempuan' : 'laki';
-              current.gender[genderKey] = (current.gender[genderKey] || 0) + 1;
-            }
-            
-            const catMap: Record<string, string> = {
-              'verified_actor': 'verified', 'verified_dinas': 'verified', 'bank_pending': 'verified', 'lpj_pending': 'verified', 'finish': 'verified',
-              'rejected': 'rejected', 'pending': 'pending'
-            };
-            const cat = catMap[s] || 'pending';
-            current.status[cat] = (current.status[cat] || 0) + 1;
-            
-            current.lastUpdated = new Date().toISOString();
-            return current;
-          });
+          // Update stats and search index atomically
+          await updateStatsOnNewActor(database, { ...newData, id: newActorRef.key });
 
           await sendMessage(chatId, `✅ *DATA BERHASIL DIINPUT*\n\n` +
                                    `👤 Nama: *${parsedData.fullName}*\n` +
                                    `🆔 NIK: \`${parsedData.nik}\`\n` +
                                    `🏬 Usaha: *${parsedData.businessName || "-"}*\n` +
                                    `📍 Lokasi: ${parsedData.businessLocation || "-"}\n\n` +
-                                   `Data telah masuk ke sistem dan sedang menunggu verifikasi oleh tim Admin.`);
+                                   `Data telah masuk ke sistem SIMPU dan sedang menunggu verifikasi oleh tim Admin.`);
           
-          // Log Activity
           await logActivity({
             query: `INPUT: ${parsedData.fullName} (${parsedData.nik})`,
             results: `Berhasil Simpan`,
@@ -621,114 +921,7 @@ export async function POST(req: NextRequest) {
            await sendMessage(chatId, `❌ *Error:* Gagal menyimpan data ke database.`);
         }
       } 
-      else if (text.startsWith('/kuota')) {
-        await sendMessage(chatId, `⏳ _Mengambil data kuota koordinator..._`);
-        
-        const actorsRef = ref(database, 'businessActors');
-        const actorsSnap = await get(actorsRef);
-        const actors = actorsSnap.exists() ? Object.values(actorsSnap.val()) as any[] : [];
-
-        const usageMap = new Map<string, number>();
-        actors.forEach(actor => {
-            const isCancelDinas = (actor.status === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(actor.alasanCancelDinas);
-            const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(actor.status) && !isCancelDinas;
-            if (actor.coordinator && isVerified) {
-                const coordinatorName = (actor.coordinator || "").toUpperCase().trim();
-                usageMap.set(coordinatorName, (usageMap.get(coordinatorName) || 0) + 1);
-            }
-        });
-
-        const quotaRef = ref(database, 'koordinator_kuotas');
-        const quotaSnap = await get(quotaRef);
-
-        if (quotaSnap.exists()) {
-          const quotaData = Object.values(quotaSnap.val()) as any[];
-          
-          const combined = quotaData.map((q: any) => {
-            const name = q.name || "Unnamed";
-            const nameUpper = name.toUpperCase().trim();
-            const limit = Number(q.quota ?? 0);
-            const used = usageMap.get(nameUpper) || 0;
-            const remaining = limit - used;
-            return {
-              name,
-              limit,
-              used,
-              remaining
-            };
-          }).sort((a, b) => a.name.localeCompare(b.name));
-
-          const habis = combined.filter(c => c.remaining <= 0);
-          const belumHabis = combined.filter(c => c.remaining > 0 && c.used > 0);
-          const belumTerinput = combined.filter(c => c.remaining > 0 && c.used === 0);
-
-          const now = new Date();
-          const optionsHari = { weekday: 'long' as const, timeZone: 'Asia/Jakarta' };
-          const optionsTanggal = { day: 'numeric' as const, month: 'long' as const, year: 'numeric' as const, timeZone: 'Asia/Jakarta' };
-          const optionsJam = { hour: '2-digit' as const, minute: '2-digit' as const, second: '2-digit' as const, hour12: false, timeZone: 'Asia/Jakarta' };
-
-          const hari = now.toLocaleDateString('id-ID', optionsHari);
-          const tanggal = now.toLocaleDateString('id-ID', optionsTanggal);
-          const jam = now.toLocaleTimeString('id-ID', optionsJam).replace(/\./g, ':') + ' WIB';
-
-          let reply = `*PENGECEKKAN DATA*\n` +
-                      `Hari : ${hari}\n` +
-                      `Tanggal : ${tanggal}\n` +
-                      `Jam : ${jam}\n\n`;
-
-          reply += `*Koordinator Yang Kuotanya Habis*\n`;
-          if (habis.length > 0) {
-            habis.forEach((c) => {
-              reply += `- ${c.name} (Total Kuota: ${c.limit})\n`;
-            });
-            const totalHabisQuota = habis.reduce((acc, c) => acc + c.limit, 0);
-            reply += `*Total Koordinator: ${habis.length}*\n` +
-                     `*Total Kuota: ${totalHabisQuota}*\n\n`;
-          } else {
-            reply += `_Tidak ada_\n\n`;
-          }
-
-          reply += `*Koordinator Yang Kuotanya Belum Habis*\n`;
-          if (belumHabis.length > 0) {
-            belumHabis.forEach((c) => {
-              reply += `- ${c.name} (Terpakai: ${c.used} / Total Kuota: ${c.limit})\n`;
-            });
-            const totalBelumHabisUsed = belumHabis.reduce((acc, c) => acc + c.used, 0);
-            const totalBelumHabisQuota = belumHabis.reduce((acc, c) => acc + c.limit, 0);
-            reply += `*Total Koordinator: ${belumHabis.length}*\n` +
-                     `*Total Kuota Terpakai: ${totalBelumHabisUsed} / ${totalBelumHabisQuota}*\n\n`;
-          } else {
-            reply += `_Tidak ada_\n\n`;
-          }
-
-          reply += `*Koordinator Yang Belum Terinput*\n`;
-          if (belumTerinput.length > 0) {
-            belumTerinput.forEach((c) => {
-              reply += `- ${c.name} (Total Kuota: ${c.limit})\n`;
-            });
-            const totalBelumTerinputQuota = belumTerinput.reduce((acc, c) => acc + c.limit, 0);
-            reply += `*Total Koordinator: ${belumTerinput.length}*\n` +
-                     `*Total Kuota: ${totalBelumTerinputQuota}*\n`;
-          } else {
-            reply += `_Tidak ada_\n`;
-          }
-
-          await sendMessage(chatId, reply);
-
-          // Log Activity
-          await logActivity({
-            query: 'Cek Kuota Koordinator',
-            results: `Berhasil Tampil`,
-            device: 'Bot',
-            source: 'Telegram',
-            method: 'CEK KUOTA',
-            chatId: String(chatId)
-          });
-        } else {
-          await sendMessage(chatId, "⚠️ Tidak ada data kuota yang terdaftar.");
-        }
-      }
-       else {
+      else {
         await sendMessage(chatId, "❌ *Perintah tidak dikenali.*\nGunakan /start untuk melihat menu.");
       }
     }
