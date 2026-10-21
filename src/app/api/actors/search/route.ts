@@ -31,15 +31,13 @@ async function ensureAuth() {
 
 function extractCleanSurveyData(sd: any) {
   if (!sd || typeof sd !== 'object') return undefined;
-  return {
+  const clean: any = {
     hasSurvey: true,
     tanggalSurvey: sd.tanggalSurvey || '',
     status: sd.status || '',
-    dtks: sd.dtks ? { masuk: Boolean(sd.dtks.masuk), jenis: sd.dtks.jenis || '' } : undefined,
     modalUsaha: sd.modalUsaha || '',
     omset: sd.omset || '',
     peralatan: sd.peralatan || '',
-    hibah: sd.hibah ? { pernah: Boolean(sd.hibah.pernah), dariMana: sd.hibah.dariMana || '', tahun: sd.hibah.tahun || '' } : undefined,
     rencanaPenggunaan: sd.rencanaPenggunaan || '',
     hasilSurvey: sd.hasilSurvey || '',
     bidangUsaha: sd.bidangUsaha || '',
@@ -51,8 +49,18 @@ function extractCleanSurveyData(sd: any) {
     noHp: sd.noHp || '',
     email: sd.email || '',
     sosmed: sd.sosmed || '',
-    pejabatData: sd.pejabatData || undefined,
   };
+
+  if (sd.dtks) {
+    clean.dtks = { masuk: Boolean(sd.dtks.masuk), jenis: sd.dtks.jenis || '' };
+  }
+  if (sd.hibah) {
+    clean.hibah = { pernah: Boolean(sd.hibah.pernah), dariMana: sd.hibah.dariMana || '', tahun: sd.hibah.tahun || '' };
+  }
+  if (sd.pejabatData) {
+    clean.pejabatData = sd.pejabatData;
+  }
+  return clean;
 }
 
 async function getLightweightActors(forceRefresh: boolean = false): Promise<any[]> {

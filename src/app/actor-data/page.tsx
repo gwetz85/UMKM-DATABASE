@@ -353,7 +353,7 @@ function ActorDataContent() {
           if (list.length > 0) {
             setLocalIndex(list);
             try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(list)); } catch {}
-            set(ref(database, 'settings/actors_search'), searchMap).catch(() => {});
+            set(ref(database, 'settings/actors_search'), JSON.parse(JSON.stringify(searchMap))).catch(() => {});
             return;
           }
         }
@@ -2161,7 +2161,7 @@ function ActorDataContent() {
 
                                   // Background save clean searchMap to settings/actors_search
                                   if (Object.keys(searchMap).length > 0) {
-                                    set(ref(database, 'settings/actors_search'), searchMap).catch(() => {});
+                                    set(ref(database, 'settings/actors_search'), JSON.parse(JSON.stringify(searchMap))).catch(() => {});
                                   }
                                 }
                               } catch (e) {

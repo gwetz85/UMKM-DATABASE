@@ -60,15 +60,13 @@ export const getCategory = (actorData: any) => {
 
 export function extractCleanSurveyData(sd: any) {
   if (!sd || typeof sd !== 'object') return undefined;
-  return {
+  const clean: any = {
     hasSurvey: true,
     tanggalSurvey: sd.tanggalSurvey || '',
     status: sd.status || '',
-    dtks: sd.dtks ? { masuk: Boolean(sd.dtks.masuk), jenis: sd.dtks.jenis || '' } : undefined,
     modalUsaha: sd.modalUsaha || '',
     omset: sd.omset || '',
     peralatan: sd.peralatan || '',
-    hibah: sd.hibah ? { pernah: Boolean(sd.hibah.pernah), dariMana: sd.hibah.dariMana || '', tahun: sd.hibah.tahun || '' } : undefined,
     rencanaPenggunaan: sd.rencanaPenggunaan || '',
     hasilSurvey: sd.hasilSurvey || '',
     bidangUsaha: sd.bidangUsaha || '',
@@ -80,8 +78,18 @@ export function extractCleanSurveyData(sd: any) {
     noHp: sd.noHp || '',
     email: sd.email || '',
     sosmed: sd.sosmed || '',
-    pejabatData: sd.pejabatData || undefined,
   };
+
+  if (sd.dtks) {
+    clean.dtks = { masuk: Boolean(sd.dtks.masuk), jenis: sd.dtks.jenis || '' };
+  }
+  if (sd.hibah) {
+    clean.hibah = { pernah: Boolean(sd.hibah.pernah), dariMana: sd.hibah.dariMana || '', tahun: sd.hibah.tahun || '' };
+  }
+  if (sd.pejabatData) {
+    clean.pejabatData = sd.pejabatData;
+  }
+  return clean;
 }
 
 // Helper to get detailed stage for Dinas workflow (Tahap 1, 2, 3, 4)
@@ -576,9 +584,9 @@ export async function recalculateAndSaveSystemStats(database: Database) {
     }
   });
 
-  await set(ref(database, 'system_stats'), stats);
+  await set(ref(database, 'system_stats'), JSON.parse(JSON.stringify(stats)));
   if (Object.keys(searchIndexMap).length > 0) {
-    await set(ref(database, 'settings/actors_search'), searchIndexMap);
+    await set(ref(database, 'settings/actors_search'), JSON.parse(JSON.stringify(searchIndexMap)));
   }
   return stats;
 }
@@ -638,7 +646,7 @@ export async function syncActorToSearchIndex(database: Database, actorData: any)
       dikembalikanKePetugasAt: actorData.dikembalikanKePetugasAt || '',
     };
 
-    await set(searchActorRef, cleanItem);
+    await set(searchActorRef, JSON.parse(JSON.stringify(cleanItem)));
   } catch (err) {
     console.error('Error syncing actor to search index:', err);
   }
