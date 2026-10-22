@@ -648,74 +648,47 @@ export async function POST(req: NextRequest) {
             }
           });
           
-          // Load master data sheets for KK cross-reference
-          const [m2023Snap, m2024Snap, m2025Snap] = await Promise.all([
-            get(ref(database, 'master_data_2023')),
-            get(ref(database, 'master_data_2024')),
-            get(ref(database, 'master_data_2025'))
-          ]);
-
-          const masterSheets: { label: string; data: any[] }[] = [
-            { label: '2023', data: m2023Snap.exists() ? Object.values(m2023Snap.val()) as any[] : [] },
-            { label: '2024', data: m2024Snap.exists() ? Object.values(m2024Snap.val()) as any[] : [] },
-            { label: '2025', data: m2025Snap.exists() ? Object.values(m2025Snap.val()) as any[] : [] },
-          ];
-
           if (results.length > 0) {
-            let reply = `🔍 *HASIL PENCARIAN [${type.toUpperCase()}]:*\n` +
+            let reply = `🔍 *HASIL DATA PELAKU USAHA 2026 [${type.toUpperCase()}]:*\n` +
                         `Ditemukan: *${results.length} data*\n\n`;
 
             const displayList = results.slice(0, 15);
             displayList.forEach((r, i) => {
               const statusInfo = getStatusDetails(r);
+              const rtRwRaw = resolveRtRw(r);
+              const rtRw = rtRwRaw !== '-' ? rtRwRaw : (r.rtRw || r.rt_rw || (r.rt && r.rw ? `${r.rt}/${r.rw}` : r.rt || "-"));
+              const kelRaw = resolveKelurahan(r);
+              const kel = kelRaw !== '-' ? kelRaw : (r.kelurahan || "-");
+              const kecRaw = resolveKecamatan(r, kel);
+              const kec = kecRaw !== '-' ? kecRaw : (r.kecamatan || "-");
+
+              const bankName = r.bankName || "-";
+              const bankNumber = r.bankNumber || "-";
+              const petugasSurvey = r.petugasSurvey || r.surveyData?.pejabatData?.petugas?.nama || r.pejabatData?.petugas?.nama || "-";
+              const hasilSurvey = r.hasilSurvey || r.surveyData?.hasilSurvey || r.hasilVerifikasiDinas || "-";
+              const verifikatorDinas = r.verifikatorDinas || r.verifiedDinasBy || r.berkasDinasVerifiedBy || "-";
+              const timestamp = r.createdAt ? new Date(r.createdAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ' WIB' : "-";
 
               reply += `${statusInfo.emoji} *${i+1}. ${r._businessName || "TANPA NAMA USAHA"}*\n`;
-              reply += `■ Reg ID: \`${r._registrationCode || r._id}\`\n`;
+              reply += `■ Reg ID: \`${r._registrationCode || r._id || "-"}\`\n`;
               reply += `■ Nama: *${r._fullName || "-"}*\n`;
               reply += `■ NIK: \`${r._nik || "-"}\`\n`;
               reply += `■ KK: \`${r._noKK || "-"}\`\n`;
               reply += `■ HP: \`${r._phone || "-"}\`\n`;
-              reply += `■ Usaha: ${r._businessName || "-"}\n`;
+              reply += `■ Usaha: *${r._businessName || "-"}*\n`;
               reply += `■ Alamat: ${r._address || "-"}\n`;
-              
-              const rtRw = resolveRtRw(r);
-              const kel = resolveKelurahan(r);
-              const kec = resolveKecamatan(r, kel);
-              reply += `■ RT/RW: ${rtRw !== '-' ? rtRw : (r.rtRw || "-")}\n`;
-              reply += `■ Wilayah: Kel. ${kel !== '-' ? kel : (r.kelurahan || "-")}, Kec. ${kec !== '-' ? kec : (r.kecamatan || "-")}\n`;
+              reply += `■ RT/RW: ${rtRw}\n`;
+              reply += `■ Wilayah: Kel. ${kel}, Kec. ${kec}\n`;
+              reply += `■ Nama Bank: *${bankName}*\n`;
+              reply += `■ Nomor Rekening: \`${bankNumber}\`\n`;
+              reply += `■ Nama Petugas Survey: *${petugasSurvey}*\n`;
+              reply += `■ Hasil Survey: *${hasilSurvey}*\n`;
+              reply += `■ Verifikator Dinas: *${verifikatorDinas}*\n`;
               reply += `■ Koordinator: *${r._coordinator || "-"}*\n`;
-
-              reply += `■ *Posisi Data:* *${statusInfo.label}*\n`;
+              reply += `■ Posisi Data: *${statusInfo.label}*\n`;
               reply += `■ Status Detail: _${statusInfo.detail}_\n`;
               reply += `■ Menu di Web: *${statusInfo.menu}*\n`;
-
-              const timestamp = r.createdAt ? new Date(r.createdAt).toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}) : "-";
-              reply += `■ Waktu Daftar: ${timestamp}\n`;
-
-              // Cross-reference KK
-              const kkTarget = (r._noKK || "").trim();
-              if (kkTarget) {
-                const kkMatches: string[] = [];
-                masterSheets.forEach(({ label, data }) => {
-                  const found = data.filter(m =>
-                    m && m.noKK && String(m.noKK).trim() === kkTarget
-                  );
-                  if (found.length > 0) {
-                    found.forEach(m => {
-                      kkMatches.push(
-                        `   📅 *Sheet ${label}*: ${m.nama || m.fullName || "-"} | Nominal: ${formatCurrency(m.nominal)} | Status: ${m.status || "-"}`
-                      );
-                    });
-                  }
-                });
-                if (kkMatches.length > 0) {
-                  reply += `■ *Riwayat Bantuan KK Sebelumnya:*\n${kkMatches.join('\n')}\n`;
-                } else {
-                  reply += `■ *Riwayat Bantuan KK:* _Tidak ada di Sheet 2023/2024/2025_\n`;
-                }
-              }
-
-              reply += `\n`;
+              reply += `■ Waktu Daftar: ${timestamp}\n\n`;
             });
 
             if (results.length > 15) {
