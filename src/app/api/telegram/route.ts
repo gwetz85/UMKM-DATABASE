@@ -261,7 +261,12 @@ export async function POST(req: NextRequest) {
 
           const rawActors = actorsSnap.val();
           const actorList = Object.values(rawActors) as any[];
-          const totalRecords = actorList.length;
+          
+          // Filter out dummy/ghost records that lack valid identity or are flagged as ghost
+          const validActors = actorList.filter((a: any) => 
+            a && (a.fullName || a.nik) && !a.isGhost && !(a.status || '').toLowerCase().includes('ghost')
+          );
+          const totalRecords = validActors.length;
 
           let verifiedCount = 0;
           let rejectedCount = 0;
@@ -290,8 +295,7 @@ export async function POST(req: NextRequest) {
           const coordinatorMap: Record<string, number> = {};
           const coordinatorRekeningMap: Record<string, number> = {};
 
-          actorList.forEach((actor: any) => {
-            if (!actor || (!actor.fullName && !actor.nik && !actor.status)) return;
+          validActors.forEach((actor: any) => {
 
             const s = (actor.status || 'pending').toLowerCase();
             const actorIsCancel = isCancelDinas(actor);

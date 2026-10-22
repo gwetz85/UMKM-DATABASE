@@ -501,7 +501,7 @@ export async function recalculateAndSaveSystemStats(database: Database) {
 
   snap.forEach((child) => {
     const actor = child.val();
-    if (!actor || (!actor.fullName && !actor.nik && !actor.status)) return;
+    if (!actor || (!actor.fullName && !actor.nik) || actor.isGhost || (actor.status || '').toLowerCase().includes('ghost')) return;
     const s = (actor.status || 'pending').toLowerCase();
     const isActorCancelDinas = isCancelDinas(actor);
     const isRejected = s === 'rejected' || isActorCancelDinas;

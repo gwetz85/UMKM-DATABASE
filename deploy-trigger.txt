@@ -1,4 +1,4 @@
 # Vercel Deployment Trigger
-Deployment triggered at: 2026-10-22 07:39:00 WIB
+Deployment triggered at: 2026-10-22 07:50:00 WIB
 Author: gwetz85 <agus.sahabathanura@gmail.com>
-Reason: Update bot telegram search fields (/nama, /nik, /code, /alamat, /hp) to 2026 data only with custom reply format
+Reason: Exclude dummy/ghost test records from system stats and bot telegram stats
