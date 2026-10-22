@@ -8,6 +8,9 @@ import { normalizeCoordinator } from '@/lib/coordinator-utils';
 import { 
   isCancelDinas, 
   isVerifiedStatus, 
+  getDetailedStage,
+  normGender,
+  normGenderKey,
   recalculateAndSaveSystemStats, 
   updateStatsOnNewActor,
   SystemStats 
@@ -242,59 +245,210 @@ export async function POST(req: NextRequest) {
                       `© ${new Date().getFullYear()} SIMPU - All Rights Reserved`;
         await sendMessage(chatId, reply);
       } 
-      else if (text.startsWith('/stats')) {
-        await sendMessage(chatId, "⏳ _Sedang mengambil data statistik resmi SIMPU..._");
+      else if (text.startsWith('/stats') || text.startsWith('/stat')) {
+        await sendMessage(chatId, "⏳ _Sedang menghitung data statistik realtime dari database aplikasi SIMPU..._");
         
-        let statsSnap = await get(ref(database, 'system_stats'));
-        let stats: SystemStats | null = statsSnap.exists() ? statsSnap.val() : null;
+        try {
+          const [actorsSnap, quotaSnap] = await Promise.all([
+            get(ref(database, 'businessActors')),
+            get(ref(database, 'koordinator_kuotas'))
+          ]);
 
-        if (!stats || !stats.totalActors) {
-          stats = await recalculateAndSaveSystemStats(database);
-        }
+          if (!actorsSnap.exists()) {
+            await sendMessage(chatId, "⚠️ Belum ada data pendaftar UMKM dalam database.");
+            return NextResponse.json({ ok: true });
+          }
 
-        if (stats) {
-          const total = stats.totalActors || 0;
-          const verified = stats.status?.verified || 0;
-          const rejected = stats.status?.rejected || 0;
-          const pending = stats.status?.pending || 0;
+          const rawActors = actorsSnap.val();
+          const actorList = Object.values(rawActors) as any[];
+          const totalRecords = actorList.length;
 
-          const detailed = stats.detailedStatus || { survey: 0, verifikasi: 0, hasilVerifikasi: 0, lpj: 0, selesai: 0 };
-          const verifiedGender = stats.verifiedGender || { 'Laki-laki': 0, 'Perempuan': 0 };
+          let verifiedCount = 0;
+          let rejectedCount = 0;
+          let pendingCount = 0;
 
-          const updatedDate = stats.lastUpdated 
-            ? new Date(stats.lastUpdated).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ' WIB'
-            : '-';
+          const detailedStatus = {
+            survey: 0,
+            verifikasi: 0,
+            hasilVerifikasi: 0,
+            selesai: 0,
+            lpj: 0
+          };
 
-          const reply = `📈 *STATISTIK RESMI SISTEM SIMPU*\n` +
-                        `🕒 _Pembaruan: ${updatedDate}_\n\n` +
-                        `📊 *Total Data Diproses:* *${total}*\n` +
-                        `_(Total Terverifikasi + Cancell/Ditolak)_\n\n` +
-                        `✅ *Terverifikasi:* *${verified}*\n` +
-                        `❌ *Cancell / Ditolak:* *${rejected}*\n` +
-                        `⏳ *Pending (Baru):* *${pending}*\n\n` +
-                        `📋 *Rincian Tahapan Verifikasi:*\n` +
-                        `▫️ Tahap 1 (Survey Lapangan): *${detailed.survey || 0}*\n` +
-                        `▫️ Tahap 2 (Verifikasi Berkas): *${detailed.verifikasi || 0}*\n` +
-                        `▫️ Tahap 3 (Hasil Verifikasi): *${detailed.hasilVerifikasi || 0}*\n` +
-                        `▫️ Tahap 4 (Selesai / Finish): *${detailed.selesai || 0}*\n` +
-                        `▫️ Menunggu LPJ: *${detailed.lpj || 0}*\n\n` +
-                        `👥 *Gender Pelaku Terverifikasi:*\n` +
-                        `▫️ Laki-laki: *${verifiedGender['Laki-laki'] || 0}*\n` +
-                        `▫️ Perempuan: *${verifiedGender['Perempuan'] || 0}*\n\n` +
-                        `_Data tersinkronisasi 100% dengan Dashboard Web SIMPU._`;
+          const genderProcessed = {
+            laki: 0,
+            perempuan: 0,
+            unknown: 0
+          };
+
+          const genderVerified = {
+            'Laki-laki': 0,
+            'Perempuan': 0
+          };
+
+          const kelurahanMap: Record<string, number> = {};
+          const coordinatorMap: Record<string, number> = {};
+          const coordinatorRekeningMap: Record<string, number> = {};
+
+          actorList.forEach((actor: any) => {
+            if (!actor || (!actor.fullName && !actor.nik && !actor.status)) return;
+
+            const s = (actor.status || 'pending').toLowerCase();
+            const actorIsCancel = isCancelDinas(actor);
+            const isActorRejected = s === 'rejected' || actorIsCancel;
+            const isActorVerified = isVerifiedStatus(actor);
+
+            // Total actors & gender (verified + rejected)
+            if (isActorVerified || isActorRejected) {
+              const g = normGender(actor.gender);
+              genderProcessed[g] = (genderProcessed[g] || 0) + 1;
+            }
+
+            if (isActorVerified) {
+              verifiedCount++;
+              const gKey = normGenderKey(actor.gender);
+              genderVerified[gKey] = (genderVerified[gKey] || 0) + 1;
+
+              const stage = getDetailedStage(actor);
+              if (stage && detailedStatus[stage] !== undefined) {
+                detailedStatus[stage]++;
+              }
+
+              if (actor.coordinator) {
+                const coord = normalizeCoordinator(actor.coordinator).toUpperCase().trim();
+                coordinatorMap[coord] = (coordinatorMap[coord] || 0) + 1;
+                if (actor.bankNumber && String(actor.bankNumber).trim() !== '') {
+                  coordinatorRekeningMap[coord] = (coordinatorRekeningMap[coord] || 0) + 1;
+                }
+              }
+
+              if (actor.kelurahan) {
+                const kel = actor.kelurahan.toUpperCase().trim();
+                kelurahanMap[kel] = (kelurahanMap[kel] || 0) + 1;
+              }
+            } else if (isActorRejected) {
+              rejectedCount++;
+            } else {
+              pendingCount++;
+            }
+          });
+
+          const totalProcessed = verifiedCount + rejectedCount;
+
+          // Asynchronously update system_stats in Firebase Realtime Database
+          const freshStats: SystemStats = {
+            totalActors: totalProcessed,
+            gender: genderProcessed,
+            verifiedGender: genderVerified,
+            status: {
+              pending: pendingCount,
+              verified: verifiedCount,
+              rejected: rejectedCount,
+              finish: detailedStatus.selesai
+            },
+            detailedStatus,
+            kelurahan: kelurahanMap,
+            coordinator: coordinatorMap,
+            coordinatorRekening: coordinatorRekeningMap,
+            lastUpdated: new Date().toISOString()
+          };
+          set(ref(database, 'system_stats'), freshStats).catch((e) => console.error("Error updating system_stats:", e));
+
+          // Calculate Quota Stats
+          let totalQuota = 0;
+          let totalUsed = 0;
+          let habisCount = 0;
+          let belumHabisCount = 0;
+          let belumTerinputCount = 0;
+
+          if (quotaSnap.exists()) {
+            const quotaData = Object.values(quotaSnap.val()) as any[];
+            quotaData.filter(Boolean).forEach((q: any) => {
+              const limit = Number(q.quota ?? 0);
+              const rawName = q.name ? String(q.name).trim() : '';
+              const nameUpper = rawName.toUpperCase();
+              const nameNormalized = normalizeCoordinator(rawName).toUpperCase().trim();
+
+              const used = (coordinatorMap[nameNormalized] !== undefined)
+                ? coordinatorMap[nameNormalized]
+                : (coordinatorMap[nameUpper] || 0);
+
+              const remaining = limit - used;
+              totalQuota += limit;
+              totalUsed += used;
+
+              if (remaining <= 0) habisCount++;
+              else if (used > 0) belumHabisCount++;
+              else belumTerinputCount++;
+            });
+          }
+
+          const totalRemaining = Math.max(0, totalQuota - totalUsed);
+
+          // Top 5 Kelurahan
+          const sortedKelurahan = Object.entries(kelurahanMap)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+
+          const getPct = (val: number, tot: number) => tot > 0 ? ((val / tot) * 100).toFixed(1) : "0";
+
+          const now = new Date();
+          const hari = now.toLocaleDateString('id-ID', { weekday: 'long', timeZone: 'Asia/Jakarta' });
+          const tanggal = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' });
+          const jam = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' }).replace(/\./g, ':') + ' WIB';
+
+          let reply = `📊 *STATISTIK REALTIME DATA UMKM (SIMPU)*\n` +
+                      `📅 ${hari}, ${tanggal} - ${jam}\n` +
+                      `_Data dihitung langsung secara real-time dari database aplikasi SIMPU._\n\n` +
+                      `📁 *TOTAL SELURUH BERKAS:* *${totalRecords}*\n` +
+                      `▫️ Total Data Diproses: *${totalProcessed}*\n` +
+                      `▫️ ✅ Terverifikasi (Lolos): *${verifiedCount}* (${getPct(verifiedCount, totalProcessed)}%)\n` +
+                      `▫️ ❌ Cancell / Ditolak: *${rejectedCount}* (${getPct(rejectedCount, totalProcessed)}%)\n` +
+                      `▫️ ⏳ Pending (Menunggu Admin): *${pendingCount}*\n\n` +
+                      `📋 *ALUR 4 TAHAPAN VERIFIKASI DINAS:*\n` +
+                      `▫️ 📝 Tahap 1 (Survey Lapangan): *${detailedStatus.survey}*\n` +
+                      `▫️ 🔍 Tahap 2 (Verifikasi Berkas): *${detailedStatus.verifikasi}*\n` +
+                      `▫️ 🎉 Tahap 3 (Hasil Verifikasi): *${detailedStatus.hasilVerifikasi}*\n` +
+                      `▫️ 💳 Tahap 4 (Input Rekening Bank): *${detailedStatus.selesai}*\n` +
+                      `▫️ 📄 Menunggu Dokumen LPJ: *${detailedStatus.lpj}*\n\n` +
+                      `👥 *PROPORSI GENDER (TERVERIFIKASI):*\n` +
+                      `▫️ 👨 Laki-laki: *${genderVerified['Laki-laki']}* (${getPct(genderVerified['Laki-laki'], verifiedCount)}%)\n` +
+                      `▫️ 👩 Perempuan: *${genderVerified['Perempuan']}* (${getPct(genderVerified['Perempuan'], verifiedCount)}%)\n\n`;
+
+          if (totalQuota > 0) {
+            reply += `🎯 *RINGKASAN KUOTA KOORDINATOR:*\n` +
+                     `▫️ Total Kuota: *${totalQuota}*\n` +
+                     `▫️ Terpakai: *${totalUsed}* (${getPct(totalUsed, totalQuota)}%)\n` +
+                     `▫️ Sisa Kuota: *${totalRemaining}*\n` +
+                     `▫️ 🔴 Kuota Habis: *${habisCount}* koordinator\n` +
+                     `▫️ 🟡 Belum Habis: *${belumHabisCount}* koordinator\n` +
+                     `▫️ ⚪ Belum Ada Input: *${belumTerinputCount}* koordinator\n\n`;
+          }
+
+          if (sortedKelurahan.length > 0) {
+            reply += `📍 *TOP 5 SEBARAN KELURAHAN (TERVERIFIKASI):*\n`;
+            sortedKelurahan.forEach(([kel, count], idx) => {
+              reply += ` ${idx + 1}. *${kel}*: ${count} UMKM (${getPct(count, verifiedCount)}%)\n`;
+            });
+            reply += `\n`;
+          }
+
+          reply += `_✨ 100% Real-Time & Sinkron dengan Dashboard SIMPU._\n` +
+                   `_Ketik /kuota untuk rincian lengkap seluruh koordinator._`;
 
           await sendMessage(chatId, reply);
 
           await logActivity({
-            query: 'Cek Statistik',
-            results: `Total: ${total}`,
+            query: 'Cek Statistik Realtime',
+            results: `Total: ${totalRecords} (Verified: ${verifiedCount}, Rejected: ${rejectedCount})`,
             device: 'Bot',
             source: 'Telegram',
-            method: 'STATISTIK',
+            method: 'STATISTIK REALTIME',
             chatId: String(chatId)
           });
-        } else {
-          await sendMessage(chatId, "⚠️ Gagal memuat statistik database.");
+        } catch (err: any) {
+          console.error("Error computing realtime stats:", err);
+          await sendMessage(chatId, "⚠️ Terjadi kesalahan saat menghitung statistik real-time dari database.");
         }
       }
       else if (text.startsWith('/kuota')) {
