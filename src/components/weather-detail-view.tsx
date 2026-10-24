@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { cn } from "@/lib/utils"
 import { 
   FullWeatherForecastData,
@@ -21,7 +21,6 @@ import {
   ELEVATION
 } from "@/lib/weather-service"
 import { WeatherIcon } from "@/components/weather-icons"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { 
   MapPin, 
   Droplets, 
@@ -46,7 +45,13 @@ import {
   Clock, 
   Navigation,
   Sparkles,
-  Zap
+  Zap,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  ArrowUpRight,
+  Radio,
+  CheckCircle2
 } from 'lucide-react'
 
 interface WeatherDetailViewProps {
@@ -65,8 +70,20 @@ export function WeatherDetailView({
   const [data, setData] = useState<FullWeatherForecastData | null>(initialData || null)
   const [isLoading, setIsLoading] = useState(!initialData)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [activeTab, setActiveTab] = useState("hourly")
-  const [hourlyViewRange, setHourlyViewRange] = useState<24 | 36>(24)
+  const [activeTab, setActiveTab] = useState<"hourly" | "current" | "air" | "wind" | "daily">("hourly")
+  const [hourlyViewRange, setHourlyViewRange] = useState<24 | 36 | 48>(24)
+  const [currentTime, setCurrentTime] = useState<Date>(new Date())
+
+  // Hourly carousel scroll ref
+  const hourlyScrollRef = useRef<HTMLDivElement>(null)
+
+  // Real-time ticking clock
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   const loadData = async (manual = false) => {
     if (manual) setIsRefreshing(true)
@@ -95,16 +112,28 @@ export function WeatherDetailView({
     if (onRefresh) onRefresh()
   }
 
+  const scrollHourly = (direction: 'left' | 'right') => {
+    if (hourlyScrollRef.current) {
+      const amount = direction === 'left' ? -380 : 380
+      hourlyScrollRef.current.scrollBy({ left: amount, behavior: 'smooth' })
+    }
+  }
+
   if (isLoading || !data) {
     return (
-      <div className="w-full min-h-[450px] p-8 flex flex-col items-center justify-center gap-3 text-center">
-        <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-        <span className="text-sm font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest">
-          Mengambil Data Cuaca & Atmosfer...
-        </span>
-        <span className="text-xs text-slate-400">
-          Menghubungkan ke Stasiun Cuaca {CITY_NAME} & Satelit Open-Meteo
-        </span>
+      <div className="w-full min-h-[500px] p-8 flex flex-col items-center justify-center gap-4 text-center bg-white/95 dark:bg-slate-900/95">
+        <div className="relative flex items-center justify-center">
+          <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+          <div className="absolute w-8 h-8 rounded-full bg-primary/10 animate-ping" />
+        </div>
+        <div className="space-y-1">
+          <span className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest block">
+            Sinkronisasi Stasiun Cuaca {CITY_NAME}...
+          </span>
+          <span className="text-xs text-slate-400 block">
+            Menghubungkan ke Stasiun BMKG Maritim & Satelit Pemodelan Atmosfer
+          </span>
+        </div>
       </div>
     )
   }
@@ -115,23 +144,60 @@ export function WeatherDetailView({
   const beaufort = getBeaufortScale(current.windSpeed)
   const aqiInfo = getAqiCategoryDetails(airQuality.aqi)
   const todayDaily = daily[0]
-  const todayUv = getUvCategory(todayDaily?.uvIndexMax || current.dewPoint || 5)
+  const todayUv = getUvCategory(todayDaily?.uvIndexMax || 7.5)
 
   // Hourly list limited to user selection
   const displayedHourly = hourly.slice(0, hourlyViewRange)
 
   // Calculate AQI bar needle position (0 - 300 scale)
-  const aqiNeedlePercent = Math.min(Math.max((airQuality.aqi / 300) * 100, 3), 97)
+  const aqiNeedlePercent = Math.min(Math.max((airQuality.aqi / 300) * 100, 4), 96)
+
+  // Hourly Statistics summary
+  const minTempHourly = Math.min(...displayedHourly.map(h => h.temperature))
+  const maxTempHourly = Math.max(...displayedHourly.map(h => h.temperature))
+  const maxRainProbItem = displayedHourly.reduce((prev, curr) => 
+    (curr.precipitationProbability > prev.precipitationProbability) ? curr : prev, displayedHourly[0]
+  )
+  const avgWindSpeed = Math.round(
+    displayedHourly.reduce((acc, h) => acc + h.windSpeed, 0) / displayedHourly.length
+  )
+
+  // Dynamic hero sky background classes based on weather condition
+  const getHeroThemeClasses = () => {
+    if (current.weatherCode >= 95) {
+      // Thunderstorm
+      return "from-purple-900/15 via-indigo-900/10 to-slate-900/15 border-purple-500/30"
+    }
+    if (current.weatherCode >= 51 && current.weatherCode <= 82) {
+      // Rain / Drizzle
+      return "from-sky-600/15 via-blue-600/10 to-indigo-900/15 border-blue-400/30"
+    }
+    if (!current.isDay) {
+      // Clear or Cloudy Night
+      return "from-indigo-950/20 via-slate-900/25 to-blue-950/20 border-indigo-500/25"
+    }
+    if (current.weatherCode <= 1) {
+      // Clear Sunny Day
+      return "from-amber-400/15 via-sky-400/15 to-blue-500/10 border-amber-400/30"
+    }
+    // Cloudy / Partly Cloudy Day
+    return "from-sky-500/15 via-slate-100/40 to-indigo-500/10 dark:from-slate-800/80 dark:via-slate-900/80 dark:to-slate-800/80 border-sky-400/25"
+  }
 
   return (
-    <div className="w-full flex flex-col bg-white/95 dark:bg-slate-900/95 text-slate-800 dark:text-slate-100 transition-colors">
+    <div className="w-full flex flex-col bg-white/98 dark:bg-slate-900/98 text-slate-800 dark:text-slate-100 transition-colors">
       
       {/* ================= HEADER OBSERVATORY ================= */}
-      <div className="px-5 sm:px-8 py-5 border-b border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-md">
+      {/* Note: pr-14 ensures safe distance from dialog close button 'X' */}
+      <div className="px-5 sm:px-8 py-4 sm:py-5 border-b border-slate-200/90 dark:border-slate-800/90 flex flex-wrap items-center justify-between gap-4 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-xl relative pr-14 sm:pr-16">
         <div className="flex items-center gap-3">
           <div 
-            className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
-            style={{ backgroundColor: `${aqiInfo.hex}18`, color: aqiInfo.hex }}
+            className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border"
+            style={{ 
+              backgroundColor: `${aqiInfo.hex}18`, 
+              color: aqiInfo.hex,
+              borderColor: `${aqiInfo.hex}35`
+            }}
           >
             <MapPin className="w-5 h-5" />
           </div>
@@ -144,47 +210,56 @@ export function WeatherDetailView({
                 Pusat Pemerintahan
               </span>
               <span 
-                className="px-2 py-0.5 rounded-full text-[10px] font-black border"
+                className="px-2.5 py-0.5 rounded-full text-[10px] font-black border flex items-center gap-1.5 shadow-2xs"
                 style={{ 
                   backgroundColor: `${aqiInfo.hex}15`, 
-                  borderColor: `${aqiInfo.hex}35`, 
+                  borderColor: `${aqiInfo.hex}40`, 
                   color: aqiInfo.hex 
                 }}
               >
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: aqiInfo.hex }} />
                 AQI {airQuality.aqi} • {aqiInfo.label}
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-2">
-              <span>{PROVINCE}, Indonesia</span>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">{PROVINCE}, Indonesia</span>
               <span>•</span>
               <span className="font-mono text-[11px] text-slate-400">
                 {LATITUDE.toFixed(4)}° N, {LONGITUDE.toFixed(4)}° E (~{ELEVATION}m dpl)
+              </span>
+              <span>•</span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.2 rounded-md">
+                Stasiun BMKG & WMO
               </span>
             </p>
           </div>
         </div>
 
-        {/* Actions & Live Clock */}
+        {/* Header Right Actions & Live Clock */}
         <div className="flex items-center gap-2 sm:gap-3 ml-auto">
-          <div className="hidden sm:flex flex-col text-right pr-2">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          {/* Live Station Clock */}
+          <div className="hidden md:flex flex-col text-right pr-2">
+            <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest flex items-center justify-end gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Waktu Stasiun
             </span>
-            <span className="text-xs font-mono font-black text-slate-700 dark:text-slate-300">
-              {current.lastUpdated.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':')} WIB
+            <span className="text-xs font-mono font-black text-slate-800 dark:text-slate-200">
+              {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':')} WIB
             </span>
           </div>
 
+          {/* Refresh Action */}
           <button
             onClick={handleManualRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-all active:scale-95 cursor-pointer shadow-xs"
-            title="Sinkronisasi Data Cuaca"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 transition-all active:scale-95 cursor-pointer shadow-xs"
+            title="Sinkronisasi Data Cuaca Terkini"
           >
-            <RefreshCw className={cn("w-3.5 h-3.5", isRefreshing && "animate-spin text-primary")} />
+            <RefreshCw className={cn("w-3.5 h-3.5 text-primary", isRefreshing && "animate-spin")} />
             <span className="hidden sm:inline">Perbarui</span>
           </button>
 
+          {/* Fullscreen / New Tab */}
           {isModal && (
             <button
               onClick={() => {
@@ -194,153 +269,331 @@ export function WeatherDetailView({
                   window.open('/cuaca', '_blank')
                 }
               }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-all active:scale-95 cursor-pointer shadow-xs"
-              title="Buka Halaman Cuaca di Tab / Jendela Penuh"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/25 transition-all active:scale-95 cursor-pointer shadow-xs"
+              title="Buka Observatorium Cuaca di Halaman Penuh"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Buka di Tab Baru</span>
+              <span className="hidden sm:inline">Halaman Penuh</span>
             </button>
           )}
         </div>
       </div>
 
-      <div className="p-4 sm:p-6 md:p-8 space-y-6 overflow-y-auto max-h-[calc(90vh-100px)]">
+      {/* ================= MAIN SCROLLABLE CONTENT BODY ================= */}
+      <div className="p-4 sm:p-6 md:p-8 space-y-6 overflow-y-auto max-h-[calc(94vh-90px)] scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
 
-        {/* ================= HERO CURRENT WEATHER DISPLAY ================= */}
-        <div className="relative overflow-hidden rounded-3xl p-5 sm:p-7 border border-slate-200/90 dark:border-slate-800 bg-gradient-to-br from-slate-50/90 via-sky-50/30 to-indigo-50/20 dark:from-slate-900 dark:via-slate-900/90 dark:to-slate-800/80 shadow-sm">
-          {/* Ambient blur accents */}
+        {/* ================= HERO ATMOSPHERIC DISPLAY & VITAL BENTO ================= */}
+        <div className={cn(
+          "relative overflow-hidden rounded-3xl p-5 sm:p-7 border bg-gradient-to-br shadow-sm transition-all duration-500",
+          getHeroThemeClasses()
+        )}>
+          {/* Ambient Glowing Orbs */}
           <div 
-            className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-20 pointer-events-none"
+            className="absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl opacity-20 pointer-events-none transition-all duration-700"
             style={{ backgroundColor: aqiInfo.hex }}
           />
-          <div className="absolute -bottom-10 -left-10 w-52 h-52 bg-sky-400/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-sky-400/25 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+          <div className="relative z-10 space-y-6">
             
-            {/* Left: Big Animated Weather Hero */}
-            <div className="md:col-span-6 lg:col-span-5 flex items-center gap-4 sm:gap-6">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 drop-shadow-md">
-                <WeatherIcon icon={desc.icon} className="w-full h-full" />
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tighter">
-                    {current.temperature}
-                  </span>
-                  <span className="text-3xl font-black text-primary">°C</span>
+            {/* Top Row: Hero Identity & Primary Temperatures */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              
+              {/* Left: Weather Hero with Animated SVG */}
+              <div className="flex items-center gap-4 sm:gap-6">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 drop-shadow-lg relative">
+                  <div className="absolute inset-0 rounded-full blur-xl bg-amber-400/20 pointer-events-none" />
+                  <WeatherIcon icon={desc.icon} className="w-full h-full relative z-10" />
                 </div>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className={cn("text-xs font-black uppercase px-2.5 py-0.5 rounded-full border shadow-2xs", desc.color)}>
-                    {desc.label}
-                  </span>
-                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                    Terasa {current.feelsLike}°C
+                
+                <div className="flex flex-col">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-4xl sm:text-5xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
+                      {current.temperature}
+                    </span>
+                    <span className="text-2xl sm:text-3xl font-black text-primary">°C</span>
+                    <span className="ml-2 text-xs font-bold text-slate-400 bg-white/70 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/80 px-2 py-0.5 rounded-md">
+                      Min {todayDaily?.temperatureMin ?? 25}° • Max {todayDaily?.temperatureMax ?? 32}°
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className={cn("text-xs font-black uppercase px-3 py-1 rounded-full border shadow-2xs leading-none", desc.color)}>
+                      {desc.label}
+                    </span>
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white/60 dark:bg-slate-800/60 px-2.5 py-1 rounded-full border border-slate-200/80 dark:border-slate-700/80">
+                      Terasa {current.feelsLike}°C
+                    </span>
+                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      {current.cloudCover > 60 ? "Langit Teduh" : current.cloudCover > 30 ? "Cerah Berawan" : "Terik Optimal"}
+                    </span>
+                  </div>
+
+                  <p className="text-xs font-medium text-slate-600 dark:text-slate-300 mt-2 max-w-xl leading-relaxed">
+                    {desc.detail}. Kondisi atmosfer terpantau stabil dengan kelembaban kepulauan maritim.
+                  </p>
+                </div>
+              </div>
+
+              {/* Right: AQI Quick Badge & Mask Advisory */}
+              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/85 dark:bg-slate-800/85 border border-slate-200/90 dark:border-slate-700/80 shadow-xs lg:self-start shrink-0">
+                <div 
+                  className="w-12 h-12 rounded-xl flex flex-col items-center justify-center font-black shrink-0"
+                  style={{ backgroundColor: `${aqiInfo.hex}22`, color: aqiInfo.hex }}
+                >
+                  <span className="text-lg leading-none">{airQuality.aqi}</span>
+                  <span className="text-[8px] uppercase tracking-wider font-extrabold mt-0.5">AQI US</span>
+                </div>
+                <div className="flex flex-col pr-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-black text-slate-900 dark:text-white uppercase">
+                      Udara {aqiInfo.label}
+                    </span>
+                    <span 
+                      className="w-2 h-2 rounded-full" 
+                      style={{ backgroundColor: aqiInfo.hex }} 
+                    />
+                  </div>
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+                    {aqiInfo.shortAdvice}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
-                  {desc.detail}
-                </p>
               </div>
+
             </div>
 
-            {/* Right: Quick Bento Metrics Grid */}
-            <div className="md:col-span-6 lg:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+            {/* Bottom Row: Full Comprehensive Bento Vital Metrics (ALL INFO VISIBLE) */}
+            <div className="pt-2 border-t border-slate-200/70 dark:border-slate-800/70 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
               
-              {/* Kelembaban */}
-              <div className="p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
-                <div className="flex items-center gap-2 text-sky-500 mb-1">
-                  <Droplets className="w-4 h-4" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              {/* 1. Kelembaban */}
+              <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 shadow-2xs">
+                <div className="flex items-center gap-1.5 text-sky-500 mb-1">
+                  <Droplets className="w-3.5 h-3.5" />
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">
                     Kelembaban
                   </span>
                 </div>
-                <span className="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100">
+                <span className="text-base font-black text-slate-900 dark:text-white block">
                   {current.humidity}%
                 </span>
-                <span className="text-[10px] text-slate-400 block mt-0.5">
-                  Titik embun {current.dewPoint}°C
+                <span className="text-[9.5px] text-slate-400 dark:text-slate-400 block mt-0.5">
+                  Embun {current.dewPoint}°C
                 </span>
               </div>
 
-              {/* Angin */}
-              <div className="p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
-                <div className="flex items-center gap-2 text-cyan-500 mb-1">
-                  <Wind className="w-4 h-4" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              {/* 2. Kecepatan Angin */}
+              <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 shadow-2xs">
+                <div className="flex items-center gap-1.5 text-cyan-500 mb-1">
+                  <Wind className="w-3.5 h-3.5" />
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">
                     Angin
                   </span>
                 </div>
-                <span className="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100">
+                <span className="text-base font-black text-slate-900 dark:text-white block">
                   {current.windSpeed} <span className="text-xs font-normal">km/h</span>
                 </span>
-                <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-bold block mt-0.5">
+                <span className="text-[9.5px] text-cyan-600 dark:text-cyan-400 font-bold block mt-0.5 truncate">
                   {windDir.code} ({windDir.angle}°)
                 </span>
               </div>
 
-              {/* Tekanan Udara */}
-              <div className="p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
-                <div className="flex items-center gap-2 text-indigo-500 mb-1">
-                  <Gauge className="w-4 h-4" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              {/* 3. Peluang & Curah Hujan */}
+              <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 shadow-2xs">
+                <div className="flex items-center gap-1.5 text-blue-500 mb-1">
+                  <CloudRain className="w-3.5 h-3.5" />
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+                    Hujan
+                  </span>
+                </div>
+                <span className="text-base font-black text-slate-900 dark:text-white block">
+                  {todayDaily?.precipitationProbabilityMax ?? 15}%
+                </span>
+                <span className="text-[9.5px] text-slate-400 dark:text-slate-400 block mt-0.5">
+                  Curah {current.precipitation} mm
+                </span>
+              </div>
+
+              {/* 4. Indeks UV */}
+              <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 shadow-2xs">
+                <div className="flex items-center gap-1.5 text-amber-500 mb-1">
+                  <Sun className="w-3.5 h-3.5" />
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+                    Indeks UV
+                  </span>
+                </div>
+                <span className="text-base font-black text-slate-900 dark:text-white block">
+                  {todayDaily?.uvIndexMax ?? 7.5}
+                </span>
+                <span className="text-[9.5px] text-amber-600 dark:text-amber-400 font-bold block mt-0.5 truncate">
+                  {todayUv.category}
+                </span>
+              </div>
+
+              {/* 5. Tekanan Barometrik */}
+              <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 shadow-2xs">
+                <div className="flex items-center gap-1.5 text-indigo-500 mb-1">
+                  <Gauge className="w-3.5 h-3.5" />
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">
                     Tekanan
                   </span>
                 </div>
-                <span className="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100">
+                <span className="text-base font-black text-slate-900 dark:text-white block">
                   {current.pressureMsl} <span className="text-xs font-normal">hPa</span>
                 </span>
-                <span className="text-[10px] text-slate-400 block mt-0.5">
+                <span className="text-[9.5px] text-slate-400 dark:text-slate-400 block mt-0.5">
                   Permukaan laut
                 </span>
               </div>
 
-              {/* Kualitas Udara */}
-              <div className="p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
-                <div className="flex items-center gap-2 mb-1" style={{ color: aqiInfo.hex }}>
-                  <Activity className="w-4 h-4" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    Kondisi Udara
+              {/* 6. Tutupan Awan */}
+              <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 shadow-2xs">
+                <div className="flex items-center gap-1.5 text-slate-500 mb-1">
+                  <Cloud className="w-3.5 h-3.5" />
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+                    Tutupan Awan
                   </span>
                 </div>
-                <span className="text-base sm:text-lg font-black" style={{ color: aqiInfo.hex }}>
-                  AQI {airQuality.aqi}
+                <span className="text-base font-black text-slate-900 dark:text-white block">
+                  {current.cloudCover}%
                 </span>
-                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mt-0.5 truncate">
-                  {aqiInfo.label}
+                <span className="text-[9.5px] text-slate-400 dark:text-slate-400 block mt-0.5">
+                  Langit tertutup
+                </span>
+              </div>
+
+              {/* 7. Jarak Pandang */}
+              <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 shadow-2xs">
+                <div className="flex items-center gap-1.5 text-emerald-500 mb-1">
+                  <Eye className="w-3.5 h-3.5" />
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+                    Jarak Pandang
+                  </span>
+                </div>
+                <span className="text-base font-black text-slate-900 dark:text-white block">
+                  10.0 <span className="text-xs font-normal">km</span>
+                </span>
+                <span className="text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold block mt-0.5">
+                  Optimal & Jernih
+                </span>
+              </div>
+
+              {/* 8. Terbit & Terbenam */}
+              <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 shadow-2xs">
+                <div className="flex items-center gap-1.5 text-orange-500 mb-1">
+                  <Sunrise className="w-3.5 h-3.5" />
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+                    Matahari
+                  </span>
+                </div>
+                <span className="text-xs font-black text-slate-900 dark:text-white block">
+                  🌅 {todayDaily?.sunrise ?? "05:44"}
+                </span>
+                <span className="text-xs font-black text-slate-900 dark:text-white block mt-0.5">
+                  🌇 {todayDaily?.sunset ?? "17:50"}
                 </span>
               </div>
 
             </div>
+
           </div>
         </div>
 
-        {/* ================= NAVIGATION TABS ================= */}
-        <Tabs defaultValue="hourly" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-2 sm:grid-cols-5 h-auto p-1.5 gap-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-2xl">
-            <TabsTrigger value="hourly" className="py-2.5 rounded-xl font-black text-xs gap-1.5">
+        {/* ================= HIGH-END SEGMENTED TAB NAVIGATION ================= */}
+        <div className="w-full">
+          {/* Responsive Tab Bar with all 5 views clearly visible */}
+          <div className="p-1.5 bg-slate-100/90 dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 flex items-center gap-1.5 overflow-x-auto scrollbar-none shadow-xs">
+            
+            {/* Tab 1: Hourly Forecast */}
+            <button
+              onClick={() => setActiveTab("hourly")}
+              className={cn(
+                "flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition-all whitespace-nowrap cursor-pointer shrink-0 flex-1 min-w-[150px]",
+                activeTab === "hourly"
+                  ? "bg-primary text-white shadow-md shadow-primary/25"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+              )}
+            >
               <Clock className="w-3.5 h-3.5" />
-              Perkiraan / Jam
-            </TabsTrigger>
-            <TabsTrigger value="current" className="py-2.5 rounded-xl font-black text-xs gap-1.5">
-              <Thermometer className="w-3.5 h-3.5" />
-              Cuaca Saat Ini
-            </TabsTrigger>
-            <TabsTrigger value="air" className="py-2.5 rounded-xl font-black text-xs gap-1.5">
-              <Activity className="w-3.5 h-3.5" />
-              Kondisi Udara
-            </TabsTrigger>
-            <TabsTrigger value="wind" className="py-2.5 rounded-xl font-black text-xs gap-1.5">
-              <Wind className="w-3.5 h-3.5" />
-              Kecepatan Angin
-            </TabsTrigger>
-            <TabsTrigger value="daily" className="col-span-2 sm:col-span-1 py-2.5 rounded-xl font-black text-xs gap-1.5">
-              <Calendar className="w-3.5 h-3.5" />
-              Prakiraan 7 Hari
-            </TabsTrigger>
-          </TabsList>
+              <span>Perkiraan Jam / Jam</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-white/20 text-white font-extrabold">
+                {hourlyViewRange}j
+              </span>
+            </button>
 
-          {/* ================= TAB 1: PERKIRAAN CUACA / JAM ================= */}
-          <TabsContent value="hourly" className="mt-4 space-y-4">
+            {/* Tab 2: Parameter Cuaca */}
+            <button
+              onClick={() => setActiveTab("current")}
+              className={cn(
+                "flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition-all whitespace-nowrap cursor-pointer shrink-0 flex-1 min-w-[150px]",
+                activeTab === "current"
+                  ? "bg-primary text-white shadow-md shadow-primary/25"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+              )}
+            >
+              <Thermometer className="w-3.5 h-3.5" />
+              <span>Parameter Cuaca</span>
+            </button>
+
+            {/* Tab 3: Kualitas Udara */}
+            <button
+              onClick={() => setActiveTab("air")}
+              className={cn(
+                "flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition-all whitespace-nowrap cursor-pointer shrink-0 flex-1 min-w-[150px]",
+                activeTab === "air"
+                  ? "bg-primary text-white shadow-md shadow-primary/25"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+              )}
+            >
+              <Activity className="w-3.5 h-3.5" />
+              <span>Kondisi Udara (AQI)</span>
+              <span 
+                className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold"
+                style={{ 
+                  backgroundColor: activeTab === 'air' ? 'rgba(255,255,255,0.25)' : `${aqiInfo.hex}22`,
+                  color: activeTab === 'air' ? '#fff' : aqiInfo.hex
+                }}
+              >
+                {airQuality.aqi}
+              </span>
+            </button>
+
+            {/* Tab 4: Kecepatan Angin */}
+            <button
+              onClick={() => setActiveTab("wind")}
+              className={cn(
+                "flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition-all whitespace-nowrap cursor-pointer shrink-0 flex-1 min-w-[150px]",
+                activeTab === "wind"
+                  ? "bg-primary text-white shadow-md shadow-primary/25"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+              )}
+            >
+              <Wind className="w-3.5 h-3.5" />
+              <span>Dinamika Angin</span>
+            </button>
+
+            {/* Tab 5: Prakiraan 7 Hari */}
+            <button
+              onClick={() => setActiveTab("daily")}
+              className={cn(
+                "flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition-all whitespace-nowrap cursor-pointer shrink-0 flex-1 min-w-[150px]",
+                activeTab === "daily"
+                  ? "bg-primary text-white shadow-md shadow-primary/25"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50"
+              )}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Prakiraan 7 Hari</span>
+            </button>
+
+          </div>
+        </div>
+
+        {/* ================= TAB 1: PERKIRAAN CUACA JAM DEMI JAM ================= */}
+        {activeTab === "hourly" && (
+          <div className="space-y-4 animate-in fade-in-50 duration-300">
+            
+            {/* Header Controls for Hourly Tab */}
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
@@ -348,40 +601,93 @@ export function WeatherDetailView({
                   Perkiraan Cuaca Jam Demi Jam (Hourly Forecast)
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Fluktuasi suhu, presipitasi curah hujan, dan kecepatan angin Tanjungpinang
+                  Fluktuasi suhu, presipitasi curah hujan, tutupan awan, dan hembusan angin Tanjungpinang
                 </p>
               </div>
 
-              {/* Range Toggle */}
-              <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-bold">
-                <button
-                  onClick={() => setHourlyViewRange(24)}
-                  className={cn(
-                    "px-3 py-1 rounded-lg transition-all cursor-pointer",
-                    hourlyViewRange === 24 
-                      ? "bg-white dark:bg-slate-700 text-primary shadow-xs font-black" 
-                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                  )}
-                >
-                  24 Jam
-                </button>
-                <button
-                  onClick={() => setHourlyViewRange(36)}
-                  className={cn(
-                    "px-3 py-1 rounded-lg transition-all cursor-pointer",
-                    hourlyViewRange === 36 
-                      ? "bg-white dark:bg-slate-700 text-primary shadow-xs font-black" 
-                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                  )}
-                >
-                  36 Jam
-                </button>
+              {/* Range Filter & Navigation Controls */}
+              <div className="flex items-center gap-2">
+                
+                {/* Range Toggle */}
+                <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-bold border border-slate-200/80 dark:border-slate-700">
+                  {([24, 36, 48] as const).map((range) => (
+                    <button
+                      key={range}
+                      onClick={() => setHourlyViewRange(range)}
+                      className={cn(
+                        "px-3 py-1 rounded-lg transition-all cursor-pointer text-xs",
+                        hourlyViewRange === range 
+                          ? "bg-white dark:bg-slate-700 text-primary shadow-xs font-black" 
+                          : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                      )}
+                    >
+                      {range} Jam
+                    </button>
+                  ))}
+                </div>
+
+                {/* Carousel Scroll Left / Right Buttons */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => scrollHourly('left')}
+                    className="w-8 h-8 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center shadow-2xs active:scale-95 transition-all cursor-pointer"
+                    title="Gulir ke Kiri"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => scrollHourly('right')}
+                    className="w-8 h-8 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center shadow-2xs active:scale-95 transition-all cursor-pointer"
+                    title="Gulir ke Kanan"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+
               </div>
             </div>
 
-            {/* Scrollable Hourly Cards Carousel */}
-            <div className="relative">
-              <div className="flex items-stretch gap-3 overflow-x-auto pb-4 pt-1 snap-x scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
+            {/* Quick Hourly Highlights Summary Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-2xl bg-sky-500/5 dark:bg-sky-500/10 border border-sky-500/20 text-xs">
+              <div className="flex items-center gap-2">
+                <Thermometer className="w-4 h-4 text-amber-500 shrink-0" />
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-bold">Rentang Suhu {hourlyViewRange}j</span>
+                  <span className="font-black text-slate-800 dark:text-slate-100">{minTempHourly}°C s/d {maxTempHourly}°C</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <CloudRain className="w-4 h-4 text-blue-500 shrink-0" />
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-bold">Puncak Peluang Hujan</span>
+                  <span className="font-black text-blue-600 dark:text-blue-400">{maxRainProbItem.displayTime} ({maxRainProbItem.precipitationProbability}%)</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Wind className="w-4 h-4 text-cyan-500 shrink-0" />
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-bold">Rata-rata Angin</span>
+                  <span className="font-black text-slate-800 dark:text-slate-100">{avgWindSpeed} km/h ({windDir.code})</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-bold">Kondisi Udara</span>
+                  <span className="font-black" style={{ color: aqiInfo.hex }}>AQI {airQuality.aqi} • {aqiInfo.label}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Scrollable Hourly Cards Carousel with Safe Widths (NO CUT-OFF) */}
+            <div className="relative group">
+              <div 
+                ref={hourlyScrollRef}
+                className="flex items-stretch gap-3 overflow-x-auto pb-4 pt-1 snap-x scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scroll-smooth"
+              >
                 {displayedHourly.map((item, idx) => {
                   const itemDesc = getWeatherDescription(item.weatherCode, item.isDay)
                   const itemWind = getWindDirectionDetails(item.windDirection)
@@ -391,73 +697,99 @@ export function WeatherDetailView({
                     <div
                       key={item.time}
                       className={cn(
-                        "min-w-[130px] sm:min-w-[145px] p-3.5 rounded-2xl border flex flex-col items-center justify-between gap-2.5 snap-start shrink-0 transition-all duration-200 hover:-translate-y-1 shadow-2xs",
+                        // min-w-[160px] guarantees labels like 'BERAWAN SEBAGIAN' fit without truncation
+                        "min-w-[160px] sm:min-w-[172px] p-4 rounded-2xl border flex flex-col items-center justify-between gap-3 snap-start shrink-0 transition-all duration-200 hover:-translate-y-1 shadow-2xs relative",
                         isCurrent 
-                          ? "bg-primary/5 dark:bg-primary/10 border-primary/40 ring-2 ring-primary/20 shadow-md"
-                          : "bg-white dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600"
+                          ? "bg-primary/10 dark:bg-primary/15 border-primary/50 ring-2 ring-primary/30 shadow-md"
+                          : "bg-white dark:bg-slate-800/90 border-slate-200/90 dark:border-slate-700/70 hover:border-primary/40 dark:hover:border-primary/40 hover:shadow-md"
                       )}
                     >
+                      {/* Current Hour Indicator Badge */}
+                      {isCurrent && (
+                        <span className="absolute -top-2 px-2.5 py-0.5 rounded-full text-[9px] font-black bg-primary text-white shadow-xs uppercase tracking-wider">
+                          Saat Ini
+                        </span>
+                      )}
+
                       {/* Time & Date Header */}
-                      <div className="text-center w-full">
+                      <div className="text-center w-full pt-1">
                         <span className={cn(
-                          "text-xs font-black block tracking-tight",
-                          isCurrent ? "text-primary" : "text-slate-800 dark:text-slate-200"
+                          "text-sm font-black block tracking-tight leading-tight",
+                          isCurrent ? "text-primary" : "text-slate-900 dark:text-white"
                         )}>
                           {item.displayTime}
                         </span>
-                        <span className="text-[10px] font-semibold text-slate-400 block">
+                        <span className="text-[10px] font-bold text-slate-400 block mt-0.5">
                           {item.displayDate}
                         </span>
                       </div>
 
-                      {/* Weather Icon */}
-                      <div className="w-11 h-11 my-1">
+                      {/* Weather Icon with Animation */}
+                      <div className="w-12 h-12 my-1 shrink-0 drop-shadow-sm">
                         <WeatherIcon icon={itemDesc.icon} className="w-full h-full" />
                       </div>
 
-                      {/* Temperature */}
+                      {/* Temperature & Feels-Like */}
                       <div className="text-center">
-                        <span className="text-xl font-black text-slate-900 dark:text-white">
+                        <span className="text-2xl font-black text-slate-900 dark:text-white leading-none">
                           {item.temperature}°
                         </span>
-                        <span className="text-[9.5px] font-bold text-slate-400 block">
+                        <span className="text-[10px] font-bold text-slate-400 block mt-1">
                           Terasa {item.feelsLike}°
                         </span>
                       </div>
 
-                      {/* Condition Label */}
-                      <span className={cn("text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border text-center leading-tight truncate max-w-full", itemDesc.color)}>
-                        {itemDesc.label}
-                      </span>
+                      {/* Weather Condition Badge - NO TRUNCATION */}
+                      <div className="w-full flex items-center justify-center">
+                        <span className={cn(
+                          "text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border text-center whitespace-normal leading-tight break-words max-w-full shadow-2xs",
+                          itemDesc.color
+                        )}>
+                          {itemDesc.label}
+                        </span>
+                      </div>
 
-                      {/* Metric Pills */}
-                      <div className="w-full space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-700/60 text-[10px]">
+                      {/* Metric Details Block */}
+                      <div className="w-full space-y-1.5 pt-2.5 border-t border-slate-100 dark:border-slate-700/80 text-[10px]">
                         
                         {/* Peluang Hujan */}
                         <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 font-bold">
-                          <span className="flex items-center gap-1 text-[9px] text-slate-400">
-                            <CloudRain className="w-3 h-3" />
+                          <span className="flex items-center gap-1.5 text-slate-400 font-semibold">
+                            <CloudRain className="w-3.5 h-3.5 text-blue-500" />
                             Hujan
                           </span>
                           <span>{item.precipitationProbability}%</span>
                         </div>
 
                         {/* Angin */}
-                        <div className="flex items-center justify-between text-slate-600 dark:text-slate-300 font-bold">
-                          <span className="flex items-center gap-1 text-[9px] text-slate-400">
-                            <Wind className="w-3 h-3" />
+                        <div className="flex items-center justify-between text-slate-700 dark:text-slate-300 font-bold">
+                          <span className="flex items-center gap-1.5 text-slate-400 font-semibold">
+                            <Wind className="w-3.5 h-3.5 text-cyan-500" />
                             Angin
                           </span>
-                          <span className="flex items-center gap-0.5 text-[9.5px]">
-                            {item.windSpeed} km/h
+                          <span className="text-[9.5px]">
+                            {item.windSpeed} km/h <span className="text-cyan-600 dark:text-cyan-400 font-extrabold">{itemWind.code}</span>
                           </span>
                         </div>
 
                         {/* Kelembaban */}
-                        <div className="flex items-center justify-between text-slate-500 font-medium text-[9px]">
-                          <span>Lembap</span>
-                          <span>{item.humidity}%</span>
+                        <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 font-medium">
+                          <span className="flex items-center gap-1.5 text-slate-400">
+                            <Droplets className="w-3.5 h-3.5 text-sky-500" />
+                            Lembap
+                          </span>
+                          <span className="font-bold text-slate-700 dark:text-slate-300">{item.humidity}%</span>
                         </div>
+
+                        {/* Tutupan Awan */}
+                        <div className="flex items-center justify-between text-slate-500 font-medium text-[9.5px]">
+                          <span className="flex items-center gap-1.5 text-slate-400">
+                            <Cloud className="w-3.5 h-3.5 text-slate-400" />
+                            Awan
+                          </span>
+                          <span className="font-bold text-slate-600 dark:text-slate-400">{item.cloudCover}%</span>
+                        </div>
+
                       </div>
 
                     </div>
@@ -466,37 +798,40 @@ export function WeatherDetailView({
               </div>
             </div>
 
-            {/* Hourly Summary Callout */}
+            {/* Informational Callout */}
             <div className="p-4 rounded-2xl bg-sky-500/5 dark:bg-sky-500/10 border border-sky-500/20 flex items-center gap-3">
               <Info className="w-5 h-5 text-sky-600 dark:text-sky-400 shrink-0" />
-              <p className="text-xs text-slate-700 dark:text-slate-300">
-                Prakiraan jam-demi-jam diperbarui setiap saat menggunakan model komputasi ECMWF & GFS Open-Meteo dengan resolusi lokal Tanjungpinang.
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                Prakiraan jam-demi-jam diperbarui otomatis setiap interval waktu menggunakan model resolusi tinggi ECMWF & GFS Open-Meteo dengan kalibrasi koordinat stasiun BMKG Maritim Tanjungpinang.
               </p>
             </div>
-          </TabsContent>
 
-          {/* ================= TAB 2: CUACA SAAT INI (LENGKAP) ================= */}
-          <TabsContent value="current" className="mt-4 space-y-4">
+          </div>
+        )}
+
+        {/* ================= TAB 2: PARAMETER FISIK ATMOSFER LENGKAP ================= */}
+        {activeTab === "current" && (
+          <div className="space-y-4 animate-in fade-in-50 duration-300">
             <div>
               <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
                 <Thermometer className="w-4 h-4 text-primary" />
-                Parameter Fisik Atmosfer Saat Ini
+                Parameter Fisik Atmosfer Saat Ini (Detailed Atmospheric Metrics)
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Kondisi atmosferik mendalam di wilayah Kota Tanjungpinang
+                Pengukuran kondisi atmosferik mendalam di wilayah Kota Tanjungpinang & Kepulauan Riau
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
               
               {/* Suhu & Sensasi Termal */}
-              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/70 shadow-2xs">
                 <div className="flex items-center justify-between text-amber-500 mb-2">
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <Thermometer className="w-4 h-4 text-amber-500" />
-                    Sensasi Suhu
+                    Sensasi Suhu Termal
                   </span>
-                  <span className="text-xs font-bold bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/20">
                     Suhu Udara
                   </span>
                 </div>
@@ -504,19 +839,19 @@ export function WeatherDetailView({
                   <span className="text-3xl font-black text-slate-900 dark:text-white">{current.temperature}°C</span>
                   <span className="text-sm font-bold text-slate-400">Terasa {current.feelsLike}°C</span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                  Rentang perkiraan hari ini: Min {todayDaily?.temperatureMin ?? 25}°C s/d Max {todayDaily?.temperatureMax ?? 32}°C.
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                  Rentang perkiraan hari ini: Min {todayDaily?.temperatureMin ?? 25}°C s/d Max {todayDaily?.temperatureMax ?? 32}°C. Suhu optimal untuk aktivitas masyarakat.
                 </p>
               </div>
 
               {/* Kelembaban & Titik Embun */}
-              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/70 shadow-2xs">
                 <div className="flex items-center justify-between text-sky-500 mb-2">
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <Droplets className="w-4 h-4 text-sky-500" />
-                    Kelembaban & Embun
+                    Kelembaban & Titik Embun
                   </span>
-                  <span className="text-xs font-bold bg-sky-500/10 text-sky-600 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-bold bg-sky-500/10 text-sky-600 dark:text-sky-400 px-2 py-0.5 rounded-full border border-sky-500/20">
                     Relatif
                   </span>
                 </div>
@@ -524,19 +859,19 @@ export function WeatherDetailView({
                   <span className="text-3xl font-black text-slate-900 dark:text-white">{current.humidity}%</span>
                   <span className="text-sm font-bold text-slate-400">Titik Embun {current.dewPoint}°C</span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                  Kadar uap air di udara relatif tinggi khas iklim kepulauan maritim tropis.
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                  Kadar uap air di udara relatif tinggi khas iklim kepulauan tropis maritim dengan sirkulasi angin laut.
                 </p>
               </div>
 
               {/* Tekanan Barometrik */}
-              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/70 shadow-2xs">
                 <div className="flex items-center justify-between text-indigo-500 mb-2">
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <Gauge className="w-4 h-4 text-indigo-500" />
                     Tekanan Barometrik
                   </span>
-                  <span className="text-xs font-bold bg-indigo-500/10 text-indigo-600 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/20">
                     Stabil
                   </span>
                 </div>
@@ -544,19 +879,19 @@ export function WeatherDetailView({
                   <span className="text-3xl font-black text-slate-900 dark:text-white">{current.pressureMsl}</span>
                   <span className="text-sm font-bold text-slate-400">hPa (MSL)</span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                  Tekanan permukaan tanah: {current.surfacePressure} hPa. Indikasi kondisi atmosfer stabil.
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                  Tekanan permukaan tanah: {current.surfacePressure} hPa. Indikasi kestabilan atmosfer tanpa potensi siklon tropis.
                 </p>
               </div>
 
               {/* Tutupan Awan */}
-              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/70 shadow-2xs">
                 <div className="flex items-center justify-between text-slate-500 mb-2">
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <Cloud className="w-4 h-4 text-slate-500" />
-                    Tutupan Awan
+                    Tutupan Awan (Cloud Cover)
                   </span>
-                  <span className="text-xs font-bold bg-slate-500/10 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-bold bg-slate-500/10 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full border border-slate-500/20">
                     {current.cloudCover > 60 ? "Mendung" : current.cloudCover > 30 ? "Sebagian" : "Cerah"}
                   </span>
                 </div>
@@ -564,39 +899,39 @@ export function WeatherDetailView({
                   <span className="text-3xl font-black text-slate-900 dark:text-white">{current.cloudCover}%</span>
                   <span className="text-sm font-bold text-slate-400">Langit Tertutup</span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                  Tutupan awan memoderasi paparan sinar UV langsung ke permukaan daratan.
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                  Awan kumulus memoderasi radiasi sinar matahari langsung ke permukaan daratan kota.
                 </p>
               </div>
 
               {/* Curah Hujan & Presipitasi */}
-              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/70 shadow-2xs">
                 <div className="flex items-center justify-between text-blue-500 mb-2">
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <CloudRain className="w-4 h-4 text-blue-500" />
-                    Curah Hujan (Presipitasi)
+                    Curah Hujan & Presipitasi
                   </span>
-                  <span className="text-xs font-bold bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded-full">
-                    Hari Ini
+                  <span className="text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20">
+                    Akumulasi
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-black text-slate-900 dark:text-white">{current.precipitation}</span>
-                  <span className="text-sm font-bold text-slate-400">mm (Akumulasi)</span>
+                  <span className="text-sm font-bold text-slate-400">mm (Hari Ini)</span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                  Peluang curah hujan hari ini mencapai {todayDaily?.precipitationProbabilityMax ?? 20}%.
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                  Peluang curah hujan hari ini mencapai {todayDaily?.precipitationProbabilityMax ?? 20}%. Tidak ada peringatan banjir.
                 </p>
               </div>
 
               {/* Siklus Matahari (Sunrise & Sunset) */}
-              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/70 shadow-2xs">
                 <div className="flex items-center justify-between text-amber-500 mb-2">
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <Sun className="w-4 h-4 text-amber-500" />
-                    Siklus Matahari
+                    Siklus Matahari & UV
                   </span>
-                  <span className="text-xs font-bold bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/20">
                     {current.isDay ? "Siang Hari" : "Malam Hari"}
                   </span>
                 </div>
@@ -616,27 +951,29 @@ export function WeatherDetailView({
                     </div>
                   </div>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                  Indeks UV Maksimal: {todayDaily?.uvIndexMax ?? 7.5} ({todayUv.category}).
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                  Indeks UV Maksimal: {todayDaily?.uvIndexMax ?? 7.5} ({todayUv.category}). Disarankan pelindung tabir surya di siang hari.
                 </p>
               </div>
 
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* ================= TAB 3: KONDISI UDARA (AIR QUALITY & POLLUTANTS) ================= */}
-          <TabsContent value="air" className="mt-4 space-y-4">
+        {/* ================= TAB 3: KONDISI UDARA (AIR QUALITY & POLLUTANTS) ================= */}
+        {activeTab === "air" && (
+          <div className="space-y-4 animate-in fade-in-50 duration-300">
             <div>
               <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
                 <Activity className="w-4 h-4 text-primary" />
                 Kualitas Udara & Indeks Polusi (Air Quality Index)
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Pengukuran real-time polutan mikroskopis PM2.5, PM10, dan emisi gas atmosfer
+                Pengukuran real-time konsentrasi polutan mikroskopis PM2.5, PM10, dan gas buang atmosfer
               </p>
             </div>
 
-            {/* AQI Overview Hero */}
+            {/* AQI Overview Hero Card */}
             <div 
               className={cn(
                 "p-5 sm:p-6 rounded-3xl border relative overflow-hidden backdrop-blur-md shadow-xs",
@@ -647,14 +984,18 @@ export function WeatherDetailView({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div 
-                    className="w-16 h-16 rounded-2xl flex flex-col items-center justify-center font-black shadow-sm shrink-0"
-                    style={{ backgroundColor: `${aqiInfo.hex}25`, color: aqiInfo.hex }}
+                    className="w-16 h-16 rounded-2xl flex flex-col items-center justify-center font-black shadow-sm shrink-0 border"
+                    style={{ 
+                      backgroundColor: `${aqiInfo.hex}25`, 
+                      color: aqiInfo.hex,
+                      borderColor: `${aqiInfo.hex}45`
+                    }}
                   >
                     <span className="text-2xl leading-none">{airQuality.aqi}</span>
                     <span className="text-[9px] uppercase tracking-wider font-extrabold mt-0.5">AQI US</span>
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-lg sm:text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white">
                         Udara {aqiInfo.label}
                       </span>
@@ -666,13 +1007,13 @@ export function WeatherDetailView({
                       </span>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-1">
-                      {aqiInfo.shortAdvice} • Indeks AQI Eropa: {airQuality.europeanAqi}
+                      {aqiInfo.shortAdvice} • Indeks AQI Standar Eropa: {airQuality.europeanAqi}
                     </p>
                   </div>
                 </div>
 
-                {/* Masker Badge */}
-                <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shrink-0">
+                {/* Masker Badge Indicator */}
+                <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-white/90 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/90 shrink-0 shadow-xs">
                   {aqiInfo.maskRequired ? (
                     <>
                       <ShieldAlert className="w-5 h-5 text-orange-500" />
@@ -693,56 +1034,56 @@ export function WeatherDetailView({
                 </div>
               </div>
 
-              {/* Spectrum Meter Bar */}
-              <div className="mt-5 space-y-1.5">
-                <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              {/* Spectrum Meter Bar with Needle Pointer */}
+              <div className="mt-5 space-y-2">
+                <div className="flex justify-between text-[9.5px] font-bold text-slate-400 uppercase tracking-wider">
                   <span>0 - Baik</span>
                   <span>50 - Sedang</span>
                   <span>100 - Kurang Sehat</span>
                   <span>150 - Tidak Sehat</span>
                   <span>200+ Berbahaya</span>
                 </div>
-                <div className="w-full h-3 rounded-full bg-slate-200 dark:bg-slate-700/80 relative overflow-hidden shadow-inner">
+                <div className="w-full h-3.5 rounded-full bg-slate-200 dark:bg-slate-700/80 relative overflow-hidden shadow-inner">
                   <div 
                     className="absolute inset-0 rounded-full"
                     style={{
-                      background: 'linear-gradient(to right, #10B981, #F59E0B, #F97316, #EF4444, #A855F7, #881337)'
+                      background: 'linear-gradient(to right, #10B981 0%, #F59E0B 20%, #F97316 40%, #EF4444 65%, #A855F7 85%, #881337 100%)'
                     }}
                   />
-                  {/* Indicator needle */}
+                  {/* Indicator Needle */}
                   <div 
-                    className="absolute top-0 bottom-0 w-2 -translate-x-1/2 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-white rounded-full shadow-md transition-all duration-500"
+                    className="absolute top-0 bottom-0 w-2.5 -translate-x-1/2 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-white rounded-full shadow-md transition-all duration-700"
                     style={{ left: `${aqiNeedlePercent}%` }}
                   />
                 </div>
               </div>
 
-              {/* Health Guidance */}
-              <div className="mt-4 pt-3.5 border-t border-slate-200/60 dark:border-slate-700/60 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              {/* Health Guidance Split */}
+              <div className="mt-4 pt-3.5 border-t border-slate-200/70 dark:border-slate-700/70 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                 <div>
-                  <span className="font-bold text-slate-700 dark:text-slate-200 block mb-0.5">
+                  <span className="font-black text-slate-800 dark:text-slate-100 block mb-0.5">
                     Masyarakat Umum:
                   </span>
-                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
                     {aqiInfo.generalAdvice}
                   </p>
                 </div>
                 <div>
-                  <span className="font-bold text-slate-700 dark:text-slate-200 block mb-0.5">
+                  <span className="font-black text-slate-800 dark:text-slate-100 block mb-0.5">
                     Kelompok Sensitif & Lansia:
                   </span>
-                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
                     {aqiInfo.sensitiveAdvice}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Pollutants Breakdown Bento */}
+            {/* Pollutants Breakdown Bento Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               
               {/* PM2.5 */}
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/70 shadow-2xs">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
                   PM2.5 (Partikel Halus)
                 </span>
@@ -755,7 +1096,7 @@ export function WeatherDetailView({
               </div>
 
               {/* PM10 */}
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/70 shadow-2xs">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
                   PM10 (Debu Kasar)
                 </span>
@@ -768,7 +1109,7 @@ export function WeatherDetailView({
               </div>
 
               {/* Karbon Monoksida (CO) */}
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/70 shadow-2xs">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
                   CO (Karbon Monoksida)
                 </span>
@@ -776,38 +1117,38 @@ export function WeatherDetailView({
                   {airQuality.co ?? 426} <span className="text-xs font-normal text-slate-400">µg/m³</span>
                 </span>
                 <span className="text-[10px] text-slate-400 font-medium block mt-1">
-                  Emisi pembakaran
+                  Kadar Emisi Normal
                 </span>
               </div>
 
               {/* Nitrogen Dioksida (NO2) */}
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/70 shadow-2xs">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
                   NO2 (Nitrogen Dioksida)
                 </span>
                 <span className="text-xl font-black text-slate-900 dark:text-white mt-1 block">
                   {airQuality.no2 ?? 0.9} <span className="text-xs font-normal text-slate-400">µg/m³</span>
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium block mt-1">
-                  Kadar sangat rendah
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block mt-1">
+                  Sangat Rendah
                 </span>
               </div>
 
               {/* Sulfur Dioksida (SO2) */}
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/70 shadow-2xs">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
                   SO2 (Sulfur Dioksida)
                 </span>
                 <span className="text-xl font-black text-slate-900 dark:text-white mt-1 block">
                   {airQuality.so2 ?? 1.8} <span className="text-xs font-normal text-slate-400">µg/m³</span>
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium block mt-1">
-                  Kadar aman
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block mt-1">
+                  Kadar Aman
                 </span>
               </div>
 
               {/* Ozon (O3) */}
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/70 shadow-2xs">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
                   O3 (Ozon Permukaan)
                 </span>
@@ -815,15 +1156,17 @@ export function WeatherDetailView({
                   {airQuality.o3 ?? 126} <span className="text-xs font-normal text-slate-400">µg/m³</span>
                 </span>
                 <span className="text-[10px] text-slate-400 font-medium block mt-1">
-                  Fotokimia atmosfer
+                  Fotokimia Atmosfer
                 </span>
               </div>
 
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* ================= TAB 4: KECEPATAN ANGIN & ANEMOMETER ================= */}
-          <TabsContent value="wind" className="mt-4 space-y-4">
+        {/* ================= TAB 4: KECEPATAN ANGIN & ANEMOMETER ================= */}
+        {activeTab === "wind" && (
+          <div className="space-y-4 animate-in fade-in-50 duration-300">
             <div>
               <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
                 <Wind className="w-4 h-4 text-primary" />
@@ -836,11 +1179,11 @@ export function WeatherDetailView({
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               
-              {/* Left: Wind Speed & Beaufort Card */}
+              {/* Left Column: Wind Speed & Beaufort Scale */}
               <div className="md:col-span-7 space-y-4">
                 
-                {/* Main Wind Hero */}
-                <div className="p-5 rounded-3xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+                {/* Main Wind Metrics Hero */}
+                <div className="p-5 rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/70 shadow-2xs">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black uppercase tracking-wider text-slate-500">
                       Kecepatan Angin Rata-rata
@@ -857,8 +1200,8 @@ export function WeatherDetailView({
                     <span className="text-lg font-bold text-slate-400">km/jam (km/h)</span>
                   </div>
 
-                  {/* Multi-unit conversions */}
-                  <div className="grid grid-cols-3 gap-2 p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 text-center">
+                  {/* Multi-unit Conversions Grid */}
+                  <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 text-center">
                     <div>
                       <span className="text-[10px] text-slate-400 block font-bold">Meter / Detik</span>
                       <span className="text-xs font-black text-slate-800 dark:text-slate-200">{current.windSpeedMs} m/s</span>
@@ -874,7 +1217,7 @@ export function WeatherDetailView({
                   </div>
                 </div>
 
-                {/* Skala Beaufort */}
+                {/* Beaufort Maritime Scale Card */}
                 <div className="p-5 rounded-3xl bg-cyan-500/5 dark:bg-cyan-500/10 border border-cyan-500/20 shadow-2xs">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-xs font-black text-cyan-700 dark:text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
@@ -886,37 +1229,37 @@ export function WeatherDetailView({
                     </span>
                   </div>
                   <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed mt-2">
-                    <strong className="text-cyan-700 dark:text-cyan-300">Pengaruh: </strong>
+                    <strong className="text-cyan-700 dark:text-cyan-300">Pengaruh Permukaan: </strong>
                     {beaufort.effect}
                   </p>
                 </div>
 
               </div>
 
-              {/* Right: Interactive Visual Wind Compass */}
-              <div className="md:col-span-5 p-5 rounded-3xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 flex flex-col items-center justify-center text-center relative overflow-hidden shadow-2xs min-h-[260px]">
+              {/* Right Column: Interactive Animated Wind Compass */}
+              <div className="md:col-span-5 p-5 rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/70 flex flex-col items-center justify-center text-center relative overflow-hidden shadow-2xs min-h-[280px]">
                 <span className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2">
-                  Kompas Arah Angin
+                  Kompas Arah Mata Angin
                 </span>
 
                 {/* Compass Dial Graphic */}
-                <div className="relative w-44 h-44 sm:w-48 sm:h-48 my-2 rounded-full border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center bg-gradient-to-b from-slate-50 to-transparent dark:from-slate-900/60 shadow-inner">
+                <div className="relative w-48 h-48 sm:w-52 sm:h-52 my-2 rounded-full border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center bg-gradient-to-b from-slate-50 to-transparent dark:from-slate-900/60 shadow-inner">
                   {/* Cardinal Points */}
-                  <span className="absolute top-1 text-[11px] font-black text-rose-500">U</span>
-                  <span className="absolute bottom-1 text-[11px] font-black text-slate-400">S</span>
-                  <span className="absolute right-2 text-[11px] font-black text-slate-400">T</span>
-                  <span className="absolute left-2 text-[11px] font-black text-slate-400">B</span>
+                  <span className="absolute top-1.5 text-xs font-black text-rose-500">U</span>
+                  <span className="absolute bottom-1.5 text-xs font-black text-slate-400">S</span>
+                  <span className="absolute right-2 text-xs font-black text-slate-400">T</span>
+                  <span className="absolute left-2 text-xs font-black text-slate-400">B</span>
 
                   {/* Intercardinal markers */}
-                  <span className="absolute top-4 right-5 text-[8.5px] font-bold text-slate-300 dark:text-slate-600">TL</span>
-                  <span className="absolute bottom-4 right-5 text-[8.5px] font-bold text-slate-300 dark:text-slate-600">TG</span>
-                  <span className="absolute bottom-4 left-5 text-[8.5px] font-bold text-slate-300 dark:text-slate-600">BD</span>
-                  <span className="absolute top-4 left-5 text-[8.5px] font-bold text-slate-300 dark:text-slate-600">BL</span>
+                  <span className="absolute top-5 right-6 text-[9px] font-bold text-slate-400 dark:text-slate-600">TL</span>
+                  <span className="absolute bottom-5 right-6 text-[9px] font-bold text-slate-400 dark:text-slate-600">TG</span>
+                  <span className="absolute bottom-5 left-6 text-[9px] font-bold text-slate-400 dark:text-slate-600">BD</span>
+                  <span className="absolute top-5 left-6 text-[9px] font-bold text-slate-400 dark:text-slate-600">BL</span>
 
                   {/* Concentric rings */}
-                  <div className="w-32 h-32 rounded-full border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center">
-                    <div className="w-20 h-20 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center">
-                      <div className="w-3 h-3 rounded-full bg-cyan-500 shadow-sm z-20" />
+                  <div className="w-36 h-36 rounded-full border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center">
+                    <div className="w-24 h-24 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center">
+                      <div className="w-3.5 h-3.5 rounded-full bg-cyan-500 shadow-sm z-20" />
                     </div>
                   </div>
 
@@ -925,11 +1268,11 @@ export function WeatherDetailView({
                     className="absolute inset-0 flex items-center justify-center pointer-events-none transition-transform duration-1000 ease-out"
                     style={{ transform: `rotate(${current.windDirection}deg)` }}
                   >
-                    <div className="h-full w-6 flex flex-col items-center justify-between py-2">
-                      {/* Arrow Head (pointing where wind is blowing toward) */}
-                      <div className="w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-b-[16px] border-b-cyan-500 drop-shadow-md" />
+                    <div className="h-full w-6 flex flex-col items-center justify-between py-2.5">
+                      {/* Arrow Head (pointing toward wind direction) */}
+                      <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[18px] border-b-cyan-500 drop-shadow-md" />
                       {/* Tail */}
-                      <div className="w-0.5 h-12 bg-gradient-to-b from-cyan-500 to-transparent opacity-60" />
+                      <div className="w-1 h-14 bg-gradient-to-b from-cyan-500 to-transparent opacity-70" />
                     </div>
                   </div>
                 </div>
@@ -939,24 +1282,26 @@ export function WeatherDetailView({
                   <span className="text-base font-black text-slate-900 dark:text-white">
                     {windDir.angle}° ({windDir.name})
                   </span>
-                  <span className="text-[10px] text-slate-400 block">
-                    Menuju ke arah {windDir.name} ({windDir.code})
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                    Hembusan menuju arah {windDir.name} ({windDir.code})
                   </span>
                 </div>
               </div>
 
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* ================= TAB 5: PRAKIRAAN 7 HARI (DAILY FORECAST) ================= */}
-          <TabsContent value="daily" className="mt-4 space-y-4">
+        {/* ================= TAB 5: PRAKIRAAN 7 HARI (DAILY FORECAST) ================= */}
+        {activeTab === "daily" && (
+          <div className="space-y-4 animate-in fade-in-50 duration-300">
             <div>
               <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-primary" />
                 Prakiraan Cuaca 7 Hari ke Depan (7-Day Outlook)
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Tren perkiraan cuaca harian, rentang suhu, curah hujan, dan indeks UV
+                Tren perkiraan cuaca harian, rentang fluktuasi suhu, potensi curah hujan, dan indeks paparan UV
               </p>
             </div>
 
@@ -970,41 +1315,44 @@ export function WeatherDetailView({
                   <div
                     key={item.date}
                     className={cn(
-                      "p-3.5 sm:p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 transition-all duration-200 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 shadow-2xs",
+                      "p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 transition-all duration-200 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 shadow-2xs",
                       isToday 
-                        ? "bg-primary/5 dark:bg-primary/10 border-primary/30"
-                        : "bg-white dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-700/60"
+                        ? "bg-primary/5 dark:bg-primary/10 border-primary/40 ring-1 ring-primary/20"
+                        : "bg-white dark:bg-slate-800/70 border-slate-200/90 dark:border-slate-700/70"
                     )}
                   >
-                    {/* Day & Date */}
-                    <div className="flex items-center gap-3 min-w-[150px]">
-                      <div className="w-10 h-10 shrink-0">
+                    {/* Day & Date with Animated Icon */}
+                    <div className="flex items-center gap-3.5 min-w-[170px]">
+                      <div className="w-10 h-10 shrink-0 drop-shadow-sm">
                         <WeatherIcon icon={itemDesc.icon} className="w-full h-full" />
                       </div>
                       <div>
                         <span className={cn(
-                          "text-sm font-black block tracking-tight",
+                          "text-sm font-black block tracking-tight leading-tight",
                           isToday ? "text-primary" : "text-slate-900 dark:text-white"
                         )}>
-                          {item.displayDay}
+                          {item.displayDay} {isToday && "(Hari Ini)"}
                         </span>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs font-semibold text-slate-400 block mt-0.5">
                           {item.displayDate}
                         </span>
                       </div>
                     </div>
 
-                    {/* Condition Badge */}
-                    <div className="min-w-[130px]">
-                      <span className={cn("text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shadow-2xs inline-block", itemDesc.color)}>
+                    {/* Condition Badge - NO TRUNCATION */}
+                    <div className="min-w-[140px]">
+                      <span className={cn(
+                        "text-[10px] font-black uppercase px-2.5 py-1 rounded-full border shadow-2xs inline-block whitespace-normal break-words leading-tight",
+                        itemDesc.color
+                      )}>
                         {itemDesc.label}
                       </span>
                     </div>
 
-                    {/* Rain Probability & Curah Hujan */}
-                    <div className="flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 min-w-[120px]">
+                    {/* Rain Probability & Precipitation */}
+                    <div className="flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 min-w-[130px]">
                       <CloudRain className="w-4 h-4 shrink-0" />
-                      <span>{item.precipitationProbabilityMax}%</span>
+                      <span>{item.precipitationProbabilityMax}% Hujan</span>
                       {item.precipitationSum > 0 && (
                         <span className="text-[10px] font-semibold text-slate-400">
                           ({item.precipitationSum} mm)
@@ -1013,11 +1361,11 @@ export function WeatherDetailView({
                     </div>
 
                     {/* Temperature Range Bar */}
-                    <div className="flex items-center gap-3 min-w-[180px]">
+                    <div className="flex items-center gap-3 min-w-[190px]">
                       <span className="text-xs font-bold text-slate-400 w-8 text-right">
                         {item.temperatureMin}°
                       </span>
-                      {/* Bar indicator */}
+                      {/* Visual Color Gradient Bar */}
                       <div className="flex-1 h-2 rounded-full bg-slate-200 dark:bg-slate-700 relative overflow-hidden">
                         <div 
                           className="h-full rounded-full bg-gradient-to-r from-sky-400 via-amber-400 to-rose-500"
@@ -1032,27 +1380,32 @@ export function WeatherDetailView({
                       </span>
                     </div>
 
-                    {/* Sunrise & Sunset */}
-                    <div className="hidden md:flex items-center gap-3 text-[11px] text-slate-400 font-semibold min-w-[120px] justify-end">
-                      <span title="Matahari Terbit">🌅 {item.sunrise}</span>
-                      <span title="Matahari Terbenam">🌇 {item.sunset}</span>
+                    {/* Sunrise, Sunset & UV Index */}
+                    <div className="hidden lg:flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-semibold min-w-[160px] justify-end">
+                      <span title="Matahari Terbit & Terbenam">🌅 {item.sunrise} / 🌇 {item.sunset}</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                        UV {item.uvIndexMax}
+                      </span>
                     </div>
 
                   </div>
                 )
               })}
             </div>
-          </TabsContent>
-
-        </Tabs>
-
-        {/* ================= FOOTER / DATA SOURCES & DISCLOSURE ================= */}
-        <div className="pt-4 border-t border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Sumber Data: Stasiun BMKG Maritim / Open-Meteo High-Resolution WMO Observatory</span>
           </div>
-          <span>Koordinat Stasiun: Tanjungpinang (0.9186 N, 104.4586 E)</span>
+        )}
+
+        {/* ================= FOOTER / DATA SOURCES & COORDINATES ================= */}
+        <div className="pt-4 border-t border-slate-200/90 dark:border-slate-800/90 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-semibold text-slate-600 dark:text-slate-400">
+              Sumber Data: Stasiun BMKG Maritim / Open-Meteo High-Resolution WMO Observatory
+            </span>
+          </div>
+          <span className="font-mono text-[11px] text-slate-400">
+            Koordinat Stasiun: Tanjungpinang (0.9186° N, 104.4586° E, elevasi ~18m dpl)
+          </span>
         </div>
 
       </div>

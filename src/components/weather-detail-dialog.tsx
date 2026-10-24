@@ -27,12 +27,12 @@ export function WeatherDetailDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="w-[96vw] max-w-5xl p-0 overflow-hidden max-h-[92vh] rounded-[28px] border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl shadow-2xl"
+        className="w-[96vw] max-w-6xl p-0 overflow-hidden max-h-[94vh] rounded-[30px] border-slate-200/90 dark:border-slate-800/90 bg-white/98 dark:bg-slate-900/98 backdrop-blur-3xl shadow-2xl focus:outline-none"
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>Detail Informasi Cuaca Tanjungpinang</DialogTitle>
+          <DialogTitle>Detail Informasi Cuaca & Kualitas Udara Tanjungpinang</DialogTitle>
           <DialogDescription>
-            Prakiraan cuaca per jam, kondisi udara AQI, kecepatan angin, dan parameter cuaca lengkap
+            Prakiraan cuaca per jam, kondisi udara AQI, kecepatan angin, dan parameter cuaca lengkap Stasiun BMKG & WMO Tanjungpinang
           </DialogDescription>
         </DialogHeader>
 
