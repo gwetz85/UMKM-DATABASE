@@ -27,7 +27,7 @@ export function WeatherDetailDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="w-[96vw] max-w-6xl p-0 overflow-hidden max-h-[94vh] rounded-[30px] border-slate-200/90 dark:border-slate-800/90 bg-white/98 dark:bg-slate-900/98 backdrop-blur-3xl shadow-2xl focus:outline-none"
+        className="w-[96vw] max-w-6xl p-0 overflow-hidden h-[92vh] max-h-[92vh] rounded-[28px] border border-slate-200/90 dark:border-slate-800/90 bg-slate-50 dark:bg-slate-900 shadow-2xl focus:outline-none flex flex-col"
       >
         <DialogHeader className="sr-only">
           <DialogTitle>Detail Informasi Cuaca & Kualitas Udara Tanjungpinang</DialogTitle>

@@ -385,7 +385,7 @@ export async function fetchFullWeatherData(): Promise<FullWeatherForecastData> {
     if (startIndex < 0) startIndex = 0
 
     // Take next 36 hours for granular viewing
-    const sliceEnd = Math.min(startIndex + 36, hourlyRaw.time.length)
+    const sliceEnd = Math.min(startIndex + 48, hourlyRaw.time.length)
     const daysIndo = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"]
     const monthsIndo = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"]
 
