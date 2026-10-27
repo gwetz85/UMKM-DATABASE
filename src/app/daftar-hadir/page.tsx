@@ -86,10 +86,14 @@ import {
   History,
   QrCode,
   CheckSquare,
-  SearchCheck
+  SearchCheck,
+  UploadCloud,
+  FileUp,
+  Download
 } from "lucide-react"
 
 import ExcelJS from "exceljs"
+import * as XLSX from "xlsx"
 
 // Tipe Status Kehadiran
 export type AttendanceStatus = 'hadir' | 'belum_hadir' | 'izin' | 'sakit';
@@ -129,6 +133,27 @@ function DaftarHadirContent() {
 
   // State Mode Tampilan: Khusus Petugas Absensi selalu 'scanner', Admin bisa beralih
   const [viewMode, setViewMode] = useState<'scanner' | 'table'>('table')
+
+  // ─── STATE IMPORT EXCEL JADWAL & POSISI MEJA ───
+  const [showImportExcelModal, setShowImportExcelModal] = useState(false)
+  const [importExcelFile, setImportExcelFile] = useState<File | null>(null)
+  const [isProcessingImport, setIsProcessingImport] = useState(false)
+  const [importSummary, setImportSummary] = useState<{
+    totalRows: number
+    matchedCount: number
+    unmatchedCount: number
+    parsedData: Array<{
+      rowNum: number
+      rawNik: string
+      schedule: string
+      desk: string
+      actor: BusinessActor | null
+      status: 'matched' | 'unmatched'
+    }>
+  } | null>(null)
+  const [importDeskMode, setImportDeskMode] = useState<'excel_or_kecamatan' | 'auto_kecamatan' | 'fixed' | 'keep'>('excel_or_kecamatan')
+  const [importSelectedFixedDesk, setImportSelectedFixedDesk] = useState('Meja 1 (Kec. Tanjungpinang Barat)')
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null)
 
   // Scanner NIK States (Mode Khusus Petugas Absensi)
   const [scannerNikInput, setScannerNikInput] = useState("")
@@ -359,6 +384,324 @@ function DaftarHadirContent() {
     } finally {
       setIsSubmitting(false)
       setNotesModalActor(null)
+    }
+  }
+
+  // ─── HELPER: PENENTUAN POSISI MEJA BERDASARKAN KECAMATAN ───
+  const getDeskByKecamatan = (kecamatan?: string) => {
+    const kec = (kecamatan || "").toLowerCase()
+    if (kec.includes("barat")) return "Meja 1 (Kec. Tanjungpinang Barat)"
+    if (kec.includes("timur")) return "Meja 2 (Kec. Tanjungpinang Timur)"
+    if (kec.includes("bestari")) return "Meja 3 (Kec. Bukit Bestari)"
+    if (kec.includes("kota")) return "Meja 4 (Kec. Tanjungpinang Kota)"
+    return "Meja 1 (Kec. Tanjungpinang Barat)"
+  }
+
+  // ─── FUNGSI BACA DAN PROSES FILE EXCEL ───
+  const handleProcessImportExcelFile = async (file: File) => {
+    setIsProcessingImport(true)
+    setImportExcelFile(file)
+    try {
+      const buffer = await file.arrayBuffer()
+      const wb = XLSX.read(buffer, { type: "array" })
+      if (!wb.SheetNames || wb.SheetNames.length === 0) {
+        throw new Error("File Excel tidak memiliki sheet yang valid.")
+      }
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const rows2d: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: false })
+
+      if (!rows2d || rows2d.length === 0) {
+        throw new Error("Sheet Excel kosong.")
+      }
+
+      // Deteksi Header jika ada
+      let headerRowIdx = -1
+      let colNik = 2 // Default Kolom C (0-indexed: 2)
+      let colSchedule = 4 // Default Kolom E (0-indexed: 4)
+      let colDesk: number | null = null
+
+      // Scan 6 baris pertama untuk mencari baris header
+      for (let r = 0; r < Math.min(rows2d.length, 6); r++) {
+        const row = rows2d[r] || []
+        const rowText = row.map((c: any) => String(c || '').toLowerCase().trim())
+        const nikIdx = rowText.findIndex((c: string) => c === 'nik' || c.includes('no. nik') || c.includes('nomor nik') || c.includes('no nik'))
+        if (nikIdx !== -1) {
+          headerRowIdx = r
+          colNik = nikIdx
+          // Cari kolom Jadwal / Sesi
+          const schIdx = rowText.findIndex((c: string) => c.includes('jadwal') || c.includes('sesi') || c.includes('waktu') || c.includes('jam'))
+          if (schIdx !== -1) colSchedule = schIdx
+          // Cari kolom Meja / Loket
+          const deskIdx = rowText.findIndex((c: string) => c.includes('meja') || c.includes('loket') || c.includes('posisi'))
+          if (deskIdx !== -1) colDesk = deskIdx
+          break
+        }
+      }
+
+      // Jika kolom Meja belum ketemu dari header, scan nilai baris untuk mendeteksi kolom yang berisi kata 'Meja'
+      if (colDesk === null) {
+        for (let r = headerRowIdx + 1; r < Math.min(rows2d.length, 10); r++) {
+          const row = rows2d[r] || []
+          if (String(row[6] || "").toLowerCase().includes('meja')) { colDesk = 6; break }
+          if (String(row[3] || "").toLowerCase().includes('meja')) { colDesk = 3; break }
+          if (String(row[5] || "").toLowerCase().includes('meja')) { colDesk = 5; break }
+        }
+      }
+
+      const startRow = headerRowIdx !== -1 ? headerRowIdx + 1 : 0
+      const parsed: Array<{
+        rowNum: number
+        rawNik: string
+        schedule: string
+        desk: string
+        actor: BusinessActor | null
+        status: 'matched' | 'unmatched'
+      }> = []
+
+      let matched = 0
+      let unmatched = 0
+
+      // Lookup Map untuk O(1) matching NIK
+      const actorMap = new Map<string, BusinessActor>()
+      verifiedActorsList.forEach(a => {
+        const cleanA = (a.nik || "").trim().replace(/\D/g, '')
+        if (cleanA) actorMap.set(cleanA, a)
+      })
+
+      for (let r = startRow; r < rows2d.length; r++) {
+        const row = rows2d[r] || []
+        const rawNik = String(row[colNik] || "").trim()
+        const cleanNik = rawNik.replace(/\D/g, '')
+
+        // Lewati jika baris kosong atau digit NIK kurang dari 10
+        if (!cleanNik || cleanNik.length < 10) continue
+
+        const rawSchedule = String(row[colSchedule] || "").trim()
+        const rawDeskVal = colDesk !== null ? String(row[colDesk] || "").trim() : ""
+
+        // Matching dengan database
+        const matchedActor = actorMap.get(cleanNik) || verifiedActorsList.find(a => {
+          const c = (a.nik || "").replace(/\D/g, '')
+          return c === cleanNik || (cleanNik.length >= 12 && c.includes(cleanNik))
+        }) || null
+
+        // Tentukan Posisi Meja
+        let finalDesk = rawDeskVal
+        if (matchedActor) {
+          if (importDeskMode === 'auto_kecamatan') {
+            finalDesk = getDeskByKecamatan(matchedActor.kecamatan)
+          } else if (importDeskMode === 'fixed') {
+            finalDesk = importSelectedFixedDesk
+          } else if (importDeskMode === 'keep') {
+            finalDesk = (matchedActor as any).attendanceDesk || ""
+          } else {
+            // excel_or_kecamatan
+            if (!finalDesk) {
+              finalDesk = getDeskByKecamatan(matchedActor.kecamatan)
+            }
+          }
+        }
+
+        if (matchedActor) {
+          matched++
+          parsed.push({
+            rowNum: r + 1,
+            rawNik,
+            schedule: rawSchedule,
+            desk: finalDesk,
+            actor: matchedActor,
+            status: 'matched'
+          })
+        } else {
+          unmatched++
+          parsed.push({
+            rowNum: r + 1,
+            rawNik,
+            schedule: rawSchedule,
+            desk: finalDesk,
+            actor: null,
+            status: 'unmatched'
+          })
+        }
+      }
+
+      setImportSummary({
+        totalRows: parsed.length,
+        matchedCount: matched,
+        unmatchedCount: unmatched,
+        parsedData: parsed
+      })
+
+      toast({
+        title: "File Excel Berhasil Dibaca",
+        description: `Ditemukan ${parsed.length} baris data (${matched} cocok dengan Daftar Hadir, ${unmatched} tidak ditemukan).`
+      })
+    } catch (err: any) {
+      console.error("Gagal membaca Excel:", err)
+      toast({
+        variant: "destructive",
+        title: "Gagal Membaca File Excel",
+        description: err.message || "Pastikan format file Excel valid (.xlsx atau .xls)."
+      })
+      setImportSummary(null)
+    } finally {
+      setIsProcessingImport(false)
+    }
+  }
+
+  // ─── RE-EVALUATE MEJA KETIKA MODE MEJA DIUBAH PADA PREVIEW ───
+  const handleUpdateImportDeskMode = (newMode: 'excel_or_kecamatan' | 'auto_kecamatan' | 'fixed' | 'keep', newFixedDesk?: string) => {
+    setImportDeskMode(newMode)
+    const fixedDesk = newFixedDesk || importSelectedFixedDesk
+    if (newFixedDesk) setImportSelectedFixedDesk(newFixedDesk)
+
+    if (importSummary) {
+      const updatedParsed = importSummary.parsedData.map(item => {
+        if (!item.actor) return item
+        let finalDesk = item.desk
+        if (newMode === 'auto_kecamatan') {
+          finalDesk = getDeskByKecamatan(item.actor.kecamatan)
+        } else if (newMode === 'fixed') {
+          finalDesk = fixedDesk
+        } else if (newMode === 'keep') {
+          finalDesk = (item.actor as any).attendanceDesk || ""
+        }
+        return {
+          ...item,
+          desk: finalDesk
+        }
+      })
+
+      setImportSummary({
+        ...importSummary,
+        parsedData: updatedParsed
+      })
+    }
+  }
+
+  // ─── FUNGSI SINKRONISASI HASIL IMPORT KE REALTIME DATABASE ───
+  const handleApplyImportExcel = async () => {
+    if (!database || !user || !importSummary) return
+    const matched = importSummary.parsedData.filter(p => p.status === 'matched' && p.actor)
+    if (matched.length === 0) {
+      toast({ variant: "destructive", title: "Tidak Ada Data Cocok", description: "Tidak ada data NIK yang cocok untuk disinkronkan." })
+      return
+    }
+
+    setIsSubmitting(true)
+    const officerName = userProfile?.fullName || user?.email || (isAdmin ? "Administrator" : "Petugas Absensi")
+    const nowIso = new Date().toISOString()
+
+    try {
+      const updates: Record<string, any> = {}
+
+      matched.forEach(item => {
+        const actor = item.actor!
+        if (item.schedule) {
+          updates[`businessActors/${actor.id}/attendanceSchedule`] = item.schedule
+          updates[`daftar_hadir/${actor.id}/schedule`] = item.schedule
+        }
+        if (item.desk) {
+          updates[`businessActors/${actor.id}/attendanceDesk`] = item.desk
+          updates[`daftar_hadir/${actor.id}/desk`] = item.desk
+        }
+        updates[`daftar_hadir/${actor.id}/actorId`] = actor.id
+        updates[`daftar_hadir/${actor.id}/fullName`] = actor.fullName
+        updates[`daftar_hadir/${actor.id}/nik`] = actor.nik
+        updates[`daftar_hadir/${actor.id}/businessName`] = actor.businessName || ""
+        updates[`daftar_hadir/${actor.id}/updatedAt`] = nowIso
+        updates[`daftar_hadir/${actor.id}/updatedBy`] = officerName
+      })
+
+      await update(ref(database), updates)
+
+      logActivity({
+        query: `IMPORT EXCEL JADWAL & MEJA: Sinkronisasi ${matched.length} peserta`,
+        results: `Total baris: ${importSummary.totalRows}, Cocok: ${matched.length}`,
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'IMPORT EXCEL DAFTAR HADIR',
+        userId: officerName
+      })
+
+      playSound('success', 0.5)
+
+      toast({
+        title: "✓ Berhasil Sinkronisasi!",
+        description: `Berhasil memperbarui Jadwal & Posisi Meja untuk ${matched.length} peserta ke Daftar Hadir.`
+      })
+
+      setShowImportExcelModal(false)
+      setImportExcelFile(null)
+      setImportSummary(null)
+    } catch (err: any) {
+      console.error("Gagal sinkronisasi data:", err)
+      toast({
+        variant: "destructive",
+        title: "Gagal Menyimpan Data",
+        description: err.message || "Terjadi kesalahan saat menyimpan data ke database."
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // ─── FUNGSI UNDUH FORMAT TEMPLATE EXCEL ───
+  const handleDownloadImportTemplate = async () => {
+    try {
+      const workbook = new ExcelJS.Workbook()
+      const worksheet = workbook.addWorksheet("Template Jadwal & Meja")
+
+      worksheet.columns = [
+        { header: "NO", key: "no", width: 8 },
+        { header: "NAMA LENGKAP", key: "fullName", width: 30 },
+        { header: "NIK", key: "nik", width: 24 }, // Kolom C
+        { header: "KECAMATAN", key: "kecamatan", width: 25 },
+        { header: "JADWAL SESI", key: "schedule", width: 32 }, // Kolom E
+        { header: "KOORDINATOR", key: "coordinator", width: 25 },
+        { header: "POSISI MEJA", key: "desk", width: 32 }
+      ]
+
+      const headerRow = worksheet.getRow(1)
+      headerRow.height = 28
+      headerRow.eachCell((cell) => {
+        cell.font = { name: "Arial", size: 10, bold: true, color: { argb: "FFFFFFFF" } }
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0284C7" } }
+        cell.alignment = { vertical: "middle", horizontal: "center" }
+      })
+
+      verifiedActorsList.forEach((actor, index) => {
+        worksheet.addRow({
+          no: index + 1,
+          fullName: actor.fullName,
+          nik: actor.nik,
+          kecamatan: actor.kecamatan || "-",
+          schedule: (actor as any).attendanceSchedule || "Sesi 1 (08.00 - 10.00 WIB)",
+          coordinator: normalizeCoordinator(actor.coordinator) || "-",
+          desk: (actor as any).attendanceDesk || getDeskByKecamatan(actor.kecamatan)
+        })
+      })
+
+      worksheet.getColumn(3).numFmt = '@'
+
+      const buffer = await workbook.xlsx.writeBuffer()
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `TEMPLATE_JADWAL_DAN_MEJA_DAFTAR_HADIR.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      toast({
+        title: "Template Terunduh",
+        description: "Buka file template, ubah kolom Jadwal & Posisi Meja, lalu upload kembali melalui tombol Import Excel."
+      })
+    } catch (err) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal", description: "Tidak dapat mengunduh template Excel." })
     }
   }
 
@@ -1706,6 +2049,22 @@ function DaftarHadirContent() {
             <span>Ekspor</span>
           </Button>
 
+          {/* Tombol Import Excel Jadwal & Meja */}
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              setShowImportExcelModal(true)
+              setImportSummary(null)
+              setImportExcelFile(null)
+            }}
+            className="h-10 px-3 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white gap-1.5 shadow-2xs"
+            title="Import Excel untuk membagi Jadwal Pertemuan (Kolom E) & Posisi Absensi Meja berdasarkan NIK (Kolom C)"
+          >
+            <UploadCloud className="w-3.5 h-3.5" />
+            <span>Import Excel</span>
+          </Button>
+
           {/* Tombol Buka/Tutup Sensor NIK Global */}
           <Button
             type="button"
@@ -1862,6 +2221,22 @@ function DaftarHadirContent() {
 
         {/* Tombol Atur Jadwal & Meja (Bagi Batch) */}
         <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setShowImportExcelModal(true)
+              setImportSummary(null)
+              setImportExcelFile(null)
+            }}
+            className="h-8 px-2.5 text-xs font-bold border-teal-500 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50 gap-1.5 rounded-lg cursor-pointer shadow-2xs"
+            title="Import Excel Jadwal (Kolom E) & Posisi Meja berdasarkan NIK (Kolom C)"
+          >
+            <UploadCloud className="w-3.5 h-3.5 text-teal-600" />
+            <span>Import Excel</span>
+          </Button>
+
           <Button
             type="button"
             size="sm"
@@ -2709,6 +3084,243 @@ function DaftarHadirContent() {
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
               Simpan Presensi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── MODAL DIALOG: IMPORT EXCEL JADWAL & POSISI MEJA ─── */}
+      <Dialog open={showImportExcelModal} onOpenChange={setShowImportExcelModal}>
+        <DialogContent className="max-w-3xl rounded-2xl p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
+          <DialogHeader className="pr-8">
+            <DialogTitle className="text-primary font-black uppercase text-sm sm:text-base flex items-center gap-2">
+              <UploadCloud className="w-5 h-5 text-teal-600 shrink-0" />
+              <span>Import Excel Jadwal & Posisi Absensi (Meja)</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 mt-1">
+              Upload file Excel untuk membagi <strong>Jadwal Pertemuan (Kolom E)</strong> dan <strong>Posisi Absensi Meja</strong> dengan pembacaan otomatis berdasarkan <strong>NIK (Kolom C)</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-2">
+            {/* Box Petunjuk & Tombol Template */}
+            <div className="bg-teal-50 dark:bg-teal-950/40 p-3.5 rounded-xl border border-teal-200 dark:border-teal-800 text-xs text-teal-900 dark:text-teal-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <p className="font-bold">Format Kolom Excel yang Dibaca Sistem:</p>
+                <p className="text-[11px] text-teal-700 dark:text-teal-300 mt-0.5">
+                  • <strong>Kolom C:</strong> NIK Peserta (16 digit) <br />
+                  • <strong>Kolom E:</strong> Jadwal Sesi Pertemuan (contoh: <em>Sesi 1 (08.00 - 10.00 WIB)</em>) <br />
+                  • <strong>Kolom G / Posisi:</strong> Meja Absensi (opsional, dapat diisi otomatis)
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadImportTemplate}
+                className="shrink-0 bg-white dark:bg-zinc-900 text-teal-700 dark:text-teal-300 border-teal-300 dark:border-teal-700 text-xs font-bold gap-1.5 shadow-2xs hover:bg-teal-100"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Unduh Format Template</span>
+              </Button>
+            </div>
+
+            {/* Input Dropzone File */}
+            <div className="border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-teal-500 dark:hover:border-teal-500 rounded-xl p-6 text-center bg-slate-50/50 dark:bg-zinc-800/50 transition-colors">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx, .xls, .csv"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) handleProcessImportExcelFile(f)
+                }}
+                className="hidden"
+                id="excel-file-import-input"
+              />
+              <label htmlFor="excel-file-import-input" className="cursor-pointer block space-y-2">
+                <div className="w-12 h-12 rounded-full bg-teal-100 dark:bg-teal-950 text-teal-600 flex items-center justify-center mx-auto">
+                  {isProcessingImport ? (
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  ) : (
+                    <FileUp className="w-6 h-6" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                    {importExcelFile ? importExcelFile.name : "Klik atau seret file Excel (.xlsx / .xls) ke sini"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Mendukung format Microsoft Excel .xlsx, .xls, dan CSV
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            {/* Opsi Pengisian Posisi Meja */}
+            <div className="p-3.5 bg-slate-50 dark:bg-zinc-800/60 rounded-xl border border-slate-200 dark:border-zinc-700 space-y-2">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-200 block">
+                Pengaturan Posisi Absensi (Meja):
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <label className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="deskMode"
+                    value="excel_or_kecamatan"
+                    checked={importDeskMode === 'excel_or_kecamatan'}
+                    onChange={() => handleUpdateImportDeskMode('excel_or_kecamatan')}
+                    className="accent-teal-600"
+                  />
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    Dari Excel (Auto Kecamatan jika kosong)
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="deskMode"
+                    value="auto_kecamatan"
+                    checked={importDeskMode === 'auto_kecamatan'}
+                    onChange={() => handleUpdateImportDeskMode('auto_kecamatan')}
+                    className="accent-teal-600"
+                  />
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    Otomatis 4 Meja sesuai Kecamatan
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="deskMode"
+                    value="fixed"
+                    checked={importDeskMode === 'fixed'}
+                    onChange={() => handleUpdateImportDeskMode('fixed')}
+                    className="accent-teal-600"
+                  />
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    Tetapkan Semua ke Meja Tertentu
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="deskMode"
+                    value="keep"
+                    checked={importDeskMode === 'keep'}
+                    onChange={() => handleUpdateImportDeskMode('keep')}
+                    className="accent-teal-600"
+                  />
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    Pertahankan Meja Saat Ini (Hanya Jadwal)
+                  </span>
+                </label>
+              </div>
+
+              {importDeskMode === 'fixed' && (
+                <div className="pt-2">
+                  <select
+                    value={importSelectedFixedDesk}
+                    onChange={(e) => handleUpdateImportDeskMode('fixed', e.target.value)}
+                    className="h-9 w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-xs font-semibold"
+                  >
+                    <option value="Meja 1 (Kec. Tanjungpinang Barat)">Meja 1 (Kec. Tanjungpinang Barat)</option>
+                    <option value="Meja 2 (Kec. Tanjungpinang Timur)">Meja 2 (Kec. Tanjungpinang Timur)</option>
+                    <option value="Meja 3 (Kec. Bukit Bestari)">Meja 3 (Kec. Bukit Bestari)</option>
+                    <option value="Meja 4 (Kec. Tanjungpinang Kota)">Meja 4 (Kec. Tanjungpinang Kota)</option>
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Hasil Ringkasan & Pratinjau Data */}
+            {importSummary && (
+              <div className="space-y-3">
+                {/* Stats Bar */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-slate-100 dark:bg-zinc-800 p-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-center">
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Total Baris</p>
+                    <p className="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100">{importSummary.totalRows}</p>
+                  </div>
+                  <div className="bg-emerald-50 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 text-center">
+                    <p className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-300">Cocok di Daftar Hadir</p>
+                    <p className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400">{importSummary.matchedCount}</p>
+                  </div>
+                  <div className="bg-rose-50 dark:bg-rose-950/40 p-2.5 rounded-xl border border-rose-200 dark:border-rose-800 text-center">
+                    <p className="text-[10px] uppercase font-bold text-rose-700 dark:text-rose-300">Tidak Ditemukan</p>
+                    <p className="text-base sm:text-lg font-black text-rose-600 dark:text-rose-400">{importSummary.unmatchedCount}</p>
+                  </div>
+                </div>
+
+                {/* Tabel Preview (10 baris pertama) */}
+                <div className="border border-slate-200 dark:border-zinc-700 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
+                  <table className="w-full text-[11px] text-left">
+                    <thead className="bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 font-bold sticky top-0">
+                      <tr>
+                        <th className="p-2 text-center w-10">No</th>
+                        <th className="p-2">NIK (Kolom C)</th>
+                        <th className="p-2">Nama Peserta</th>
+                        <th className="p-2">Jadwal Sesi (Kolom E)</th>
+                        <th className="p-2">Posisi Meja</th>
+                        <th className="p-2 text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                      {importSummary.parsedData.slice(0, 15).map((row, idx) => (
+                        <tr key={idx} className={row.status === 'matched' ? "hover:bg-slate-50 dark:hover:bg-zinc-900" : "bg-rose-50/50 dark:bg-rose-950/20"}>
+                          <td className="p-2 text-center font-bold text-muted-foreground">{idx + 1}</td>
+                          <td className="p-2 font-mono font-bold text-primary">{row.rawNik}</td>
+                          <td className="p-2 font-bold truncate max-w-[150px]">{row.actor ? row.actor.fullName : <span className="text-muted-foreground italic">-</span>}</td>
+                          <td className="p-2 font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[140px]">{row.schedule || "-"}</td>
+                          <td className="p-2 font-semibold text-sky-700 dark:text-sky-300 truncate max-w-[140px]">{row.desk || "-"}</td>
+                          <td className="p-2 text-center">
+                            {row.status === 'matched' ? (
+                              <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[9px] font-bold">
+                                ✓ Cocok
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 text-[9px] font-bold">
+                                ✗ NIK Tidak Ada
+                              </Badge>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {importSummary.parsedData.length > 15 && (
+                  <p className="text-[10px] text-muted-foreground text-center italic">
+                    Menampilkan 15 dari {importSummary.parsedData.length} baris data yang dibaca dari Excel.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="mt-4 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowImportExcelModal(false)}
+              className="text-xs font-bold"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleApplyImportExcel}
+              disabled={!importSummary || importSummary.matchedCount === 0 || isSubmitting}
+              className="text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white gap-1.5 shadow-xs"
+            >
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              <span>Sinkronkan ke Daftar Hadir ({importSummary ? importSummary.matchedCount : 0} Data)</span>
             </Button>
           </DialogFooter>
         </DialogContent>
