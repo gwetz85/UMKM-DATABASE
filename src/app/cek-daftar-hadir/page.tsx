@@ -430,16 +430,16 @@ function CekDaftarHadirContent() {
 
   // Desk display values
   const deskInfo = useMemo(() => {
-    if (!selectedActor) return { main: "03", sub: "Contoh Meja" }
+    if (!selectedActor) return { main: "--", sub: "" }
     return formatDeskDisplay((selectedActor as any).attendanceDesk)
   }, [selectedActor])
 
   // Schedule display value
   const scheduleDisplay = useMemo(() => {
-    if (!selectedActor) return fullDateString || "Senin, 27 Oktober 2026"
+    if (!selectedActor) return "--"
     const sch = (selectedActor as any).attendanceSchedule
     if (sch && sch.trim()) return sch.trim()
-    return fullDateString
+    return fullDateString || "-"
   }, [selectedActor, fullDateString])
 
   const isHadir = (selectedActor as any)?.attendanceStatus === "hadir"
@@ -589,151 +589,163 @@ function CekDaftarHadirContent() {
               )}
             </div>
 
-            {/* Content Data NIK: Scrollable jika tinggi layar kecil */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
-              {/* TOP PROFILE SECTION: FOTO SURVEY RATA TENGAH & DIPERBESAR */}
-              <div className="flex flex-col items-center text-center pb-3 border-b border-slate-100">
-                {/* Foto Survey Box Raksasa Rata Tengah */}
-                <div
-                  onClick={() => {
-                    if (surveyPhotoUrl) setIsPhotoModalOpen(true)
-                  }}
-                  className={cn(
-                    "w-44 h-44 sm:w-52 sm:h-52 md:w-56 md:h-56 rounded-3xl overflow-hidden shrink-0 border-4 border-blue-200 bg-[#E2EDFB] flex items-center justify-center relative shadow-md group mx-auto",
-                    surveyPhotoUrl && "cursor-pointer hover:border-[#0055b3] hover:shadow-lg transition-all"
-                  )}
-                  title={surveyPhotoUrl ? "Klik untuk melihat foto survey ukuran penuh" : "Foto Pelaku Usaha"}
-                >
-                  {isLoadingPhoto ? (
-                    <div className="flex flex-col items-center gap-2 text-slate-500">
-                      <Loader2 className="w-8 h-8 animate-spin text-[#0055b3]" />
-                      <span className="text-xs font-bold">Memuat Foto Survey...</span>
+            {/* Content Data NIK: Tampilkan hanya jika NIK sudah dicari dan data ditemukan */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5">
+              {selectedActor ? (
+                <div className="space-y-4">
+                  {/* TOP PROFILE SECTION: FOTO SURVEY RATA TENGAH & DIPERBESAR */}
+                  <div className="flex flex-col items-center text-center pb-3 border-b border-slate-100">
+                    {/* Foto Survey Box Raksasa Rata Tengah */}
+                    <div
+                      onClick={() => {
+                        if (surveyPhotoUrl) setIsPhotoModalOpen(true)
+                      }}
+                      className={cn(
+                        "w-44 h-44 sm:w-52 sm:h-52 md:w-56 md:h-56 rounded-3xl overflow-hidden shrink-0 border-4 border-blue-200 bg-[#E2EDFB] flex items-center justify-center relative shadow-md group mx-auto",
+                        surveyPhotoUrl && "cursor-pointer hover:border-[#0055b3] hover:shadow-lg transition-all"
+                      )}
+                      title={surveyPhotoUrl ? "Klik untuk melihat foto survey ukuran penuh" : "Foto Pelaku Usaha"}
+                    >
+                      {isLoadingPhoto ? (
+                        <div className="flex flex-col items-center gap-2 text-slate-500">
+                          <Loader2 className="w-8 h-8 animate-spin text-[#0055b3]" />
+                          <span className="text-xs font-bold">Memuat Foto Survey...</span>
+                        </div>
+                      ) : surveyPhotoUrl ? (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={surveyPhotoUrl}
+                            alt={selectedActor.fullName || "Foto Survey"}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-black tracking-wider uppercase backdrop-blur-2xs">
+                            🔍 Perbesar Foto
+                          </div>
+                        </>
+                      ) : (
+                        <AvatarIllustration />
+                      )}
                     </div>
-                  ) : surveyPhotoUrl ? (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={surveyPhotoUrl}
-                        alt={selectedActor?.fullName || "Foto Survey"}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-black tracking-wider uppercase backdrop-blur-2xs">
-                        🔍 Perbesar Foto
+
+                    {/* Nama Lengkap & Badge Data Ditemukan */}
+                    <div className="mt-3.5 space-y-1.5 w-full flex flex-col items-center">
+                      <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug">
+                        {selectedActor.fullName}
+                      </h3>
+
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black bg-[#dcfce7] text-[#15803d] shadow-2xs">
+                          <CheckCircle2 className="w-4 h-4" />
+                          Data Ditemukan
+                        </span>
                       </div>
-                    </>
-                  ) : (
-                    <AvatarIllustration />
-                  )}
-                </div>
 
-                {/* Nama Lengkap & Badge Data Ditemukan */}
-                <div className="mt-3.5 space-y-1.5 w-full flex flex-col items-center">
-                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug">
-                    {selectedActor ? selectedActor.fullName : searchStatus === "not_found" ? "Data Tidak Ditemukan" : "Budi Santoso"}
+                      {selectedActor.businessName && (
+                        <p className="text-xs sm:text-sm text-slate-600 font-semibold">
+                          Usaha: <strong className="text-slate-900 font-black">{selectedActor.businessName}</strong>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* DETAIL ROWS TABLE MATCHING THE MOCKUP */}
+                  <div className="divide-y divide-slate-100 text-xs sm:text-sm pt-1">
+                    {/* NIK */}
+                    <div className="py-2.5 flex items-center justify-between gap-3">
+                      <span className="text-slate-500 font-semibold w-28 shrink-0">NIK</span>
+                      <span className="font-mono font-bold text-slate-800 text-right">
+                        {selectedActor.nik}
+                      </span>
+                    </div>
+
+                    {/* Nomor Ponsel */}
+                    <div className="py-2.5 flex items-center justify-between gap-3">
+                      <span className="text-slate-500 font-semibold w-28 shrink-0">Nomor Ponsel</span>
+                      <span className="font-semibold text-slate-800 text-right">
+                        {selectedActor.phone || "-"}
+                      </span>
+                    </div>
+
+                    {/* Alamat */}
+                    <div className="py-2.5 flex items-start justify-between gap-3">
+                      <span className="text-slate-500 font-semibold w-28 shrink-0 pt-0.5">Alamat</span>
+                      <span className="font-medium text-slate-800 text-right leading-relaxed max-w-[65%]">
+                        {selectedActor.address || "-"} {selectedActor.rtRw ? `(${selectedActor.rtRw})` : ""} Kec. {selectedActor.kecamatan || "-"} Kel. {selectedActor.kelurahan || "-"}
+                      </span>
+                    </div>
+
+                    {/* Jenis Kelamin */}
+                    <div className="py-2.5 flex items-center justify-between gap-3">
+                      <span className="text-slate-500 font-semibold w-28 shrink-0">Jenis Kelamin</span>
+                      <span className="font-semibold text-slate-800 text-right">
+                        {selectedActor.gender || "-"}
+                      </span>
+                    </div>
+
+                    {/* Tanggal Lahir */}
+                    <div className="py-2.5 flex items-center justify-between gap-3">
+                      <span className="text-slate-500 font-semibold w-28 shrink-0">Tanggal Lahir</span>
+                      <span className="font-semibold text-slate-800 text-right">
+                        {formatDobDisplay(selectedActor)}
+                      </span>
+                    </div>
+
+                    {/* Status Hadir */}
+                    <div className="py-2.5 flex items-center justify-between gap-3">
+                      <span className="text-slate-500 font-semibold w-28 shrink-0">Status</span>
+                      <div className="text-right">
+                        {isHadir ? (
+                          <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-black bg-[#dbeafe] text-[#1e40af]">
+                            Hadir
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-black bg-amber-100 text-amber-800">
+                            Belum Hadir
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Keterangan */}
+                    <div className="py-2.5 flex items-center justify-between gap-3">
+                      <span className="text-slate-500 font-semibold w-28 shrink-0">Keterangan</span>
+                      <span className="font-medium text-slate-800 text-right">
+                        {(selectedActor as any).attendanceNotes ||
+                          (isHadir ? "Absensi telah tercatat" : "Belum melakukan absensi")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : searchStatus === "not_found" ? (
+                /* STATE: DATA TIDAK DITEMUKAN */
+                <div className="h-full flex flex-col items-center justify-center p-6 text-center min-h-[320px]">
+                  <div className="w-20 h-20 rounded-3xl bg-rose-50 border-2 border-rose-200 flex items-center justify-center text-rose-500 mb-4 shadow-xs">
+                    <XCircle className="w-10 h-10" />
+                  </div>
+                  <h3 className="text-xl font-black text-slate-800">Data Tidak Ditemukan</h3>
+                  <p className="text-xs sm:text-sm text-slate-500 max-w-sm mt-2 leading-relaxed">
+                    NIK <span className="font-mono font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">{searchNik}</span> tidak terdaftar dalam database presensi atau belum diverifikasi dinas.
+                  </p>
+                </div>
+              ) : (
+                /* STATE: NIK KOSONG (STANDBY) - TIDAK MENAMPILKAN DATA APAPUN */
+                <div className="h-full flex flex-col items-center justify-center p-6 text-center min-h-[320px]">
+                  <div className="w-24 h-24 rounded-3xl bg-blue-50/70 border-2 border-blue-200/60 flex items-center justify-center text-[#0055b3] mb-4 shadow-xs">
+                    <User className="w-12 h-12 text-[#0055b3]/40 stroke-[1.5]" />
+                  </div>
+                  <h3 className="text-xl font-black text-slate-800 tracking-tight">
+                    Menunggu Input NIK
                   </h3>
-
-                  <div className="flex items-center justify-center gap-2">
-                    {selectedActor ? (
-                      <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black bg-[#dcfce7] text-[#15803d] shadow-2xs">
-                        <CheckCircle2 className="w-4 h-4" />
-                        Data Ditemukan
-                      </span>
-                    ) : searchStatus === "not_found" ? (
-                      <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-700 shadow-2xs">
-                        <XCircle className="w-4 h-4" />
-                        NIK Tidak Terdaftar
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black bg-[#dcfce7] text-[#15803d] shadow-2xs">
-                        <CheckCircle2 className="w-4 h-4" />
-                        Data Ditemukan (Contoh)
-                      </span>
-                    )}
-                  </div>
-
-                  {selectedActor?.businessName && (
-                    <p className="text-xs sm:text-sm text-slate-600 font-semibold">
-                      Usaha: <strong className="text-slate-900 font-black">{selectedActor.businessName}</strong>
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* DETAIL ROWS TABLE MATCHING THE MOCKUP */}
-              <div className="divide-y divide-slate-100 text-xs sm:text-sm pt-1">
-                {/* NIK */}
-                <div className="py-2.5 flex items-center justify-between gap-3">
-                  <span className="text-slate-500 font-semibold w-28 shrink-0">NIK</span>
-                  <span className="font-mono font-bold text-slate-800 text-right">
-                    {selectedActor ? selectedActor.nik : "3175010101010001"}
-                  </span>
-                </div>
-
-                {/* Nomor Ponsel */}
-                <div className="py-2.5 flex items-center justify-between gap-3">
-                  <span className="text-slate-500 font-semibold w-28 shrink-0">Nomor Ponsel</span>
-                  <span className="font-semibold text-slate-800 text-right">
-                    {selectedActor ? selectedActor.phone || "-" : "0812 3456 7890"}
-                  </span>
-                </div>
-
-                {/* Alamat */}
-                <div className="py-2.5 flex items-start justify-between gap-3">
-                  <span className="text-slate-500 font-semibold w-28 shrink-0 pt-0.5">Alamat</span>
-                  <span className="font-medium text-slate-800 text-right leading-relaxed max-w-[65%]">
-                    {selectedActor
-                      ? `${selectedActor.address || "-"} ${selectedActor.rtRw ? `(${selectedActor.rtRw})` : ""} Kec. ${selectedActor.kecamatan || "-"} Kel. ${selectedActor.kelurahan || "-"}`
-                      : "Jl. Merdeka No. 12 Kec. Tanjungpinang Timur Kota Tanjungpinang"}
-                  </span>
-                </div>
-
-                {/* Jenis Kelamin */}
-                <div className="py-2.5 flex items-center justify-between gap-3">
-                  <span className="text-slate-500 font-semibold w-28 shrink-0">Jenis Kelamin</span>
-                  <span className="font-semibold text-slate-800 text-right">
-                    {selectedActor ? selectedActor.gender || "-" : "Laki-laki"}
-                  </span>
-                </div>
-
-                {/* Tanggal Lahir */}
-                <div className="py-2.5 flex items-center justify-between gap-3">
-                  <span className="text-slate-500 font-semibold w-28 shrink-0">Tanggal Lahir</span>
-                  <span className="font-semibold text-slate-800 text-right">
-                    {selectedActor ? formatDobDisplay(selectedActor) : "10 Januari 1990"}
-                  </span>
-                </div>
-
-                {/* Status Hadir */}
-                <div className="py-2.5 flex items-center justify-between gap-3">
-                  <span className="text-slate-500 font-semibold w-28 shrink-0">Status</span>
-                  <div className="text-right">
-                    {isHadir ? (
-                      <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-black bg-[#dbeafe] text-[#1e40af]">
-                        Hadir
-                      </span>
-                    ) : selectedActor ? (
-                      <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-black bg-amber-100 text-amber-800">
-                        Belum Hadir
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-black bg-[#dbeafe] text-[#1e40af]">
-                        Hadir
-                      </span>
-                    )}
+                  <p className="text-xs sm:text-sm text-slate-500 max-w-xs sm:max-w-sm mt-2 leading-relaxed">
+                    Silakan ketik atau scan 16 Digit NIK pelaku usaha pada kotak pencarian di atas untuk menampilkan data presensi.
+                  </p>
+                  <div className="mt-5 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-xs font-bold shadow-2xs">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Scanner Siap Digunakan</span>
                   </div>
                 </div>
-
-                {/* Keterangan */}
-                <div className="py-2.5 flex items-center justify-between gap-3">
-                  <span className="text-slate-500 font-semibold w-28 shrink-0">Keterangan</span>
-                  <span className="font-medium text-slate-800 text-right">
-                    {selectedActor
-                      ? (selectedActor as any).attendanceNotes ||
-                        (isHadir ? "Absensi telah tercatat" : "Belum melakukan absensi")
-                      : "Absensi telah tercatat"}
-                  </span>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </section>
@@ -756,7 +768,7 @@ function CekDaftarHadirContent() {
                 {deskInfo.main}
               </div>
               <p className="text-xs sm:text-sm font-black uppercase tracking-widest text-slate-400 mt-2">
-                {deskInfo.sub || "Loket / Meja Presensi"}
+                {selectedActor ? (deskInfo.sub || "Loket / Meja Presensi") : "Menunggu Input NIK"}
               </p>
             </div>
           </div>
