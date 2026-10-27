@@ -425,7 +425,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   {!isRootPage && pathname !== '/dashboard' && !isKoordinator && !isLoginPage && !isPortalSurveyPage && !isLayarInformasiPage && (
                     <div className={cn(
                       "mb-3.5 flex items-center justify-between gap-3 print:hidden",
-                      pathname === '/daftar-hadir' && "px-6 pt-4 mb-2"
+                      pathname === '/daftar-hadir' && "px-1 sm:px-2 pt-2 mb-2"
                     )}>
                       <button
                         onClick={() => router.push('/')}

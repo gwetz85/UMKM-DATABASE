@@ -588,11 +588,11 @@ function DaftarHadirContent() {
   }
 
   return (
-    // ─── TAMPILAN FULL-WIDTH (w-full px-6 mx-auto) ───
-    <div className="w-full px-6 mx-auto space-y-4 pb-8">
+    // ─── TAMPILAN FULL-WIDTH TANPA PADDING KIRI & KANAN (EDGE TO EDGE) ───
+    <div className="w-full p-0 space-y-3 pb-8">
       
       {/* ─── Header & Toolbar Menyatu Satu Baris (Persis Layout Gambar 2) ─── */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 print:hidden">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3 px-1 sm:px-2 print:hidden">
         
         {/* Sisi Kiri: SidebarTrigger + Judul + Subtitle */}
         <div className="flex flex-col gap-1">
@@ -736,7 +736,7 @@ function DaftarHadirContent() {
       </div>
 
       {/* ─── TABEL UTAMA: TAMPILAN FULL PANEL PERSIS SEPERTI GAMBAR 2 ─── */}
-      <Card className="border border-slate-200/60 dark:border-zinc-800 shadow-sm overflow-hidden bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-xl sm:rounded-2xl w-full">
+      <Card className="border-y sm:border border-slate-200/60 dark:border-zinc-800 shadow-none sm:shadow-xs overflow-hidden bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-none sm:rounded-xl w-full">
         <CardContent className="p-0">
           {isActorsLoading ? (
             <div className="py-24 flex flex-col items-center justify-center gap-3">
