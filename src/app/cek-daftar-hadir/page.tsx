@@ -814,11 +814,10 @@ function CekDaftarHadirContent() {
           <Megaphone className="w-5 h-5 sm:w-6 sm:h-6 text-white shrink-0 mr-3 animate-pulse" />
           <div className="relative flex-1 h-full flex items-center overflow-hidden">
             <div className="animate-marquee whitespace-nowrap text-xs sm:text-sm font-bold text-white tracking-wide">
-              <span className="inline-block px-6">{activeRunningText}</span>
+              <span className="inline-block px-8">{activeRunningText}</span>
               <span className="text-blue-300 font-black">•</span>
-              <span className="inline-block px-6">{activeRunningText}</span>
+              <span className="inline-block px-8">{activeRunningText}</span>
               <span className="text-blue-300 font-black">•</span>
-              <span className="inline-block px-6">{activeRunningText}</span>
             </div>
           </div>
         </div>
@@ -828,7 +827,10 @@ function CekDaftarHadirContent() {
       <style jsx>{`
         .animate-marquee {
           display: inline-flex;
-          animation: marquee-scroll 45s linear infinite;
+          animation: marquee-scroll 150s linear infinite;
+        }
+        .animate-marquee:hover {
+          animation-play-state: paused;
         }
         @keyframes marquee-scroll {
           0% {
