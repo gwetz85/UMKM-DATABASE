@@ -87,6 +87,8 @@ import {
   QrCode,
   CheckSquare,
   SearchCheck,
+  Plus,
+  Trash2,
   UploadCloud,
   FileUp,
   Download
@@ -135,6 +137,31 @@ function DaftarHadirContent() {
   const [viewMode, setViewMode] = useState<'scanner' | 'table'>('table')
 
   // ─── STATE IMPORT EXCEL JADWAL & POSISI MEJA ───
+  // ─── SESI KEHADIRAN MANAGEMENT (FIREBASE & DYNAMIC SESSIONS) ───
+  const sessionsRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'settings/attendance_sessions')
+  }, [database])
+  const { data: rawSavedSessions } = useObject(sessionsRef)
+
+  const savedSessionsList: string[] = useMemo(() => {
+    if (!rawSavedSessions) return []
+    if (Array.isArray(rawSavedSessions)) {
+      return rawSavedSessions.filter(s => typeof s === 'string' && s.trim().length > 0)
+    }
+    if (typeof rawSavedSessions === 'object') {
+      return Object.values(rawSavedSessions).filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+    }
+    return []
+  }, [rawSavedSessions])
+
+  const [showAddSessionModal, setShowAddSessionModal] = useState(false)
+  const [newSessionInput, setNewSessionInput] = useState("")
+  const [applySessionTarget, setApplySessionTarget] = useState<'list_only' | 'filtered_actors'>('list_only')
+  const [showClearScheduleDialog, setShowClearScheduleDialog] = useState(false)
+  const [sessionModalActor, setSessionModalActor] = useState<BusinessActor | null>(null)
+  const [selectedSingleSession, setSelectedSingleSession] = useState("")
+
   const [showImportExcelModal, setShowImportExcelModal] = useState(false)
   const [importExcelFile, setImportExcelFile] = useState<File | null>(null)
   const [isProcessingImport, setIsProcessingImport] = useState(false)
@@ -212,7 +239,7 @@ function DaftarHadirContent() {
   // State Pembagian Per Koordinator
   const [selectedBatchCoord, setSelectedBatchCoord] = useState("")
   const [batchCoordDesk, setBatchCoordDesk] = useState("Meja 1")
-  const [batchCoordSchedule, setBatchCoordSchedule] = useState("Sesi 1 (08.00 - 10.00 WIB)")
+  const [batchCoordSchedule, setBatchCoordSchedule] = useState("")
 
   // NIK Sensitive Data Protection State
   const [showAllNik, setShowAllNik] = useState(false)
@@ -230,10 +257,10 @@ function DaftarHadirContent() {
   // Modal Dialog Atur Jadwal & Meja (Batch / Massal)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [batchTab, setBatchTab] = useState("auto_kecamatan")
-  const [batchSessionName, setBatchSessionName] = useState("Sesi 1 (08.00 - 10.00 WIB)")
+  const [batchSessionName, setBatchSessionName] = useState("")
   const [evenSplitCount, setEvenSplitCount] = useState<number>(3)
   const [customBatchDesk, setCustomBatchDesk] = useState("Meja 1 (Kec. Tanjungpinang Barat)")
-  const [customBatchSchedule, setCustomBatchSchedule] = useState("Sesi 1 (08.00 - 10.00 WIB)")
+  const [customBatchSchedule, setCustomBatchSchedule] = useState("")
 
   // Batch action confirm dialogs
   const [showMarkAllDialog, setShowMarkAllDialog] = useState(false)
@@ -675,7 +702,7 @@ function DaftarHadirContent() {
           fullName: actor.fullName,
           nik: actor.nik,
           kecamatan: actor.kecamatan || "-",
-          schedule: (actor as any).attendanceSchedule || "Sesi 1 (08.00 - 10.00 WIB)",
+          schedule: (actor as any).attendanceSchedule || "",
           coordinator: normalizeCoordinator(actor.coordinator) || "-",
           desk: (actor as any).attendanceDesk || getDeskByKecamatan(actor.kecamatan)
         })
@@ -701,6 +728,159 @@ function DaftarHadirContent() {
     } catch (err) {
       console.error(err)
       toast({ variant: "destructive", title: "Gagal", description: "Tidak dapat mengunduh template Excel." })
+    }
+  }
+
+  // ─── FUNGSI TAMBAH DAN KELOLA SESI ───
+  const handleAddSession = async () => {
+    const sessionName = newSessionInput.trim()
+    if (!sessionName) {
+      toast({ variant: "destructive", title: "Nama Sesi Kosong", description: "Silakan masukkan nama sesi atau pilih dari tombol pintas." })
+      return
+    }
+    if (!database || !user) return
+
+    setIsSubmitting(true)
+    try {
+      // 1. Simpan ke settings/attendance_sessions
+      const currentList = Array.from(new Set([...savedSessionsList, sessionName]))
+      await update(ref(database, 'settings'), {
+        attendance_sessions: currentList
+      })
+
+      // 2. Jika dipilih untuk diterapkan ke data yang tampil
+      if (applySessionTarget === 'filtered_actors' && filteredActors.length > 0) {
+        const updates: Record<string, any> = {}
+        filteredActors.forEach(actor => {
+          updates[`businessActors/${actor.id}/attendanceSchedule`] = sessionName
+        })
+
+        const entries = Object.entries(updates)
+        const chunkSize = 400
+        for (let i = 0; i < entries.length; i += chunkSize) {
+          const chunk = Object.fromEntries(entries.slice(i, i + chunkSize))
+          await update(ref(database), chunk)
+        }
+
+        toast({
+          title: "Sesi Berhasil Diterapkan!",
+          description: `Sesi "${sessionName}" diterapkan ke ${filteredActors.length} pelaku usaha.`
+        })
+      } else {
+        toast({
+          title: "Sesi Ditambahkan",
+          description: `Sesi "${sessionName}" berhasil ditambahkan ke daftar pilihan.`
+        })
+      }
+
+      playSound('success', 0.4)
+      setNewSessionInput("")
+      setShowAddSessionModal(false)
+    } catch (err: any) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal Menambahkan Sesi", description: err.message || "Terjadi kesalahan." })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDeleteSavedSession = async (sessionToDelete: string) => {
+    if (!database || !user) return
+    setIsSubmitting(true)
+    try {
+      const updated = savedSessionsList.filter(s => s !== sessionToDelete)
+      await update(ref(database, 'settings'), {
+        attendance_sessions: updated
+      })
+      toast({ title: "Sesi Dihapus", description: `Sesi "${sessionToDelete}" dihapus dari daftar.` })
+    } catch (err: any) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal", description: err.message })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // ─── FUNGSI KOSONGKAN SELURUH SESI KEHADIRAN ───
+  const executeClearAllSchedules = async () => {
+    if (!database || !user) return
+    setIsSubmitting(true)
+    setShowClearScheduleDialog(false)
+
+    try {
+      const updates: Record<string, any> = {}
+      verifiedActorsList.forEach(actor => {
+        if ((actor as any).attendanceSchedule) {
+          updates[`businessActors/${actor.id}/attendanceSchedule`] = null
+        }
+      })
+
+      // Kosongkan juga daftar sesi tersimpan di settings
+      await update(ref(database, 'settings'), {
+        attendance_sessions: null
+      })
+
+      if (Object.keys(updates).length > 0) {
+        const entries = Object.entries(updates)
+        const chunkSize = 400
+        for (let i = 0; i < entries.length; i += chunkSize) {
+          const chunk = Object.fromEntries(entries.slice(i, i + chunkSize))
+          await update(ref(database), chunk)
+        }
+      }
+
+      logActivity({
+        query: `KOSONGKAN SESI: Seluruh jadwal sesi dibersihkan untuk ${verifiedActorsList.length} peserta`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'MODUL DAFTAR HADIR',
+        userId: userProfile?.fullName || user?.email || "Admin"
+      })
+
+      playSound('success', 0.5)
+
+      toast({
+        title: "Seluruh Sesi Dikosongkan!",
+        description: "Seluruh jadwal sesi kehadiran peserta dan daftar pilihan sesi telah dikosongkan."
+      })
+      setSelectedScheduleFilter('semua')
+    } catch (err: any) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal", description: err.message || "Gagal mengosongkan sesi." })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // ─── FUNGSI SIMPAN SESI UNTUK 1 PESERTA TERTENTU ───
+  const handleSaveSingleActorSession = async () => {
+    if (!database || !user || !sessionModalActor) return
+    setIsSubmitting(true)
+    try {
+      const val = selectedSingleSession.trim() || null
+      await update(ref(database, `businessActors/${sessionModalActor.id}`), {
+        attendanceSchedule: val
+      })
+      
+      // Jika ada nilai baru dan belum ada di savedSessionsList, simpan juga ke settings
+      if (val && !savedSessionsList.includes(val)) {
+        await update(ref(database, 'settings'), {
+          attendance_sessions: [...savedSessionsList, val]
+        })
+      }
+
+      toast({
+        title: val ? "Sesi Berhasil Diatur" : "Sesi Dikosongkan",
+        description: `${sessionModalActor.fullName}: ${val || 'Tanpa Sesi'}`
+      })
+      playSound('success', 0.4)
+      setSessionModalActor(null)
+    } catch (err: any) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal", description: err.message })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -892,14 +1072,16 @@ function DaftarHadirContent() {
       .sort((a, b) => b.count - a.count)
   }, [verifiedActorsList])
 
-  // Distinct Schedules (Daftar Sesi yang ada di data)
+  // Distinct Schedules (Daftar Sesi Dinamis - Kosong secara default sampai ditambahkan user)
   const distinctSchedules = useMemo(() => {
     const set = new Set<string>()
-    set.add("Sesi 1 (08.00 - 10.00 WIB)")
-    set.add("Sesi 2 (10.00 - 12.00 WIB)")
-    set.add("Sesi 3 (13.00 - 15.00 WIB)")
-    set.add("Sesi 4 (15.00 - 17.00 WIB)")
-    
+
+    // 1. Ambil dari sesi yang pernah disimpan di settings/attendance_sessions
+    savedSessionsList.forEach(s => {
+      if (s && s.trim()) set.add(s.trim())
+    })
+
+    // 2. Ambil dari peserta yang memiliki jadwal sesi aktif
     verifiedActorsList.forEach(a => {
       const s = (a as any).attendanceSchedule
       if (s && typeof s === 'string' && s.trim()) {
@@ -907,7 +1089,7 @@ function DaftarHadirContent() {
       }
     })
     return Array.from(set)
-  }, [verifiedActorsList])
+  }, [savedSessionsList, verifiedActorsList])
 
   // Hitung jumlah per-kategori tab kehadiran
   const counts = useMemo(() => {
@@ -2153,12 +2335,27 @@ function DaftarHadirContent() {
               }}
               className="h-8 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer shadow-2xs"
             >
-              <option value="semua">Semua Sesi</option>
+              <option value="semua">Semua Sesi {distinctSchedules.length === 0 ? "(Kosong)" : `(${distinctSchedules.length})`}</option>
               {distinctSchedules.map(sch => (
                 <option key={sch} value={sch}>{sch}</option>
               ))}
               <option value="belum_diatur">-- Belum Terjadwal Sesi --</option>
             </select>
+
+            {/* Tombol Pintas Tambah Sesi */}
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                setNewSessionInput("")
+                setShowAddSessionModal(true)
+              }}
+              className="h-8 px-2 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white gap-1 shadow-2xs rounded-lg cursor-pointer"
+              title="Tambah sesi baru ke daftar"
+            >
+              <Plus className="w-3 h-3" />
+              <span className="hidden sm:inline">Tambah Sesi</span>
+            </Button>
           </div>
 
           {/* Filter Kecamatan */}
@@ -2220,8 +2417,36 @@ function DaftarHadirContent() {
           )}
         </div>
 
-        {/* Tombol Atur Jadwal & Meja (Bagi Batch) */}
-        <div className="flex items-center gap-2">
+        {/* Tombol Aksi Sesi, Meja & Import */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Tombol Aksi: Tambah Sesi */}
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              setNewSessionInput("")
+              setShowAddSessionModal(true)
+            }}
+            className="h-8 px-2.5 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white gap-1 rounded-lg cursor-pointer shadow-2xs"
+            title="Tambah Sesi Kehadiran"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Tambah Sesi</span>
+          </Button>
+
+          {/* Tombol Aksi: Kosongkan Sesi */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowClearScheduleDialog(true)}
+            className="h-8 px-2.5 text-xs font-bold border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:hover:bg-rose-950/40 gap-1 rounded-lg cursor-pointer shadow-2xs"
+            title="Kosongkan seluruh sesi kehadiran peserta"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Kosongkan Sesi</span>
+          </Button>
+
           <Button
             type="button"
             variant="outline"
@@ -3326,6 +3551,246 @@ function DaftarHadirContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ─── MODAL DIALOG: TAMBAH & KELOLA SESI ─── */}
+      <Dialog open={showAddSessionModal} onOpenChange={setShowAddSessionModal}>
+        <DialogContent className="max-w-md rounded-2xl p-5 sm:p-6">
+          <DialogHeader className="pr-8">
+            <DialogTitle className="text-amber-600 dark:text-amber-400 font-black uppercase text-sm sm:text-base flex items-center gap-2">
+              <Clock className="w-5 h-5 shrink-0" />
+              <span>Tambah Sesi Kehadiran</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 mt-1">
+              Tambahkan sesi kehadiran baru ke dalam sistem atau terapkan langsung ke peserta yang sedang tampil.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-2">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                Nama Sesi / Jadwal Waktu
+              </label>
+              <Input
+                value={newSessionInput}
+                onChange={(e) => setNewSessionInput(e.target.value)}
+                placeholder="Contoh: Sesi 1 (08.00 - 10.00 WIB)"
+                className="text-xs font-semibold h-10"
+                autoFocus
+              />
+
+              {/* Tombol Pintas Preset Sesi Standar */}
+              <div className="pt-1.5">
+                <span className="text-[10px] text-muted-foreground font-bold uppercase block mb-1">
+                  Pilihan Pintas (Klik untuk mengisi):
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {[
+                    "Sesi 1 (08.00 - 10.00 WIB)",
+                    "Sesi 2 (10.00 - 12.00 WIB)",
+                    "Sesi 3 (13.00 - 15.00 WIB)",
+                    "Sesi 4 (15.00 - 17.00 WIB)",
+                    "Sesi Pagi (08.30 - 11.30 WIB)",
+                    "Sesi Siang (13.30 - 16.30 WIB)"
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setNewSessionInput(preset)}
+                      className="text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 px-2 py-1 rounded-md transition-colors cursor-pointer"
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Pilihan Penerapan */}
+            <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-200 block">
+                Target Penerapan:
+              </label>
+              <div className="space-y-2 text-xs">
+                <label className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="applySessionTarget"
+                    value="list_only"
+                    checked={applySessionTarget === 'list_only'}
+                    onChange={() => setApplySessionTarget('list_only')}
+                    className="accent-amber-600"
+                  />
+                  <span>Hanya simpan ke daftar pilihan sesi (peserta tetap kosong)</span>
+                </label>
+
+                <label className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="applySessionTarget"
+                    value="filtered_actors"
+                    checked={applySessionTarget === 'filtered_actors'}
+                    onChange={() => setApplySessionTarget('filtered_actors')}
+                    className="accent-amber-600"
+                  />
+                  <span>Terapkan langsung ke <strong>{filteredActors.length} pelaku usaha</strong> yang sedang tampil</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Daftar Sesi yang Saat Ini Tersimpan */}
+            {savedSessionsList.length > 0 && (
+              <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-1.5">
+                <span className="text-[10px] text-muted-foreground font-bold uppercase block">
+                  Daftar Sesi Tersimpan ({savedSessionsList.length}):
+                </span>
+                <div className="max-h-28 overflow-y-auto space-y-1 divide-y divide-slate-100 dark:divide-zinc-800 border rounded-lg p-1.5">
+                  {savedSessionsList.map(s => (
+                    <div key={s} className="flex items-center justify-between text-xs py-1 px-1">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{s}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSavedSession(s)}
+                        className="text-rose-500 hover:text-rose-700 text-[10px] font-bold px-1.5 py-0.5 rounded hover:bg-rose-50"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="mt-4 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddSessionModal(false)}
+              className="text-xs font-bold"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleAddSession}
+              disabled={!newSessionInput.trim() || isSubmitting}
+              className="text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white gap-1.5 shadow-xs"
+            >
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              <span>Simpan Sesi</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── MODAL DIALOG: ATUR SESI SATUAN (PER PESERTA) ─── */}
+      <Dialog open={Boolean(sessionModalActor)} onOpenChange={(open) => { if (!open) setSessionModalActor(null) }}>
+        <DialogContent className="max-w-md rounded-2xl p-5 sm:p-6">
+          <DialogHeader className="pr-8">
+            <DialogTitle className="text-amber-600 dark:text-amber-400 font-black uppercase text-sm flex items-center gap-2">
+              <Clock className="w-4 h-4 shrink-0" />
+              <span>Atur Sesi Peserta</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-600 mt-1">
+              Pilih atau ketik jadwal sesi kehadiran untuk <strong>{sessionModalActor?.fullName}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 mt-2">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                Pilih atau Ketik Sesi Waktu:
+              </label>
+              <Input
+                value={selectedSingleSession}
+                onChange={(e) => setSelectedSingleSession(e.target.value)}
+                placeholder="Contoh: Sesi 1 (08.00 - 10.00 WIB)"
+                className="text-xs font-semibold h-10"
+              />
+            </div>
+
+            {/* Pilihan Sesi yang Tersedia */}
+            <div className="space-y-1">
+              <span className="text-[10px] text-muted-foreground font-bold uppercase block">
+                Pilihan Cepat Sesi:
+              </span>
+              <div className="flex flex-wrap gap-1">
+                {Array.from(new Set([
+                  ...distinctSchedules,
+                  "Sesi 1 (08.00 - 10.00 WIB)",
+                  "Sesi 2 (10.00 - 12.00 WIB)",
+                  "Sesi 3 (13.00 - 15.00 WIB)",
+                  "Sesi 4 (15.00 - 17.00 WIB)"
+                ])).map((sch) => (
+                  <button
+                    key={sch}
+                    type="button"
+                    onClick={() => setSelectedSingleSession(sch)}
+                    className={cn(
+                      "text-[10.5px] font-bold px-2 py-1 rounded-md border transition-all cursor-pointer",
+                      selectedSingleSession === sch
+                        ? "bg-amber-600 text-white border-amber-600"
+                        : "bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:bg-amber-50 hover:border-amber-300"
+                    )}
+                  >
+                    {sch}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-4 gap-2 flex-row justify-between sm:justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSelectedSingleSession("")
+                handleSaveSingleActorSession()
+              }}
+              className="text-xs font-bold text-rose-600 hover:bg-rose-50 border-rose-200"
+            >
+              Kosongkan Sesi Ini
+            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setSessionModalActor(null)}
+                className="text-xs font-bold"
+              >
+                Batal
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSaveSingleActorSession}
+                disabled={isSubmitting}
+                className="text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white gap-1.5 shadow-xs"
+              >
+                {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                <span>Simpan Sesi</span>
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── CONFIRM DIALOG: KOSONGKAN SELURUH SESI ─── */}
+      <ConfirmDialog
+        open={showClearScheduleDialog}
+        onOpenChange={setShowClearScheduleDialog}
+        title="Kosongkan Seluruh Sesi Kehadiran"
+        description="Apakah Anda yakin ingin mengosongkan seluruh jadwal sesi kehadiran untuk semua peserta? Seluruh data sesi dan daftar pilihan sesi akan dibersihkan kembali ke kondisi kosong."
+        onConfirm={executeClearAllSchedules}
+        confirmText="Ya, Kosongkan Semua Sesi"
+        variant="destructive"
+        icon={<Trash2 className="w-8 h-8 text-destructive" />}
+      />
 
       {/* ─── CONFIRM DIALOG: TANDAI HADIR SEMUA ─── */}
       <ConfirmDialog
