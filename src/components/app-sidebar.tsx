@@ -210,6 +210,7 @@ export function AppSidebar() {
           "/verifikasi-dinas-berkas",
           "/hasil-verifikasi",
           "/daftar-hadir",
+          "/cek-daftar-hadir",
           "/gbas"
         ]
       },

@@ -26,7 +26,14 @@ export function MobileBottomNav() {
   const { toggleSidebar, openMobile } = useSidebar();
 
   // Do not show on login, fullscreen layar informasi, or survey portal
-  if (pathname === '/login' || pathname?.startsWith('/layar-informasi')) {
+  if (
+    pathname === '/login' || 
+    pathname?.startsWith('/layar-informasi') ||
+    pathname === '/cek-daftar-hadir' ||
+    pathname?.startsWith('/cek-daftar-hadir') ||
+    pathname === '/daftar-hadir/cek' ||
+    pathname?.startsWith('/daftar-hadir/cek')
+  ) {
     return null;
   }
 

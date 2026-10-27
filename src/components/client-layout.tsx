@@ -74,11 +74,13 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
   const isLoginPage = pathname === '/login';
   const isCekDataPage = pathname === '/cek-data' || pathname?.startsWith('/cek-data');
+  const isCekDaftarHadirPage = pathname === '/cek-daftar-hadir' || pathname?.startsWith('/cek-daftar-hadir') || pathname === '/daftar-hadir/cek' || pathname?.startsWith('/daftar-hadir/cek');
   const isLayarInformasiPage = pathname === '/layar-informasi' || pathname?.startsWith('/layar-informasi');
+  const isSpecialFullscreenPage = isLayarInformasiPage || isCekDaftarHadirPage;
   const isPortalSurveyPage = pathname === '/portal-survey' || pathname?.startsWith('/portal-survey');
-  const isDaftarHadirPage = pathname === '/daftar-hadir' || pathname?.startsWith('/daftar-hadir');
+  const isDaftarHadirPage = (pathname === '/daftar-hadir' || pathname?.startsWith('/daftar-hadir')) && !isCekDaftarHadirPage;
   const isPendaftaranPage = (pathname === '/pendaftaran' || pathname?.startsWith('/pendaftaran') || pathname === '/daftar' || pathname === '/daftar/' || pathname?.startsWith('/daftar/')) && !isDaftarHadirPage;
-  const isPublicPage = isLoginPage || isCekDataPage || isLayarInformasiPage || isPendaftaranPage;
+  const isPublicPage = isLoginPage || isCekDataPage || isSpecialFullscreenPage || isPendaftaranPage;
   const isRootPage = pathname === '/';
   const isAdmin = profile?.role === 'admin' || (user?.email?.toLowerCase() === 'agus@umkm.id');
   const isStaff = profile?.role === 'staff';
@@ -262,6 +264,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       case '/rejected': return 'Data Ditolak';
       case '/verify-actor': return 'Verifikasi Admin';
       case '/daftar-hadir': return 'Daftar Hadir';
+      case '/cek-daftar-hadir':
+      case '/daftar-hadir/cek': return 'Layar Pengecekan Hadir';
       case '/input': return 'Input Data';
       case '/data-hold': return 'Data Hold';
       case '/pendaftaran':
@@ -288,11 +292,11 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         <div className="flex h-[100dvh] w-full overflow-hidden p-0">
           <div className={cn(
             "flex w-full h-full overflow-hidden transition-all duration-300",
-            isLoginPage || isLayarInformasiPage || isPortalSurveyPage
+            isLoginPage || isSpecialFullscreenPage || isPortalSurveyPage
               ? "rounded-none max-w-full"
               : "w-full rounded-none bg-white dark:bg-slate-900"
           )}>
-            {user && !isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (
+            {user && !isLoginPage && !isSpecialFullscreenPage && !isPortalSurveyPage && (
               <AppSidebar />
             )}
 
@@ -301,7 +305,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               {user && !isLoginPage && <MessageNotification />}
               <Toaster />
 
-              {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (
+              {!isLoginPage && !isSpecialFullscreenPage && !isPortalSurveyPage && (
                 <>
                   <header className="relative flex items-center justify-between px-3 sm:px-6 h-14 sm:h-16 border-b border-slate-100 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shrink-0 print:hidden gap-2 sm:gap-3">
                     {/* Breadcrumbs matching Growly LMS */}
@@ -412,19 +416,19 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
               <main className={cn(
                 "flex-1 bg-white dark:bg-slate-900 print:bg-white relative z-0 isolate flex flex-col custom-scrollbar",
-                isLoginPage ? "overflow-hidden" : isPortalSurveyPage ? "overflow-y-auto overflow-x-hidden" : isLayarInformasiPage ? "overflow-y-auto lg:overflow-hidden" : "overflow-y-auto"
+                isLoginPage ? "overflow-hidden" : isPortalSurveyPage ? "overflow-y-auto overflow-x-hidden" : isSpecialFullscreenPage ? "overflow-hidden" : "overflow-y-auto"
               )}>
                 <div key={pathname} className={cn(
                   "w-full relative z-0 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out",
                   isLoginPage ? "flex-1 flex flex-col min-h-0 p-0 overflow-hidden" : 
                   isPortalSurveyPage ? "p-0 min-h-full flex-1 flex flex-col" :
-                  isLayarInformasiPage ? "p-0 min-h-full lg:h-full lg:max-h-full flex-1 flex flex-col overflow-y-auto lg:overflow-hidden" :
+                  isSpecialFullscreenPage ? "p-0 min-h-full h-full max-h-full flex-1 flex flex-col overflow-hidden" :
                   isDaftarHadirPage ? "p-0 min-h-full w-full max-w-none" :
                   isCekDataPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-7xl mx-auto" :
                   isPendaftaranPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-5xl mx-auto" :
                   "p-3 sm:p-5 lg:p-6 min-h-full"
                 )}>
-                  {!isRootPage && pathname !== '/dashboard' && !isKoordinator && !isLoginPage && !isPortalSurveyPage && !isLayarInformasiPage && (
+                  {!isRootPage && pathname !== '/dashboard' && !isKoordinator && !isLoginPage && !isPortalSurveyPage && !isSpecialFullscreenPage && (
                     <div className={cn(
                       "mb-3.5 flex items-center justify-between gap-3 print:hidden",
                       isDaftarHadirPage && "px-1 sm:px-2 pt-2 mb-2"
@@ -441,14 +445,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   {children}
 
                   {/* Safe Area Spacer for Mobile Bottom Navigation */}
-                  {!isLoginPage && !isLayarInformasiPage && (
+                  {!isLoginPage && !isSpecialFullscreenPage && (
                     <div className="h-16 md:hidden shrink-0 pointer-events-none" aria-hidden="true" />
                   )}
                 </div>
               </main>
 
               {/* Running Text at Bottom of Page */}
-              {!isLoginPage && !isLayarInformasiPage && (
+              {!isLoginPage && !isSpecialFullscreenPage && (
                 <RunningText />
               )}
             </div>

@@ -52,6 +52,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 
 // Icons
 import {
+  ExternalLink,
   ClipboardCheck,
   CheckCircle2,
   XCircle,
@@ -1914,6 +1915,19 @@ function DaftarHadirContent() {
               <span className="font-bold text-slate-700 dark:text-slate-300">{counts.semua} Total</span>
             </div>
 
+            {/* Tombol Buka Layar Landscape Petugas */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => window.open('/cek-daftar-hadir', '_blank')}
+              className="text-xs font-bold gap-1.5 border-sky-300 text-sky-700 bg-sky-50 hover:bg-sky-100"
+              title="Buka Layar Pengecekan Petugas Orientasi Landscape"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Layar Landscape</span>
+            </Button>
+
             {/* Jika admin, bisa beralih kembali ke mode tabel */}
             {isAdmin && (
               <Button
@@ -2388,6 +2402,19 @@ function DaftarHadirContent() {
           >
             <ScanLine className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Mode Scan NIK</span>
+          </Button>
+
+          {/* Tombol Layar Landscape Petugas */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => window.open('/cek-daftar-hadir', '_blank')}
+            className="h-10 px-3 text-xs font-bold border-sky-300 text-sky-700 bg-sky-50 hover:bg-sky-100 gap-1.5 shadow-2xs"
+            title="Buka Layar Pengecekan Petugas Orientasi Landscape"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Layar Landscape</span>
           </Button>
 
           {/* Tombol Cetak Presensi */}

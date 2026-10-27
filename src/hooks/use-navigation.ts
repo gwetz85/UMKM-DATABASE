@@ -23,6 +23,7 @@ import {
   Info,
   FileDown,
   Tv,
+  ScanLine,
   Store,
   PauseCircle
 } from "lucide-react"
@@ -78,6 +79,14 @@ export function useNavigation() {
           show: true,
           color: "#06b6d4",
           description: "Presensi dan Kehadiran Pelaku Usaha Real-Time"
+        },
+        {
+          name: "Layar Cek Hadir (Landscape)",
+          href: "/cek-daftar-hadir",
+          icon: ScanLine,
+          show: true,
+          color: "#3b82f6",
+          description: "Layar Pengecekan Hadir Orientasi Landscape"
         }
       ]
     }
@@ -223,6 +232,14 @@ export function useNavigation() {
       show: isAdmin || isPetugasAbsensi,
       color: "#06b6d4",
       description: "Presensi dan Kehadiran Pelaku Usaha Real-Time"
+    },
+    {
+      name: "Layar Cek Hadir (Landscape)",
+      href: "/cek-daftar-hadir",
+      icon: ScanLine,
+      show: isAdmin || isPetugasAbsensi,
+      color: "#3b82f6",
+      description: "Layar Pengecekan Hadir Orientasi Landscape"
     },
     {
       name: "GBAS",
