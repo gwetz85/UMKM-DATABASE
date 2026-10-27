@@ -827,7 +827,7 @@ function CekDaftarHadirContent() {
       <style jsx>{`
         .animate-marquee {
           display: inline-flex;
-          animation: marquee-scroll 150s linear infinite;
+          animation: marquee-scroll 80s linear infinite;
         }
         .animate-marquee:hover {
           animation-play-state: paused;
