@@ -137,6 +137,31 @@ function DaftarHadirContent() {
   const [viewMode, setViewMode] = useState<'scanner' | 'table'>('table')
 
   // ─── STATE IMPORT EXCEL JADWAL & POSISI MEJA ───
+  // ─── MEJA ABSENSI MANAGEMENT (FIREBASE & DYNAMIC DESKS) ───
+  const desksRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'settings/attendance_desks')
+  }, [database])
+  const { data: rawSavedDesks } = useObject(desksRef)
+
+  const savedDesksList: string[] = useMemo(() => {
+    if (!rawSavedDesks) return []
+    if (Array.isArray(rawSavedDesks)) {
+      return rawSavedDesks.filter(d => typeof d === 'string' && d.trim().length > 0)
+    }
+    if (typeof rawSavedDesks === 'object') {
+      return Object.values(rawSavedDesks).filter((d): d is string => typeof d === 'string' && d.trim().length > 0)
+    }
+    return []
+  }, [rawSavedDesks])
+
+  const [showAddDeskModal, setShowAddDeskModal] = useState(false)
+  const [newDeskInput, setNewDeskInput] = useState("")
+  const [applyDeskTarget, setApplyDeskTarget] = useState<'list_only' | 'filtered_actors'>('list_only')
+  const [showClearDeskDialog, setShowClearDeskDialog] = useState(false)
+  const [deskModalActor, setDeskModalActor] = useState<BusinessActor | null>(null)
+  const [selectedSingleDesk, setSelectedSingleDesk] = useState("")
+
   // ─── SESI KEHADIRAN MANAGEMENT (FIREBASE & DYNAMIC SESSIONS) ───
   const sessionsRef = useMemoFirebase(() => {
     if (!database) return null
@@ -704,7 +729,7 @@ function DaftarHadirContent() {
           kecamatan: actor.kecamatan || "-",
           schedule: (actor as any).attendanceSchedule || "",
           coordinator: normalizeCoordinator(actor.coordinator) || "-",
-          desk: (actor as any).attendanceDesk || getDeskByKecamatan(actor.kecamatan)
+          desk: (actor as any).attendanceDesk || ""
         })
       })
 
@@ -728,6 +753,158 @@ function DaftarHadirContent() {
     } catch (err) {
       console.error(err)
       toast({ variant: "destructive", title: "Gagal", description: "Tidak dapat mengunduh template Excel." })
+    }
+  }
+
+  // ─── FUNGSI TAMBAH DAN KELOLA MEJA ───
+  const handleAddDesk = async () => {
+    const deskName = newDeskInput.trim()
+    if (!deskName) {
+      toast({ variant: "destructive", title: "Nama Meja Kosong", description: "Silakan masukkan nama meja atau pilih dari tombol pintas." })
+      return
+    }
+    if (!database || !user) return
+
+    setIsSubmitting(true)
+    try {
+      // 1. Simpan ke settings/attendance_desks
+      const currentList = Array.from(new Set([...savedDesksList, deskName]))
+      await update(ref(database, 'settings'), {
+        attendance_desks: currentList
+      })
+
+      // 2. Jika dipilih untuk diterapkan ke data yang tampil
+      if (applyDeskTarget === 'filtered_actors' && filteredActors.length > 0) {
+        const updates: Record<string, any> = {}
+        filteredActors.forEach(actor => {
+          updates[`businessActors/${actor.id}/attendanceDesk`] = deskName
+        })
+
+        const entries = Object.entries(updates)
+        const chunkSize = 400
+        for (let i = 0; i < entries.length; i += chunkSize) {
+          const chunk = Object.fromEntries(entries.slice(i, i + chunkSize))
+          await update(ref(database), chunk)
+        }
+
+        toast({
+          title: "Meja Berhasil Diterapkan!",
+          description: `Posisi "${deskName}" diterapkan ke ${filteredActors.length} pelaku usaha.`
+        })
+      } else {
+        toast({
+          title: "Meja Ditambahkan",
+          description: `Posisi "${deskName}" berhasil ditambahkan ke daftar pilihan meja.`
+        })
+      }
+
+      playSound('success', 0.4)
+      setNewDeskInput("")
+      setShowAddDeskModal(false)
+    } catch (err: any) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal Menambahkan Meja", description: err.message || "Terjadi kesalahan." })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDeleteSavedDesk = async (deskToDelete: string) => {
+    if (!database || !user) return
+    setIsSubmitting(true)
+    try {
+      const updated = savedDesksList.filter(d => d !== deskToDelete)
+      await update(ref(database, 'settings'), {
+        attendance_desks: updated
+      })
+      toast({ title: "Meja Dihapus", description: `Meja "${deskToDelete}" dihapus dari daftar.` })
+    } catch (err: any) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal", description: err.message })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // ─── FUNGSI KOSONGKAN SELURUH POSISI MEJA ───
+  const executeClearAllDesks = async () => {
+    if (!database || !user) return
+    setIsSubmitting(true)
+    setShowClearDeskDialog(false)
+
+    try {
+      const updates: Record<string, any> = {}
+      verifiedActorsList.forEach(actor => {
+        if ((actor as any).attendanceDesk) {
+          updates[`businessActors/${actor.id}/attendanceDesk`] = null
+        }
+      })
+
+      // Kosongkan juga daftar meja tersimpan di settings
+      await update(ref(database, 'settings'), {
+        attendance_desks: null
+      })
+
+      if (Object.keys(updates).length > 0) {
+        const entries = Object.entries(updates)
+        const chunkSize = 400
+        for (let i = 0; i < entries.length; i += chunkSize) {
+          const chunk = Object.fromEntries(entries.slice(i, i + chunkSize))
+          await update(ref(database), chunk)
+        }
+      }
+
+      logActivity({
+        query: `KOSONGKAN MEJA: Seluruh posisi meja dibersihkan untuk ${verifiedActorsList.length} peserta`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'MODUL DAFTAR HADIR',
+        userId: userProfile?.fullName || user?.email || "Admin"
+      })
+
+      playSound('success', 0.5)
+
+      toast({
+        title: "Seluruh Meja Dikosongkan!",
+        description: "Seluruh posisi meja absensi peserta dan daftar pilihan meja telah dikosongkan."
+      })
+      setSelectedDeskFilter('semua')
+    } catch (err: any) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal", description: err.message || "Gagal mengosongkan meja." })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // ─── FUNGSI SIMPAN MEJA UNTUK 1 PESERTA TERTENTU ───
+  const handleSaveSingleActorDesk = async () => {
+    if (!database || !user || !deskModalActor) return
+    setIsSubmitting(true)
+    try {
+      const val = selectedSingleDesk.trim() || null
+      await update(ref(database, `businessActors/${deskModalActor.id}`), {
+        attendanceDesk: val
+      })
+      
+      if (val && !savedDesksList.includes(val)) {
+        await update(ref(database, 'settings'), {
+          attendance_desks: [...savedDesksList, val]
+        })
+      }
+
+      toast({
+        title: val ? "Posisi Meja Diatur" : "Posisi Meja Dikosongkan",
+        description: `${deskModalActor.fullName}: ${val || 'Tanpa Meja'}`
+      })
+      playSound('success', 0.4)
+      setDeskModalActor(null)
+    } catch (err: any) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal", description: err.message })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -1030,14 +1207,16 @@ function DaftarHadirContent() {
       .slice(0, 5)
   }, [verifiedActorsList])
 
-  // Distinct Desks (Daftar Meja yang ada di data)
+  // Distinct Desks (Daftar Meja Dinamis - Kosong secara default sampai ditambahkan user)
   const distinctDesks = useMemo(() => {
     const set = new Set<string>()
-    set.add("Meja 1 (Kec. Tanjungpinang Barat)")
-    set.add("Meja 2 (Kec. Tanjungpinang Timur)")
-    set.add("Meja 3 (Kec. Bukit Bestari)")
-    set.add("Meja 4 (Kec. Tanjungpinang Kota)")
-    
+
+    // 1. Ambil dari meja yang pernah disimpan di settings/attendance_desks
+    savedDesksList.forEach(d => {
+      if (d && d.trim()) set.add(d.trim())
+    })
+
+    // 2. Ambil dari peserta yang memiliki attendanceDesk aktif
     verifiedActorsList.forEach(a => {
       const d = (a as any).attendanceDesk
       if (d && typeof d === 'string' && d.trim()) {
@@ -1045,7 +1224,7 @@ function DaftarHadirContent() {
       }
     })
     return Array.from(set)
-  }, [verifiedActorsList])
+  }, [savedDesksList, verifiedActorsList])
 
   // Distinct Coordinators list with counts, current desks & schedules
   const coordinatorStats = useMemo(() => {
@@ -2313,7 +2492,7 @@ function DaftarHadirContent() {
               }}
               className="h-8 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer shadow-2xs"
             >
-              <option value="semua">Semua Meja</option>
+              <option value="semua">Semua Meja {distinctDesks.length === 0 ? "(Kosong)" : `(${distinctDesks.length})`}</option>
               {distinctDesks.map(desk => (
                 <option key={desk} value={desk}>{desk}</option>
               ))}
@@ -2404,7 +2583,7 @@ function DaftarHadirContent() {
           )}
         </div>
 
-        {/* Tombol Aksi Sesi, Meja & Import */}
+        {/* Tombol Aksi Sesi & Meja */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Tombol Aksi: Tambah Sesi */}
           <Button
@@ -2421,17 +2600,45 @@ function DaftarHadirContent() {
             <span>+ Tambah Sesi</span>
           </Button>
 
+          {/* Tombol Aksi: Tambah Meja */}
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              setNewDeskInput("")
+              setShowAddDeskModal(true)
+            }}
+            className="h-8 px-2.5 text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white gap-1 rounded-lg cursor-pointer shadow-2xs"
+            title="Tambah Posisi Meja / Loket"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Tambah Meja</span>
+          </Button>
+
           {/* Tombol Aksi: Kosongkan Sesi */}
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => setShowClearScheduleDialog(true)}
-            className="h-8 px-2.5 text-xs font-bold border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:hover:bg-rose-950/40 gap-1 rounded-lg cursor-pointer shadow-2xs"
+            className="h-8 px-2 text-xs font-bold border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:hover:bg-rose-950/40 gap-1 rounded-lg cursor-pointer shadow-2xs"
             title="Kosongkan seluruh sesi kehadiran peserta"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Kosongkan Sesi</span>
+          </Button>
+
+          {/* Tombol Aksi: Kosongkan Meja */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowClearDeskDialog(true)}
+            className="h-8 px-2 text-xs font-bold border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:hover:bg-rose-950/40 gap-1 rounded-lg cursor-pointer shadow-2xs"
+            title="Kosongkan seluruh posisi meja peserta"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Kosongkan Meja</span>
           </Button>
 
 
@@ -3524,6 +3731,250 @@ function DaftarHadirContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ─── MODAL DIALOG: TAMBAH & KELOLA MEJA ─── */}
+      <Dialog open={showAddDeskModal} onOpenChange={setShowAddDeskModal}>
+        <DialogContent className="max-w-md rounded-2xl p-5 sm:p-6">
+          <DialogHeader className="pr-8">
+            <DialogTitle className="text-sky-700 dark:text-sky-400 font-black uppercase text-sm sm:text-base flex items-center gap-2">
+              <MapPin className="w-5 h-5 shrink-0" />
+              <span>Tambah Posisi Meja / Loket</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 mt-1">
+              Tambahkan posisi meja absensi baru ke dalam sistem atau terapkan langsung ke peserta yang sedang tampil.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-2">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                Nama Posisi Meja / Loket
+              </label>
+              <Input
+                value={newDeskInput}
+                onChange={(e) => setNewDeskInput(e.target.value)}
+                placeholder="Contoh: Meja 1 (Kec. Tanjungpinang Barat)"
+                className="text-xs font-semibold h-10"
+                autoFocus
+              />
+
+              {/* Tombol Pintas Preset Meja Standar */}
+              <div className="pt-1.5">
+                <span className="text-[10px] text-muted-foreground font-bold uppercase block mb-1">
+                  Pilihan Pintas (Klik untuk mengisi):
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {[
+                    "Meja 1 (Kec. Tanjungpinang Barat)",
+                    "Meja 2 (Kec. Tanjungpinang Timur)",
+                    "Meja 3 (Kec. Bukit Bestari)",
+                    "Meja 4 (Kec. Tanjungpinang Kota)",
+                    "Meja 1",
+                    "Meja 2",
+                    "Meja 3",
+                    "Meja 4",
+                    "Loket 1",
+                    "Loket 2"
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setNewDeskInput(preset)}
+                      className="text-[10px] font-bold bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 px-2 py-1 rounded-md transition-colors cursor-pointer"
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Pilihan Penerapan */}
+            <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-200 block">
+                Target Penerapan:
+              </label>
+              <div className="space-y-2 text-xs">
+                <label className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="applyDeskTarget"
+                    value="list_only"
+                    checked={applyDeskTarget === 'list_only'}
+                    onChange={() => setApplyDeskTarget('list_only')}
+                    className="accent-sky-600"
+                  />
+                  <span>Hanya simpan ke daftar pilihan meja (peserta tetap kosong)</span>
+                </label>
+
+                <label className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="applyDeskTarget"
+                    value="filtered_actors"
+                    checked={applyDeskTarget === 'filtered_actors'}
+                    onChange={() => setApplyDeskTarget('filtered_actors')}
+                    className="accent-sky-600"
+                  />
+                  <span>Terapkan langsung ke <strong>{filteredActors.length} pelaku usaha</strong> yang sedang tampil</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Daftar Meja yang Saat Ini Tersimpan */}
+            {savedDesksList.length > 0 && (
+              <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-1.5">
+                <span className="text-[10px] text-muted-foreground font-bold uppercase block">
+                  Daftar Meja Tersimpan ({savedDesksList.length}):
+                </span>
+                <div className="max-h-28 overflow-y-auto space-y-1 divide-y divide-slate-100 dark:divide-zinc-800 border rounded-lg p-1.5">
+                  {savedDesksList.map(d => (
+                    <div key={d} className="flex items-center justify-between text-xs py-1 px-1">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{d}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSavedDesk(d)}
+                        className="text-rose-500 hover:text-rose-700 text-[10px] font-bold px-1.5 py-0.5 rounded hover:bg-rose-50"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="mt-4 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddDeskModal(false)}
+              className="text-xs font-bold"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleAddDesk}
+              disabled={!newDeskInput.trim() || isSubmitting}
+              className="text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white gap-1.5 shadow-xs"
+            >
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              <span>Simpan Meja</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── MODAL DIALOG: ATUR MEJA SATUAN (PER PESERTA) ─── */}
+      <Dialog open={Boolean(deskModalActor)} onOpenChange={(open) => { if (!open) setDeskModalActor(null) }}>
+        <DialogContent className="max-w-md rounded-2xl p-5 sm:p-6">
+          <DialogHeader className="pr-8">
+            <DialogTitle className="text-sky-700 dark:text-sky-400 font-black uppercase text-sm flex items-center gap-2">
+              <MapPin className="w-4 h-4 shrink-0" />
+              <span>Atur Posisi Meja Peserta</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-600 mt-1">
+              Pilih atau ketik posisi meja absensi untuk <strong>{deskModalActor?.fullName}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 mt-2">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                Pilih atau Ketik Posisi Meja:
+              </label>
+              <Input
+                value={selectedSingleDesk}
+                onChange={(e) => setSelectedSingleDesk(e.target.value)}
+                placeholder="Contoh: Meja 1 (Kec. Tanjungpinang Barat)"
+                className="text-xs font-semibold h-10"
+              />
+            </div>
+
+            {/* Pilihan Meja yang Tersedia */}
+            <div className="space-y-1">
+              <span className="text-[10px] text-muted-foreground font-bold uppercase block">
+                Pilihan Cepat Meja:
+              </span>
+              <div className="flex flex-wrap gap-1">
+                {Array.from(new Set([
+                  ...distinctDesks,
+                  "Meja 1 (Kec. Tanjungpinang Barat)",
+                  "Meja 2 (Kec. Tanjungpinang Timur)",
+                  "Meja 3 (Kec. Bukit Bestari)",
+                  "Meja 4 (Kec. Tanjungpinang Kota)"
+                ])).map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setSelectedSingleDesk(d)}
+                    className={cn(
+                      "text-[10.5px] font-bold px-2 py-1 rounded-md border transition-all cursor-pointer",
+                      selectedSingleDesk === d
+                        ? "bg-sky-600 text-white border-sky-600"
+                        : "bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:bg-sky-50 hover:border-sky-300"
+                    )}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-4 gap-2 flex-row justify-between sm:justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSelectedSingleDesk("")
+                handleSaveSingleActorDesk()
+              }}
+              className="text-xs font-bold text-rose-600 hover:bg-rose-50 border-rose-200"
+            >
+              Kosongkan Meja Ini
+            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setDeskModalActor(null)}
+                className="text-xs font-bold"
+              >
+                Batal
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSaveSingleActorDesk}
+                disabled={isSubmitting}
+                className="text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white gap-1.5 shadow-xs"
+              >
+                {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                <span>Simpan Meja</span>
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── CONFIRM DIALOG: KOSONGKAN SELURUH MEJA ─── */}
+      <ConfirmDialog
+        open={showClearDeskDialog}
+        onOpenChange={setShowClearDeskDialog}
+        title="Kosongkan Seluruh Posisi Meja"
+        description="Apakah Anda yakin ingin mengosongkan seluruh penetapan posisi meja absensi untuk semua peserta? Seluruh data meja dan daftar pilihan meja akan dibersihkan kembali ke kondisi kosong."
+        onConfirm={executeClearAllDesks}
+        confirmText="Ya, Kosongkan Semua Meja"
+        variant="destructive"
+        icon={<Trash2 className="w-8 h-8 text-destructive" />}
+      />
 
       {/* ─── MODAL DIALOG: TAMBAH & KELOLA SESI ─── */}
       <Dialog open={showAddSessionModal} onOpenChange={setShowAddSessionModal}>
