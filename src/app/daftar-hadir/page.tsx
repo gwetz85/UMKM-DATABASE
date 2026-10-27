@@ -588,8 +588,8 @@ function DaftarHadirContent() {
   }
 
   return (
-    // ─── TAMPILAN FULL PANEL TANPA JARAK LEBAR KIRI DAN KANAN (EDGE TO EDGE) ───
-    <div className="w-full space-y-3.5 p-0">
+    // ─── TAMPILAN FULL-WIDTH (w-full px-6 mx-auto) ───
+    <div className="w-full px-6 mx-auto space-y-4 pb-8">
       
       {/* ─── Header & Toolbar Menyatu Satu Baris (Persis Layout Gambar 2) ─── */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 print:hidden">

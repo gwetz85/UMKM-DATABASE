@@ -419,11 +419,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   isLayarInformasiPage ? "p-0 min-h-full lg:h-full lg:max-h-full flex-1 flex flex-col overflow-y-auto lg:overflow-hidden" :
                   isCekDataPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-7xl mx-auto" :
                   isPendaftaranPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-5xl mx-auto" :
-                  pathname === '/daftar-hadir' ? "p-1 sm:p-2 min-h-full w-full" :
+                  pathname === '/daftar-hadir' ? "p-0 min-h-full w-full" :
                   "p-3 sm:p-5 lg:p-6 min-h-full"
                 )}>
                   {!isRootPage && pathname !== '/dashboard' && !isKoordinator && !isLoginPage && !isPortalSurveyPage && !isLayarInformasiPage && (
-                    <div className="mb-3.5 flex items-center justify-between gap-3 print:hidden">
+                    <div className={cn(
+                      "mb-3.5 flex items-center justify-between gap-3 print:hidden",
+                      pathname === '/daftar-hadir' && "px-6 pt-4 mb-2"
+                    )}>
                       <button
                         onClick={() => router.push('/')}
                         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all active:scale-95 text-xs font-bold"
