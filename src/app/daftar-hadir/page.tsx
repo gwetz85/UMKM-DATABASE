@@ -735,219 +735,213 @@ function DaftarHadirContent() {
         <p className="text-[10px] text-slate-500 mt-1">Dicetak pada: {new Date().toLocaleDateString('id-ID', { dateStyle: 'full' })}</p>
       </div>
 
-      {/* ─── TABEL UTAMA: TAMPILAN MENYELURUH FULL-WIDTH (TANPA TERPOTONG) ─── */}
-      <Card className="border-y sm:border border-slate-200/80 dark:border-zinc-800 shadow-none sm:shadow-xs overflow-hidden bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm rounded-none sm:rounded-xl w-full">
-        <CardContent className="p-0 w-full">
-          {isActorsLoading ? (
-            <div className="py-24 flex flex-col items-center justify-center gap-3">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
-                Memuat data presensi pelaku usaha terverifikasi...
-              </p>
-            </div>
-          ) : filteredActors.length === 0 ? (
-            <div className="py-20 text-center text-muted-foreground text-xs font-bold uppercase tracking-wider">
-              Tidak ada data pelaku usaha terverifikasi pada kategori ini.
-            </div>
-          ) : (
-            <div className="w-full overflow-x-auto">
-              <Table className="w-full table-auto">
-                {/* Header Tabel Menyeluruh */}
-                <TableHeader className="bg-muted/40 dark:bg-zinc-800/50">
-                  <TableRow className="border-b border-slate-200 dark:border-zinc-800">
-                    <TableHead className="w-10 text-center font-bold text-xs uppercase py-2.5 px-1 pl-2">No</TableHead>
-                    <TableHead className="font-bold text-xs uppercase py-2.5 px-2">Nama Lengkap</TableHead>
-                    <TableHead className="text-center font-bold text-xs uppercase py-2.5 px-1.5">NIK</TableHead>
-                    <TableHead className="text-center font-bold text-xs uppercase py-2.5 px-1.5">Kategori</TableHead>
-                    <TableHead className="font-bold text-xs uppercase py-2.5 px-2">Usaha</TableHead>
-                    <TableHead className="text-center font-bold text-xs uppercase py-2.5 px-1.5">Koordinator</TableHead>
-                    <TableHead className="text-center font-bold text-xs uppercase py-2.5 px-1.5">Status Verifikasi</TableHead>
-                    <TableHead className="text-center font-bold text-xs uppercase py-2.5 px-2">Kehadiran</TableHead>
-                    <TableHead className="text-right font-bold text-xs uppercase py-2.5 px-2 pr-3 print:hidden">Aksi</TableHead>
-                    <TableHead className="w-28 font-bold text-xs uppercase py-2.5 text-center hidden print:table-cell">Tanda Tangan</TableHead>
-                  </TableRow>
-                </TableHeader>
+      {/* ─── TABEL UTAMA: PERSIS SEPERTI GAMBAR 1 (MENYELURUH FULL-WIDTH TANPA TERPOTONG) ─── */}
+      <div className="w-full p-0 m-0 overflow-x-auto bg-white dark:bg-zinc-900 border-y border-slate-200/90 dark:border-zinc-800 shadow-2xs">
+        {isActorsLoading ? (
+          <div className="py-24 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
+              Memuat data presensi pelaku usaha terverifikasi...
+            </p>
+          </div>
+        ) : filteredActors.length === 0 ? (
+          <div className="py-20 text-center text-muted-foreground text-xs font-bold uppercase tracking-wider">
+            Tidak ada data pelaku usaha terverifikasi pada kategori ini.
+          </div>
+        ) : (
+          <table className="w-full text-xs border-collapse">
+            {/* Header Tabel Persis Desain Gambar 1 */}
+            <thead className="bg-[#E5E7EB] dark:bg-zinc-800 text-slate-900 dark:text-slate-100 border-b border-slate-300 dark:border-zinc-700">
+              <tr className="divide-x divide-slate-300 dark:divide-zinc-700">
+                <th className="w-[4%] text-center font-bold text-[11px] uppercase py-2.5 px-1">NO</th>
+                <th className="w-[17%] text-center font-bold text-[11px] uppercase py-2.5 px-2 leading-tight">NAMA<br/>LENGKAP</th>
+                <th className="w-[14%] text-center font-bold text-[11px] uppercase py-2.5 px-1.5">NIK</th>
+                <th className="w-[9%] text-center font-bold text-[11px] uppercase py-2.5 px-1">KATEGORI</th>
+                <th className="w-[17%] text-center font-bold text-[11px] uppercase py-2.5 px-2">USAHA</th>
+                <th className="w-[10%] text-center font-bold text-[11px] uppercase py-2.5 px-1">KOORDINATOR</th>
+                <th className="w-[11%] text-center font-bold text-[11px] uppercase py-2.5 px-1 leading-tight">STATUS<br/>VERIFIKASI</th>
+                <th className="w-[10%] text-center font-bold text-[11px] uppercase py-2.5 px-1">KEHADIRAN</th>
+                <th className="w-[8%] text-center font-bold text-[11px] uppercase py-2.5 px-1">AKSI</th>
+                <th className="w-28 font-bold text-[11px] uppercase py-2.5 text-center hidden print:table-cell">TANDA TANGAN</th>
+              </tr>
+            </thead>
 
-                <TableBody>
-                  {filteredActors.slice(0, pageLimit).map((actor, index) => {
-                    const attStatus = ((actor as any).attendanceStatus || 'belum_hadir') as AttendanceStatus
-                    const isHadir = attStatus === 'hadir'
-                    const officer = (actor as any).attendanceUpdatedBy
-                    const time = (actor as any).attendanceUpdatedAt
-                    const notes = (actor as any).attendanceNotes
+            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/80">
+              {filteredActors.slice(0, pageLimit).map((actor, index) => {
+                const attStatus = ((actor as any).attendanceStatus || 'belum_hadir') as AttendanceStatus
+                const isHadir = attStatus === 'hadir'
+                const officer = (actor as any).attendanceUpdatedBy
+                const time = (actor as any).attendanceUpdatedAt
+                const notes = (actor as any).attendanceNotes
 
-                    return (
-                      <TableRow 
-                        key={actor.id} 
-                        className={cn(
-                          "hover:bg-primary/5 transition-colors border-b border-slate-100 dark:border-zinc-800/70",
-                          isHadir && "bg-emerald-50/20 dark:bg-emerald-950/15"
+                return (
+                  <tr 
+                    key={actor.id} 
+                    className={cn(
+                      "hover:bg-primary/5 transition-colors",
+                      isHadir ? "bg-emerald-50/25 dark:bg-emerald-950/20" : "even:bg-slate-50/40 dark:even:zinc-900/40"
+                    )}
+                  >
+                    {/* 1. NO */}
+                    <td className="py-2.5 px-1 text-center font-bold text-xs text-slate-500">
+                      {index + 1}
+                    </td>
+
+                    {/* 2. NAMA LENGKAP */}
+                    <td className="py-2.5 px-2 font-bold text-slate-900 dark:text-slate-100 uppercase text-xs">
+                      {actor.fullName || "-"}
+                    </td>
+
+                    {/* 3. NIK */}
+                    <td className="py-2.5 px-1.5 text-center font-mono text-xs">
+                      <div className="inline-flex items-center gap-1 bg-slate-100/90 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-zinc-700">
+                        <span className="font-bold text-slate-700 dark:text-slate-200 text-[11px] whitespace-nowrap">
+                          {formatMaskedNik(actor.nik, actor.id)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => toggleSingleNik(actor.id)}
+                          className="p-0.5 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors print:hidden"
+                          title={unmaskedNiks[actor.id] ? "Sensor NIK" : "Buka Sensor NIK"}
+                        >
+                          {unmaskedNiks[actor.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyNik(actor.nik)}
+                          className="p-0.5 rounded text-slate-400 hover:text-primary transition-colors print:hidden"
+                          title="Salin NIK"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </td>
+
+                    {/* 4. KATEGORI */}
+                    <td className="py-2.5 px-1 text-center">
+                      <span className="bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 font-bold px-2 py-0.5 rounded text-[10px] uppercase tracking-wider whitespace-nowrap">
+                        {actor.businessCategory || "-"}
+                      </span>
+                    </td>
+
+                    {/* 5. USAHA */}
+                    <td className="py-2.5 px-2">
+                      <div className="space-y-0.5">
+                        <p className="font-semibold text-xs text-slate-800 dark:text-slate-200 uppercase" title={actor.businessName || "-"}>
+                          {actor.businessName || "-"}
+                        </p>
+                        {actor.kelurahan && (
+                          <p className="text-[10px] text-slate-400 flex items-center gap-0.5" title={actor.kelurahan}>
+                            <MapPin className="w-2.5 h-2.5 inline shrink-0" /> {actor.kelurahan}
+                          </p>
                         )}
-                      >
-                        {/* 1. Nomor Urut */}
-                        <TableCell className="py-2.5 px-1 pl-2 text-center font-bold text-xs text-slate-500">
-                          {index + 1}
-                        </TableCell>
+                      </div>
+                    </td>
 
-                        {/* 2. Nama Lengkap Pelaku Usaha */}
-                        <TableCell className="py-2.5 px-2 font-bold text-slate-900 dark:text-slate-100 uppercase text-xs">
-                          {actor.fullName || "-"}
-                        </TableCell>
+                    {/* 6. KOORDINATOR */}
+                    <td className="py-2.5 px-1 text-center font-bold text-xs uppercase text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                      {normalizeCoordinator(actor.coordinator)}
+                    </td>
 
-                        {/* 3. NIK dengan Proteksi Data Sensitif */}
-                        <TableCell className="py-2.5 px-1.5 text-center font-mono text-xs">
-                          <div className="inline-flex items-center gap-1 bg-slate-100/80 dark:bg-zinc-800/80 px-1.5 py-0.5 rounded border border-slate-200/80 dark:border-zinc-700">
-                            <span className="font-bold text-slate-700 dark:text-slate-200 text-[11px] whitespace-nowrap">
-                              {formatMaskedNik(actor.nik, actor.id)}
+                    {/* 7. STATUS VERIFIKASI */}
+                    <td className="py-2.5 px-1 text-center whitespace-nowrap">
+                      <VerificationBadge status={actor.status} />
+                    </td>
+
+                    {/* 8. KEHADIRAN (Badge + Waktu & Petugas) */}
+                    <td className="py-2.5 px-1 text-center">
+                      <div className="inline-flex flex-col items-center gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => handleQuickToggleHadir(actor)}
+                          className="focus:outline-hidden transition-transform active:scale-95 print:pointer-events-none cursor-pointer"
+                          title="Klik untuk mengubah Hadir/Belum Hadir"
+                        >
+                          <AttendanceBadge status={attStatus} />
+                        </button>
+                        {time && (
+                          <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
+                            <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                              {formatTimeIndo(time)}
                             </span>
-                            <button
-                              type="button"
-                              onClick={() => toggleSingleNik(actor.id)}
-                              className="p-0.5 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors print:hidden"
-                              title={unmaskedNiks[actor.id] ? "Sensor NIK" : "Buka Sensor NIK"}
-                            >
-                              {unmaskedNiks[actor.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleCopyNik(actor.nik)}
-                              className="p-0.5 rounded text-slate-400 hover:text-primary transition-colors print:hidden"
-                              title="Salin NIK"
-                            >
-                              <Copy className="w-3 h-3" />
-                            </button>
+                            {officer && <span className="truncate max-w-[80px]" title={officer}>• {officer}</span>}
                           </div>
-                        </TableCell>
-
-                        {/* 4. Kategori Usaha */}
-                        <TableCell className="py-2.5 px-1.5 text-center">
-                          <span className="bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 font-bold px-2 py-0.5 rounded text-[10px] uppercase tracking-wider whitespace-nowrap">
-                            {actor.businessCategory || "-"}
+                        )}
+                        {notes && (
+                          <span className="text-[9px] text-amber-600 dark:text-amber-400 italic max-w-[110px] truncate" title={notes}>
+                            Ket: {notes}
                           </span>
-                        </TableCell>
+                        )}
+                      </div>
+                    </td>
 
-                        {/* 5. Usaha */}
-                        <TableCell className="py-2.5 px-2">
-                          <div className="space-y-0.5 max-w-[170px]">
-                            <p className="font-semibold text-xs text-slate-800 dark:text-slate-200 uppercase truncate" title={actor.businessName || "-"}>
-                              {actor.businessName || "-"}
-                            </p>
-                            {actor.kelurahan && (
-                              <p className="text-[10px] text-slate-400 flex items-center gap-0.5 truncate" title={actor.kelurahan}>
-                                <MapPin className="w-2.5 h-2.5 inline shrink-0" /> {actor.kelurahan}
-                              </p>
-                            )}
-                          </div>
-                        </TableCell>
+                    {/* 9. AKSI */}
+                    <td className="text-center py-2.5 px-1 print:hidden">
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          size="sm"
+                          variant={isHadir ? "outline" : "default"}
+                          onClick={() => handleQuickToggleHadir(actor)}
+                          className={cn(
+                            "h-7 px-2 text-xs font-bold gap-1 rounded-lg",
+                            isHadir 
+                              ? "border-slate-300 text-slate-600 hover:bg-slate-100 dark:border-zinc-700 dark:text-slate-300 dark:hover:bg-zinc-800"
+                              : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                          )}
+                        >
+                          {isHadir ? (
+                            <>
+                              <RotateCcw className="w-3 h-3" />
+                              <span>Batal</span>
+                            </>
+                          ) : (
+                            <>
+                              <Check className="w-3 h-3" />
+                              <span>Hadir</span>
+                            </>
+                          )}
+                        </Button>
 
-                        {/* 6. Koordinator */}
-                        <TableCell className="py-2.5 px-1.5 text-center font-bold text-xs uppercase text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                          {normalizeCoordinator(actor.coordinator)}
-                        </TableCell>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setNotesModalActor(actor)
+                            setCustomStatus(attStatus)
+                            setCustomNotes(notes || "")
+                          }}
+                          className="h-7 w-7 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                          title="Atur Catatan & Opsi Kehadiran"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </td>
 
-                        {/* 7. Status Verifikasi */}
-                        <TableCell className="py-2.5 px-1.5 text-center whitespace-nowrap">
-                          <VerificationBadge status={actor.status} />
-                        </TableCell>
+                    {/* Kolom Tanda Tangan Cetak (Print View Only) */}
+                    <td className="py-2.5 text-center hidden print:table-cell text-xs text-slate-400 border border-black h-10">
+                      {isHadir ? "HADIR" : "................"}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
 
-                        {/* 8. Kehadiran Menyeluruh (Status + Waktu & Petugas) */}
-                        <TableCell className="py-2.5 px-2 text-center">
-                          <div className="inline-flex flex-col items-center gap-0.5">
-                            <button
-                              type="button"
-                              onClick={() => handleQuickToggleHadir(actor)}
-                              className="focus:outline-hidden transition-transform active:scale-95 print:pointer-events-none cursor-pointer"
-                              title="Klik untuk mengubah Hadir/Belum Hadir"
-                            >
-                              <AttendanceBadge status={attStatus} />
-                            </button>
-                            {time && (
-                              <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
-                                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                                  {formatTimeIndo(time)}
-                                </span>
-                                {officer && <span className="truncate max-w-[80px]" title={officer}>• {officer}</span>}
-                              </div>
-                            )}
-                            {notes && (
-                              <span className="text-[9px] text-amber-600 dark:text-amber-400 italic max-w-[110px] truncate" title={notes}>
-                                Ket: {notes}
-                              </span>
-                            )}
-                          </div>
-                        </TableCell>
-
-                        {/* 9. Aksi */}
-                        <TableCell className="text-right py-2.5 px-2 pr-3 print:hidden">
-                          <div className="flex items-center justify-end gap-1">
-                            {/* Tombol Quick 1-Click Hadir / Batal */}
-                            <Button
-                              size="sm"
-                              variant={isHadir ? "outline" : "default"}
-                              onClick={() => handleQuickToggleHadir(actor)}
-                              className={cn(
-                                "h-7 px-2 text-xs font-bold gap-1 rounded-lg",
-                                isHadir 
-                                  ? "border-slate-300 text-slate-600 hover:bg-slate-100 dark:border-zinc-700 dark:text-slate-300 dark:hover:bg-zinc-800"
-                                  : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                              )}
-                            >
-                              {isHadir ? (
-                                <>
-                                  <RotateCcw className="w-3 h-3" />
-                                  <span>Batal</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Check className="w-3 h-3" />
-                                  <span>Hadir</span>
-                                </>
-                              )}
-                            </Button>
-
-                            {/* Tombol Opsi Detail & Catatan */}
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => {
-                                setNotesModalActor(actor)
-                                setCustomStatus(attStatus)
-                                setCustomNotes(notes || "")
-                              }}
-                              className="h-7 w-7 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                              title="Atur Catatan & Opsi Kehadiran"
-                            >
-                              <FileText className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </TableCell>
-
-                        {/* Kolom Tanda Tangan Cetak (Print View Only) */}
-                        <TableCell className="py-2.5 text-center hidden print:table-cell text-xs text-slate-400 border border-black h-10">
-                          {isHadir ? "HADIR" : "................"}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-
-          {/* Pagination / Tampilkan Lebih Banyak Data */}
-          {filteredActors.length > pageLimit && (
-            <div className="p-4 flex justify-center border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 print:hidden">
-              <Button
-                variant="outline"
-                onClick={() => setPageLimit(prev => prev + 50)}
-                className="text-xs font-bold border-primary text-primary hover:bg-primary/10"
-              >
-                Tampilkan 50 Data Lagi (Menampilkan {Math.min(pageLimit, filteredActors.length)} dari {filteredActors.length})
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {/* Pagination / Tampilkan Lebih Banyak Data */}
+        {filteredActors.length > pageLimit && (
+          <div className="p-4 flex justify-center border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 print:hidden">
+            <Button
+              variant="outline"
+              onClick={() => setPageLimit(prev => prev + 50)}
+              className="text-xs font-bold border-primary text-primary hover:bg-primary/10"
+            >
+              Tampilkan 50 Data Lagi (Menampilkan {Math.min(pageLimit, filteredActors.length)} dari {filteredActors.length})
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* ─── MODAL DIALOG: UBAH STATUS KEHADIRAN & CATATAN ─── */}
       <Dialog open={!!notesModalActor} onOpenChange={(open) => { if (!open) setNotesModalActor(null) }}>

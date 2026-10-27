@@ -77,6 +77,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const isLayarInformasiPage = pathname === '/layar-informasi' || pathname?.startsWith('/layar-informasi');
   const isPortalSurveyPage = pathname === '/portal-survey' || pathname?.startsWith('/portal-survey');
   const isPendaftaranPage = pathname === '/pendaftaran' || pathname?.startsWith('/pendaftaran') || pathname === '/daftar' || pathname?.startsWith('/daftar');
+  const isDaftarHadirPage = pathname === '/daftar-hadir' || pathname?.startsWith('/daftar-hadir');
   const isPublicPage = isLoginPage || isCekDataPage || isLayarInformasiPage || isPendaftaranPage;
   const isRootPage = pathname === '/';
   const isAdmin = profile?.role === 'admin' || (user?.email?.toLowerCase() === 'agus@umkm.id');
@@ -419,13 +420,13 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   isLayarInformasiPage ? "p-0 min-h-full lg:h-full lg:max-h-full flex-1 flex flex-col overflow-y-auto lg:overflow-hidden" :
                   isCekDataPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-7xl mx-auto" :
                   isPendaftaranPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-5xl mx-auto" :
-                  pathname === '/daftar-hadir' ? "p-0 min-h-full w-full" :
+                  isDaftarHadirPage ? "p-0 min-h-full w-full max-w-none" :
                   "p-3 sm:p-5 lg:p-6 min-h-full"
                 )}>
                   {!isRootPage && pathname !== '/dashboard' && !isKoordinator && !isLoginPage && !isPortalSurveyPage && !isLayarInformasiPage && (
                     <div className={cn(
                       "mb-3.5 flex items-center justify-between gap-3 print:hidden",
-                      pathname === '/daftar-hadir' && "px-1 sm:px-2 pt-2 mb-2"
+                      isDaftarHadirPage && "px-3 sm:px-4 pt-2.5 mb-2"
                     )}>
                       <button
                         onClick={() => router.push('/')}
