@@ -2342,20 +2342,7 @@ function DaftarHadirContent() {
               <option value="belum_diatur">-- Belum Terjadwal Sesi --</option>
             </select>
 
-            {/* Tombol Pintas Tambah Sesi */}
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => {
-                setNewSessionInput("")
-                setShowAddSessionModal(true)
-              }}
-              className="h-8 px-2 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white gap-1 shadow-2xs rounded-lg cursor-pointer"
-              title="Tambah sesi baru ke daftar"
-            >
-              <Plus className="w-3 h-3" />
-              <span className="hidden sm:inline">Tambah Sesi</span>
-            </Button>
+
           </div>
 
           {/* Filter Kecamatan */}
@@ -2447,21 +2434,7 @@ function DaftarHadirContent() {
             <span>Kosongkan Sesi</span>
           </Button>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setShowImportExcelModal(true)
-              setImportSummary(null)
-              setImportExcelFile(null)
-            }}
-            className="h-8 px-2.5 text-xs font-bold border-teal-500 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50 gap-1.5 rounded-lg cursor-pointer shadow-2xs"
-            title="Import Excel Jadwal (Kolom E) & Posisi Meja berdasarkan NIK (Kolom C)"
-          >
-            <UploadCloud className="w-3.5 h-3.5 text-teal-600" />
-            <span>Import Excel</span>
-          </Button>
+
 
           <Button
             type="button"
