@@ -711,10 +711,18 @@ function DaftarHadirContent() {
     handleUpdateAttendance(actor, nextStatus, (actor as any).attendanceNotes || "")
   }
 
-  // 5. Data Terverifikasi yang tampil di Daftar Hadir
+  // 5. Data Terverifikasi yang tampil di Daftar Hadir (Urutan identik dengan Data Pelaku Usaha: Koordinator A-Z, lalu Nama A-Z)
   const verifiedActorsList = useMemo(() => {
     if (!rawActors) return []
-    return rawActors.filter(a => a && isActorVerified(a))
+    return rawActors
+      .filter(a => a && isActorVerified(a))
+      .sort((a, b) => {
+        const coordA = String(a.coordinator || "Tanpa Koordinator").trim().toUpperCase()
+        const coordB = String(b.coordinator || "Tanpa Koordinator").trim().toUpperCase()
+        const coordCompare = coordA.localeCompare(coordB)
+        if (coordCompare !== 0) return coordCompare
+        return String(a.fullName || "").trim().localeCompare(String(b.fullName || "").trim())
+      })
   }, [rawActors])
 
 // ─── FUNGSI SCANNER NIK (KHUSUS ROLE PETUGAS ABSENSI) ───
@@ -989,6 +997,13 @@ function DaftarHadirContent() {
       }
 
       return true
+    })
+    .sort((a, b) => {
+      const coordA = String(a.coordinator || "Tanpa Koordinator").trim().toUpperCase()
+      const coordB = String(b.coordinator || "Tanpa Koordinator").trim().toUpperCase()
+      const coordCompare = coordA.localeCompare(coordB)
+      if (coordCompare !== 0) return coordCompare
+      return String(a.fullName || "").trim().localeCompare(String(b.fullName || "").trim())
     })
   }, [verifiedActorsList, activeTab, selectedDeskFilter, selectedScheduleFilter, selectedKecamatanFilter, selectedCoordinatorFilter, searchQuery])
 
