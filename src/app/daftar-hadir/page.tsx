@@ -81,6 +81,21 @@ import ExcelJS from "exceljs"
 // Tipe Status Kehadiran
 export type AttendanceStatus = 'hadir' | 'belum_hadir' | 'izin' | 'sakit';
 
+// Helper Penentu Data yang TERVERIFIKASI
+export const isCancelDinas = (actorData: any): boolean => {
+  if (!actorData) return false;
+  const status = (actorData.status || "").toLowerCase();
+  return (status === 'verified_dinas' && actorData.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(actorData.alasanCancelDinas);
+};
+
+export const isActorVerified = (actorData: any): boolean => {
+  if (!actorData) return false;
+  if (isCancelDinas(actorData)) return false;
+  const status = (actorData.status || "").toLowerCase();
+  // Hanya status yang telah melewati verifikasi resmi (Admin / Dinas / Pencairan / Finish)
+  return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(status);
+};
+
 export default function DaftarHadirPage() {
   return (
     <Suspense fallback={
@@ -284,34 +299,39 @@ function DaftarHadirContent() {
     handleUpdateAttendance(actor, nextStatus, "")
   }
 
-  // 5. Data Filter & Search Memo
-  const actorsList = useMemo(() => {
+  // 5. Data Filter: HANYA MENAMPILKAN DATA YANG TERVERIFIKASI
+  const verifiedActorsList = useMemo(() => {
     if (!rawActors) return []
-    return rawActors.filter(Boolean)
+    // Filter ketat: Hanya data yang statusnya lolos verifikasi resmi
+    return rawActors.filter(a => a && isActorVerified(a))
   }, [rawActors])
 
-  // Extract unique Kelurahan list for filter dropdown
+  // Extract unique Kelurahan list dari data terverifikasi
   const uniqueKelurahanList = useMemo(() => {
     const setKel = new Set<string>()
-    actorsList.forEach(a => {
+    verifiedActorsList.forEach(a => {
       if (a.kelurahan) setKel.add(a.kelurahan.trim())
     })
     return Array.from(setKel).sort()
-  }, [actorsList])
+  }, [verifiedActorsList])
 
   const filteredActors = useMemo(() => {
-    return actorsList.filter(actor => {
+    return verifiedActorsList.filter(actor => {
       const attendance = ((actor as any).attendanceStatus || 'belum_hadir') as AttendanceStatus
-      const verification = (actor.status || 'pending').toLowerCase()
+      const verification = (actor.status || '').toLowerCase()
 
       // Filter Kehadiran
       if (filterAttendance !== "semua" && attendance !== filterAttendance) {
         return false
       }
 
-      // Filter Verifikasi
-      if (filterVerification !== "semua" && verification !== filterVerification) {
-        return false
+      // Filter Verifikasi Khusus Data Terverifikasi
+      if (filterVerification !== "semua") {
+        if (filterVerification === 'verified_dinas' && verification !== 'verified_dinas') return false;
+        if (filterVerification === 'verified_actor' && verification !== 'verified_actor') return false;
+        if (filterVerification === 'finish' && verification !== 'finish') return false;
+        if (filterVerification === 'bank_pending' && verification !== 'bank_pending') return false;
+        if (filterVerification === 'lpj_pending' && verification !== 'lpj_pending') return false;
       }
 
       // Filter Kelurahan
@@ -336,16 +356,16 @@ function DaftarHadirContent() {
 
       return true
     })
-  }, [actorsList, searchQuery, filterAttendance, filterVerification, filterKelurahan])
+  }, [verifiedActorsList, searchQuery, filterAttendance, filterVerification, filterKelurahan])
 
-  // Real-time Summary Statistics
+  // Real-time Summary Statistics (Berdasarkan Data Terverifikasi)
   const statistics = useMemo(() => {
     let hadir = 0
     let belumHadir = 0
     let izin = 0
     let sakit = 0
 
-    actorsList.forEach(a => {
+    verifiedActorsList.forEach(a => {
       const st = ((a as any).attendanceStatus || 'belum_hadir') as AttendanceStatus
       if (st === 'hadir') hadir++
       else if (st === 'izin') izin++
@@ -353,11 +373,11 @@ function DaftarHadirContent() {
       else belumHadir++
     })
 
-    const total = actorsList.length
+    const total = verifiedActorsList.length
     const percentageHadir = total > 0 ? Math.round((hadir / total) * 100) : 0
 
     return { total, hadir, belumHadir, izin, sakit, percentageHadir }
-  }, [actorsList])
+  }, [verifiedActorsList])
 
   // Batch Mark All Filtered as Hadir
   const executeBatchMarkHadir = async () => {
@@ -385,7 +405,7 @@ function DaftarHadirContent() {
 
       toast({
         title: "Presensi Massal Berhasil",
-        description: `${count} pelaku usaha berhasil ditandai HADIR.`
+        description: `${count} pelaku usaha terverifikasi berhasil ditandai HADIR.`
       })
     } catch (e) {
       console.error(e)
@@ -402,7 +422,7 @@ function DaftarHadirContent() {
     setShowResetDialog(false)
 
     try {
-      for (const actor of actorsList) {
+      for (const actor of verifiedActorsList) {
         const actorRef = ref(database, `businessActors/${actor.id}`)
         updateDocumentNonBlocking(actorRef, {
           attendanceStatus: 'belum_hadir',
@@ -433,7 +453,7 @@ function DaftarHadirContent() {
 
     try {
       const workbook = new ExcelJS.Workbook()
-      const worksheet = workbook.addWorksheet("Daftar Hadir Pelaku Usaha")
+      const worksheet = workbook.addWorksheet("Daftar Hadir Terverifikasi")
 
       worksheet.pageSetup = {
         orientation: "landscape",
@@ -447,13 +467,13 @@ function DaftarHadirContent() {
       // Title rows
       worksheet.mergeCells("A1:G1")
       const titleCell = worksheet.getCell("A1")
-      titleCell.value = "DAFTAR HADIR PELAKU USAHA BINAAN DINAS KOPERASI DAN UKM"
+      titleCell.value = "DAFTAR HADIR PELAKU USAHA TERVERIFIKASI DINAS KOPERASI DAN UKM"
       titleCell.font = { name: "Arial", size: 14, bold: true, color: { argb: "FF0F172A" } }
       titleCell.alignment = { horizontal: "center", vertical: "middle" }
 
       worksheet.mergeCells("A2:G2")
       const subTitleCell = worksheet.getCell("A2")
-      subTitleCell.value = `Tanggal Ekspor: ${new Date().toLocaleDateString('id-ID', { dateStyle: 'full' })} | Total: ${filteredActors.length} Pelaku Usaha`
+      subTitleCell.value = `Tanggal Ekspor: ${new Date().toLocaleDateString('id-ID', { dateStyle: 'full' })} | Total: ${filteredActors.length} Pelaku Usaha Terverifikasi`
       subTitleCell.font = { name: "Arial", size: 10, italic: true, color: { argb: "FF475569" } }
       subTitleCell.alignment = { horizontal: "center", vertical: "middle" }
 
@@ -489,7 +509,7 @@ function DaftarHadirContent() {
 
       // Column widths
       worksheet.getColumn(1).width = 6
-      worksheet.getColumn(2).width = 30
+      worksheet.getColumn(2).width = 32
       worksheet.getColumn(3).width = 22
       worksheet.getColumn(4).width = 24
       worksheet.getColumn(5).width = 22
@@ -534,13 +554,13 @@ function DaftarHadirContent() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `DAFTAR_HADIR_PELAKU_USAHA_${new Date().toISOString().split('T')[0]}.xlsx`
+      a.download = `DAFTAR_HADIR_TERVERIFIKASI_${new Date().toISOString().split('T')[0]}.xlsx`
       a.click()
       window.URL.revokeObjectURL(url)
 
       toast({
         title: "Ekspor Berhasil",
-        description: "File Excel Daftar Hadir berhasil diunduh."
+        description: "File Excel Daftar Hadir Terverifikasi berhasil diunduh."
       })
     } catch (err) {
       console.error(err)
@@ -611,23 +631,30 @@ function DaftarHadirContent() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    // ─── TAMPILAN FULL PANEL: 100% LEBAR LAYAR, RESPONSIF PENUH ───
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       
       {/* ─── Header Halaman (Screen View) ─── */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <div>
           <div className="flex items-center gap-3">
             <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-2xl bg-cyan-50 text-cyan-600 dark:bg-cyan-950/60 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-800">
                 <ClipboardCheck className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-50 tracking-tight font-headline">
-                  Daftar Hadir
-                </h1>
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-                  Presensi & Kehadiran Seluruh Pelaku Usaha Terverifikasi Real-Time
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-50 tracking-tight font-headline">
+                    Daftar Hadir
+                  </h1>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    Khusus Data Terverifikasi
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  Presensi & Kehadiran Seluruh Pelaku Usaha Terverifikasi Real-Time (Tampilan Penuh)
                 </p>
               </div>
             </div>
@@ -659,29 +686,29 @@ function DaftarHadirContent() {
         <h3 className="text-lg font-black uppercase tracking-wider">DINAS KOPERASI DAN USAHA KECIL MENENGAH</h3>
         <p className="text-xs text-slate-600">Sistem Informasi Manajemen Pelaku Usaha (SIMPU) • Lembar Daftar Hadir</p>
         <div className="mt-2 text-xs font-bold uppercase underline">
-          DAFTAR HADIR PESERTA / PELAKU USAHA
+          DAFTAR HADIR PESERTA / PELAKU USAHA TERVERIFIKASI
         </div>
         <p className="text-[10px] text-slate-500 mt-1">Dicetak pada: {new Date().toLocaleDateString('id-ID', { dateStyle: 'full' })}</p>
       </div>
 
-      {/* ─── Bento Stat Cards: Real-time Attendance Metrics ─── */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 print:hidden">
-        {/* Card 1: Total Pelaku Usaha */}
-        <Card className="border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl shadow-xs">
+      {/* ─── Bento Stat Cards: Real-time Attendance Metrics (Full Width) ─── */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full print:hidden">
+        {/* Card 1: Total Pelaku Usaha Terverifikasi */}
+        <Card className="border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-3xl shadow-xs">
           <CardContent className="p-4 sm:p-5 flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Pelaku Usaha</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Terverifikasi</p>
               <h3 className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-50">{statistics.total}</h3>
-              <p className="text-[10px] text-slate-400 mt-0.5">Database SIMPU</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Data Lolos Verifikasi</p>
             </div>
-            <div className="p-3 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
+            <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
               <Users className="w-5 h-5" />
             </div>
           </CardContent>
         </Card>
 
         {/* Card 2: Total Hadir */}
-        <Card className="border border-emerald-200/80 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl shadow-xs">
+        <Card className="border border-emerald-200/80 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-3xl shadow-xs">
           <CardContent className="p-4 sm:p-5 flex items-center justify-between">
             <div>
               <div className="flex items-center gap-1.5">
@@ -693,28 +720,28 @@ function DaftarHadirContent() {
               <h3 className="mt-1 text-2xl font-black text-emerald-700 dark:text-emerald-400">{statistics.hadir}</h3>
               <p className="text-[10px] text-emerald-600 dark:text-emerald-400/80 mt-0.5">Telah terverifikasi hadir</p>
             </div>
-            <div className="p-3 rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300">
+            <div className="p-3 rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300">
               <UserCheck className="w-5 h-5" />
             </div>
           </CardContent>
         </Card>
 
         {/* Card 3: Belum Hadir */}
-        <Card className="border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl shadow-xs">
+        <Card className="border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-3xl shadow-xs">
           <CardContent className="p-4 sm:p-5 flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Belum Hadir</p>
               <h3 className="mt-1 text-2xl font-black text-slate-700 dark:text-slate-300">{statistics.belumHadir}</h3>
               <p className="text-[10px] text-slate-400 mt-0.5">Menunggu konfirmasi</p>
             </div>
-            <div className="p-3 rounded-xl bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-400">
+            <div className="p-3 rounded-2xl bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-400">
               <Clock className="w-5 h-5" />
             </div>
           </CardContent>
         </Card>
 
         {/* Card 4: Izin / Sakit */}
-        <Card className="border border-amber-200/80 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/20 rounded-2xl shadow-xs">
+        <Card className="border border-amber-200/80 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/20 rounded-3xl shadow-xs">
           <CardContent className="p-4 sm:p-5 flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-amber-800 dark:text-amber-300">Izin / Sakit</p>
@@ -723,16 +750,16 @@ function DaftarHadirContent() {
                 Izin: {statistics.izin} • Sakit: {statistics.sakit}
               </p>
             </div>
-            <div className="p-3 rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">
+            <div className="p-3 rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">
               <HelpCircle className="w-5 h-5" />
             </div>
           </CardContent>
         </Card>
       </section>
 
-      {/* ─── Search, Filters & NIK Security Control ─── */}
-      <section className="p-4 sm:p-5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xs space-y-4 print:hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* ─── Search, Filters & NIK Security Control (Full Width) ─── */}
+      <section className="w-full p-4 sm:p-5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-xs space-y-4 print:hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           
           {/* Input Search */}
           <div className="relative">
@@ -752,7 +779,7 @@ function DaftarHadirContent() {
                 <SelectValue placeholder="Status Kehadiran" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="semua">Semua Status Kehadiran</SelectItem>
+                <SelectItem value="semua">Semua Kehadiran</SelectItem>
                 <SelectItem value="hadir">Hadir ({statistics.hadir})</SelectItem>
                 <SelectItem value="belum_hadir">Belum Hadir ({statistics.belumHadir})</SelectItem>
                 <SelectItem value="izin">Izin ({statistics.izin})</SelectItem>
@@ -761,21 +788,19 @@ function DaftarHadirContent() {
             </Select>
           </div>
 
-          {/* Filter Status Verifikasi */}
+          {/* Filter Status Verifikasi (Hanya Menampilkan Pilihan Terverifikasi) */}
           <div>
             <Select value={filterVerification} onValueChange={setFilterVerification}>
               <SelectTrigger className="text-xs sm:text-sm font-medium">
-                <SelectValue placeholder="Status Verifikasi" />
+                <SelectValue placeholder="Tahap Verifikasi" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="semua">Semua Status Verifikasi</SelectItem>
+                <SelectItem value="semua">Semua Data Terverifikasi</SelectItem>
+                <SelectItem value="finish">Selesai (Finish)</SelectItem>
                 <SelectItem value="verified_dinas">Terverifikasi Dinas</SelectItem>
                 <SelectItem value="verified_actor">Terverifikasi Admin</SelectItem>
-                <SelectItem value="pending">Menunggu Verifikasi</SelectItem>
-                <SelectItem value="lengkapi_data">Perlu Lengkapi Data</SelectItem>
-                <SelectItem value="hold">Hold</SelectItem>
-                <SelectItem value="finish">Selesai (Finish)</SelectItem>
-                <SelectItem value="rejected">Ditolak</SelectItem>
+                <SelectItem value="bank_pending">Pencairan Bank</SelectItem>
+                <SelectItem value="lpj_pending">Tahap LPJ</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -856,36 +881,36 @@ function DaftarHadirContent() {
         </div>
       </section>
 
-      {/* ─── TABEL UTAMA: DAFTAR HADIR REAL-TIME ─── */}
-      <section className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xs overflow-hidden">
+      {/* ─── TABEL UTAMA: DAFTAR HADIR REAL-TIME (TAMPILAN FULL PANEL) ─── */}
+      <section className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-xs overflow-hidden">
         {isActorsLoading ? (
           <div className="py-24 flex flex-col items-center justify-center gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-xs text-slate-500 font-medium">Memuat data presensi pelaku usaha...</p>
+            <p className="text-xs text-slate-500 font-medium">Memuat data presensi pelaku usaha terverifikasi...</p>
           </div>
         ) : filteredActors.length === 0 ? (
           <div className="py-20 text-center space-y-3">
             <div className="w-12 h-12 mx-auto rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-400">
               <ClipboardCheck className="w-6 h-6" />
             </div>
-            <p className="text-base font-bold text-slate-700 dark:text-slate-300">Tidak ada data pelaku usaha ditemukan</p>
+            <p className="text-base font-bold text-slate-700 dark:text-slate-300">Tidak ada data pelaku usaha terverifikasi ditemukan</p>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
               Coba sesuaikan kata kunci pencarian atau filter yang dipilih.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
+          <div className="w-full overflow-x-auto">
+            <Table className="w-full">
               <TableHeader>
                 <TableRow className="bg-slate-100/90 dark:bg-zinc-900/90 border-b border-slate-200 dark:border-zinc-800">
-                  <TableHead className="w-12 text-center font-black text-xs uppercase py-3.5 pl-4">No</TableHead>
-                  <TableHead className="min-w-[200px] font-black text-xs uppercase py-3.5">Nama Pelaku Usaha</TableHead>
-                  <TableHead className="min-w-[160px] font-black text-xs uppercase py-3.5 text-center">NIK (Sensitif)</TableHead>
+                  <TableHead className="w-14 text-center font-black text-xs uppercase py-3.5 pl-4">No</TableHead>
+                  <TableHead className="min-w-[220px] font-black text-xs uppercase py-3.5">Nama Pelaku Usaha</TableHead>
+                  <TableHead className="min-w-[180px] font-black text-xs uppercase py-3.5 text-center">NIK (Sensitif)</TableHead>
                   <TableHead className="min-w-[160px] font-black text-xs uppercase py-3.5 text-center">Status Verifikasi</TableHead>
                   <TableHead className="min-w-[160px] font-black text-xs uppercase py-3.5 text-center">Kehadiran (Presensi)</TableHead>
                   <TableHead className="min-w-[180px] font-black text-xs uppercase py-3.5 text-center print:hidden">Waktu & Petugas</TableHead>
-                  <TableHead className="min-w-[120px] font-black text-xs uppercase py-3.5 text-center print:hidden">Aksi</TableHead>
-                  <TableHead className="w-32 font-black text-xs uppercase py-3.5 text-center hidden print:table-cell">Tanda Tangan</TableHead>
+                  <TableHead className="min-w-[130px] font-black text-xs uppercase py-3.5 text-center print:hidden">Aksi</TableHead>
+                  <TableHead className="w-36 font-black text-xs uppercase py-3.5 text-center hidden print:table-cell">Tanda Tangan</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -917,7 +942,7 @@ function DaftarHadirContent() {
                           </p>
                           <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-slate-500 dark:text-slate-400">
                             {actor.businessName && (
-                              <span className="font-semibold text-primary truncate max-w-[160px]">
+                              <span className="font-semibold text-primary truncate max-w-[200px]">
                                 {actor.businessName}
                               </span>
                             )}
@@ -995,7 +1020,7 @@ function DaftarHadirContent() {
                             <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
                               {formatTimeIndo(time)}
                             </span>
-                            <span className="text-[10px] text-slate-400 truncate max-w-[130px]" title={officer}>
+                            <span className="text-[10px] text-slate-400 truncate max-w-[150px]" title={officer}>
                               Oleh: {officer || "Petugas"}
                             </span>
                           </div>
@@ -1144,7 +1169,7 @@ function DaftarHadirContent() {
         open={showMarkAllDialog}
         onOpenChange={setShowMarkAllDialog}
         title="Tandai Hadir Seluruh Data Terfilter"
-        description={`Apakah Anda yakin ingin menandai ${filteredActors.length} pelaku usaha sebagai HADIR secara bersamaan?`}
+        description={`Apakah Anda yakin ingin menandai ${filteredActors.length} pelaku usaha terverifikasi sebagai HADIR secara bersamaan?`}
         onConfirm={executeBatchMarkHadir}
         confirmText="Ya, Tandai Hadir"
         variant="default"
@@ -1231,35 +1256,35 @@ function VerificationBadge({ status }: { status?: string }) {
     )
   }
 
-  if (st === 'hold' || st === 'lengkapi_data') {
+  if (st === 'bank_pending') {
     return (
-      <Badge className="bg-amber-100 text-amber-950 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-700 text-[10px] font-bold uppercase gap-1">
-        <AlertTriangle className="w-3 h-3" /> Lengkapi Data
+      <Badge className="bg-teal-100 text-teal-900 border-teal-300 dark:bg-teal-950/80 dark:text-teal-300 dark:border-teal-700 text-[10px] font-bold uppercase gap-1">
+        <Building2 className="w-3 h-3" /> Rekening Bank
       </Badge>
     )
   }
 
-  if (st === 'rejected') {
+  if (st === 'lpj_pending') {
     return (
-      <Badge className="bg-rose-100 text-rose-950 border-rose-300 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-700 text-[10px] font-bold uppercase gap-1">
-        <XCircle className="w-3 h-3" /> Ditolak
+      <Badge className="bg-indigo-100 text-indigo-900 border-indigo-300 dark:bg-indigo-950/80 dark:text-indigo-300 dark:border-indigo-700 text-[10px] font-bold uppercase gap-1">
+        <FileText className="w-3 h-3" /> Tahap LPJ
       </Badge>
     )
   }
 
   return (
-    <Badge className="bg-sky-100 text-sky-900 border-sky-300 dark:bg-sky-950/80 dark:text-sky-300 dark:border-sky-700 text-[10px] font-bold uppercase gap-1">
-      <Clock className="w-3 h-3" /> Menunggu Verifikasi
+    <Badge className="bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-700 text-[10px] font-bold uppercase gap-1">
+      <CheckCircle2 className="w-3 h-3" /> Terverifikasi
     </Badge>
   )
 }
 
 function formatVerificationLabel(status?: string): string {
-  const st = (status || 'pending').toLowerCase()
+  const st = (status || '').toLowerCase()
   if (st === 'verified_dinas') return 'Terverifikasi Dinas'
   if (st === 'verified_actor') return 'Terverifikasi Admin'
   if (st === 'finish') return 'Selesai'
-  if (st === 'hold' || st === 'lengkapi_data') return 'Lengkapi Data'
-  if (st === 'rejected') return 'Ditolak'
-  return 'Menunggu Verifikasi'
+  if (st === 'bank_pending') return 'Pencairan Bank'
+  if (st === 'lpj_pending') return 'Tahap LPJ'
+  return 'Terverifikasi'
 }
