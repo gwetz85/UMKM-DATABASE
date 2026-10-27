@@ -558,6 +558,7 @@ export default function UserManagementPage() {
                       <SelectItem value="staff">Staff</SelectItem>
                       <SelectItem value="dinas">Dinas</SelectItem>
                       <SelectItem value="verifikator_dinas">Verifikator Dinas</SelectItem>
+                      <SelectItem value="petugas_absensi">Petugas Absensi</SelectItem>
                       <SelectItem value="inspektorat">Inspektorat</SelectItem>
                     </SelectContent>
                   </Select>
@@ -638,6 +639,10 @@ export default function UserManagementPage() {
                         ) : u.role === 'inspektorat' ? (
                           <Badge variant="outline" className="text-slate-600 border-slate-300 bg-slate-50 font-black uppercase text-[9px] gap-1">
                             <ShieldCheck className="w-3 h-3" /> Inspektorat
+                          </Badge>
+                        ) : u.role === 'petugas_absensi' ? (
+                          <Badge variant="outline" className="text-cyan-700 border-cyan-300 bg-cyan-50 dark:bg-cyan-950/40 dark:text-cyan-300 font-black uppercase text-[9px] gap-1">
+                            <ClipboardCheck className="w-3 h-3" /> Petugas Absensi
                           </Badge>
                         ) : u.role === 'staff' ? (
                           <Badge variant="outline" className="text-teal-700 border-teal-300 bg-teal-50 font-black uppercase text-[9px] gap-1">
@@ -831,6 +836,10 @@ export default function UserManagementPage() {
                           ) : u.role === 'inspektorat' ? (
                             <Badge variant="outline" className="text-slate-600 border-slate-300 bg-slate-50 font-black uppercase text-[9px] gap-1">
                               <ShieldCheck className="w-3 h-3" /> Inspektorat
+                            </Badge>
+                          ) : u.role === 'petugas_absensi' ? (
+                            <Badge variant="outline" className="text-cyan-700 border-cyan-300 bg-cyan-50 dark:bg-cyan-950/40 dark:text-cyan-300 font-black uppercase text-[9px] gap-1">
+                              <ClipboardCheck className="w-3 h-3" /> Petugas Absensi
                             </Badge>
                           ) : u.role === 'staff' ? (
                             <Badge variant="outline" className="text-teal-700 border-teal-300 bg-teal-50 font-black uppercase text-[9px] gap-1">
@@ -1029,6 +1038,7 @@ export default function UserManagementPage() {
                         <SelectItem value="staff">Staff</SelectItem>
                         <SelectItem value="dinas">Dinas</SelectItem>
                         <SelectItem value="verifikator_dinas">Verifikator Dinas</SelectItem>
+                        <SelectItem value="petugas_absensi">Petugas Absensi</SelectItem>
                         <SelectItem value="inspektorat">Inspektorat</SelectItem>
                       </SelectContent>
                     </Select>

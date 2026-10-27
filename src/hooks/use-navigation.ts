@@ -54,6 +54,7 @@ export function useNavigation() {
   const isInspektorat = userProfile?.role === 'inspektorat'
   const isStaff = userProfile?.role === 'staff'
   const isSurveyor = userProfile?.role === 'surveyor'
+  const isPetugasAbsensi = roleStr === 'petugas_absensi' || roleStr === 'petugas absensi' || roleStr === 'absensi'
   
   // Real-time unread count
   const chatsRef = useMemoFirebase(() => {
@@ -200,6 +201,14 @@ export function useNavigation() {
       show: (isAdmin || isStaff) && !isDinas && !isVerifikatorDinas,
       color: "#0d9488",
       description: "Laporan Hasil Verifikasi"
+    },
+    {
+      name: "Daftar Hadir",
+      href: "/daftar-hadir",
+      icon: ClipboardCheck,
+      show: isAdmin || isPetugasAbsensi,
+      color: "#06b6d4",
+      description: "Presensi dan Kehadiran Pelaku Usaha Real-Time"
     },
     {
       name: "GBAS",
@@ -384,7 +393,7 @@ export function useNavigation() {
       color: "#059669",
       description: "Upload & Verifikasi Hasil BPJS Ketenagakerjaan"
     },
-  ], [user, isAdmin, isMonitoring, isKoordinator, isPetugas, isVerifikatorDinas, isDinas, isStaff, userProfile, totalUnread])
+  ], [user, isAdmin, isMonitoring, isKoordinator, isPetugas, isVerifikatorDinas, isDinas, isStaff, isPetugasAbsensi, userProfile, totalUnread])
 
   return {
     navigation: navigation.filter(item => item.show),
@@ -396,6 +405,7 @@ export function useNavigation() {
     isVerifikatorDinas,
     isInspektorat,
     isStaff,
+    isPetugasAbsensi,
     userProfile
   }
 }
