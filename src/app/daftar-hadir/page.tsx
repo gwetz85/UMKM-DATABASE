@@ -735,9 +735,9 @@ function DaftarHadirContent() {
         <p className="text-[10px] text-slate-500 mt-1">Dicetak pada: {new Date().toLocaleDateString('id-ID', { dateStyle: 'full' })}</p>
       </div>
 
-      {/* ─── TABEL UTAMA: TAMPILAN FULL PANEL PERSIS SEPERTI GAMBAR 2 ─── */}
-      <Card className="border-y sm:border border-slate-200/60 dark:border-zinc-800 shadow-none sm:shadow-xs overflow-hidden bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-none sm:rounded-xl w-full">
-        <CardContent className="p-0">
+      {/* ─── TABEL UTAMA: TAMPILAN MENYELURUH FULL-WIDTH (TANPA TERPOTONG) ─── */}
+      <Card className="border-y sm:border border-slate-200/80 dark:border-zinc-800 shadow-none sm:shadow-xs overflow-hidden bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm rounded-none sm:rounded-xl w-full">
+        <CardContent className="p-0 w-full">
           {isActorsLoading ? (
             <div className="py-24 flex flex-col items-center justify-center gap-3">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -751,21 +751,20 @@ function DaftarHadirContent() {
             </div>
           ) : (
             <div className="w-full overflow-x-auto">
-              <Table className="w-full">
-                {/* Header Tabel Persis Desain Gambar 2 */}
-                <TableHeader className="bg-muted/30 dark:bg-zinc-800/40">
+              <Table className="w-full table-auto">
+                {/* Header Tabel Menyeluruh */}
+                <TableHeader className="bg-muted/40 dark:bg-zinc-800/50">
                   <TableRow className="border-b border-slate-200 dark:border-zinc-800">
-                    <TableHead className="w-12 text-center font-bold text-xs uppercase py-3.5 pl-4">No</TableHead>
-                    <TableHead className="min-w-[180px] font-bold text-xs uppercase py-3.5">Nama Lengkap</TableHead>
-                    <TableHead className="min-w-[150px] font-bold text-xs uppercase py-3.5 text-center">NIK</TableHead>
-                    <TableHead className="min-w-[120px] font-bold text-xs uppercase py-3.5 text-center">Kategori</TableHead>
-                    <TableHead className="min-w-[180px] font-bold text-xs uppercase py-3.5">Usaha</TableHead>
-                    <TableHead className="min-w-[160px] font-bold text-xs uppercase py-3.5">Koordinator</TableHead>
-                    <TableHead className="min-w-[150px] font-bold text-xs uppercase py-3.5 text-center">Status Verifikasi</TableHead>
-                    <TableHead className="min-w-[140px] font-bold text-xs uppercase py-3.5 text-center">Kehadiran</TableHead>
-                    <TableHead className="min-w-[160px] font-bold text-xs uppercase py-3.5 text-center print:hidden">Waktu & Petugas</TableHead>
-                    <TableHead className="text-right font-bold text-xs uppercase py-3.5 pr-6 print:hidden">Aksi</TableHead>
-                    <TableHead className="w-32 font-bold text-xs uppercase py-3.5 text-center hidden print:table-cell">Tanda Tangan</TableHead>
+                    <TableHead className="w-10 text-center font-bold text-xs uppercase py-2.5 px-1 pl-2">No</TableHead>
+                    <TableHead className="font-bold text-xs uppercase py-2.5 px-2">Nama Lengkap</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase py-2.5 px-1.5">NIK</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase py-2.5 px-1.5">Kategori</TableHead>
+                    <TableHead className="font-bold text-xs uppercase py-2.5 px-2">Usaha</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase py-2.5 px-1.5">Koordinator</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase py-2.5 px-1.5">Status Verifikasi</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase py-2.5 px-2">Kehadiran</TableHead>
+                    <TableHead className="text-right font-bold text-xs uppercase py-2.5 px-2 pr-3 print:hidden">Aksi</TableHead>
+                    <TableHead className="w-28 font-bold text-xs uppercase py-2.5 text-center hidden print:table-cell">Tanda Tangan</TableHead>
                   </TableRow>
                 </TableHeader>
 
@@ -786,25 +785,25 @@ function DaftarHadirContent() {
                         )}
                       >
                         {/* 1. Nomor Urut */}
-                        <TableCell className="py-3.5 pl-4 text-center font-bold text-xs text-slate-500">
+                        <TableCell className="py-2.5 px-1 pl-2 text-center font-bold text-xs text-slate-500">
                           {index + 1}
                         </TableCell>
 
                         {/* 2. Nama Lengkap Pelaku Usaha */}
-                        <TableCell className="py-3.5 font-bold text-slate-900 dark:text-slate-100 uppercase text-xs sm:text-sm">
+                        <TableCell className="py-2.5 px-2 font-bold text-slate-900 dark:text-slate-100 uppercase text-xs">
                           {actor.fullName || "-"}
                         </TableCell>
 
                         {/* 3. NIK dengan Proteksi Data Sensitif */}
-                        <TableCell className="py-3.5 text-center font-mono text-xs">
-                          <div className="inline-flex items-center gap-1 bg-slate-100/80 dark:bg-zinc-800/80 px-2 py-0.5 rounded-md border border-slate-200/80 dark:border-zinc-700">
-                            <span className="font-bold text-slate-700 dark:text-slate-200">
+                        <TableCell className="py-2.5 px-1.5 text-center font-mono text-xs">
+                          <div className="inline-flex items-center gap-1 bg-slate-100/80 dark:bg-zinc-800/80 px-1.5 py-0.5 rounded border border-slate-200/80 dark:border-zinc-700">
+                            <span className="font-bold text-slate-700 dark:text-slate-200 text-[11px] whitespace-nowrap">
                               {formatMaskedNik(actor.nik, actor.id)}
                             </span>
                             <button
                               type="button"
                               onClick={() => toggleSingleNik(actor.id)}
-                              className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors print:hidden"
+                              className="p-0.5 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors print:hidden"
                               title={unmaskedNiks[actor.id] ? "Sensor NIK" : "Buka Sensor NIK"}
                             >
                               {unmaskedNiks[actor.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
@@ -812,7 +811,7 @@ function DaftarHadirContent() {
                             <button
                               type="button"
                               onClick={() => handleCopyNik(actor.nik)}
-                              className="p-1 rounded text-slate-400 hover:text-primary transition-colors print:hidden"
+                              className="p-0.5 rounded text-slate-400 hover:text-primary transition-colors print:hidden"
                               title="Salin NIK"
                             >
                               <Copy className="w-3 h-3" />
@@ -820,39 +819,39 @@ function DaftarHadirContent() {
                           </div>
                         </TableCell>
 
-                        {/* 4. Kategori Usaha (Persis Gaya Gambar 2) */}
-                        <TableCell className="py-3.5 text-center">
-                          <span className="bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 font-bold px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider">
+                        {/* 4. Kategori Usaha */}
+                        <TableCell className="py-2.5 px-1.5 text-center">
+                          <span className="bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 font-bold px-2 py-0.5 rounded text-[10px] uppercase tracking-wider whitespace-nowrap">
                             {actor.businessCategory || "-"}
                           </span>
                         </TableCell>
 
                         {/* 5. Usaha */}
-                        <TableCell className="py-3.5">
-                          <div className="space-y-0.5">
-                            <p className="font-semibold text-xs text-slate-800 dark:text-slate-200 uppercase">
+                        <TableCell className="py-2.5 px-2">
+                          <div className="space-y-0.5 max-w-[170px]">
+                            <p className="font-semibold text-xs text-slate-800 dark:text-slate-200 uppercase truncate" title={actor.businessName || "-"}>
                               {actor.businessName || "-"}
                             </p>
                             {actor.kelurahan && (
-                              <p className="text-[10px] text-slate-400 flex items-center gap-0.5">
-                                <MapPin className="w-2.5 h-2.5 inline" /> {actor.kelurahan}
+                              <p className="text-[10px] text-slate-400 flex items-center gap-0.5 truncate" title={actor.kelurahan}>
+                                <MapPin className="w-2.5 h-2.5 inline shrink-0" /> {actor.kelurahan}
                               </p>
                             )}
                           </div>
                         </TableCell>
 
                         {/* 6. Koordinator */}
-                        <TableCell className="py-3.5 font-bold text-xs uppercase text-slate-700 dark:text-slate-300">
+                        <TableCell className="py-2.5 px-1.5 text-center font-bold text-xs uppercase text-slate-700 dark:text-slate-300 whitespace-nowrap">
                           {normalizeCoordinator(actor.coordinator)}
                         </TableCell>
 
                         {/* 7. Status Verifikasi */}
-                        <TableCell className="py-3.5 text-center">
+                        <TableCell className="py-2.5 px-1.5 text-center whitespace-nowrap">
                           <VerificationBadge status={actor.status} />
                         </TableCell>
 
-                        {/* 8. Kehadiran (Interactive Badge & Realtime Toggle) */}
-                        <TableCell className="py-3.5 text-center">
+                        {/* 8. Kehadiran Menyeluruh (Status + Waktu & Petugas) */}
+                        <TableCell className="py-2.5 px-2 text-center">
                           <div className="inline-flex flex-col items-center gap-0.5">
                             <button
                               type="button"
@@ -862,40 +861,32 @@ function DaftarHadirContent() {
                             >
                               <AttendanceBadge status={attStatus} />
                             </button>
+                            {time && (
+                              <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
+                                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                  {formatTimeIndo(time)}
+                                </span>
+                                {officer && <span className="truncate max-w-[80px]" title={officer}>• {officer}</span>}
+                              </div>
+                            )}
                             {notes && (
-                              <span className="text-[9px] text-amber-600 dark:text-amber-400 italic max-w-[130px] truncate" title={notes}>
+                              <span className="text-[9px] text-amber-600 dark:text-amber-400 italic max-w-[110px] truncate" title={notes}>
                                 Ket: {notes}
                               </span>
                             )}
                           </div>
                         </TableCell>
 
-                        {/* 9. Waktu & Petugas Presensi */}
-                        <TableCell className="py-3.5 text-center print:hidden">
-                          {time ? (
-                            <div className="flex flex-col items-center text-[11px]">
-                              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                                {formatTimeIndo(time)}
-                              </span>
-                              <span className="text-[10px] text-slate-400 truncate max-w-[140px]" title={officer}>
-                                {officer || "Petugas"}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-slate-400">-</span>
-                          )}
-                        </TableCell>
-
-                        {/* 10. Aksi (Persis Posisi Gambar 2) */}
-                        <TableCell className="text-right py-3.5 pr-6 print:hidden">
-                          <div className="flex items-center justify-end gap-1.5">
+                        {/* 9. Aksi */}
+                        <TableCell className="text-right py-2.5 px-2 pr-3 print:hidden">
+                          <div className="flex items-center justify-end gap-1">
                             {/* Tombol Quick 1-Click Hadir / Batal */}
                             <Button
                               size="sm"
                               variant={isHadir ? "outline" : "default"}
                               onClick={() => handleQuickToggleHadir(actor)}
                               className={cn(
-                                "h-7 px-2.5 text-xs font-bold gap-1 rounded-lg",
+                                "h-7 px-2 text-xs font-bold gap-1 rounded-lg",
                                 isHadir 
                                   ? "border-slate-300 text-slate-600 hover:bg-slate-100 dark:border-zinc-700 dark:text-slate-300 dark:hover:bg-zinc-800"
                                   : "bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -932,7 +923,7 @@ function DaftarHadirContent() {
                         </TableCell>
 
                         {/* Kolom Tanda Tangan Cetak (Print View Only) */}
-                        <TableCell className="py-3.5 text-center hidden print:table-cell text-xs text-slate-400 border border-black h-12">
+                        <TableCell className="py-2.5 text-center hidden print:table-cell text-xs text-slate-400 border border-black h-10">
                           {isHadir ? "HADIR" : "................"}
                         </TableCell>
                       </TableRow>
