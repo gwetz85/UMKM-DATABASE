@@ -217,6 +217,16 @@ function DaftarHadirContent() {
     })
   }
 
+  // Helper Format Kategori Usaha agar Rapi & Tidak Tumpuk
+  const formatCategoryBadge = (cat?: string): string => {
+    if (!cat) return "-"
+    const upper = cat.trim().toUpperCase()
+    if (upper.startsWith("BUKAN KULINER") || upper.startsWith("NON KULINER")) return "BUKAN KULINER"
+    if (upper.startsWith("KULINER") || upper.includes("MAKANAN") || upper.includes("MINUMAN")) return "KULINER"
+    if (upper.includes("WARUNG") || upper.includes("JAHIT") || upper.includes("SALON") || upper.includes("LAUNDRY") || upper.includes("BENGKEL")) return "BUKAN KULINER"
+    return cat.trim().toUpperCase()
+  }
+
   // Helper Format Waktu Indonesia
   const formatTimeIndo = (isoString?: string) => {
     if (!isoString) return "-"
@@ -1274,12 +1284,12 @@ function DaftarHadirContent() {
             <thead className="bg-[#E5E7EB] dark:bg-zinc-800 text-slate-900 dark:text-slate-100 border-b border-slate-300 dark:border-zinc-700">
               <tr className="divide-x divide-slate-300 dark:divide-zinc-700">
                 <th className="w-[3.5%] text-center font-bold text-[11px] uppercase py-2.5 px-1">NO</th>
-                <th className="w-[14.5%] text-center font-bold text-[11px] uppercase py-2.5 px-2 leading-tight">NAMA<br/>LENGKAP</th>
+                <th className="w-[14%] text-center font-bold text-[11px] uppercase py-2.5 px-2 leading-tight">NAMA<br/>LENGKAP</th>
                 <th className="w-[12%] text-center font-bold text-[11px] uppercase py-2.5 px-1.5">NIK</th>
-                <th className="w-[7%] text-center font-bold text-[11px] uppercase py-2.5 px-1">KATEGORI</th>
-                <th className="w-[13%] text-center font-bold text-[11px] uppercase py-2.5 px-2">USAHA</th>
+                <th className="w-[8%] text-center font-bold text-[11px] uppercase py-2.5 px-1">KATEGORI</th>
+                <th className="w-[13.5%] text-center font-bold text-[11px] uppercase py-2.5 px-2">USAHA</th>
                 <th className="w-[8%] text-center font-bold text-[11px] uppercase py-2.5 px-1">KOORDINATOR</th>
-                <th className="w-[15%] text-center font-bold text-[11px] uppercase py-2.5 px-1 leading-tight">JADWAL & POSISI<br/>ABSENSI (MEJA)</th>
+                <th className="w-[14%] text-center font-bold text-[11px] uppercase py-2.5 px-1 leading-tight">JADWAL & POSISI<br/>ABSENSI (MEJA)</th>
                 <th className="w-[10%] text-center font-bold text-[11px] uppercase py-2.5 px-1 leading-tight">STATUS<br/>VERIFIKASI</th>
                 <th className="w-[9%] text-center font-bold text-[11px] uppercase py-2.5 px-1">KEHADIRAN</th>
                 <th className="w-[8%] text-center font-bold text-[11px] uppercase py-2.5 px-1">AKSI</th>
@@ -1313,20 +1323,20 @@ function DaftarHadirContent() {
                     </td>
 
                     {/* 2. NAMA LENGKAP */}
-                    <td className="py-2.5 px-2 font-bold text-slate-900 dark:text-slate-100 uppercase text-xs">
+                    <td className="py-2.5 px-2 font-bold text-slate-900 dark:text-slate-100 uppercase text-xs break-words leading-snug overflow-hidden">
                       {actor.fullName || "-"}
                     </td>
 
                     {/* 3. NIK */}
-                    <td className="py-2.5 px-1.5 text-center font-mono text-xs">
-                      <div className="inline-flex items-center gap-1 bg-slate-100/90 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-zinc-700">
+                    <td className="py-2.5 px-1.5 text-center font-mono text-xs overflow-hidden">
+                      <div className="inline-flex items-center gap-1 bg-slate-100/90 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-zinc-700 max-w-full">
                         <span className="font-bold text-slate-700 dark:text-slate-200 text-[11px] whitespace-nowrap">
                           {formatMaskedNik(actor.nik, actor.id)}
                         </span>
                         <button
                           type="button"
                           onClick={() => toggleSingleNik(actor.id)}
-                          className="p-0.5 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors print:hidden cursor-pointer"
+                          className="p-0.5 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors print:hidden cursor-pointer shrink-0"
                           title={unmaskedNiks[actor.id] ? "Sensor NIK" : "Buka Sensor NIK"}
                         >
                           {unmaskedNiks[actor.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
@@ -1334,7 +1344,7 @@ function DaftarHadirContent() {
                         <button
                           type="button"
                           onClick={() => handleCopyNik(actor.nik)}
-                          className="p-0.5 rounded text-slate-400 hover:text-primary transition-colors print:hidden cursor-pointer"
+                          className="p-0.5 rounded text-slate-400 hover:text-primary transition-colors print:hidden cursor-pointer shrink-0"
                           title="Salin NIK"
                         >
                           <Copy className="w-3 h-3" />
@@ -1343,20 +1353,23 @@ function DaftarHadirContent() {
                     </td>
 
                     {/* 4. KATEGORI */}
-                    <td className="py-2.5 px-1 text-center">
-                      <span className="bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 font-bold px-2 py-0.5 rounded text-[10px] uppercase tracking-wider whitespace-nowrap">
-                        {actor.businessCategory || "-"}
+                    <td className="py-2.5 px-1 text-center overflow-hidden">
+                      <span 
+                        className="inline-block max-w-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 font-bold px-1.5 py-0.5 rounded text-[9.5px] uppercase tracking-wider truncate"
+                        title={actor.businessCategory || "-"}
+                      >
+                        {formatCategoryBadge(actor.businessCategory)}
                       </span>
                     </td>
 
                     {/* 5. USAHA */}
-                    <td className="py-2.5 px-2">
-                      <div className="space-y-0.5">
-                        <p className="font-semibold text-xs text-slate-800 dark:text-slate-200 uppercase" title={actor.businessName || "-"}>
+                    <td className="py-2.5 px-2 overflow-hidden">
+                      <div className="space-y-0.5 break-words">
+                        <p className="font-semibold text-xs text-slate-800 dark:text-slate-200 uppercase leading-snug break-words" title={actor.businessName || "-"}>
                           {actor.businessName || "-"}
                         </p>
                         {actor.kelurahan && (
-                          <p className="text-[10px] text-slate-400 flex items-center gap-0.5" title={actor.kelurahan}>
+                          <p className="text-[10px] text-slate-400 flex items-center gap-0.5 truncate" title={actor.kelurahan}>
                             <MapPin className="w-2.5 h-2.5 inline shrink-0" /> {actor.kelurahan}
                           </p>
                         )}
@@ -1364,10 +1377,10 @@ function DaftarHadirContent() {
                     </td>
 
                     {/* 6. KOORDINATOR */}
-                    <td className="py-2.5 px-1 text-center font-bold text-xs uppercase text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                    <td className="py-2.5 px-1 text-center font-bold text-xs uppercase text-slate-700 dark:text-slate-300 overflow-hidden">
                       {isHoldOrPending ? (
                         <span 
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950 dark:text-amber-300 cursor-pointer"
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950 dark:text-amber-300 cursor-pointer max-w-full truncate"
                           onClick={() => {
                             setNotesModalActor(actor)
                             setCustomStatus(attStatus)
@@ -1379,10 +1392,12 @@ function DaftarHadirContent() {
                           title="Label arsip (Klik untuk sesuaikan koordinator)"
                         >
                           <AlertTriangle className="w-2.5 h-2.5 text-amber-600 shrink-0" />
-                          <span className="truncate max-w-[90px]">{normalizeCoordinator(actor.coordinator)}</span>
+                          <span className="truncate">{normalizeCoordinator(actor.coordinator)}</span>
                         </span>
                       ) : (
-                        normalizeCoordinator(actor.coordinator)
+                        <span className="truncate block max-w-full" title={normalizeCoordinator(actor.coordinator)}>
+                          {normalizeCoordinator(actor.coordinator)}
+                        </span>
                       )}
                     </td>
 
