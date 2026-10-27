@@ -159,6 +159,12 @@ function DaftarHadirContent() {
   const [selectedDeskFilter, setSelectedDeskFilter] = useState("semua")
   const [selectedScheduleFilter, setSelectedScheduleFilter] = useState("semua")
   const [selectedKecamatanFilter, setSelectedKecamatanFilter] = useState("semua")
+  const [selectedCoordinatorFilter, setSelectedCoordinatorFilter] = useState("semua")
+
+  // State Pembagian Per Koordinator
+  const [selectedBatchCoord, setSelectedBatchCoord] = useState("")
+  const [batchCoordDesk, setBatchCoordDesk] = useState("Meja 1")
+  const [batchCoordSchedule, setBatchCoordSchedule] = useState("Sesi 1 (08.00 - 10.00 WIB)")
 
   // NIK Sensitive Data Protection State
   const [showAllNik, setShowAllNik] = useState(false)
@@ -337,6 +343,31 @@ function DaftarHadirContent() {
     return Array.from(set)
   }, [verifiedActorsList])
 
+  // Distinct Coordinators list with counts, current desks & schedules
+  const coordinatorStats = useMemo(() => {
+    const map = new Map<string, { count: number; desks: Set<string>; schedules: Set<string> }>()
+    verifiedActorsList.forEach(a => {
+      const koor = normalizeCoordinator(a.coordinator) || "TANPA KOORDINATOR"
+      if (!map.has(koor)) {
+        map.set(koor, { count: 0, desks: new Set(), schedules: new Set() })
+      }
+      const item = map.get(koor)!
+      item.count++
+      const d = (a as any).attendanceDesk
+      if (d && typeof d === 'string' && d.trim()) item.desks.add(d.trim())
+      const s = (a as any).attendanceSchedule
+      if (s && typeof s === 'string' && s.trim()) item.schedules.add(s.trim())
+    })
+    return Array.from(map.entries())
+      .map(([name, data]) => ({ 
+        name, 
+        count: data.count,
+        desks: Array.from(data.desks),
+        schedules: Array.from(data.schedules)
+      }))
+      .sort((a, b) => b.count - a.count)
+  }, [verifiedActorsList])
+
   // Distinct Schedules (Daftar Sesi yang ada di data)
   const distinctSchedules = useMemo(() => {
     const set = new Set<string>()
@@ -417,6 +448,14 @@ function DaftarHadirContent() {
         }
       }
 
+      // 5. Filter Koordinator
+      if (selectedCoordinatorFilter !== 'semua') {
+        const koor = normalizeCoordinator(actor.coordinator) || "TANPA KOORDINATOR"
+        if (koor.toLowerCase() !== selectedCoordinatorFilter.toLowerCase()) {
+          return false
+        }
+      }
+
       // 5. Search Query
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim()
@@ -435,7 +474,7 @@ function DaftarHadirContent() {
 
       return true
     })
-  }, [verifiedActorsList, activeTab, selectedDeskFilter, selectedScheduleFilter, selectedKecamatanFilter, searchQuery])
+  }, [verifiedActorsList, activeTab, selectedDeskFilter, selectedScheduleFilter, selectedKecamatanFilter, selectedCoordinatorFilter, searchQuery])
 
   // ─── FUNGSI BATCH PEMBAGIAN JADWAL & MEJA SECARA CEPAT (ATOMIC MULTI-PATH RTDB) ───
   
@@ -496,6 +535,96 @@ function DaftarHadirContent() {
     } catch (err) {
       console.error("Gagal auto-assign meja:", err)
       toast({ variant: "destructive", title: "Gagal Pembagian", description: "Terjadi kesalahan saat menyimpan data." })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // 1b. Pembagian Berdasarkan Koordinator
+  const executeCoordinatorAssignment = async (coordName: string, desk: string, schedule: string) => {
+    if (!database || !user || !coordName) {
+      toast({ variant: "destructive", title: "Pilih Koordinator", description: "Silakan pilih salah satu koordinator terlebih dahulu." })
+      return
+    }
+    setIsSubmitting(true)
+
+    try {
+      const updates: Record<string, any> = {}
+      let count = 0
+
+      verifiedActorsList.forEach(actor => {
+        const actorKoor = normalizeCoordinator(actor.coordinator) || "TANPA KOORDINATOR"
+        if (actorKoor.toLowerCase() === coordName.toLowerCase()) {
+          if (desk.trim()) {
+            updates[`businessActors/${actor.id}/attendanceDesk`] = desk.trim()
+          }
+          if (schedule.trim()) {
+            updates[`businessActors/${actor.id}/attendanceSchedule`] = schedule.trim()
+          }
+          count++
+        }
+      })
+
+      if (Object.keys(updates).length > 0) {
+        await update(ref(database), updates)
+      }
+
+      logActivity({
+        query: `PEMBAGIAN KOORDINATOR: ${coordName} (${count} peserta) -> Meja: ${desk || '-'}, Sesi: ${schedule || '-'}`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'MODUL DAFTAR HADIR',
+        userId: userProfile?.fullName || user?.email || "Admin"
+      })
+
+      toast({
+        title: "Penetapan Koordinator Berhasil!",
+        description: `Berhasil menetapkan ${desk ? `Meja: ${desk}` : ''}${desk && schedule ? ' • ' : ''}${schedule ? `Sesi: ${schedule}` : ''} untuk ${count} peserta di bawah Koordinator ${coordName}.`
+      })
+    } catch (err) {
+      console.error("Gagal assign koordinator:", err)
+      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan saat menyimpan data." })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Bagi Rata Seluruh Koordinator ke Meja 1 s.d Meja 4
+  const executeAutoDistributeAllCoordinators = async (deskCount: number = 4) => {
+    if (!database || !user || coordinatorStats.length === 0) return
+    setIsSubmitting(true)
+
+    try {
+      const updates: Record<string, any> = {}
+      const deskLoads = Array.from({ length: deskCount }, (_, i) => ({ deskIndex: i + 1, totalPeople: 0 }))
+      const coordToDeskMap = new Map<string, string>()
+
+      coordinatorStats.forEach(coord => {
+        deskLoads.sort((a, b) => a.totalPeople - b.totalPeople)
+        const targetDesk = `Meja ${deskLoads[0].deskIndex}`
+        deskLoads[0].totalPeople += coord.count
+        coordToDeskMap.set(coord.name.toLowerCase(), targetDesk)
+      })
+
+      verifiedActorsList.forEach(actor => {
+        const koor = (normalizeCoordinator(actor.coordinator) || "TANPA KOORDINATOR").toLowerCase()
+        const assignedDesk = coordToDeskMap.get(koor) || "Meja 1"
+        updates[`businessActors/${actor.id}/attendanceDesk`] = assignedDesk
+      })
+
+      if (Object.keys(updates).length > 0) {
+        await update(ref(database), updates)
+      }
+
+      toast({
+        title: "Koordinator Berhasil Dibagi!",
+        description: `Berhasil membagi seimbang ${coordinatorStats.length} koordinator ke Meja 1 s.d Meja ${deskCount}.`
+      })
+      setShowScheduleModal(false)
+    } catch (err) {
+      console.error("Gagal auto distribute koordinator:", err)
+      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan saat membagi koordinator." })
     } finally {
       setIsSubmitting(false)
     }
@@ -1063,17 +1192,39 @@ function DaftarHadirContent() {
             </select>
           </div>
 
+          {/* Filter Koordinator */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-1">
+              <Users className="w-3 h-3 text-emerald-600" />
+              <span>Koordinator:</span>
+            </span>
+            <select
+              value={selectedCoordinatorFilter}
+              onChange={(e) => {
+                setSelectedCoordinatorFilter(e.target.value)
+                setPageLimit(50)
+              }}
+              className="h-8 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer shadow-2xs max-w-[150px] truncate"
+            >
+              <option value="semua">Semua Koordinator</option>
+              {coordinatorStats.map(c => (
+                <option key={c.name} value={c.name}>{c.name} ({c.count})</option>
+              ))}
+            </select>
+          </div>
+
           {/* Reset Active Filter */}
-          {(selectedDeskFilter !== 'semua' || selectedScheduleFilter !== 'semua' || selectedKecamatanFilter !== 'semua') && (
+          {(selectedDeskFilter !== 'semua' || selectedScheduleFilter !== 'semua' || selectedKecamatanFilter !== 'semua' || selectedCoordinatorFilter !== 'semua') && (
             <button
               onClick={() => {
                 setSelectedDeskFilter('semua')
                 setSelectedScheduleFilter('semua')
                 setSelectedKecamatanFilter('semua')
+                setSelectedCoordinatorFilter('semua')
               }}
               className="text-[11px] font-bold text-rose-600 hover:text-rose-700 underline px-1 cursor-pointer"
             >
-              Reset Filter Meja/Sesi
+              Reset Filter
             </button>
           )}
         </div>
@@ -1415,21 +1566,23 @@ function DaftarHadirContent() {
 
       {/* ─── MODAL DIALOG 1: ATUR JADWAL & POSISI ABSENSI MASSAL (BATCH) ─── */}
       <Dialog open={showScheduleModal} onOpenChange={setShowScheduleModal}>
-        <DialogContent className="max-w-xl rounded-2xl p-6">
-          <DialogHeader>
-            <DialogTitle className="text-primary font-black uppercase text-base flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-sky-600" /> Pengaturan Jadwal & Posisi Absensi
+        <DialogContent className="max-w-2xl rounded-2xl p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
+          <DialogHeader className="pr-8">
+            <DialogTitle className="text-primary font-black uppercase text-sm sm:text-base flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-sky-600 shrink-0" />
+              <span>Pengaturan Jadwal & Posisi Absensi</span>
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-500">
+            <DialogDescription className="text-xs text-slate-500 mt-1">
               Bagikan kuota <strong>{verifiedActorsList.length} pelaku usaha terverifikasi</strong> ke dalam posisi meja loket dan sesi kedatangan agar proses presensi tertib dan lancar.
             </DialogDescription>
           </DialogHeader>
 
           <Tabs value={batchTab} onValueChange={setBatchTab} className="w-full mt-2">
-            <TabsList className="grid grid-cols-3 w-full bg-slate-100 dark:bg-zinc-800">
-              <TabsTrigger value="auto_kecamatan" className="text-xs font-bold">1. Per Kecamatan</TabsTrigger>
-              <TabsTrigger value="even_sessions" className="text-xs font-bold">2. Bagi Rata Sesi</TabsTrigger>
-              <TabsTrigger value="custom_filter" className="text-xs font-bold">3. Data Terfilter</TabsTrigger>
+            <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full bg-slate-100 dark:bg-zinc-800 h-auto p-1 gap-1">
+              <TabsTrigger value="auto_kecamatan" className="text-xs font-bold py-1.5">1. Per Kecamatan</TabsTrigger>
+              <TabsTrigger value="by_coordinator" className="text-xs font-bold py-1.5">2. Per Koordinator</TabsTrigger>
+              <TabsTrigger value="even_sessions" className="text-xs font-bold py-1.5">3. Bagi Rata Sesi</TabsTrigger>
+              <TabsTrigger value="custom_filter" className="text-xs font-bold py-1.5">4. Data Terfilter</TabsTrigger>
             </TabsList>
 
             {/* TAB 1: Pembagian Otomatis Berdasarkan 4 Kecamatan */}
@@ -1480,6 +1633,176 @@ function DaftarHadirContent() {
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Layers className="w-4 h-4" />}
                 Terapkan Pembagian Meja Otomatis (4 Kecamatan)
               </Button>
+            </TabsContent>
+
+            {/* TAB 2: Pembagian Berdasarkan Koordinator */}
+            <TabsContent value="by_coordinator" className="space-y-4 pt-3">
+              <div className="bg-emerald-50 dark:bg-emerald-950/40 p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-200 space-y-1.5">
+                <p className="font-bold flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-emerald-700" />
+                  <span>Pembagian Posisi Meja & Sesi Berdasarkan Koordinator:</span>
+                </p>
+                <p className="text-[11px] leading-relaxed">
+                  Pilih koordinator penanggung jawab di bawah untuk menetapkan meja loket absensi dan sesi kedatangan rombongan peserta mereka.
+                </p>
+              </div>
+
+              {/* Form Input Per Koordinator */}
+              <div className="space-y-3 bg-white dark:bg-zinc-900 p-3 rounded-xl border border-slate-200 dark:border-zinc-800">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Pilih Koordinator ({coordinatorStats.length} Koordinator Aktif)
+                  </label>
+                  <select
+                    value={selectedBatchCoord}
+                    onChange={(e) => {
+                      const name = e.target.value
+                      setSelectedBatchCoord(name)
+                      const stat = coordinatorStats.find(c => c.name === name)
+                      if (stat?.desks[0]) setBatchCoordDesk(stat.desks[0])
+                      if (stat?.schedules[0]) setBatchCoordSchedule(stat.schedules[0])
+                    }}
+                    className="w-full h-9 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-xs font-bold text-slate-900 dark:text-slate-100"
+                  >
+                    <option value="">-- Pilih Salah Satu Koordinator --</option>
+                    {coordinatorStats.map(c => (
+                      <option key={c.name} value={c.name}>
+                        {c.name} ({c.count} orang)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Posisi Meja / Loket</label>
+                    <Input
+                      value={batchCoordDesk}
+                      onChange={(e) => setBatchCoordDesk(e.target.value)}
+                      placeholder="Contoh: Meja 1 atau Loket A"
+                      className="text-xs h-9 font-medium"
+                    />
+                    <div className="flex flex-wrap gap-1">
+                      {["Meja 1", "Meja 2", "Meja 3", "Meja 4", "Meja 5"].map(m => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setBatchCoordDesk(m)}
+                          className="text-[9px] font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-sky-100 hover:text-sky-800 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+                        >
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Jadwal / Sesi Waktu</label>
+                    <Input
+                      value={batchCoordSchedule}
+                      onChange={(e) => setBatchCoordSchedule(e.target.value)}
+                      placeholder="Contoh: Sesi 1 (08.00 - 10.00 WIB)"
+                      className="text-xs h-9 font-medium"
+                    />
+                    <div className="flex flex-wrap gap-1">
+                      {["Sesi 1 (08.00 - 10.00 WIB)", "Sesi 2 (10.00 - 12.00 WIB)", "Sesi 3 (13.00 - 15.00 WIB)"].map(s => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setBatchCoordSchedule(s)}
+                          className="text-[9px] font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-amber-100 hover:text-amber-900 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+                        >
+                          {s.split(" ")[0]} {s.split(" ")[1]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  disabled={isSubmitting || !selectedBatchCoord}
+                  onClick={() => executeCoordinatorAssignment(selectedBatchCoord, batchCoordDesk, batchCoordSchedule)}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-9 gap-2 cursor-pointer shadow-sm"
+                >
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  Terapkan ke Peserta Koordinator {selectedBatchCoord || "..."}
+                </Button>
+              </div>
+
+              {/* Opsi Cepat: Bagi Rata Semua Koordinator ke Meja 1-4 */}
+              <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 flex flex-col gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Opsi Cepat Otomatis:
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isSubmitting}
+                    onClick={() => executeAutoDistributeAllCoordinators(4)}
+                    className="text-xs font-bold text-emerald-700 border-emerald-300 hover:bg-emerald-50 h-8 gap-1.5 cursor-pointer"
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    Bagi Rata Seluruh Koordinator ke Meja 1 - 4
+                  </Button>
+                </div>
+
+                {/* Ringkasan Tabel Koordinator */}
+                <div className="max-h-48 overflow-y-auto border border-slate-200 dark:border-zinc-800 rounded-lg">
+                  <table className="w-full text-[11px]">
+                    <thead className="bg-slate-100 dark:bg-zinc-800 sticky top-0 font-bold text-slate-700 dark:text-slate-300">
+                      <tr>
+                        <th className="py-1.5 px-2 text-left">Koordinator</th>
+                        <th className="py-1.5 px-2 text-center">Peserta</th>
+                        <th className="py-1.5 px-2 text-center">Meja</th>
+                        <th className="py-1.5 px-2 text-center">Sesi</th>
+                        <th className="py-1.5 px-2 text-center">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                      {coordinatorStats.map((c) => (
+                        <tr key={c.name} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50">
+                          <td className="py-1 px-2 font-bold uppercase">{c.name}</td>
+                          <td className="py-1 px-2 text-center font-mono font-bold text-slate-600 dark:text-slate-300">{c.count}</td>
+                          <td className="py-1 px-2 text-center">
+                            {c.desks[0] ? (
+                              <span className="bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded text-[9.5px] font-bold">
+                                {c.desks[0].split(" ")[0]} {c.desks[0].split(" ")[1] || ""}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 text-[10px]">-</span>
+                            )}
+                          </td>
+                          <td className="py-1 px-2 text-center">
+                            {c.schedules[0] ? (
+                              <span className="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded text-[9.5px] font-bold">
+                                {c.schedules[0].split(" ")[0]} {c.schedules[0].split(" ")[1] || ""}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 text-[10px]">-</span>
+                            )}
+                          </td>
+                          <td className="py-1 px-2 text-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedBatchCoord(c.name)
+                                if (c.desks[0]) setBatchCoordDesk(c.desks[0])
+                                if (c.schedules[0]) setBatchCoordSchedule(c.schedules[0])
+                              }}
+                              className="text-[10px] font-bold text-primary hover:underline cursor-pointer"
+                            >
+                              Pilih
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </TabsContent>
 
             {/* TAB 2: Bagi Rata Sesi Waktu */}
