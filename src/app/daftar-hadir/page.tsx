@@ -749,7 +749,7 @@ function DaftarHadirContent() {
             Tidak ada data pelaku usaha terverifikasi pada kategori ini.
           </div>
         ) : (
-          <table className="w-full text-xs border-collapse">
+          <table className="w-full text-xs border-collapse table-auto sm:table-fixed">
             {/* Header Tabel Persis Desain Gambar 1 */}
             <thead className="bg-[#E5E7EB] dark:bg-zinc-800 text-slate-900 dark:text-slate-100 border-b border-slate-300 dark:border-zinc-700">
               <tr className="divide-x divide-slate-300 dark:divide-zinc-700">
@@ -778,7 +778,7 @@ function DaftarHadirContent() {
                   <tr 
                     key={actor.id} 
                     className={cn(
-                      "hover:bg-primary/5 transition-colors",
+                      "hover:bg-primary/5 transition-colors divide-x divide-slate-200 dark:divide-zinc-800",
                       isHadir ? "bg-emerald-50/25 dark:bg-emerald-950/20" : "even:bg-slate-50/40 dark:even:zinc-900/40"
                     )}
                   >
