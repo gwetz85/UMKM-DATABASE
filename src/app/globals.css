@@ -993,54 +993,64 @@ body:not(.dark) h6:not([class*="text-"]) {
 }
 
 /* ==========================================
-   TABLES: ALWAYS WHITE BACKGROUND IN DARK MODE
+   TABLES & DATA GRIDS IN DARK MODE
    ========================================== */
 
 .dark table,
 .dark .table-container,
-.dark [data-table],
-.dark table tbody,
-.dark table td {
-  background-color: #ffffff !important;
-  color: #1e293b !important;
+.dark [data-table] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #262626 !important;
 }
 
 .dark table thead,
 .dark table thead th,
 .dark table th {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
+  background-color: #0a0a0a !important;
+  color: #ffffff !important;
+  border-color: #262626 !important;
 }
 
 .dark table tr,
 .dark table tbody tr {
-  background-color: #ffffff !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #1f1f1f !important;
 }
 
 .dark table tbody tr:nth-child(even),
 .dark table tbody tr.even {
-  background-color: #f8fafc !important;
+  background-color: #080808 !important;
 }
 
 .dark table tbody tr:hover,
-.dark table tbody tr:hover td {
-  background-color: #f1f5f9 !important;
+.dark table tbody tr:hover td,
+.dark table tr:hover,
+.dark table tr:hover td {
+  background-color: #141414 !important;
 }
 
 .dark table td,
-.dark table th {
-  border-color: #e2e8f0 !important;
+.dark table th,
+.dark table tbody td {
+  border-color: #1f1f1f !important;
+  background-color: transparent !important;
+  color: #ffffff !important;
 }
 
+.dark table td .text-slate-400,
 .dark table td .text-slate-500,
 .dark table td .text-muted-foreground {
-  color: #64748b !important;
+  color: #94a3b8 !important;
 }
 
+.dark table td .text-slate-600,
 .dark table td .text-slate-700,
 .dark table td .text-slate-800,
-.dark table td .text-slate-900 {
-  color: #1e293b !important;
+.dark table td .text-slate-900,
+.dark table td .text-black {
+  color: #ffffff !important;
 }
 
 /* ==========================================================================
@@ -1403,7 +1413,7 @@ body:not(.dark) h6:not([class*="text-"]) {
 }
 .dark thead tr,
 .dark thead th {
-  background-color: #050505 !important;
+  background-color: #0a0a0a !important;
   color: #ffffff !important;
   border-color: #262626 !important;
 }
@@ -1413,9 +1423,10 @@ body:not(.dark) h6:not([class*="text-"]) {
   border-color: #1f1f1f !important;
 }
 .dark tbody tr:hover {
-  background-color: #0d0d0d !important;
+  background-color: #141414 !important;
 }
 .dark tbody td {
+  background-color: transparent !important;
   border-color: #1f1f1f !important;
   color: #ffffff !important;
 }
