@@ -42,6 +42,8 @@ export default function LoginPage() {
       const role = existingProfile.role || ''
       if (role === 'petugas_survey' || role === 'petugas') {
         router.push("/portal-survey")
+      } else if (role === 'petugas_absensi' || role === 'petugas absensi' || role === 'absensi') {
+        router.push("/daftar-hadir")
       } else if (role === 'dinas') {
         router.push("/verifikasi-dinas")
       } else if (role === 'verifikator_dinas') {
@@ -304,6 +306,8 @@ export default function LoginPage() {
 
       if (finalUserRole === 'petugas_survey' || finalUserRole === 'petugas') {
         router.push("/portal-survey")
+      } else if (finalUserRole === 'petugas_absensi' || finalUserRole === 'petugas absensi' || finalUserRole === 'absensi') {
+        router.push("/daftar-hadir")
       } else if (finalUserRole === 'dinas') {
         router.push("/verifikasi-dinas")
       } else if (finalUserRole === 'verifikator_dinas') {

@@ -68,7 +68,21 @@ export function useNavigation() {
     return userChats.filter((c: any) => c.unread === true).length
   }, [userChats])
 
-  const navigation = React.useMemo(() => [
+  const navigation = React.useMemo(() => {
+    if (isPetugasAbsensi && !isAdmin) {
+      return [
+        {
+          name: "Daftar Hadir",
+          href: "/daftar-hadir",
+          icon: ClipboardCheck,
+          show: true,
+          color: "#06b6d4",
+          description: "Presensi dan Kehadiran Pelaku Usaha Real-Time"
+        }
+      ]
+    }
+
+    return [
     {
       name: "Dashboard Statistik",
       href: "/dashboard",
@@ -393,7 +407,8 @@ export function useNavigation() {
       color: "#059669",
       description: "Upload & Verifikasi Hasil BPJS Ketenagakerjaan"
     },
-  ], [user, isAdmin, isMonitoring, isKoordinator, isPetugas, isVerifikatorDinas, isDinas, isStaff, isPetugasAbsensi, userProfile, totalUnread])
+  ]
+  }, [user, isAdmin, isMonitoring, isKoordinator, isPetugas, isVerifikatorDinas, isDinas, isStaff, isPetugasAbsensi, userProfile, totalUnread])
 
   return {
     navigation: navigation.filter(item => item.show),

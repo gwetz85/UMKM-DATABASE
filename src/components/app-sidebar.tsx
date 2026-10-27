@@ -156,7 +156,7 @@ export function AppSidebar() {
     setMounted(true)
   }, [])
 
-  const { navigation, isAdmin, isKoordinator, isMonitoring, isPetugas, isDinas, isStaff, userProfile } = useNavigation()
+  const { navigation, isAdmin, isKoordinator, isMonitoring, isPetugas, isDinas, isStaff, isPetugasAbsensi, userProfile } = useNavigation()
 
   const handleAuthAction = async () => {
     if (isMobile) setOpenMobile(false)
@@ -517,7 +517,7 @@ export function AppSidebar() {
                         {userProfile?.fullName || user.email?.split('@')[0]}
                       </span>
                       <span className="text-[9px] text-slate-400 font-medium truncate">
-                        {isAdmin ? "Administrator" : isStaff ? "Staff Pelaksana" : isMonitoring ? "Monitoring" : isKoordinator ? "Koordinator Wilayah" : isPetugas ? "Petugas Survey" : isDinas ? "Verifikator Dinas" : "Pengguna"}
+                        {isAdmin ? "Administrator" : isPetugasAbsensi ? "Petugas Absensi" : isStaff ? "Staff Pelaksana" : isMonitoring ? "Monitoring" : isKoordinator ? "Koordinator Wilayah" : isPetugas ? "Petugas Survey" : isDinas ? "Verifikator Dinas" : "Pengguna"}
                       </span>
                     </div>
                     <ChevronsUpDown className="w-3.5 h-3.5 text-slate-400 group-hover/profile:text-white shrink-0 ml-auto group-data-[collapsible=icon]:hidden" />

@@ -9,7 +9,7 @@ import { useNavigation } from "@/hooks/use-navigation"
 
 export default function RootPage() {
   const { user, isUserLoading, isProfileLoading } = useUser()
-  const { isDinas, isKoordinator, isVerifikatorDinas, isPetugas } = useNavigation()
+  const { isDinas, isKoordinator, isVerifikatorDinas, isPetugas, isPetugasAbsensi } = useNavigation()
   const router = useRouter()
 
   useEffect(() => {
@@ -19,6 +19,11 @@ export default function RootPage() {
     }
 
     if (isProfileLoading) {
+      return
+    }
+
+    if (isPetugasAbsensi) {
+      router.push("/daftar-hadir")
       return
     }
 

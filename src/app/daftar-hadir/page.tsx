@@ -12,6 +12,7 @@ import {
 import { ref, update } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { useToast } from "@/hooks/use-toast"
+import { useSoundEffect } from "@/hooks/use-sound-effect"
 import { BusinessActor } from "../lib/types"
 import { normalizeCoordinator } from "@/lib/coordinator-utils"
 import { cn } from "@/lib/utils"
@@ -80,7 +81,12 @@ import {
   SlidersHorizontal,
   Filter,
   RefreshCw,
-  Edit
+  Edit,
+  ScanLine,
+  History,
+  QrCode,
+  CheckSquare,
+  SearchCheck
 } from "lucide-react"
 
 import ExcelJS from "exceljs"
@@ -119,6 +125,16 @@ function DaftarHadirContent() {
   const { user, isUserLoading, userProfile } = useUser()
   const database = useDatabase()
   const { toast } = useToast()
+  const { playSound } = useSoundEffect()
+
+  // State Mode Tampilan: Khusus Petugas Absensi selalu 'scanner', Admin bisa beralih
+  const [viewMode, setViewMode] = useState<'scanner' | 'table'>('table')
+
+  // Scanner NIK States (Mode Khusus Petugas Absensi)
+  const [scannerNikInput, setScannerNikInput] = useState("")
+  const [scannerResult, setScannerResult] = useState<BusinessActor | null>(null)
+  const [scannerStatus, setScannerStatus] = useState<'idle' | 'found' | 'not_found'>('idle')
+  const inputScannerRef = React.useRef<HTMLInputElement | null>(null)
 
   // 1. Role-Based Access Control (RBAC)
   const adminRef = useMemoFirebase(() => {
@@ -141,6 +157,13 @@ function DaftarHadirContent() {
 
   // Akses diizinkan HANYA untuk Admin dan Petugas Absensi
   const isAuthorized = isAdmin || isPetugasAbsensi
+
+  // Otomatis aktifkan Mode Scanner jika role adalah Petugas Absensi (tanpa akses admin)
+  React.useEffect(() => {
+    if (isPetugasAbsensi && !isAdmin) {
+      setViewMode('scanner')
+    }
+  }, [isPetugasAbsensi, isAdmin])
 
   // 2. Fetch Real-time Business Actors Data
   const actorsQuery = useMemoFirebase(() => {
@@ -233,6 +256,22 @@ function DaftarHadirContent() {
     try {
       const date = new Date(isoString)
       return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + " WIB"
+    } catch {
+      return "-"
+    }
+  }
+
+  const formatDateTimeIndo = (isoString?: string) => {
+    if (!isoString) return "-"
+    try {
+      const date = new Date(isoString)
+      return date.toLocaleDateString('id-ID', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric',
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }) + " WIB"
     } catch {
       return "-"
     }
@@ -335,6 +374,144 @@ function DaftarHadirContent() {
     if (!rawActors) return []
     return rawActors.filter(a => a && isActorVerified(a))
   }, [rawActors])
+
+// ─── FUNGSI SCANNER NIK (KHUSUS ROLE PETUGAS ABSENSI) ───
+  const handleSearchScanner = (overrideNik?: string) => {
+    const rawQuery = overrideNik !== undefined ? overrideNik : scannerNikInput
+    const query = rawQuery.trim().replace(/\D/g, '')
+
+    if (!query) {
+      setScannerResult(null)
+      setScannerStatus('idle')
+      return
+    }
+
+    // Cari di verifiedActorsList
+    const found = verifiedActorsList.find(a => {
+      const cleanNik = (a.nik || "").trim().replace(/\D/g, '')
+      return cleanNik === query || (query.length >= 12 && cleanNik.includes(query))
+    })
+
+    if (found) {
+      setScannerResult(found)
+      setScannerStatus('found')
+      if ((found as any).attendanceStatus === 'hadir') {
+        playSound('click', 0.4)
+      } else {
+        playSound('select', 0.4)
+      }
+    } else {
+      setScannerResult(null)
+      setScannerStatus('not_found')
+      playSound('error', 0.45)
+    }
+  }
+
+  const handleScannerMarkHadir = async (actor: BusinessActor) => {
+    if (!database || !user) return
+    setIsSubmitting(true)
+    const officerName = userProfile?.fullName || user?.email || (isAdmin ? "Administrator" : "Petugas Absensi")
+    const nowIso = new Date().toISOString()
+
+    try {
+      const actorRef = ref(database, `businessActors/${actor.id}`)
+      await update(actorRef, {
+        attendanceStatus: 'hadir',
+        attendanceUpdatedAt: nowIso,
+        attendanceUpdatedBy: officerName,
+      })
+
+      const attendanceLogRef = ref(database, `daftar_hadir/${actor.id}`)
+      await update(attendanceLogRef, {
+        actorId: actor.id,
+        fullName: actor.fullName,
+        nik: actor.nik,
+        businessName: actor.businessName || "",
+        status: 'hadir',
+        desk: (actor as any).attendanceDesk || null,
+        schedule: (actor as any).attendanceSchedule || null,
+        updatedAt: nowIso,
+        updatedBy: officerName,
+      })
+
+      logActivity({
+        query: `PRESENSI NIK: ${actor.nik} (${actor.fullName}) -> HADIR`,
+        results: `Presensi berhasil dicatat oleh ${officerName}`,
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'PETUGAS ABSENSI SCANNER',
+        userId: officerName
+      })
+
+      playSound('success', 0.5)
+
+      // Update state scannerResult realtime
+      setScannerResult({
+        ...actor,
+        attendanceStatus: 'hadir',
+        attendanceUpdatedAt: nowIso,
+        attendanceUpdatedBy: officerName
+      } as any)
+
+      toast({
+        title: "✓ Presensi Berhasil!",
+        description: `${actor.fullName} berhasil ditandai HADIR oleh ${officerName}.`
+      })
+    } catch (err) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal Update", description: "Terjadi kesalahan saat menyimpan presensi." })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleScannerCancelHadir = async (actor: BusinessActor) => {
+    if (!database || !user) return
+    setIsSubmitting(true)
+
+    try {
+      const actorRef = ref(database, `businessActors/${actor.id}`)
+      await update(actorRef, {
+        attendanceStatus: 'belum_hadir',
+        attendanceUpdatedAt: null,
+        attendanceUpdatedBy: null,
+      })
+
+      setScannerResult({
+        ...actor,
+        attendanceStatus: 'belum_hadir',
+        attendanceUpdatedAt: null,
+        attendanceUpdatedBy: null
+      } as any)
+
+      toast({
+        title: "Status Dibatalkan",
+        description: `Presensi ${actor.fullName} dikembalikan ke BELUM HADIR.`
+      })
+    } catch (err) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan saat membatalkan presensi." })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleScannerReset = () => {
+    setScannerNikInput('')
+    setScannerResult(null)
+    setScannerStatus('idle')
+    setTimeout(() => {
+      inputScannerRef.current?.focus()
+    }, 50)
+  }
+
+  // Riwayat 5 Presensi Terakhir oleh Petugas
+  const recentOfficerScans = useMemo(() => {
+    return verifiedActorsList
+      .filter(a => (a as any).attendanceStatus === 'hadir' && (a as any).attendanceUpdatedAt)
+      .sort((a, b) => new Date((b as any).attendanceUpdatedAt).getTime() - new Date((a as any).attendanceUpdatedAt).getTime())
+      .slice(0, 5)
+  }, [verifiedActorsList])
 
   // Distinct Desks (Daftar Meja yang ada di data)
   const distinctDesks = useMemo(() => {
@@ -996,6 +1173,437 @@ function DaftarHadirContent() {
     )
   }
 
+  // ─── TAMPILAN KHUSUS MODE SCANNER NIK (ROLE PETUGAS ABSENSI / ADMIN SCAN MODE) ───
+  if (viewMode === 'scanner' || (isPetugasAbsensi && !isAdmin)) {
+    return (
+      <div className="w-full min-h-[90vh] p-2 sm:p-4 max-w-4xl mx-auto space-y-4">
+        {/* Top Header Card */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-xs">
+          <div className="flex items-center gap-3">
+            <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300">
+                  <ScanLine className="w-5 h-5" />
+                </span>
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 font-headline">
+                  Presensi Kehadiran Pelaku Usaha
+                </h1>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Petugas: <strong className="text-slate-800 dark:text-slate-200">{userProfile?.fullName || user?.email}</strong> 
+                <span className="mx-1.5">•</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 uppercase">
+                  {isAdmin ? "Administrator" : "Petugas Absensi"}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            {/* Quick stats mini */}
+            <div className="flex items-center gap-2 text-xs bg-slate-50 dark:bg-zinc-800/80 px-3 py-1.5 rounded-xl border border-slate-200/80 dark:border-zinc-700">
+              <span className="text-slate-500 font-medium">Hadir Hari Ini:</span>
+              <span className="font-black text-emerald-600 dark:text-emerald-400">{counts.hadir}</span>
+              <span className="text-slate-300 dark:text-zinc-600">/</span>
+              <span className="font-bold text-slate-700 dark:text-slate-300">{counts.semua} Total</span>
+            </div>
+
+            {/* Jika admin, bisa beralih kembali ke mode tabel */}
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setViewMode('table')}
+                className="text-xs font-bold gap-1.5 border-slate-300"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Mode Tabel</span>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* ─── HANYA 1 KOLOM SEARCH: PENCARIAN NIK ─── */}
+        <Card className="border-2 border-primary/20 shadow-md bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
+          <CardContent className="p-4 sm:p-6 space-y-4">
+            <div className="space-y-1.5">
+              <label htmlFor="scanner-nik-input" className="text-sm font-black uppercase tracking-wider text-slate-700 dark:text-slate-200 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <SearchCheck className="w-4 h-4 text-primary" />
+                  Pencarian NIK (Nomor Induk Kependudukan)
+                </span>
+                <span className="text-xs font-mono font-normal text-muted-foreground">
+                  {scannerNikInput.replace(/\D/g, '').length} / 16 Digit
+                </span>
+              </label>
+
+              <div className="relative">
+                <Input
+                  id="scanner-nik-input"
+                  ref={inputScannerRef}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={16}
+                  placeholder="Ketik atau Scan 16 Digit NIK di sini..."
+                  value={scannerNikInput}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 16)
+                    setScannerNikInput(val)
+                    if (val.length === 16) {
+                      handleSearchScanner(val)
+                    } else if (val.length === 0) {
+                      setScannerResult(null)
+                      setScannerStatus('idle')
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleSearchScanner()
+                    }
+                  }}
+                  className="h-14 pl-12 pr-28 text-lg sm:text-xl font-mono font-bold tracking-wider rounded-xl border-2 border-primary/30 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/20 bg-slate-50/50 dark:bg-zinc-800/50"
+                  autoFocus
+                />
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary">
+                  <ScanLine className="w-6 h-6 animate-pulse" />
+                </div>
+
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  {scannerNikInput && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleScannerReset}
+                      className="h-9 px-2 text-xs text-muted-foreground hover:text-slate-900"
+                    >
+                      Batal
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => handleSearchScanner()}
+                    className="h-9 px-4 text-xs font-bold bg-primary hover:bg-primary/90 text-white rounded-lg shadow-xs"
+                  >
+                    <Search className="w-3.5 h-3.5 mr-1" /> Cari
+                  </Button>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-muted-foreground">
+                Masukkan 16 digit NIK pelaku usaha. Sistem otomatis mencari saat 16 digit lengkap atau tekan tombol <strong>Enter</strong>.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ─── HASIL PENGECEKAN NIK ─── */}
+        {scannerStatus === 'found' && scannerResult && (
+          <Card className="border-2 border-slate-200 dark:border-zinc-800 shadow-lg rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 animate-in fade-in-50 zoom-in-95 duration-200">
+            {/* Status Header Banner */}
+            {((scannerResult as any).attendanceStatus === 'hadir') ? (
+              <div className="p-4 bg-emerald-500 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-inner">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-black uppercase tracking-widest bg-white/25 px-2.5 py-0.5 rounded-full inline-block">
+                      STATUS: TELAH HADIR
+                    </span>
+                    <h2 className="text-lg font-black mt-0.5">
+                      Pelaku Usaha Sudah Melakukan Presensi
+                    </h2>
+                    <p className="text-xs text-emerald-100 flex items-center gap-1 mt-0.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      Diverifikasi oleh: <strong>{(scannerResult as any).attendanceUpdatedBy || "Petugas Absensi"}</strong> pada {formatDateTimeIndo((scannerResult as any).attendanceUpdatedAt)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleScannerCancelHadir(scannerResult)}
+                    disabled={isSubmitting}
+                    className="bg-white/10 hover:bg-white/20 text-white border-white/30 text-xs font-bold"
+                  >
+                    Batal Hadir
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleScannerReset}
+                    className="bg-white text-emerald-700 hover:bg-emerald-50 text-xs font-black shadow-xs"
+                  >
+                    Cari NIK Lain
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-amber-500 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-inner">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                    <Clock className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-black uppercase tracking-widest bg-white/25 px-2.5 py-0.5 rounded-full inline-block">
+                      STATUS: BELUM HADIR
+                    </span>
+                    <h2 className="text-lg font-black mt-0.5">
+                      Siap Untuk Melakukan Presensi
+                    </h2>
+                    <p className="text-xs text-amber-100 mt-0.5">
+                      Silakan periksa posisi meja dan jadwal sesi di bawah, lalu klik tombol <strong>Tandai Hadir</strong>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="shrink-0 w-full sm:w-auto flex justify-end">
+                  <Button
+                    type="button"
+                    size="lg"
+                    onClick={() => handleScannerMarkHadir(scannerResult)}
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto bg-white text-emerald-800 hover:bg-emerald-50 text-base font-black px-6 py-6 shadow-md gap-2"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Check className="w-6 h-6 text-emerald-600" />
+                    )}
+                    <span>TANDAI HADIR</span>
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <CardContent className="p-5 sm:p-6 space-y-6">
+              {/* Highlight Dua Kotak: POSISI MEJA & JADWAL SESI */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Posisi Absensi (Meja) */}
+                <div className="p-4 rounded-xl bg-sky-50 dark:bg-sky-950/40 border-2 border-sky-200 dark:border-sky-800 flex items-start gap-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <MapPin className="w-6 h-6" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-sky-700 dark:text-sky-300">
+                      POSISI ABSENSI (MEJA / LOKET)
+                    </span>
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 leading-snug">
+                      {(scannerResult as any).attendanceDesk || (
+                        <span className="text-amber-600 dark:text-amber-400 italic font-semibold">
+                          Belum Ditentukan
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Arahkan pelaku usaha menuju loket meja di atas
+                    </p>
+                  </div>
+                </div>
+
+                {/* Jadwal Absensi (Sesi) */}
+                <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-200 dark:border-amber-800 flex items-start gap-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <Clock className="w-6 h-6" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                      JADWAL ABSENSI (SESI / WAKTU)
+                    </span>
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 leading-snug">
+                      {(scannerResult as any).attendanceSchedule || (
+                        <span className="text-amber-600 dark:text-amber-400 italic font-semibold">
+                          Belum Ditentukan
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Waktu kehadiran sesuai gelombang undangan
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Data Lengkap Pelaku Usaha */}
+              <div className="border border-slate-200 dark:border-zinc-800 rounded-xl p-4 bg-slate-50/60 dark:bg-zinc-800/40 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-700 pb-2">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                    <UserCheck className="w-4 h-4 text-primary" />
+                    Biodata Pelaku Usaha
+                  </h4>
+                  <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-bold">
+                    ✓ Lolos Verifikasi Dinas
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 text-xs">
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 text-[10.5px] font-bold block">NAMA LENGKAP</span>
+                    <span className="font-black text-slate-900 dark:text-slate-100 text-sm">{scannerResult.fullName}</span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 text-[10.5px] font-bold block">NOMOR NIK</span>
+                    <span className="font-mono font-black text-primary text-sm tracking-wider">{scannerResult.nik}</span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 text-[10.5px] font-bold block">NAMA USAHA</span>
+                    <span className="font-black text-slate-800 dark:text-slate-200">{scannerResult.businessName || "-"}</span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 text-[10.5px] font-bold block">BIDANG / KATEGORI</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{scannerResult.businessCategory || "-"}</span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 text-[10.5px] font-bold block">WILAYAH (KECAMATAN / KELURAHAN)</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      {scannerResult.kecamatan || "-"} / {scannerResult.kelurahan || "-"}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 text-[10.5px] font-bold block">KOORDINATOR WILAYAH</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{normalizeCoordinator(scannerResult.coordinator) || "-"}</span>
+                  </div>
+
+                  <div className="sm:col-span-2 md:col-span-3">
+                    <span className="text-slate-500 dark:text-slate-400 text-[10.5px] font-bold block">ALAMAT USAHA / DOMISILI</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-200">
+                      {scannerResult.address || "-"} {scannerResult.rtRw ? `(${scannerResult.rtRw})` : ""}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Big Action Button if status is not yet hadir */}
+              {((scannerResult as any).attendanceStatus !== 'hadir') && (
+                <div className="pt-2 flex justify-center">
+                  <Button
+                    type="button"
+                    size="lg"
+                    onClick={() => handleScannerMarkHadir(scannerResult)}
+                    disabled={isSubmitting}
+                    className="w-full sm:w-2/3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-base py-6 rounded-xl shadow-lg gap-2"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-6 h-6" />
+                    )}
+                    <span>KLIK DI SINI: TANDAI HADIR</span>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ─── HASIL TIDAK DITEMUKAN ─── */}
+        {scannerStatus === 'not_found' && (
+          <Card className="border-2 border-destructive/30 bg-destructive/5 p-6 rounded-2xl text-center space-y-3">
+            <div className="w-14 h-14 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mx-auto">
+              <XCircle className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-destructive">
+                NIK Tidak Ditemukan!
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 max-w-md mx-auto">
+                Nomor NIK <strong className="font-mono font-bold text-slate-900 dark:text-white">"{scannerNikInput}"</strong> tidak terdaftar dalam Daftar Hadir atau belum lolos verifikasi dinas.
+              </p>
+            </div>
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleScannerReset}
+                className="font-bold border-destructive/30 text-destructive hover:bg-destructive/10"
+              >
+                Coba Cari NIK Lain
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* ─── IDLE STATE: PETUNJUK & RIWAYAT TERAKHIR ─── */}
+        {scannerStatus === 'idle' && (
+          <div className="space-y-4">
+            <Card className="border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl p-6 text-center space-y-2">
+              <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                <SearchCheck className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-black text-slate-800 dark:text-slate-100">
+                Pencarian NIK Siap Digunakan
+              </h3>
+              <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                Masukkan 16 digit NIK pelaku usaha pada kolom pencarian di atas untuk memeriksa jadwal sesi, posisi meja absensi, dan melakukan verifikasi presensi kehadiran.
+              </p>
+            </Card>
+
+            {/* Riwayat 5 Presensi Terakhir */}
+            {recentOfficerScans.length > 0 && (
+              <Card className="border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-2">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                    <History className="w-4 h-4 text-emerald-600" />
+                    Riwayat Presensi Terakhir
+                  </h4>
+                  <span className="text-[10px] text-muted-foreground">5 Data Terkini</span>
+                </div>
+
+                <div className="space-y-2">
+                  {recentOfficerScans.map((actor) => (
+                    <div 
+                      key={actor.id}
+                      onClick={() => {
+                        setScannerNikInput(actor.nik)
+                        handleSearchScanner(actor.nik)
+                      }}
+                      className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-800/60 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center justify-between gap-3 cursor-pointer border border-slate-200/60 dark:border-zinc-700"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-xs text-slate-900 dark:text-slate-100 truncate">{actor.fullName}</span>
+                          <span className="font-mono text-[10px] text-slate-500 font-bold">({actor.nik})</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                          <span>{(actor as any).attendanceDesk || "Tanpa Meja"}</span>
+                          <span>•</span>
+                          <span>{(actor as any).attendanceSchedule || "Tanpa Sesi"}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                          <Check className="w-2.5 h-2.5" />
+                          {formatTimeIndo((actor as any).attendanceUpdatedAt)}
+                        </span>
+                        <p className="text-[9px] text-muted-foreground mt-0.5">
+                          Oleh: {(actor as any).attendanceUpdatedBy || "Petugas"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     // ─── TAMPILAN FULL-WIDTH TANPA PADDING KIRI & KANAN (EDGE TO EDGE) ───
     <div className="w-full p-0 space-y-3 pb-8">
@@ -1063,6 +1671,19 @@ function DaftarHadirContent() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+
+          {/* Tombol Mode Scan NIK (Pencarian 1 Kolom Petugas) */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setViewMode('scanner')}
+            className="h-10 px-3 text-xs font-bold border-primary text-primary hover:bg-primary/10 gap-1.5 shadow-2xs"
+            title="Buka Mode Pencarian NIK (Petugas Absensi)"
+          >
+            <ScanLine className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Mode Scan NIK</span>
+          </Button>
 
           {/* Tombol Cetak Presensi */}
           <Button
