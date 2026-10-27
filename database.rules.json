@@ -1,5 +1,9 @@
 {
   "rules": {
+    "daftar_hadir": {
+      ".read": "true",
+      ".write": "auth != null"
+    },
     "roles_admin": {
       ".read": "auth != null",
       "$adminId": {

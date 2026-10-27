@@ -597,23 +597,22 @@ function DaftarHadirContent() {
 
       matched.forEach(item => {
         const actor = item.actor!
-        if (item.schedule) {
-          updates[`businessActors/${actor.id}/attendanceSchedule`] = item.schedule
-          updates[`daftar_hadir/${actor.id}/schedule`] = item.schedule
+        if (item.schedule && item.schedule.trim()) {
+          updates[`businessActors/${actor.id}/attendanceSchedule`] = item.schedule.trim()
         }
-        if (item.desk) {
-          updates[`businessActors/${actor.id}/attendanceDesk`] = item.desk
-          updates[`daftar_hadir/${actor.id}/desk`] = item.desk
+        if (item.desk && item.desk.trim()) {
+          updates[`businessActors/${actor.id}/attendanceDesk`] = item.desk.trim()
         }
-        updates[`daftar_hadir/${actor.id}/actorId`] = actor.id
-        updates[`daftar_hadir/${actor.id}/fullName`] = actor.fullName
-        updates[`daftar_hadir/${actor.id}/nik`] = actor.nik
-        updates[`daftar_hadir/${actor.id}/businessName`] = actor.businessName || ""
-        updates[`daftar_hadir/${actor.id}/updatedAt`] = nowIso
-        updates[`daftar_hadir/${actor.id}/updatedBy`] = officerName
       })
 
-      await update(ref(database), updates)
+      if (Object.keys(updates).length > 0) {
+        const entries = Object.entries(updates)
+        const chunkSize = 400
+        for (let i = 0; i < entries.length; i += chunkSize) {
+          const chunk = Object.fromEntries(entries.slice(i, i + chunkSize))
+          await update(ref(database), chunk)
+        }
+      }
 
       logActivity({
         query: `IMPORT EXCEL JADWAL & MEJA: Sinkronisasi ${matched.length} peserta`,
@@ -762,19 +761,6 @@ function DaftarHadirContent() {
         attendanceStatus: 'hadir',
         attendanceUpdatedAt: nowIso,
         attendanceUpdatedBy: officerName,
-      })
-
-      const attendanceLogRef = ref(database, `daftar_hadir/${actor.id}`)
-      await update(attendanceLogRef, {
-        actorId: actor.id,
-        fullName: actor.fullName,
-        nik: actor.nik,
-        businessName: actor.businessName || "",
-        status: 'hadir',
-        desk: (actor as any).attendanceDesk || null,
-        schedule: (actor as any).attendanceSchedule || null,
-        updatedAt: nowIso,
-        updatedBy: officerName,
       })
 
       logActivity({
