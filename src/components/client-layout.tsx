@@ -419,6 +419,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   isLayarInformasiPage ? "p-0 min-h-full lg:h-full lg:max-h-full flex-1 flex flex-col overflow-y-auto lg:overflow-hidden" :
                   isCekDataPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-7xl mx-auto" :
                   isPendaftaranPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-5xl mx-auto" :
+                  pathname === '/daftar-hadir' ? "p-1 sm:p-2 min-h-full w-full" :
                   "p-3 sm:p-5 lg:p-6 min-h-full"
                 )}>
                   {!isRootPage && pathname !== '/dashboard' && !isKoordinator && !isLoginPage && !isPortalSurveyPage && !isLayarInformasiPage && (

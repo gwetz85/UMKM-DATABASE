@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState, useMemo, Suspense } from "react"
-import Link from "next/link"
 import { 
   useUser, 
   useDatabase, 
@@ -589,20 +588,9 @@ function DaftarHadirContent() {
   }
 
   return (
-    // ─── TAMPILAN FULL PANEL PERSIS SEPERTI GAMBAR 2 (EDGE TO EDGE) ───
-    <div className="p-4 md:p-8 space-y-6 w-full">
+    // ─── TAMPILAN FULL PANEL TANPA JARAK LEBAR KIRI DAN KANAN (EDGE TO EDGE) ───
+    <div className="w-full space-y-3.5 p-0">
       
-      {/* ─── Tombol Kembali ke Dashboard (Persis Seperti Gambar 2) ─── */}
-      <div className="print:hidden">
-        <Link 
-          href="/dashboard" 
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Kembali ke Dashboard</span>
-        </Link>
-      </div>
-
       {/* ─── Header & Toolbar Menyatu Satu Baris (Persis Layout Gambar 2) ─── */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 print:hidden">
         
@@ -748,7 +736,7 @@ function DaftarHadirContent() {
       </div>
 
       {/* ─── TABEL UTAMA: TAMPILAN FULL PANEL PERSIS SEPERTI GAMBAR 2 ─── */}
-      <Card className="border border-slate-200/60 dark:border-zinc-800 shadow-md overflow-hidden bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-2xl w-full">
+      <Card className="border border-slate-200/60 dark:border-zinc-800 shadow-sm overflow-hidden bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-xl sm:rounded-2xl w-full">
         <CardContent className="p-0">
           {isActorsLoading ? (
             <div className="py-24 flex flex-col items-center justify-center gap-3">
