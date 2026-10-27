@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useMemo, Suspense } from "react"
+import Link from "next/link"
 import { 
   useUser, 
   useDatabase, 
@@ -13,6 +14,8 @@ import { ref, update } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { useToast } from "@/hooks/use-toast"
 import { BusinessActor } from "../lib/types"
+import { normalizeCoordinator } from "@/lib/coordinator-utils"
+import { cn } from "@/lib/utils"
 
 // UI Components
 import { 
@@ -25,7 +28,6 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { 
   Dialog, 
@@ -66,14 +68,12 @@ import {
   Check,
   RotateCcw,
   Sparkles,
-  ArrowUpDown,
-  Filter,
   Loader2,
   MapPin,
-  Calendar,
   Building2,
   HelpCircle,
-  FileText
+  FileText,
+  ArrowLeft
 } from "lucide-react"
 
 import ExcelJS from "exceljs"
@@ -92,7 +92,7 @@ export const isActorVerified = (actorData: any): boolean => {
   if (!actorData) return false;
   if (isCancelDinas(actorData)) return false;
   const status = (actorData.status || "").toLowerCase();
-  // Hanya status yang telah melewati verifikasi resmi (Admin / Dinas / Pencairan / Finish)
+  // Hanya data yang telah melewati verifikasi resmi (Admin / Dinas / Pencairan / Finish)
   return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(status);
 };
 
@@ -143,11 +143,9 @@ function DaftarHadirContent() {
 
   const { data: rawActors, isLoading: isActorsLoading } = useList<BusinessActor>(actorsQuery)
 
-  // 3. States Filter, Search, Pagination, Sensitive Data
+  // 3. States Filter, Search, Tab, Pagination, Sensitive Data
+  const [activeTab, setActiveTab] = useState<'semua' | 'hadir' | 'belum_hadir' | 'izin' | 'sakit'>('semua')
   const [searchQuery, setSearchQuery] = useState("")
-  const [filterAttendance, setFilterAttendance] = useState<string>("semua")
-  const [filterVerification, setFilterVerification] = useState<string>("semua")
-  const [filterKelurahan, setFilterKelurahan] = useState<string>("semua")
   const [pageLimit, setPageLimit] = useState(50)
 
   // NIK Sensitive Data Protection State
@@ -155,7 +153,6 @@ function DaftarHadirContent() {
   const [unmaskedNiks, setUnmaskedNiks] = useState<Record<string, boolean>>({})
 
   // Modal Dialogs State
-  const [detailModalActor, setDetailModalActor] = useState<BusinessActor | null>(null)
   const [notesModalActor, setNotesModalActor] = useState<BusinessActor | null>(null)
   const [customStatus, setCustomStatus] = useState<AttendanceStatus>('hadir')
   const [customNotes, setCustomNotes] = useState("")
@@ -188,7 +185,7 @@ function DaftarHadirContent() {
     navigator.clipboard.writeText(nik.trim())
     toast({
       title: "NIK Disalin",
-      description: "Nomor Induk Kependudukan berhasil disalin ke clipboard secara aman."
+      description: "Nomor Induk Kependudukan berhasil disalin ke clipboard."
     })
   }
 
@@ -284,7 +281,7 @@ function DaftarHadirContent() {
       toast({
         variant: "destructive",
         title: "Gagal Menyimpan",
-        description: "Terjadi kesalahan saat memperbarui status kehadiran. Silakan coba lagi."
+        description: "Terjadi kesalahan saat memperbarui status kehadiran."
       })
     } finally {
       setIsSubmitting(false)
@@ -306,60 +303,8 @@ function DaftarHadirContent() {
     return rawActors.filter(a => a && isActorVerified(a))
   }, [rawActors])
 
-  // Extract unique Kelurahan list dari data terverifikasi
-  const uniqueKelurahanList = useMemo(() => {
-    const setKel = new Set<string>()
-    verifiedActorsList.forEach(a => {
-      if (a.kelurahan) setKel.add(a.kelurahan.trim())
-    })
-    return Array.from(setKel).sort()
-  }, [verifiedActorsList])
-
-  const filteredActors = useMemo(() => {
-    return verifiedActorsList.filter(actor => {
-      const attendance = ((actor as any).attendanceStatus || 'belum_hadir') as AttendanceStatus
-      const verification = (actor.status || '').toLowerCase()
-
-      // Filter Kehadiran
-      if (filterAttendance !== "semua" && attendance !== filterAttendance) {
-        return false
-      }
-
-      // Filter Verifikasi Khusus Data Terverifikasi
-      if (filterVerification !== "semua") {
-        if (filterVerification === 'verified_dinas' && verification !== 'verified_dinas') return false;
-        if (filterVerification === 'verified_actor' && verification !== 'verified_actor') return false;
-        if (filterVerification === 'finish' && verification !== 'finish') return false;
-        if (filterVerification === 'bank_pending' && verification !== 'bank_pending') return false;
-        if (filterVerification === 'lpj_pending' && verification !== 'lpj_pending') return false;
-      }
-
-      // Filter Kelurahan
-      if (filterKelurahan !== "semua" && (actor.kelurahan || '').trim() !== filterKelurahan) {
-        return false
-      }
-
-      // Search Query (Nama, NIK, Nama Usaha, Kelurahan, Petugas)
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim()
-        const matchName = (actor.fullName || "").toLowerCase().includes(query)
-        const matchNik = (actor.nik || "").toLowerCase().includes(query)
-        const matchBusiness = (actor.businessName || "").toLowerCase().includes(query)
-        const matchKelurahan = (actor.kelurahan || "").toLowerCase().includes(query)
-        const matchPetugas = (actor.petugasSurvey || "").toLowerCase().includes(query)
-        const matchCoordinator = (actor.coordinator || "").toLowerCase().includes(query)
-
-        if (!matchName && !matchNik && !matchBusiness && !matchKelurahan && !matchPetugas && !matchCoordinator) {
-          return false
-        }
-      }
-
-      return true
-    })
-  }, [verifiedActorsList, searchQuery, filterAttendance, filterVerification, filterKelurahan])
-
-  // Real-time Summary Statistics (Berdasarkan Data Terverifikasi)
-  const statistics = useMemo(() => {
+  // Hitung jumlah per-kategori tab kehadiran
+  const counts = useMemo(() => {
     let hadir = 0
     let belumHadir = 0
     let izin = 0
@@ -373,11 +318,42 @@ function DaftarHadirContent() {
       else belumHadir++
     })
 
-    const total = verifiedActorsList.length
-    const percentageHadir = total > 0 ? Math.round((hadir / total) * 100) : 0
-
-    return { total, hadir, belumHadir, izin, sakit, percentageHadir }
+    return {
+      semua: verifiedActorsList.length,
+      hadir,
+      belumHadir,
+      izin,
+      sakit
+    }
   }, [verifiedActorsList])
+
+  // Filter gabungan Tab Kehadiran & Search
+  const filteredActors = useMemo(() => {
+    return verifiedActorsList.filter(actor => {
+      const attendance = ((actor as any).attendanceStatus || 'belum_hadir') as AttendanceStatus
+
+      // Filter berdasarkan Tab yang dipilih (seperti Gambar 2)
+      if (activeTab !== 'semua' && attendance !== activeTab) {
+        return false
+      }
+
+      // Search Query (Nama, NIK, Nama Usaha, Kelurahan, Koordinator)
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim()
+        const matchName = (actor.fullName || "").toLowerCase().includes(query)
+        const matchNik = (actor.nik || "").toLowerCase().includes(query)
+        const matchBusiness = (actor.businessName || "").toLowerCase().includes(query)
+        const matchKelurahan = (actor.kelurahan || "").toLowerCase().includes(query)
+        const matchCoordinator = (actor.coordinator || "").toLowerCase().includes(query)
+
+        if (!matchName && !matchNik && !matchBusiness && !matchKelurahan && !matchCoordinator) {
+          return false
+        }
+      }
+
+      return true
+    })
+  }, [verifiedActorsList, activeTab, searchQuery])
 
   // Batch Mark All Filtered as Hadir
   const executeBatchMarkHadir = async () => {
@@ -465,13 +441,13 @@ function DaftarHadirContent() {
       }
 
       // Title rows
-      worksheet.mergeCells("A1:G1")
+      worksheet.mergeCells("A1:H1")
       const titleCell = worksheet.getCell("A1")
       titleCell.value = "DAFTAR HADIR PELAKU USAHA TERVERIFIKASI DINAS KOPERASI DAN UKM"
       titleCell.font = { name: "Arial", size: 14, bold: true, color: { argb: "FF0F172A" } }
       titleCell.alignment = { horizontal: "center", vertical: "middle" }
 
-      worksheet.mergeCells("A2:G2")
+      worksheet.mergeCells("A2:H2")
       const subTitleCell = worksheet.getCell("A2")
       subTitleCell.value = `Tanggal Ekspor: ${new Date().toLocaleDateString('id-ID', { dateStyle: 'full' })} | Total: ${filteredActors.length} Pelaku Usaha Terverifikasi`
       subTitleCell.font = { name: "Arial", size: 10, italic: true, color: { argb: "FF475569" } }
@@ -482,12 +458,13 @@ function DaftarHadirContent() {
       // Header Table
       const headerRow = worksheet.addRow([
         "NO",
-        "NAMA PELAKU USAHA",
+        "NAMA LENGKAP",
         "NIK",
-        "KELURAHAN / KECAMATAN",
+        "KATEGORI",
+        "USAHA",
+        "KOORDINATOR",
         "STATUS VERIFIKASI",
-        "STATUS KEHADIRAN",
-        "WAKTU & PETUGAS PRESENSI"
+        "STATUS KEHADIRAN"
       ])
 
       headerRow.height = 28
@@ -509,28 +486,27 @@ function DaftarHadirContent() {
 
       // Column widths
       worksheet.getColumn(1).width = 6
-      worksheet.getColumn(2).width = 32
+      worksheet.getColumn(2).width = 30
       worksheet.getColumn(3).width = 22
-      worksheet.getColumn(4).width = 24
-      worksheet.getColumn(5).width = 22
-      worksheet.getColumn(6).width = 18
-      worksheet.getColumn(7).width = 30
+      worksheet.getColumn(4).width = 16
+      worksheet.getColumn(5).width = 24
+      worksheet.getColumn(6).width = 22
+      worksheet.getColumn(7).width = 20
+      worksheet.getColumn(8).width = 18
 
       // Rows Data
       filteredActors.forEach((actor, index) => {
         const attStatus = ((actor as any).attendanceStatus || 'belum_hadir').toUpperCase()
-        const officer = (actor as any).attendanceUpdatedBy || "-"
-        const time = formatDateTimeIndo((actor as any).attendanceUpdatedAt)
-        const auditStr = attStatus === 'BELUM_HADIR' ? "-" : `${time} (Oleh: ${officer})`
 
         const row = worksheet.addRow([
           index + 1,
           actor.fullName ? actor.fullName.toUpperCase() : "-",
           actor.nik ? `'${actor.nik.trim()}` : "-",
-          `${actor.kelurahan || '-'} / ${actor.kecamatan || '-'}`,
+          actor.businessCategory || "-",
+          actor.businessName || "-",
+          normalizeCoordinator(actor.coordinator),
           formatVerificationLabel(actor.status),
-          attStatus === 'HADIR' ? 'HADIR' : attStatus === 'IZIN' ? 'IZIN' : attStatus === 'SAKIT' ? 'SAKIT' : 'BELUM HADIR',
-          auditStr
+          attStatus === 'HADIR' ? 'HADIR' : attStatus === 'IZIN' ? 'IZIN' : attStatus === 'SAKIT' ? 'SAKIT' : 'BELUM HADIR'
         ])
 
         row.height = 22
@@ -538,7 +514,7 @@ function DaftarHadirContent() {
           cell.font = { name: "Arial", size: 9 }
           cell.alignment = { 
             vertical: "middle", 
-            horizontal: colIndex === 1 || colIndex === 3 || colIndex === 5 || colIndex === 6 ? "center" : "left" 
+            horizontal: colIndex === 1 || colIndex === 3 || colIndex === 7 || colIndex === 8 ? "center" : "left" 
           }
           cell.border = {
             top: { style: "thin", color: { argb: "FFE2E8F0" } },
@@ -598,27 +574,9 @@ function DaftarHadirContent() {
               Akses Terbatas
             </h1>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-              Modul <strong className="text-primary font-bold">Daftar Hadir</strong> ini memiliki proteksi ketat dan hanya dapat diakses oleh pengguna dengan hak akses:
+              Modul <strong className="text-primary font-bold">Daftar Hadir</strong> ini memiliki proteksi ketat dan hanya dapat diakses oleh Administrator dan Petugas Absensi.
             </p>
-            <div className="mt-3 flex justify-center gap-2">
-              <Badge className="bg-primary/10 text-primary border-primary/20">Administrator</Badge>
-              <Badge className="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20">Petugas Absensi</Badge>
-            </div>
           </div>
-
-          <div className="p-3.5 bg-slate-50 dark:bg-zinc-800/60 rounded-xl text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-zinc-700">
-            <div className="flex justify-between py-1">
-              <span>Akun Anda:</span>
-              <span className="font-bold">{userProfile?.fullName || user?.email}</span>
-            </div>
-            <div className="flex justify-between py-1 border-t border-slate-200/60 dark:border-zinc-700">
-              <span>Peran (Role):</span>
-              <span className="font-mono font-bold uppercase text-amber-600 dark:text-amber-400">
-                {userProfile?.role || 'Umum'}
-              </span>
-            </div>
-          </div>
-
           <Button 
             onClick={() => window.location.href = '/dashboard'}
             className="w-full bg-primary hover:bg-primary/90 font-bold"
@@ -631,54 +589,152 @@ function DaftarHadirContent() {
   }
 
   return (
-    // ─── TAMPILAN FULL PANEL: 100% LEBAR LAYAR, RESPONSIF PENUH ───
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    // ─── TAMPILAN FULL PANEL PERSIS SEPERTI GAMBAR 2 (EDGE TO EDGE) ───
+    <div className="p-4 md:p-8 space-y-6 w-full">
       
-      {/* ─── Header Halaman (Screen View) ─── */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
-        <div>
+      {/* ─── Tombol Kembali ke Dashboard (Persis Seperti Gambar 2) ─── */}
+      <div className="print:hidden">
+        <Link 
+          href="/dashboard" 
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Kembali ke Dashboard</span>
+        </Link>
+      </div>
+
+      {/* ─── Header & Toolbar Menyatu Satu Baris (Persis Layout Gambar 2) ─── */}
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 print:hidden">
+        
+        {/* Sisi Kiri: SidebarTrigger + Judul + Subtitle */}
+        <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
             <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-cyan-50 text-cyan-600 dark:bg-cyan-950/60 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-800">
-                <ClipboardCheck className="w-6 h-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-50 tracking-tight font-headline">
-                    Daftar Hadir
-                  </h1>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    Khusus Data Terverifikasi
-                  </span>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                  Presensi & Kehadiran Seluruh Pelaku Usaha Terverifikasi Real-Time (Tampilan Penuh)
-                </p>
-              </div>
-            </div>
+            <h1 className="text-3xl font-black text-slate-900 dark:text-slate-100 font-headline tracking-tight">
+              Daftar Hadir
+            </h1>
           </div>
+          <p className="text-muted-foreground mt-0.5 text-xs uppercase font-black tracking-widest">
+            Presensi & Kehadiran Pelaku Usaha Terverifikasi
+          </p>
         </div>
 
-        {/* Action Header: Cetak & Ekspor Excel */}
-        <div className="flex items-center gap-2.5 flex-wrap self-stretch sm:self-auto">
+        {/* Sisi Tengah: Tab Pills Kehadiran (Persis Seperti Tab Gambar 2) */}
+        <div className="flex items-center gap-2 bg-slate-100 dark:bg-zinc-800/80 p-1 rounded-xl w-full xl:w-auto overflow-x-auto shadow-2xs">
+          {[
+            { id: 'semua', label: 'Semua', count: counts.semua },
+            { id: 'hadir', label: 'Hadir', count: counts.hadir },
+            { id: 'belum_hadir', label: 'Belum Hadir', count: counts.belumHadir },
+            { id: 'izin', label: 'Izin', count: counts.izin },
+            { id: 'sakit', label: 'Sakit', count: counts.sakit }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id as any)
+                setPageLimit(50)
+              }}
+              className={cn(
+                "flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-[11px] font-black uppercase transition-all whitespace-nowrap",
+                activeTab === tab.id 
+                  ? "bg-white dark:bg-zinc-900 text-primary shadow-xs" 
+                  : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+              )}
+            >
+              <span>{tab.label}</span>
+              <span className={cn(
+                "px-1.5 py-0.5 rounded-full text-[9px] font-bold",
+                activeTab === tab.id 
+                  ? "bg-primary text-white" 
+                  : "bg-slate-200 dark:bg-zinc-700 text-slate-600 dark:text-slate-300"
+              )}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Sisi Kanan: Search Bar & Tombol Aksi */}
+        <div className="flex items-center gap-2.5 w-full xl:w-auto flex-wrap">
+          {/* Input Search seperti Gambar 2 */}
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              placeholder="Cari..."
+              className="flex h-10 w-full rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 pl-9 text-xs text-slate-900 dark:text-slate-100 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-2xs"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          {/* Tombol Cetak Presensi */}
           <Button
             variant="outline"
+            size="sm"
             onClick={handlePrint}
-            className="border-slate-300 dark:border-zinc-700 font-bold text-xs gap-1.5 shadow-xs"
+            className="h-10 px-3 text-xs font-bold border-slate-300 dark:border-zinc-700 gap-1.5 shadow-2xs"
           >
-            <Printer className="w-4 h-4" /> Cetak Presensi
+            <Printer className="w-3.5 h-3.5" />
+            <span>Cetak</span>
           </Button>
 
+          {/* Tombol Ekspor Excel */}
           <Button
+            size="sm"
             onClick={handleExportExcel}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-1.5 shadow-xs"
+            className="h-10 px-3 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-2xs"
           >
-            <FileSpreadsheet className="w-4 h-4" /> Ekspor Excel
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>Ekspor</span>
           </Button>
+
+          {/* Tombol Buka/Tutup Sensor NIK Global */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAllNik(!showAllNik)}
+            className={cn(
+              "h-10 px-3 text-xs font-bold gap-1.5 shadow-2xs",
+              showAllNik 
+                ? "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-700" 
+                : "border-slate-300 dark:border-zinc-700"
+            )}
+            title="Buka / Sensor Semua NIK"
+          >
+            {showAllNik ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{showAllNik ? "Sensor NIK" : "Buka NIK"}</span>
+          </Button>
+
+          {/* Batch Mark All */}
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setShowMarkAllDialog(true)}
+            disabled={filteredActors.length === 0 || isSubmitting}
+            className="h-10 px-3 text-xs font-bold bg-primary hover:bg-primary/90 text-white gap-1.5 shadow-2xs"
+            title="Tandai Hadir Semua Yang Tampil"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Hadir Semua ({filteredActors.length})</span>
+          </Button>
+
+          {/* Reset Kehadiran (Khusus Admin) */}
+          {isAdmin && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowResetDialog(true)}
+              disabled={isSubmitting}
+              className="h-10 w-10 text-destructive hover:bg-destructive/10"
+              title="Reset seluruh presensi"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </Button>
+          )}
         </div>
-      </header>
+      </div>
 
       {/* ─── Header Resmi Dokumen Saat Dicetak (Print Only) ─── */}
       <div className="hidden print:block text-center pb-4 mb-4 border-b-2 border-black">
@@ -691,413 +747,228 @@ function DaftarHadirContent() {
         <p className="text-[10px] text-slate-500 mt-1">Dicetak pada: {new Date().toLocaleDateString('id-ID', { dateStyle: 'full' })}</p>
       </div>
 
-      {/* ─── Bento Stat Cards: Real-time Attendance Metrics (Full Width) ─── */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full print:hidden">
-        {/* Card 1: Total Pelaku Usaha Terverifikasi */}
-        <Card className="border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-3xl shadow-xs">
-          <CardContent className="p-4 sm:p-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Terverifikasi</p>
-              <h3 className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-50">{statistics.total}</h3>
-              <p className="text-[10px] text-slate-400 mt-0.5">Data Lolos Verifikasi</p>
-            </div>
-            <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
-              <Users className="w-5 h-5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 2: Total Hadir */}
-        <Card className="border border-emerald-200/80 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-3xl shadow-xs">
-          <CardContent className="p-4 sm:p-5 flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-1.5">
-                <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300">Total Hadir</p>
-                <span className="text-[10px] font-extrabold px-1.5 py-0.2 bg-emerald-200 text-emerald-900 dark:bg-emerald-800 dark:text-emerald-100 rounded-full">
-                  {statistics.percentageHadir}%
-                </span>
-              </div>
-              <h3 className="mt-1 text-2xl font-black text-emerald-700 dark:text-emerald-400">{statistics.hadir}</h3>
-              <p className="text-[10px] text-emerald-600 dark:text-emerald-400/80 mt-0.5">Telah terverifikasi hadir</p>
-            </div>
-            <div className="p-3 rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300">
-              <UserCheck className="w-5 h-5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 3: Belum Hadir */}
-        <Card className="border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-3xl shadow-xs">
-          <CardContent className="p-4 sm:p-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Belum Hadir</p>
-              <h3 className="mt-1 text-2xl font-black text-slate-700 dark:text-slate-300">{statistics.belumHadir}</h3>
-              <p className="text-[10px] text-slate-400 mt-0.5">Menunggu konfirmasi</p>
-            </div>
-            <div className="p-3 rounded-2xl bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-400">
-              <Clock className="w-5 h-5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 4: Izin / Sakit */}
-        <Card className="border border-amber-200/80 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/20 rounded-3xl shadow-xs">
-          <CardContent className="p-4 sm:p-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold text-amber-800 dark:text-amber-300">Izin / Sakit</p>
-              <h3 className="mt-1 text-2xl font-black text-amber-700 dark:text-amber-400">{statistics.izin + statistics.sakit}</h3>
-              <p className="text-[10px] text-amber-600 dark:text-amber-400/80 mt-0.5">
-                Izin: {statistics.izin} • Sakit: {statistics.sakit}
+      {/* ─── TABEL UTAMA: TAMPILAN FULL PANEL PERSIS SEPERTI GAMBAR 2 ─── */}
+      <Card className="border border-slate-200/60 dark:border-zinc-800 shadow-md overflow-hidden bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-2xl w-full">
+        <CardContent className="p-0">
+          {isActorsLoading ? (
+            <div className="py-24 flex flex-col items-center justify-center gap-3">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
+                Memuat data presensi pelaku usaha terverifikasi...
               </p>
             </div>
-            <div className="p-3 rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">
-              <HelpCircle className="w-5 h-5" />
+          ) : filteredActors.length === 0 ? (
+            <div className="py-20 text-center text-muted-foreground text-xs font-bold uppercase tracking-wider">
+              Tidak ada data pelaku usaha terverifikasi pada kategori ini.
             </div>
-          </CardContent>
-        </Card>
-      </section>
+          ) : (
+            <div className="w-full overflow-x-auto">
+              <Table className="w-full">
+                {/* Header Tabel Persis Desain Gambar 2 */}
+                <TableHeader className="bg-muted/30 dark:bg-zinc-800/40">
+                  <TableRow className="border-b border-slate-200 dark:border-zinc-800">
+                    <TableHead className="w-12 text-center font-bold text-xs uppercase py-3.5 pl-4">No</TableHead>
+                    <TableHead className="min-w-[180px] font-bold text-xs uppercase py-3.5">Nama Lengkap</TableHead>
+                    <TableHead className="min-w-[150px] font-bold text-xs uppercase py-3.5 text-center">NIK</TableHead>
+                    <TableHead className="min-w-[120px] font-bold text-xs uppercase py-3.5 text-center">Kategori</TableHead>
+                    <TableHead className="min-w-[180px] font-bold text-xs uppercase py-3.5">Usaha</TableHead>
+                    <TableHead className="min-w-[160px] font-bold text-xs uppercase py-3.5">Koordinator</TableHead>
+                    <TableHead className="min-w-[150px] font-bold text-xs uppercase py-3.5 text-center">Status Verifikasi</TableHead>
+                    <TableHead className="min-w-[140px] font-bold text-xs uppercase py-3.5 text-center">Kehadiran</TableHead>
+                    <TableHead className="min-w-[160px] font-bold text-xs uppercase py-3.5 text-center print:hidden">Waktu & Petugas</TableHead>
+                    <TableHead className="text-right font-bold text-xs uppercase py-3.5 pr-6 print:hidden">Aksi</TableHead>
+                    <TableHead className="w-32 font-bold text-xs uppercase py-3.5 text-center hidden print:table-cell">Tanda Tangan</TableHead>
+                  </TableRow>
+                </TableHeader>
 
-      {/* ─── Search, Filters & NIK Security Control (Full Width) ─── */}
-      <section className="w-full p-4 sm:p-5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-xs space-y-4 print:hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          
-          {/* Input Search */}
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari Nama, NIK, Usaha, Wilayah..."
-              className="pl-9 text-xs sm:text-sm font-medium"
-            />
-          </div>
+                <TableBody>
+                  {filteredActors.slice(0, pageLimit).map((actor, index) => {
+                    const attStatus = ((actor as any).attendanceStatus || 'belum_hadir') as AttendanceStatus
+                    const isHadir = attStatus === 'hadir'
+                    const officer = (actor as any).attendanceUpdatedBy
+                    const time = (actor as any).attendanceUpdatedAt
+                    const notes = (actor as any).attendanceNotes
 
-          {/* Filter Status Kehadiran */}
-          <div>
-            <Select value={filterAttendance} onValueChange={setFilterAttendance}>
-              <SelectTrigger className="text-xs sm:text-sm font-medium">
-                <SelectValue placeholder="Status Kehadiran" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="semua">Semua Kehadiran</SelectItem>
-                <SelectItem value="hadir">Hadir ({statistics.hadir})</SelectItem>
-                <SelectItem value="belum_hadir">Belum Hadir ({statistics.belumHadir})</SelectItem>
-                <SelectItem value="izin">Izin ({statistics.izin})</SelectItem>
-                <SelectItem value="sakit">Sakit ({statistics.sakit})</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Filter Status Verifikasi (Hanya Menampilkan Pilihan Terverifikasi) */}
-          <div>
-            <Select value={filterVerification} onValueChange={setFilterVerification}>
-              <SelectTrigger className="text-xs sm:text-sm font-medium">
-                <SelectValue placeholder="Tahap Verifikasi" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="semua">Semua Data Terverifikasi</SelectItem>
-                <SelectItem value="finish">Selesai (Finish)</SelectItem>
-                <SelectItem value="verified_dinas">Terverifikasi Dinas</SelectItem>
-                <SelectItem value="verified_actor">Terverifikasi Admin</SelectItem>
-                <SelectItem value="bank_pending">Pencairan Bank</SelectItem>
-                <SelectItem value="lpj_pending">Tahap LPJ</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Filter Kelurahan */}
-          <div>
-            <Select value={filterKelurahan} onValueChange={setFilterKelurahan}>
-              <SelectTrigger className="text-xs sm:text-sm font-medium">
-                <SelectValue placeholder="Kelurahan" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="semua">Semua Kelurahan</SelectItem>
-                {uniqueKelurahanList.map(kel => (
-                  <SelectItem key={kel} value={kel}>{kel}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Toolbar Baris Kedua: NIK Privacy Protection & Batch Action */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800 text-xs">
-          
-          {/* Fitur Proteksi Data Sensitif (Sensor NIK) */}
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              Proteksi Data NIK:
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAllNik(!showAllNik)}
-              className={`h-7 px-2.5 text-xs font-bold gap-1 transition-all ${
-                showAllNik 
-                  ? "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-700" 
-                  : "bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-slate-200"
-              }`}
-            >
-              {showAllNik ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              {showAllNik ? "Sensor NIK Aktifkan" : "Buka Semua Sensor NIK"}
-            </Button>
-            <span className="text-[10px] text-slate-400 hidden md:inline">
-              (NIK terlindungi secara otomatis)
-            </span>
-          </div>
-
-          {/* Tombol Aksi Massal */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowMarkAllDialog(true)}
-              disabled={filteredActors.length === 0 || isSubmitting}
-              className="h-7 px-3 text-xs font-bold text-emerald-700 border-emerald-300 hover:bg-emerald-50 dark:text-emerald-300 dark:border-emerald-800 dark:hover:bg-emerald-950/50 gap-1"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Tandai Hadir Semua ({filteredActors.length})
-            </Button>
-
-            {isAdmin && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowResetDialog(true)}
-                disabled={isSubmitting}
-                className="h-7 px-2 text-xs font-bold text-destructive hover:bg-destructive/10 gap-1"
-                title="Reset seluruh status kehadiran"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                Reset Kehadiran
-              </Button>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── TABEL UTAMA: DAFTAR HADIR REAL-TIME (TAMPILAN FULL PANEL) ─── */}
-      <section className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-xs overflow-hidden">
-        {isActorsLoading ? (
-          <div className="py-24 flex flex-col items-center justify-center gap-3">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-xs text-slate-500 font-medium">Memuat data presensi pelaku usaha terverifikasi...</p>
-          </div>
-        ) : filteredActors.length === 0 ? (
-          <div className="py-20 text-center space-y-3">
-            <div className="w-12 h-12 mx-auto rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-400">
-              <ClipboardCheck className="w-6 h-6" />
-            </div>
-            <p className="text-base font-bold text-slate-700 dark:text-slate-300">Tidak ada data pelaku usaha terverifikasi ditemukan</p>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              Coba sesuaikan kata kunci pencarian atau filter yang dipilih.
-            </p>
-          </div>
-        ) : (
-          <div className="w-full overflow-x-auto">
-            <Table className="w-full">
-              <TableHeader>
-                <TableRow className="bg-slate-100/90 dark:bg-zinc-900/90 border-b border-slate-200 dark:border-zinc-800">
-                  <TableHead className="w-14 text-center font-black text-xs uppercase py-3.5 pl-4">No</TableHead>
-                  <TableHead className="min-w-[220px] font-black text-xs uppercase py-3.5">Nama Pelaku Usaha</TableHead>
-                  <TableHead className="min-w-[180px] font-black text-xs uppercase py-3.5 text-center">NIK (Sensitif)</TableHead>
-                  <TableHead className="min-w-[160px] font-black text-xs uppercase py-3.5 text-center">Status Verifikasi</TableHead>
-                  <TableHead className="min-w-[160px] font-black text-xs uppercase py-3.5 text-center">Kehadiran (Presensi)</TableHead>
-                  <TableHead className="min-w-[180px] font-black text-xs uppercase py-3.5 text-center print:hidden">Waktu & Petugas</TableHead>
-                  <TableHead className="min-w-[130px] font-black text-xs uppercase py-3.5 text-center print:hidden">Aksi</TableHead>
-                  <TableHead className="w-36 font-black text-xs uppercase py-3.5 text-center hidden print:table-cell">Tanda Tangan</TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {filteredActors.slice(0, pageLimit).map((actor, index) => {
-                  const attStatus = ((actor as any).attendanceStatus || 'belum_hadir') as AttendanceStatus
-                  const isHadir = attStatus === 'hadir'
-                  const officer = (actor as any).attendanceUpdatedBy
-                  const time = (actor as any).attendanceUpdatedAt
-                  const notes = (actor as any).attendanceNotes
-
-                  return (
-                    <TableRow 
-                      key={actor.id} 
-                      className={`transition-colors border-b border-slate-100 dark:border-zinc-800/80 ${
-                        isHadir ? "bg-emerald-50/20 dark:bg-emerald-950/10" : ""
-                      }`}
-                    >
-                      {/* Kolom 1: Nomor Urut */}
-                      <TableCell className="py-3.5 pl-4 text-center font-bold text-xs text-slate-600 dark:text-slate-400">
-                        {index + 1}
-                      </TableCell>
-
-                      {/* Kolom 2: Nama Pelaku Usaha & Detail Usaha */}
-                      <TableCell className="py-3.5">
-                        <div className="space-y-0.5">
-                          <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 uppercase tracking-tight">
-                            {actor.fullName || "-"}
-                          </p>
-                          <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-slate-500 dark:text-slate-400">
-                            {actor.businessName && (
-                              <span className="font-semibold text-primary truncate max-w-[200px]">
-                                {actor.businessName}
-                              </span>
-                            )}
-                            {actor.kelurahan && (
-                              <span className="inline-flex items-center gap-0.5 text-slate-400">
-                                • <MapPin className="w-2.5 h-2.5 inline" /> {actor.kelurahan}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-
-                      {/* Kolom 3: NIK Terproteksi (Sensitive Data Protection) */}
-                      <TableCell className="py-3.5 text-center">
-                        <div className="inline-flex items-center gap-1 bg-slate-100/80 dark:bg-zinc-800/80 px-2 py-1 rounded-lg border border-slate-200/80 dark:border-zinc-700">
-                          <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
-                            {formatMaskedNik(actor.nik, actor.id)}
-                          </span>
-                          
-                          {/* Tombol Buka/Tutup Sensor Baris */}
-                          <button
-                            type="button"
-                            onClick={() => toggleSingleNik(actor.id)}
-                            className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors print:hidden"
-                            title={unmaskedNiks[actor.id] ? "Sensor NIK" : "Buka Sensor NIK"}
-                          >
-                            {unmaskedNiks[actor.id] ? (
-                              <EyeOff className="w-3 h-3" />
-                            ) : (
-                              <Eye className="w-3 h-3" />
-                            )}
-                          </button>
-
-                          {/* Tombol Copy NIK */}
-                          <button
-                            type="button"
-                            onClick={() => handleCopyNik(actor.nik)}
-                            className="p-1 rounded text-slate-400 hover:text-primary transition-colors print:hidden"
-                            title="Salin NIK"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </TableCell>
-
-                      {/* Kolom 4: Status Verifikasi Pelaku Usaha */}
-                      <TableCell className="py-3.5 text-center">
-                        <VerificationBadge status={actor.status} />
-                      </TableCell>
-
-                      {/* Kolom 5: Status Kehadiran Interaktif (Real-time Toggle) */}
-                      <TableCell className="py-3.5 text-center">
-                        <div className="inline-flex flex-col items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => handleQuickToggleHadir(actor)}
-                            className="focus:outline-hidden transition-transform active:scale-95 print:pointer-events-none"
-                            title="Klik untuk mengubah status Hadir/Belum Hadir"
-                          >
-                            <AttendanceBadge status={attStatus} />
-                          </button>
-                          
-                          {notes && (
-                            <span className="text-[10px] text-amber-600 dark:text-amber-400 italic max-w-[140px] truncate" title={notes}>
-                              Ket: {notes}
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-
-                      {/* Kolom 6: Waktu & Petugas Presensi (Audit Trail) */}
-                      <TableCell className="py-3.5 text-center print:hidden">
-                        {time ? (
-                          <div className="flex flex-col items-center text-[11px] text-slate-600 dark:text-slate-300">
-                            <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                              {formatTimeIndo(time)}
-                            </span>
-                            <span className="text-[10px] text-slate-400 truncate max-w-[150px]" title={officer}>
-                              Oleh: {officer || "Petugas"}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-400">-</span>
+                    return (
+                      <TableRow 
+                        key={actor.id} 
+                        className={cn(
+                          "hover:bg-primary/5 transition-colors border-b border-slate-100 dark:border-zinc-800/70",
+                          isHadir && "bg-emerald-50/20 dark:bg-emerald-950/15"
                         )}
-                      </TableCell>
+                      >
+                        {/* 1. Nomor Urut */}
+                        <TableCell className="py-3.5 pl-4 text-center font-bold text-xs text-slate-500">
+                          {index + 1}
+                        </TableCell>
 
-                      {/* Kolom 7: Tombol Aksi Lengkap / Catatan */}
-                      <TableCell className="py-3.5 text-center print:hidden">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {/* Tombol 1-Click Quick Toggle */}
-                          <Button
-                            size="sm"
-                            variant={isHadir ? "outline" : "default"}
-                            onClick={() => handleQuickToggleHadir(actor)}
-                            className={`h-7 px-2.5 text-xs font-bold gap-1 shadow-2xs ${
-                              isHadir 
-                                ? "text-slate-600 border-slate-300 hover:bg-slate-100 dark:border-zinc-700 dark:text-slate-300 dark:hover:bg-zinc-800"
-                                : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                            }`}
-                          >
-                            {isHadir ? (
-                              <>
-                                <RotateCcw className="w-3 h-3" />
-                                <span>Batal</span>
-                              </>
-                            ) : (
-                              <>
-                                <Check className="w-3 h-3" />
-                                <span>Hadir</span>
-                              </>
+                        {/* 2. Nama Lengkap Pelaku Usaha */}
+                        <TableCell className="py-3.5 font-bold text-slate-900 dark:text-slate-100 uppercase text-xs sm:text-sm">
+                          {actor.fullName || "-"}
+                        </TableCell>
+
+                        {/* 3. NIK dengan Proteksi Data Sensitif */}
+                        <TableCell className="py-3.5 text-center font-mono text-xs">
+                          <div className="inline-flex items-center gap-1 bg-slate-100/80 dark:bg-zinc-800/80 px-2 py-0.5 rounded-md border border-slate-200/80 dark:border-zinc-700">
+                            <span className="font-bold text-slate-700 dark:text-slate-200">
+                              {formatMaskedNik(actor.nik, actor.id)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => toggleSingleNik(actor.id)}
+                              className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors print:hidden"
+                              title={unmaskedNiks[actor.id] ? "Sensor NIK" : "Buka Sensor NIK"}
+                            >
+                              {unmaskedNiks[actor.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyNik(actor.nik)}
+                              className="p-1 rounded text-slate-400 hover:text-primary transition-colors print:hidden"
+                              title="Salin NIK"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </TableCell>
+
+                        {/* 4. Kategori Usaha (Persis Gaya Gambar 2) */}
+                        <TableCell className="py-3.5 text-center">
+                          <span className="bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 font-bold px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider">
+                            {actor.businessCategory || "-"}
+                          </span>
+                        </TableCell>
+
+                        {/* 5. Usaha */}
+                        <TableCell className="py-3.5">
+                          <div className="space-y-0.5">
+                            <p className="font-semibold text-xs text-slate-800 dark:text-slate-200 uppercase">
+                              {actor.businessName || "-"}
+                            </p>
+                            {actor.kelurahan && (
+                              <p className="text-[10px] text-slate-400 flex items-center gap-0.5">
+                                <MapPin className="w-2.5 h-2.5 inline" /> {actor.kelurahan}
+                              </p>
                             )}
-                          </Button>
+                          </div>
+                        </TableCell>
 
-                          {/* Tombol Buka Menu Opsi Kehadiran (Izin/Sakit/Catatan) */}
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => {
-                              setNotesModalActor(actor)
-                              setCustomStatus(attStatus)
-                              setCustomNotes(notes || "")
-                            }}
-                            className="h-7 w-7 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                            title="Opsi Kehadiran & Catatan"
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      </TableCell>
+                        {/* 6. Koordinator */}
+                        <TableCell className="py-3.5 font-bold text-xs uppercase text-slate-700 dark:text-slate-300">
+                          {normalizeCoordinator(actor.coordinator)}
+                        </TableCell>
 
-                      {/* Kolom Tanda Tangan Cetak (Print View Only) */}
-                      <TableCell className="py-3.5 text-center hidden print:table-cell text-xs text-slate-400 border border-black h-12">
-                        {isHadir ? "HADIR" : "................"}
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+                        {/* 7. Status Verifikasi */}
+                        <TableCell className="py-3.5 text-center">
+                          <VerificationBadge status={actor.status} />
+                        </TableCell>
 
-        {/* Pagination / Tampilkan Lebih Banyak */}
-        {filteredActors.length > pageLimit && (
-          <div className="p-4 flex justify-center border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 print:hidden">
-            <Button
-              variant="outline"
-              onClick={() => setPageLimit(prev => prev + 50)}
-              className="text-xs font-bold border-primary text-primary hover:bg-primary/10"
-            >
-              Tampilkan 50 Data Lagi (Menampilkan {Math.min(pageLimit, filteredActors.length)} dari {filteredActors.length})
-            </Button>
-          </div>
-        )}
-      </section>
+                        {/* 8. Kehadiran (Interactive Badge & Realtime Toggle) */}
+                        <TableCell className="py-3.5 text-center">
+                          <div className="inline-flex flex-col items-center gap-0.5">
+                            <button
+                              type="button"
+                              onClick={() => handleQuickToggleHadir(actor)}
+                              className="focus:outline-hidden transition-transform active:scale-95 print:pointer-events-none cursor-pointer"
+                              title="Klik untuk mengubah Hadir/Belum Hadir"
+                            >
+                              <AttendanceBadge status={attStatus} />
+                            </button>
+                            {notes && (
+                              <span className="text-[9px] text-amber-600 dark:text-amber-400 italic max-w-[130px] truncate" title={notes}>
+                                Ket: {notes}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+
+                        {/* 9. Waktu & Petugas Presensi */}
+                        <TableCell className="py-3.5 text-center print:hidden">
+                          {time ? (
+                            <div className="flex flex-col items-center text-[11px]">
+                              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                {formatTimeIndo(time)}
+                              </span>
+                              <span className="text-[10px] text-slate-400 truncate max-w-[140px]" title={officer}>
+                                {officer || "Petugas"}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-400">-</span>
+                          )}
+                        </TableCell>
+
+                        {/* 10. Aksi (Persis Posisi Gambar 2) */}
+                        <TableCell className="text-right py-3.5 pr-6 print:hidden">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* Tombol Quick 1-Click Hadir / Batal */}
+                            <Button
+                              size="sm"
+                              variant={isHadir ? "outline" : "default"}
+                              onClick={() => handleQuickToggleHadir(actor)}
+                              className={cn(
+                                "h-7 px-2.5 text-xs font-bold gap-1 rounded-lg",
+                                isHadir 
+                                  ? "border-slate-300 text-slate-600 hover:bg-slate-100 dark:border-zinc-700 dark:text-slate-300 dark:hover:bg-zinc-800"
+                                  : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                              )}
+                            >
+                              {isHadir ? (
+                                <>
+                                  <RotateCcw className="w-3 h-3" />
+                                  <span>Batal</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Check className="w-3 h-3" />
+                                  <span>Hadir</span>
+                                </>
+                              )}
+                            </Button>
+
+                            {/* Tombol Opsi Detail & Catatan */}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => {
+                                setNotesModalActor(actor)
+                                setCustomStatus(attStatus)
+                                setCustomNotes(notes || "")
+                              }}
+                              className="h-7 w-7 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                              title="Atur Catatan & Opsi Kehadiran"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+
+                        {/* Kolom Tanda Tangan Cetak (Print View Only) */}
+                        <TableCell className="py-3.5 text-center hidden print:table-cell text-xs text-slate-400 border border-black h-12">
+                          {isHadir ? "HADIR" : "................"}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          {/* Pagination / Tampilkan Lebih Banyak Data */}
+          {filteredActors.length > pageLimit && (
+            <div className="p-4 flex justify-center border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 print:hidden">
+              <Button
+                variant="outline"
+                onClick={() => setPageLimit(prev => prev + 50)}
+                className="text-xs font-bold border-primary text-primary hover:bg-primary/10"
+              >
+                Tampilkan 50 Data Lagi (Menampilkan {Math.min(pageLimit, filteredActors.length)} dari {filteredActors.length})
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* ─── MODAL DIALOG: UBAH STATUS KEHADIRAN & CATATAN ─── */}
       <Dialog open={!!notesModalActor} onOpenChange={(open) => { if (!open) setNotesModalActor(null) }}>
@@ -1107,7 +978,7 @@ function DaftarHadirContent() {
               <ClipboardCheck className="w-5 h-5" /> Presensi Pelaku Usaha
             </DialogTitle>
             <DialogDescription>
-              Atur status kehadiran dan catatan khusus untuk <strong className="text-slate-900 dark:text-slate-100">{notesModalActor?.fullName}</strong>.
+              Atur status kehadiran dan catatan untuk <strong className="text-slate-900 dark:text-slate-100">{notesModalActor?.fullName}</strong>.
             </DialogDescription>
           </DialogHeader>
 
@@ -1132,7 +1003,7 @@ function DaftarHadirContent() {
               <Textarea
                 value={customNotes}
                 onChange={(e) => setCustomNotes(e.target.value)}
-                placeholder="Contoh: Diwakili istri, terlambat karena hujan, ada surat izin, dll."
+                placeholder="Contoh: Diwakili istri, terlambat karena dinas luar, ada surat izin, dll."
                 className="text-xs sm:text-sm min-h-[80px]"
               />
             </div>
