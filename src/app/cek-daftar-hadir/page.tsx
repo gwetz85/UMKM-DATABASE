@@ -591,23 +591,23 @@ function CekDaftarHadirContent() {
 
             {/* Content Data NIK: Scrollable jika tinggi layar kecil */}
             <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
-              {/* TOP PROFILE SECTION: FOTO SURVEY + NAMA + BADGE STATUS */}
-              <div className="flex items-start gap-4">
-                {/* Foto Survey Box */}
+              {/* TOP PROFILE SECTION: FOTO SURVEY RATA TENGAH & DIPERBESAR */}
+              <div className="flex flex-col items-center text-center pb-3 border-b border-slate-100">
+                {/* Foto Survey Box Raksasa Rata Tengah */}
                 <div
                   onClick={() => {
                     if (surveyPhotoUrl) setIsPhotoModalOpen(true)
                   }}
                   className={cn(
-                    "w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden shrink-0 border-2 border-blue-200 bg-[#E2EDFB] flex items-center justify-center relative shadow-xs group",
-                    surveyPhotoUrl && "cursor-pointer hover:border-[#0055b3] transition-all"
+                    "w-44 h-44 sm:w-52 sm:h-52 md:w-56 md:h-56 rounded-3xl overflow-hidden shrink-0 border-4 border-blue-200 bg-[#E2EDFB] flex items-center justify-center relative shadow-md group mx-auto",
+                    surveyPhotoUrl && "cursor-pointer hover:border-[#0055b3] hover:shadow-lg transition-all"
                   )}
                   title={surveyPhotoUrl ? "Klik untuk melihat foto survey ukuran penuh" : "Foto Pelaku Usaha"}
                 >
                   {isLoadingPhoto ? (
-                    <div className="flex flex-col items-center gap-1 text-slate-500">
-                      <Loader2 className="w-6 h-6 animate-spin text-[#0055b3]" />
-                      <span className="text-[9px] font-bold">Memuat...</span>
+                    <div className="flex flex-col items-center gap-2 text-slate-500">
+                      <Loader2 className="w-8 h-8 animate-spin text-[#0055b3]" />
+                      <span className="text-xs font-bold">Memuat Foto Survey...</span>
                     </div>
                   ) : surveyPhotoUrl ? (
                     <>
@@ -617,8 +617,8 @@ function CekDaftarHadirContent() {
                         alt={selectedActor?.fullName || "Foto Survey"}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-black tracking-wider uppercase">
-                        Perbesar
+                      <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-black tracking-wider uppercase backdrop-blur-2xs">
+                        🔍 Perbesar Foto
                       </div>
                     </>
                   ) : (
@@ -627,33 +627,33 @@ function CekDaftarHadirContent() {
                 </div>
 
                 {/* Nama Lengkap & Badge Data Ditemukan */}
-                <div className="min-w-0 flex-1 pt-1">
-                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug truncate">
+                <div className="mt-3.5 space-y-1.5 w-full flex flex-col items-center">
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug">
                     {selectedActor ? selectedActor.fullName : searchStatus === "not_found" ? "Data Tidak Ditemukan" : "Budi Santoso"}
                   </h3>
 
-                  <div className="mt-1.5 flex items-center gap-2">
+                  <div className="flex items-center justify-center gap-2">
                     {selectedActor ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#dcfce7] text-[#15803d]">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black bg-[#dcfce7] text-[#15803d] shadow-2xs">
+                        <CheckCircle2 className="w-4 h-4" />
                         Data Ditemukan
                       </span>
                     ) : searchStatus === "not_found" ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-700">
-                        <XCircle className="w-3.5 h-3.5" />
+                      <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-700 shadow-2xs">
+                        <XCircle className="w-4 h-4" />
                         NIK Tidak Terdaftar
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#dcfce7] text-[#15803d]">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black bg-[#dcfce7] text-[#15803d] shadow-2xs">
+                        <CheckCircle2 className="w-4 h-4" />
                         Data Ditemukan (Contoh)
                       </span>
                     )}
                   </div>
 
                   {selectedActor?.businessName && (
-                    <p className="text-xs text-slate-500 font-semibold mt-1.5 truncate">
-                      Usaha: <strong className="text-slate-800">{selectedActor.businessName}</strong>
+                    <p className="text-xs sm:text-sm text-slate-600 font-semibold">
+                      Usaha: <strong className="text-slate-900 font-black">{selectedActor.businessName}</strong>
                     </p>
                   )}
                 </div>
