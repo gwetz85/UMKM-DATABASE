@@ -37,7 +37,20 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import dynamic from "next/dynamic"
-import { InteractiveStatisticsChart } from "@/components/interactive-statistics-chart"
+const PrayerWidget = dynamic(
+  () => import("@/components/prayer-widget").then((mod) => mod.PrayerWidget),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full min-h-[260px] bg-white dark:bg-slate-800/90 rounded-[28px] border border-slate-100 dark:border-slate-800 p-6 flex flex-col items-center justify-center gap-2.5">
+        <Loader2 className="w-8 h-8 rounded-full text-emerald-500 animate-spin" />
+        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+          Memuat Jadwal Sholat Tanjungpinang...
+        </span>
+      </div>
+    ),
+  }
+)
 
 const WeatherWidget = dynamic(
   () => import("@/components/weather-widget").then((mod) => mod.WeatherWidget),
@@ -634,14 +647,10 @@ export default function DashboardStatsPage() {
           <WeatherWidget className="w-full h-full min-h-[260px]" />
         </div>
 
-        {/* Right Bento: Real-time Interactive Statistics Overview */}
-        <InteractiveStatisticsChart
-          className="lg:col-span-5 xl:col-span-5"
-          kelurahanStats={kelurahanStats}
-          statsValues={statsValues}
-          isLoading={isStatsLoading}
-          onSelectFilter={(filter) => setSelectedFilter(filter)}
-        />
+        {/* Right Bento: Real-time Prayer Times Widget (Tanjungpinang, Kepri) */}
+        <div className="lg:col-span-5 xl:col-span-5 flex flex-col">
+          <PrayerWidget className="w-full h-full min-h-[260px]" />
+        </div>
       </div>
 
       {/* ─── MIDDLE SECTION: TAB PILLS ─── */}
