@@ -655,9 +655,18 @@ export default function LayarInformasiPage() {
             </div>
             
             <div className="flex flex-col">
-              <span className="text-xl sm:text-2xl font-black text-white tracking-tight leading-none drop-shadow-xs">
-                UMKM
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xl sm:text-2xl font-black text-white tracking-tight leading-none drop-shadow-xs">
+                  UMKM
+                </span>
+                <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white p-0.5 shadow-[0_0_12px_rgba(6,182,212,0.45)] border border-cyan-400/60 flex items-center justify-center shrink-0">
+                  <img
+                    src="/logo.png"
+                    alt="Logo SIMPU"
+                    className="w-full h-full object-contain rounded-full"
+                  />
+                </div>
+              </div>
               <span className="text-[9px] font-extrabold text-cyan-400 tracking-wider uppercase leading-tight mt-0.5">
                 DATA AKURAT, USAHA HEBAT
               </span>
