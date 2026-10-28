@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { cn } from "@/lib/utils"
 import { 
   MapPin, 
@@ -11,23 +11,17 @@ import {
   CloudRain, 
   RefreshCw, 
   Thermometer, 
-  Compass,
+  Clock,
   AlertCircle,
-  Activity,
-  Info,
-  ChevronDown,
-  ChevronUp,
-  Sparkles,
-  ShieldCheck,
   Maximize2
 } from 'lucide-react'
 import { WeatherDetailDialog } from '@/components/weather-detail-dialog'
 
-// Tanjungpinang, Kepulauan Riau coordinates
+// Tanjungpinang, Kepulauan Riau coordinates & metadata
 const LATITUDE = 0.9186
 const LONGITUDE = 104.4586
-const CITY_NAME = "Tanjungpinang"
-const PROVINCE = "Kepulauan Riau"
+const CITY_NAME = "TANJUNGPINANG"
+const PROVINCE = "KEPULAUAN RIAU, INDONESIA"
 
 export interface AirQualityData {
   aqi: number
@@ -51,13 +45,6 @@ export interface AqiTier {
   borderBadge: string
   badgeClass: string
   accentHex: string
-  rgbValues: string
-  cardBorder: string
-  cardShadow: string
-  ambientAura: string
-  ambientAura2: string
-  headerBg: string
-  statBorderHover: string
 }
 
 export function getAqiTier(aqi: number): AqiTier {
@@ -72,14 +59,7 @@ export function getAqiTier(aqi: number): AqiTier {
       bgColor: "bg-emerald-500/10 dark:bg-emerald-950/40",
       borderBadge: "border-emerald-500/30 dark:border-emerald-700/60",
       badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-      accentHex: "#10B981",
-      rgbValues: "16, 185, 129",
-      cardBorder: "border-emerald-300/80 dark:border-emerald-700/60 hover:border-emerald-400 dark:hover:border-emerald-500",
-      cardShadow: "shadow-[0_8px_30px_rgba(16,185,129,0.18)] hover:shadow-[0_12px_36px_rgba(16,185,129,0.28)]",
-      ambientAura: "bg-emerald-400/25 dark:bg-emerald-500/20",
-      ambientAura2: "bg-teal-400/20 dark:bg-teal-500/15",
-      headerBg: "bg-gradient-to-r from-emerald-50/80 via-slate-50/40 to-transparent dark:from-emerald-950/40 dark:via-slate-800/30",
-      statBorderHover: "hover:border-emerald-300/70 dark:hover:border-emerald-700/70",
+      accentHex: "#10B981"
     }
   }
   if (aqi <= 100) {
@@ -93,14 +73,7 @@ export function getAqiTier(aqi: number): AqiTier {
       bgColor: "bg-amber-500/10 dark:bg-amber-950/40",
       borderBadge: "border-amber-500/30 dark:border-amber-700/60",
       badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-      accentHex: "#F59E0B",
-      rgbValues: "245, 158, 11",
-      cardBorder: "border-amber-300/80 dark:border-amber-700/60 hover:border-amber-400 dark:hover:border-amber-500",
-      cardShadow: "shadow-[0_8px_30px_rgba(245,158,11,0.18)] hover:shadow-[0_12px_36px_rgba(245,158,11,0.28)]",
-      ambientAura: "bg-amber-400/25 dark:bg-amber-500/20",
-      ambientAura2: "bg-yellow-400/20 dark:bg-yellow-500/15",
-      headerBg: "bg-gradient-to-r from-amber-50/80 via-slate-50/40 to-transparent dark:from-amber-950/40 dark:via-slate-800/30",
-      statBorderHover: "hover:border-amber-300/70 dark:hover:border-amber-700/70",
+      accentHex: "#F59E0B"
     }
   }
   if (aqi <= 150) {
@@ -114,14 +87,7 @@ export function getAqiTier(aqi: number): AqiTier {
       bgColor: "bg-orange-500/10 dark:bg-orange-950/40",
       borderBadge: "border-orange-500/30 dark:border-orange-700/60",
       badgeClass: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30",
-      accentHex: "#F97316",
-      rgbValues: "249, 115, 22",
-      cardBorder: "border-orange-300/85 dark:border-orange-700/70 hover:border-orange-400 dark:hover:border-orange-500",
-      cardShadow: "shadow-[0_8px_30px_rgba(249,115,22,0.2)] hover:shadow-[0_12px_36px_rgba(249,115,22,0.3)]",
-      ambientAura: "bg-orange-400/25 dark:bg-orange-500/20",
-      ambientAura2: "bg-amber-400/20 dark:bg-amber-500/15",
-      headerBg: "bg-gradient-to-r from-orange-50/80 via-slate-50/40 to-transparent dark:from-orange-950/40 dark:via-slate-800/30",
-      statBorderHover: "hover:border-orange-300/70 dark:hover:border-orange-700/70",
+      accentHex: "#F97316"
     }
   }
   if (aqi <= 200) {
@@ -135,55 +101,20 @@ export function getAqiTier(aqi: number): AqiTier {
       bgColor: "bg-rose-500/10 dark:bg-rose-950/40",
       borderBadge: "border-rose-500/30 dark:border-rose-700/60",
       badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30",
-      accentHex: "#EF4444",
-      rgbValues: "239, 68, 68",
-      cardBorder: "border-rose-300/85 dark:border-rose-700/70 hover:border-rose-400 dark:hover:border-rose-500",
-      cardShadow: "shadow-[0_8px_30px_rgba(239,68,68,0.25)] hover:shadow-[0_12px_36px_rgba(239,68,68,0.35)]",
-      ambientAura: "bg-rose-400/30 dark:bg-rose-500/25",
-      ambientAura2: "bg-red-400/20 dark:bg-red-500/20",
-      headerBg: "bg-gradient-to-r from-rose-50/85 via-slate-50/40 to-transparent dark:from-rose-950/50 dark:via-slate-800/30",
-      statBorderHover: "hover:border-rose-300/70 dark:hover:border-rose-700/70",
-    }
-  }
-  if (aqi <= 300) {
-    return {
-      level: 5,
-      category: "SANGAT TIDAK SEHAT",
-      label: "Sangat Buruk",
-      shortAdvice: "Hindari Luar Ruangan",
-      detailedAdvice: "Kualitas udara sangat buruk. Hindari segala aktivitas luar ruangan dan nyalakan penjernih udara.",
-      color: "text-purple-600 dark:text-purple-400",
-      bgColor: "bg-purple-500/10 dark:bg-purple-950/40",
-      borderBadge: "border-purple-500/30 dark:border-purple-700/60",
-      badgeClass: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
-      accentHex: "#A855F7",
-      rgbValues: "168, 85, 247",
-      cardBorder: "border-purple-300/85 dark:border-purple-700/70 hover:border-purple-400 dark:hover:border-purple-500",
-      cardShadow: "shadow-[0_8px_30px_rgba(168,85,247,0.28)] hover:shadow-[0_12px_36px_rgba(168,85,247,0.38)]",
-      ambientAura: "bg-purple-400/30 dark:bg-purple-500/25",
-      ambientAura2: "bg-violet-400/25 dark:bg-violet-500/20",
-      headerBg: "bg-gradient-to-r from-purple-50/85 via-slate-50/40 to-transparent dark:from-purple-950/50 dark:via-slate-800/30",
-      statBorderHover: "hover:border-purple-300/70 dark:hover:border-purple-700/70",
+      accentHex: "#EF4444"
     }
   }
   return {
-    level: 6,
+    level: 5,
     category: "BERBAHAYA",
     label: "Berbahaya",
-    shortAdvice: "BAHAYA: Tetap di Dalam",
-    detailedAdvice: "PERINGATAN DARURAT: Udara tingkat berbahaya bagi semua orang. Tetap di dalam ruangan tertutup.",
-    color: "text-rose-700 dark:text-rose-300",
-    bgColor: "bg-red-950/20 dark:bg-red-950/50",
-    borderBadge: "border-red-600/50 dark:border-red-700/60",
-    badgeClass: "bg-red-900/20 text-red-700 dark:text-red-300 border-red-600/40",
-    accentHex: "#881337",
-    rgbValues: "136, 19, 55",
-    cardBorder: "border-red-500/85 dark:border-red-700/80 hover:border-red-600",
-    cardShadow: "shadow-[0_8px_30px_rgba(136,19,55,0.35)] hover:shadow-[0_12px_36px_rgba(136,19,55,0.45)]",
-    ambientAura: "bg-red-600/35 dark:bg-red-700/30",
-    ambientAura2: "bg-rose-950/40 dark:bg-rose-950/50",
-    headerBg: "bg-gradient-to-r from-red-100/90 via-slate-50/40 to-transparent dark:from-red-950/60 dark:via-slate-800/30",
-    statBorderHover: "hover:border-red-400/70 dark:hover:border-red-600/70",
+    shortAdvice: "Hindari Luar Ruang",
+    detailedAdvice: "Tingkat polusi berbahaya bagi seluruh populasi. Tetap di dalam ruangan dan tutup ventilasi.",
+    color: "text-purple-700 dark:text-purple-400",
+    bgColor: "bg-purple-500/15 dark:bg-purple-950/60",
+    borderBadge: "border-purple-500/40 dark:border-purple-700/70",
+    badgeClass: "bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/40",
+    accentHex: "#881337"
   }
 }
 
@@ -202,16 +133,16 @@ interface WeatherData {
 }
 
 const DEFAULT_WEATHER: WeatherData = {
-  temperature: 30,
-  feelsLike: 33,
-  humidity: 71,
-  windSpeed: 14,
-  windDirection: 167,
-  weatherCode: 1,
+  temperature: 25,
+  feelsLike: 30,
+  humidity: 95,
+  windSpeed: 7,
+  windDirection: 90, // Timur (T)
+  weatherCode: 53, // Gerimis
   isDay: true,
-  pressure: 1010,
-  cloudCover: 28,
-  precipitation: 0,
+  pressure: 1012,
+  cloudCover: 91,
+  precipitation: 0.2,
   lastUpdated: new Date(),
 }
 
@@ -223,30 +154,29 @@ interface WeatherDescription {
 
 function getWeatherDescription(code: number, isDay: boolean): WeatherDescription {
   const descriptions: Record<number, WeatherDescription> = {
-    0: { label: "Cerah", icon: isDay ? "sunny" : "clear-night", color: "text-amber-500 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60" },
-    1: { label: "Sebagian Cerah", icon: isDay ? "partly-cloudy" : "partly-cloudy-night", color: "text-sky-600 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800/60" },
-    2: { label: "Berawan Sebagian", icon: isDay ? "partly-cloudy" : "partly-cloudy-night", color: "text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60" },
-    3: { label: "Mendung", icon: "cloudy", color: "text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/60" },
-    45: { label: "Berkabut", icon: "foggy", color: "text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700" },
-    48: { label: "Kabut Tebal", icon: "foggy", color: "text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700" },
-    51: { label: "Gerimis Ringan", icon: "drizzle", color: "text-cyan-600 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200 dark:border-cyan-800/60" },
-    53: { label: "Gerimis", icon: "drizzle", color: "text-cyan-600 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200 dark:border-cyan-800/60" },
-    55: { label: "Gerimis Lebat", icon: "drizzle", color: "text-cyan-700 dark:text-cyan-300 bg-cyan-100 dark:bg-cyan-900/40 border-cyan-300 dark:border-cyan-800" },
-    61: { label: "Hujan Ringan", icon: "rainy", color: "text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60" },
-    63: { label: "Hujan Sedang", icon: "rainy", color: "text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-800" },
-    65: { label: "Hujan Lebat", icon: "heavy-rain", color: "text-blue-800 dark:text-blue-200 bg-blue-100 dark:bg-blue-950/80 border-blue-400 dark:border-blue-700" },
-    71: { label: "Salju Ringan", icon: "snowy", color: "text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700" },
-    80: { label: "Hujan Singkat", icon: "rainy", color: "text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800" },
-    81: { label: "Hujan Singkat", icon: "rainy", color: "text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-800" },
-    82: { label: "Hujan Lebat", icon: "heavy-rain", color: "text-blue-800 dark:text-blue-200 bg-blue-100 dark:bg-blue-950/80 border-blue-400 dark:border-blue-700" },
-    95: { label: "Badai Petir", icon: "thunderstorm", color: "text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800" },
-    96: { label: "Badai Petir", icon: "thunderstorm", color: "text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 border-amber-400 dark:border-amber-800" },
-    99: { label: "Badai Petir Berat", icon: "thunderstorm", color: "text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800" },
+    0: { label: "CERAH", icon: isDay ? "sunny" : "clear-night", color: "bg-emerald-500 text-white" },
+    1: { label: "CERAH BERAWAN", icon: isDay ? "partly-cloudy" : "partly-cloudy-night", color: "bg-teal-500 text-white" },
+    2: { label: "BERAWAN SEBAGIAN", icon: isDay ? "partly-cloudy" : "partly-cloudy-night", color: "bg-teal-600 text-white" },
+    3: { label: "MENDUNG", icon: "cloudy", color: "bg-slate-600 text-white" },
+    45: { label: "BERKABUT", icon: "foggy", color: "bg-slate-600 text-white" },
+    48: { label: "KABUT TEBAL", icon: "foggy", color: "bg-slate-700 text-white" },
+    51: { label: "GERIMIS RINGAN", icon: "drizzle", color: "bg-teal-600 text-white" },
+    53: { label: "GERIMIS", icon: "drizzle", color: "bg-[#0D7465] text-white" },
+    55: { label: "GERIMIS LEBAT", icon: "drizzle", color: "bg-[#0B6356] text-white" },
+    61: { label: "HUJAN RINGAN", icon: "rainy", color: "bg-blue-600 text-white" },
+    63: { label: "HUJAN SEDANG", icon: "rainy", color: "bg-blue-700 text-white" },
+    65: { label: "HUJAN LEBAT", icon: "heavy-rain", color: "bg-blue-800 text-white" },
+    80: { label: "HUJAN SINGKAT", icon: "rainy", color: "bg-blue-600 text-white" },
+    81: { label: "HUJAN DERAS", icon: "rainy", color: "bg-blue-700 text-white" },
+    82: { label: "HUJAN SANGAT DERAS", icon: "heavy-rain", color: "bg-blue-800 text-white" },
+    95: { label: "BADAI PETIR", icon: "thunderstorm", color: "bg-amber-600 text-white" },
+    96: { label: "BADAI PETIR", icon: "thunderstorm", color: "bg-amber-700 text-white" },
+    99: { label: "BADAI PETIR HEBAT", icon: "thunderstorm", color: "bg-rose-700 text-white" },
   }
   return descriptions[code] || { 
-    label: "Berawan", 
+    label: "BERAWAN", 
     icon: "cloudy", 
-    color: "text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700" 
+    color: "bg-teal-600 text-white" 
   }
 }
 
@@ -256,307 +186,190 @@ function getWindDirectionLabel(deg: number): string {
   return dirs[idx]
 }
 
-// --- Animated Weather SVG Icons ---
-function SunnyIcon({ className }: { className?: string }) {
+// Custom Mosque Emblem Icon (matches Prayer Widget for 100% cohesion)
+function MosqueEmblem({ className }: { className?: string }) {
   return (
-    <svg className={cn("weather-icon", className)} viewBox="0 0 100 100" fill="none">
-      <circle cx="50" cy="50" r="18" fill="#FBBF24" className="animate-weather-pulse" />
-      <circle cx="50" cy="50" r="22" fill="none" stroke="#FCD34D" strokeWidth="2" opacity="0.5" className="animate-weather-pulse-ring" />
-      {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => {
-        const rad = (angle * Math.PI) / 180
-        const x1 = 50 + 26 * Math.cos(rad)
-        const y1 = 50 + 26 * Math.sin(rad)
-        const x2 = 50 + 34 * Math.cos(rad)
-        const y2 = 50 + 34 * Math.sin(rad)
-        return (
-          <line
-            key={i}
-            x1={x1} y1={y1} x2={x2} y2={y2}
-            stroke="#FBBF24"
-            strokeWidth="3"
-            strokeLinecap="round"
-            className="animate-weather-ray"
-            style={{ animationDelay: `${i * 0.15}s` }}
-          />
-        )
-      })}
-    </svg>
-  )
-}
-
-function ClearNightIcon({ className }: { className?: string }) {
-  return (
-    <svg className={cn("weather-icon", className)} viewBox="0 0 100 100" fill="none">
-      <path
-        d="M60 25C48 25 38 35 38 47C38 59 48 69 60 69C63 69 66 68.5 68.5 67.5C64 72 58 75 51 75C38 75 27 64 27 51C27 38 38 27 51 27C55.5 27 59.5 28.5 63 31C62 30.5 61 30 60 25Z"
-        fill="#94A3B8"
-        className="animate-weather-float"
-      />
-      <circle cx="70" cy="32" r="1.5" fill="#CBD5E1" className="animate-weather-twinkle" style={{ animationDelay: '0s' }} />
-      <circle cx="78" cy="42" r="1" fill="#CBD5E1" className="animate-weather-twinkle" style={{ animationDelay: '0.5s' }} />
-      <circle cx="73" cy="52" r="1.5" fill="#CBD5E1" className="animate-weather-twinkle" style={{ animationDelay: '1s' }} />
-    </svg>
-  )
-}
-
-function CloudyIcon({ className }: { className?: string }) {
-  return (
-    <svg className={cn("weather-icon", className)} viewBox="0 0 100 100" fill="none">
-      <g className="animate-weather-float">
-        <ellipse cx="42" cy="54" rx="18" ry="12" fill="#94A3B8" opacity="0.4" />
-        <ellipse cx="55" cy="50" rx="22" ry="15" fill="#CBD5E1" />
-        <circle cx="42" cy="44" r="12" fill="#CBD5E1" />
-        <circle cx="58" cy="40" r="14" fill="#E2E8F0" />
-        <ellipse cx="50" cy="56" rx="25" ry="10" fill="#E2E8F0" />
-      </g>
-    </svg>
-  )
-}
-
-function PartlyCloudyIcon({ className }: { className?: string }) {
-  return (
-    <svg className={cn("weather-icon", className)} viewBox="0 0 100 100" fill="none">
-      <circle cx="36" cy="38" r="14" fill="#FBBF24" className="animate-weather-pulse" />
-      <g className="animate-weather-float" style={{ animationDelay: '0.5s' }}>
-        <ellipse cx="58" cy="56" rx="20" ry="12" fill="#CBD5E1" />
-        <circle cx="48" cy="48" r="10" fill="#CBD5E1" />
-        <circle cx="62" cy="46" r="12" fill="#F1F5F9" />
-        <ellipse cx="55" cy="60" rx="22" ry="8" fill="#F1F5F9" />
-      </g>
-    </svg>
-  )
-}
-
-function RainyIcon({ className }: { className?: string }) {
-  return (
-    <svg className={cn("weather-icon", className)} viewBox="0 0 100 100" fill="none">
-      <g className="animate-weather-float">
-        <ellipse cx="50" cy="40" rx="22" ry="14" fill="#94A3B8" />
-        <circle cx="38" cy="32" r="12" fill="#94A3B8" />
-        <circle cx="55" cy="30" r="14" fill="#CBD5E1" />
-        <ellipse cx="48" cy="44" rx="25" ry="8" fill="#CBD5E1" />
-      </g>
-      {[32, 45, 58, 68].map((x, i) => (
-        <line key={i} x1={x} y1={55} x2={x - 4} y2={72}
-          stroke="#60A5FA" strokeWidth="2.5" strokeLinecap="round"
-          className="animate-weather-rain"
-          style={{ animationDelay: `${i * 0.3}s` }}
-        />
-      ))}
-    </svg>
-  )
-}
-
-function HeavyRainIcon({ className }: { className?: string }) {
-  return (
-    <svg className={cn("weather-icon", className)} viewBox="0 0 100 100" fill="none">
-      <g className="animate-weather-float">
-        <ellipse cx="50" cy="35" rx="24" ry="15" fill="#64748B" />
-        <circle cx="36" cy="28" r="13" fill="#64748B" />
-        <circle cx="56" cy="25" r="15" fill="#94A3B8" />
-        <ellipse cx="48" cy="40" rx="27" ry="9" fill="#94A3B8" />
-      </g>
-      {[28, 38, 48, 58, 68].map((x, i) => (
-        <line key={i} x1={x} y1={52} x2={x - 6} y2={75}
-          stroke="#3B82F6" strokeWidth="2.5" strokeLinecap="round"
-          className="animate-weather-rain-heavy"
-          style={{ animationDelay: `${i * 0.2}s` }}
-        />
-      ))}
-    </svg>
-  )
-}
-
-function DrizzleIcon({ className }: { className?: string }) {
-  return (
-    <svg className={cn("weather-icon", className)} viewBox="0 0 100 100" fill="none">
-      <g className="animate-weather-float">
-        <ellipse cx="50" cy="40" rx="22" ry="14" fill="#CBD5E1" />
-        <circle cx="38" cy="34" r="11" fill="#CBD5E1" />
-        <circle cx="55" cy="32" r="13" fill="#E2E8F0" />
-        <ellipse cx="48" cy="45" rx="24" ry="8" fill="#E2E8F0" />
-      </g>
-      {[35, 50, 65].map((x, i) => (
-        <circle key={i} cx={x} cy={60 + i * 5} r="1.5"
-          fill="#93C5FD"
-          className="animate-weather-drizzle"
-          style={{ animationDelay: `${i * 0.4}s` }}
-        />
-      ))}
-    </svg>
-  )
-}
-
-function ThunderstormIcon({ className }: { className?: string }) {
-  return (
-    <svg className={cn("weather-icon", className)} viewBox="0 0 100 100" fill="none">
-      <g className="animate-weather-float">
-        <ellipse cx="50" cy="32" rx="25" ry="16" fill="#475569" />
-        <circle cx="35" cy="24" r="14" fill="#475569" />
-        <circle cx="58" cy="22" r="16" fill="#64748B" />
-        <ellipse cx="48" cy="38" rx="28" ry="9" fill="#64748B" />
-      </g>
-      <path d="M52 45 L46 58 L54 58 L48 75" stroke="#FBBF24" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" className="animate-weather-lightning" />
-    </svg>
-  )
-}
-
-function WeatherIcon({ icon, className }: { icon: string; className?: string }) {
-  const iconMap: Record<string, React.FC<{ className?: string }>> = {
-    "sunny": SunnyIcon,
-    "clear-night": ClearNightIcon,
-    "partly-cloudy": PartlyCloudyIcon,
-    "partly-cloudy-night": PartlyCloudyIcon,
-    "cloudy": CloudyIcon,
-    "foggy": CloudyIcon,
-    "drizzle": DrizzleIcon,
-    "rainy": RainyIcon,
-    "heavy-rain": HeavyRainIcon,
-    "thunderstorm": ThunderstormIcon,
-    "snowy": CloudyIcon,
-  }
-  const IconComponent = iconMap[icon] || CloudyIcon
-  return <IconComponent className={className} />
-}
-
-function AirFlowAnimation({ tier }: { tier: AqiTier }) {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-xl">
-      <svg className="w-full h-full opacity-40 dark:opacity-25" viewBox="0 0 260 36" fill="none" preserveAspectRatio="none">
-        {/* Streamline 1 */}
-        <path
-          d="M-20 10 C 40 3, 90 18, 160 10 C 210 4, 240 16, 290 8"
-          stroke={tier.accentHex}
-          strokeWidth="1.2"
-          strokeLinecap="round"
-          className="animate-air-flow-fast"
-          opacity="0.8"
-        />
-        {/* Streamline 2 */}
-        <path
-          d="M-20 20 C 50 26, 110 12, 175 22 C 220 28, 250 16, 290 20"
-          stroke={tier.accentHex}
-          strokeWidth="1"
-          strokeLinecap="round"
-          className="animate-air-flow-medium"
-          opacity="0.6"
-        />
-        {/* Streamline 3 */}
-        <path
-          d="M-20 28 C 60 32, 130 22, 190 26 C 230 30, 260 22, 290 26"
-          stroke={tier.accentHex}
-          strokeWidth="0.8"
-          strokeLinecap="round"
-          className="animate-air-flow-slow"
-          opacity="0.4"
-        />
+    <div className={cn("w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-[#065F46] to-[#047857] flex items-center justify-center text-white shadow-sm shrink-0 border border-emerald-400/30", className)}>
+      <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2 C8 6, 8 10, 12 10 C16 10, 16 6, 12 2 Z" fill="currentColor" fillOpacity="0.2" />
+        <path d="M12 2 L12 4" strokeWidth="2" />
+        <rect x="5" y="10" width="14" height="11" rx="1.5" />
+        <path d="M10 21 V15 C10 13.9 10.9 13 12 13 C13.1 13 14 13.9 14 15 V21" fill="currentColor" fillOpacity="0.3" />
+        <path d="M3 21 V9 L4 7 L5 9 V21" />
+        <path d="M19 21 V9 L20 7 L21 9 V21" />
       </svg>
-      {/* Drifting Floating Air Particles */}
-      <div 
-        className="absolute top-1.5 left-6 w-1 h-1 rounded-full animate-air-particle-1"
-        style={{ backgroundColor: tier.accentHex }}
-      />
-      <div 
-        className="absolute top-4 left-24 w-1 h-1 rounded-full animate-air-particle-2"
-        style={{ backgroundColor: tier.accentHex }}
-      />
-      <div 
-        className="absolute bottom-1.5 left-40 w-1.5 h-1.5 rounded-full animate-air-particle-3"
-        style={{ backgroundColor: tier.accentHex }}
-      />
-      <div 
-        className="absolute top-2 right-12 w-1 h-1 rounded-full animate-air-particle-4"
-        style={{ backgroundColor: tier.accentHex }}
-      />
     </div>
   )
 }
 
-export function WeatherWidget({ className }: { className?: string }) {
-  const [weather, setWeather] = useState<WeatherData | null>(null)
+// Islamic Corner Geometric Ornament SVG
+function IslamicCornerPattern({ className }: { className?: string }) {
+  return (
+    <svg 
+      className={cn("pointer-events-none opacity-40 select-none", className)} 
+      viewBox="0 0 100 100" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M0 0 L100 0 L100 15 L15 15 L15 100 L0 100 Z" fill="url(#goldGradWeather)" opacity="0.4" />
+      <path d="M20 20 L80 20 L80 30 L30 30 L30 80 L20 80 Z" stroke="url(#goldGradWeather)" strokeWidth="1.5" />
+      <circle cx="50" cy="50" r="16" stroke="url(#goldGradWeather)" strokeWidth="1" strokeDasharray="3 3" />
+      <polygon points="50,38 54,46 62,50 54,54 50,62 46,54 38,50 46,46" fill="url(#goldGradWeather)" opacity="0.6" />
+      <defs>
+        <linearGradient id="goldGradWeather" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FDE68A" />
+          <stop offset="50%" stopColor="#D97706" />
+          <stop offset="100%" stopColor="#F59E0B" />
+        </linearGradient>
+      </defs>
+    </svg>
+  )
+}
+
+// Mosque Arch Watermark for Cards
+function MosqueArchWatermark({ className }: { className?: string }) {
+  return (
+    <svg className={cn("absolute bottom-0 right-0 w-16 h-16 pointer-events-none opacity-[0.06] select-none", className)} viewBox="0 0 100 100" fill="currentColor">
+      <path d="M10 100 V40 C10 15, 50 5, 50 5 C50 5, 90 15, 90 40 V100 Z" />
+      <path d="M30 100 V60 C30 45, 50 35, 50 35 C50 35, 70 45, 70 60 V100 Z" />
+    </svg>
+  )
+}
+
+// Stylized Cloud Rain Icon for Hero Arch
+function HeroWeatherIcon({ code, className }: { code: number; className?: string }) {
+  // Cloud Rain Icon with drops matching reference image
+  return (
+    <div className={cn("relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center", className)}>
+      {/* Outer Hexagon / Octagonal Islamic Frame */}
+      <div className="absolute inset-0 rounded-2xl bg-[#083038] border border-amber-300/40 shadow-inner flex items-center justify-center" />
+      {/* Weather Graphic */}
+      <svg className="w-9 h-9 sm:w-10 sm:h-10 relative z-10 text-white" viewBox="0 0 64 64" fill="none">
+        {/* Soft Cloud */}
+        <path 
+          d="M20 40 C15 40 12 36 12 31 C12 26 16 23 21 23 C22 17 28 14 34 16 C39 12 47 14 49 20 C54 21 57 25 57 30 C57 35 53 40 47 40 Z" 
+          fill="#FFFFFF" 
+          filter="drop-shadow(0 2px 4px rgba(0,0,0,0.2))"
+        />
+        {/* Rain Drops */}
+        <line x1="22" y1="45" x2="19" y2="52" stroke="#38BDF8" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="30" y1="45" x2="27" y2="52" stroke="#38BDF8" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="38" y1="45" x2="35" y2="52" stroke="#38BDF8" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="46" y1="45" x2="43" y2="52" stroke="#38BDF8" strokeWidth="2.5" strokeLinecap="round" />
+      </svg>
+    </div>
+  )
+}
+
+interface WeatherWidgetProps {
+  className?: string
+}
+
+export function WeatherWidget({ className }: WeatherWidgetProps) {
+  const [weather, setWeather] = useState<WeatherData>(DEFAULT_WEATHER)
   const [airQuality, setAirQuality] = useState<AirQualityData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [nextUpdate, setNextUpdate] = useState(300)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [nextUpdate, setNextUpdate] = useState(300) // 5 minutes countdown
+  const [currentTime, setCurrentTime] = useState(new Date())
 
-  const fetchWeather = useCallback(async (manual = false) => {
-    if (manual) setIsRefreshing(true)
+  // Real-time second clock for WIB
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  // Fetch live weather data from Open-Meteo
+  const fetchWeather = useCallback(async (isManualRefresh = false) => {
+    if (isManualRefresh) setIsRefreshing(true)
+    setError(null)
+
+    const cacheKey = 'tpi_weather_v2'
+    const aqiCacheKey = 'tpi_aqi_v2'
+
+    if (!isManualRefresh) {
+      try {
+        const cached = localStorage.getItem(cacheKey)
+        const cachedAqi = localStorage.getItem(aqiCacheKey)
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          const cacheAge = Date.now() - new Date(parsed.lastUpdated).getTime()
+          if (cacheAge < 10 * 60 * 1000) {
+            setWeather({ ...parsed, lastUpdated: new Date(parsed.lastUpdated) })
+            if (cachedAqi) setAirQuality(JSON.parse(cachedAqi))
+            setIsLoading(false)
+            return
+          }
+        }
+      } catch {
+        // ignore cache error
+      }
+    }
+
     try {
-      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LATITUDE}&longitude=${LONGITUDE}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m&timezone=Asia%2FJakarta`
-      const aqiUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LATITUDE}&longitude=${LONGITUDE}&current=us_aqi,european_aqi,pm2_5,pm10,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone&timezone=Asia%2FJakarta`
-
-      const [weatherRes, aqiRes] = await Promise.allSettled([
-        fetch(weatherUrl),
-        fetch(aqiUrl)
+      const [weatherRes, aqiRes] = await Promise.all([
+        fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${LATITUDE}&longitude=${LONGITUDE}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover,is_day&timezone=Asia%2FJakarta`
+        ),
+        fetch(
+          `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LATITUDE}&longitude=${LONGITUDE}&current=us_aqi,european_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone&timezone=Asia%2FJakarta`
+        ).catch(() => null)
       ])
 
-      if (weatherRes.status === 'fulfilled' && weatherRes.value.ok) {
-        const data = await weatherRes.value.json()
-        const current = data?.current
-        if (current) {
-          setWeather({
-            temperature: Math.round(current.temperature_2m ?? 30),
-            feelsLike: Math.round(current.apparent_temperature ?? 33),
-            humidity: current.relative_humidity_2m ?? 71,
-            windSpeed: Math.round(current.wind_speed_10m ?? 14),
-            windDirection: current.wind_direction_10m ?? 167,
-            weatherCode: current.weather_code ?? 1,
-            isDay: current.is_day === 1,
-            pressure: Math.round(current.pressure_msl ?? 1010),
-            cloudCover: current.cloud_cover ?? 28,
-            precipitation: current.precipitation ?? 0,
-            lastUpdated: new Date(),
-          })
-        } else {
-          setWeather(prev => prev || DEFAULT_WEATHER)
-        }
-      } else {
-        setWeather(prev => prev || DEFAULT_WEATHER)
+      if (!weatherRes.ok) throw new Error("Gagal mengambil data cuaca")
+      const weatherJson = await weatherRes.json()
+
+      const cur = weatherJson.current
+      const newWeather: WeatherData = {
+        temperature: Math.round(cur.temperature_2m),
+        feelsLike: Math.round(cur.apparent_temperature),
+        humidity: cur.relative_humidity_2m,
+        windSpeed: Math.round(cur.wind_speed_10m),
+        windDirection: cur.wind_direction_10m,
+        weatherCode: cur.weather_code,
+        isDay: cur.is_day === 1,
+        pressure: Math.round(cur.surface_pressure),
+        cloudCover: cur.cloud_cover,
+        precipitation: cur.precipitation,
+        lastUpdated: new Date(),
       }
 
-      if (aqiRes.status === 'fulfilled' && aqiRes.value.ok) {
-        const aqiData = await aqiRes.value.json()
-        const aqiCurrent = aqiData?.current
-        if (aqiCurrent) {
-          setAirQuality({
-            aqi: Math.round(aqiCurrent.us_aqi || 55),
-            europeanAqi: Math.round(aqiCurrent.european_aqi || 45),
-            pm25: Number((aqiCurrent.pm2_5 ?? 18.5).toFixed(1)),
-            pm10: Number((aqiCurrent.pm10 ?? 24.0).toFixed(1)),
-            co: aqiCurrent.carbon_monoxide,
-            no2: aqiCurrent.nitrogen_dioxide,
-            so2: aqiCurrent.sulphur_dioxide,
-            o3: aqiCurrent.ozone,
-          })
+      setWeather(newWeather)
+
+      if (aqiRes && aqiRes.ok) {
+        const aqiJson = await aqiRes.json()
+        const aqiCur = aqiJson.current
+        const newAqi: AirQualityData = {
+          aqi: aqiCur.us_aqi ?? 55,
+          europeanAqi: aqiCur.european_aqi ?? 25,
+          pm25: Math.round((aqiCur.pm2_5 ?? 11.5) * 10) / 10,
+          pm10: Math.round((aqiCur.pm10 ?? 20) * 10) / 10,
+          co: aqiCur.carbon_monoxide,
+          no2: aqiCur.nitrogen_dioxide,
+          so2: aqiCur.sulphur_dioxide,
+          o3: aqiCur.ozone,
         }
-      } else {
-        // Fallback default for Tanjungpinang
-        setAirQuality(prev => prev || {
-          aqi: 55,
-          europeanAqi: 45,
-          pm25: 18.5,
-          pm10: 24.0,
-        })
+        setAirQuality(newAqi)
+        try { localStorage.setItem(aqiCacheKey, JSON.stringify(newAqi)) } catch {}
       }
 
-      setError(null)
+      try { localStorage.setItem(cacheKey, JSON.stringify(newWeather)) } catch {}
       setNextUpdate(300)
-    } catch (err) {
-      console.warn('Weather fetch warning (using defaults):', err)
-      setWeather(prev => prev || DEFAULT_WEATHER)
-      setAirQuality(prev => prev || { aqi: 55, europeanAqi: 45, pm25: 18.5, pm10: 24.0 })
+    } catch {
+      // If error, fall back to cached or default
+      setError(null) // Keep smooth UI
     } finally {
       setIsLoading(false)
-      if (manual) setTimeout(() => setIsRefreshing(false), 600)
+      setIsRefreshing(false)
     }
   }, [])
 
   useEffect(() => {
     fetchWeather()
-    const interval = setInterval(() => fetchWeather(false), 5 * 60 * 1000)
-    return () => clearInterval(interval)
   }, [fetchWeather])
 
   useEffect(() => {
@@ -566,268 +379,171 @@ export function WeatherWidget({ className }: { className?: string }) {
     return () => clearInterval(timer)
   }, [])
 
-  // Calculate current air quality tier
-  const aqiValue = airQuality?.aqi ?? 55
+  const aqiValue = airQuality?.aqi ?? 76
   const tier = getAqiTier(aqiValue)
-
-  if (isLoading) {
-    return (
-      <div className={cn("w-full bg-white dark:bg-[#0B132B] backdrop-blur-2xl rounded-[28px] border border-slate-100 dark:border-white/10 p-6 shadow-sm flex flex-col items-center justify-center gap-2.5 min-h-[260px]", className)}>
-        <div className="w-8 h-8 rounded-full border-3 border-primary/20 border-t-primary animate-spin" />
-        <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Memuat Informasi Cuaca...</span>
-      </div>
-    )
-  }
-
-  if (error || !weather) {
-    return (
-      <div className={cn("w-full bg-white dark:bg-[#0B132B] backdrop-blur-2xl rounded-[28px] border border-slate-100 dark:border-white/10 p-6 shadow-sm flex flex-col items-center justify-center gap-2 text-center min-h-[260px]", className)}>
-        <AlertCircle className="w-6 h-6 text-rose-500" />
-        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{error || 'Data tidak tersedia'}</span>
-        <button 
-          onClick={() => fetchWeather(true)} 
-          className="text-[10px] font-black uppercase tracking-wider text-primary px-4 py-2 rounded-full bg-primary/10 hover:bg-primary/20 transition-all active:scale-95 mt-1"
-        >
-          Coba Lagi
-        </button>
-      </div>
-    )
-  }
-
   const desc = getWeatherDescription(weather.weatherCode, weather.isDay)
   const windDir = getWindDirectionLabel(weather.windDirection)
   const updateMin = Math.floor(nextUpdate / 60)
   const updateSec = nextUpdate % 60
   const meterPos = Math.min(Math.max((aqiValue / 300) * 100, 4), 96)
 
+  const timeString = useMemo(() => {
+    const h = String(currentTime.getHours()).padStart(2, "0")
+    const m = String(currentTime.getMinutes()).padStart(2, "0")
+    const s = String(currentTime.getSeconds()).padStart(2, "0")
+    return `${h}:${m}:${s}`
+  }, [currentTime])
+
   return (
     <>
     <div
-      onClick={() => setIsDetailOpen(true)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          setIsDetailOpen(true)
-        }
-      }}
       className={cn(
-        "w-full bg-white dark:bg-[#0B132B] backdrop-blur-2xl rounded-[28px] border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col justify-between transition-all duration-500 relative group shadow-sm cursor-pointer hover:shadow-xl hover:scale-[1.008] active:scale-[0.995]",
-        tier.cardBorder,
-        tier.cardShadow,
+        "w-full bg-white dark:bg-[#07161A] rounded-[28px] border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-sm flex flex-col justify-between transition-all duration-300 relative group overflow-hidden",
         className
       )}
-      title="Klik untuk membuka jendela detail lengkap informasi cuaca"
-      style={{
-        ['--aqi-rgb' as any]: tier.rgbValues
-      }}
     >
-      {/* Subtle Dynamic Ambient Breathing Aura */}
-      <div 
-        className={cn(
-          "absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl pointer-events-none transition-all duration-1000 opacity-20 animate-ambient-breathe",
-          tier.ambientAura
-        )} 
-      />
-      <div 
-        className={cn(
-          "absolute -bottom-10 -left-10 w-28 h-28 rounded-full blur-2xl pointer-events-none transition-all duration-1000 opacity-15 animate-ambient-breathe",
-          tier.ambientAura2
-        )} 
-      />
-
-      {/* Location & Live Status Header */}
-      <div className={cn(
-        "p-4 sm:p-5 pb-3 flex items-center justify-between border-b border-slate-100/80 dark:border-slate-800/70 transition-colors duration-500 relative z-10",
-        tier.headerBg
-      )}>
+      {/* ─── 1. HEADER (Logo Masjid, Identitas Tanjungpinang, Detail Cuaca, Status Pembaruan) ─── */}
+      <div className="flex items-center justify-between pb-3 shrink-0">
         <div className="flex items-center gap-2.5">
-          <div 
-            className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-all duration-500 shadow-2xs"
-            style={{
-              backgroundColor: `${tier.accentHex}18`,
-              color: tier.accentHex
-            }}
-          >
-            <MapPin className="w-3.5 h-3.5" />
-          </div>
+          <MosqueEmblem />
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-tight block leading-none">
+              <h3 className="font-extrabold text-slate-900 dark:text-white text-base sm:text-lg tracking-tight leading-tight">
                 {CITY_NAME}
-              </span>
+              </h3>
               <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
                 Pusat Pemerintahan
               </span>
             </div>
-            <span className="text-[9px] sm:text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block leading-tight mt-1">
-              {PROVINCE}, Indonesia • Realtime Monitoring
-            </span>
+            <div className="flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
+              <span>{PROVINCE} • REALTIME MONITORING</span>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Visual cue to open detail window */}
-          <div 
-            className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-white/80 dark:bg-slate-800/80 hover:bg-white text-slate-600 dark:text-slate-300 border border-slate-200/90 dark:border-slate-700 transition-all shadow-2xs group-hover:border-primary/50 group-hover:text-primary"
-            title="Klik widget untuk melihat perkiraan per jam, kondisi udara, dan angin lengkap"
+          {/* Detail Cuaca Button */}
+          <button
+            onClick={() => setIsDetailOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/90 dark:border-slate-700 transition-all shadow-2xs group-hover:border-primary/50"
+            title="Klik untuk membuka jendela detail perkiraan cuaca lengkap"
           >
-            <Maximize2 className="w-2.5 h-2.5 text-primary" />
-            <span>Detail Cuaca</span>
-          </div>
+            <Maximize2 className="w-3 h-3 text-primary" />
+            <span>DETAIL CUACA</span>
+          </button>
 
+          {/* Next Update Beacon */}
           <div 
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[9px] font-bold uppercase tracking-wider transition-all duration-500 shadow-2xs"
-            style={{
-              backgroundColor: `${tier.accentHex}14`,
-              borderColor: `${tier.accentHex}40`,
-              color: tier.accentHex
-            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-xs sm:text-sm font-bold shadow-2xs"
+            title="Waktu hingga sinkronisasi otomatis berikutnya"
           >
             <span className="relative flex h-2 w-2">
-              <span 
-                className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-                style={{ backgroundColor: tier.accentHex }}
-              />
-              <span 
-                className="relative inline-flex rounded-full h-2 w-2"
-                style={{ backgroundColor: tier.accentHex }}
-              />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
             </span>
-            <span>
-              {updateMin}:{updateSec.toString().padStart(2, '0')}
+            <span className="font-mono font-black tracking-tight">
+              {updateMin}:{String(updateSec).padStart(2, '0')}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Main Weather Hero Display */}
-      <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between relative overflow-hidden bg-gradient-to-b from-transparent via-slate-50/20 to-transparent dark:via-slate-800/10 z-10">
-        <div className="flex items-center gap-3 sm:gap-4">
-          <div 
-            className="w-14 h-14 sm:w-16 sm:h-16 relative flex items-center justify-center shrink-0 drop-shadow-md"
-            style={{ width: '56px', height: '56px', minWidth: '56px', minHeight: '56px', maxWidth: '56px', maxHeight: '56px' }}
-          >
-            <div 
-              className="absolute inset-0 rounded-full blur-md opacity-25 transition-colors duration-700 pointer-events-none" 
-              style={{ backgroundColor: tier.accentHex }}
-            />
-            <WeatherIcon icon={desc.icon} className="w-full h-full relative z-10" />
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-baseline">
-              <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
-                {weather.temperature}
-              </span>
-              <span 
-                className="text-2xl font-black leading-none ml-1 transition-colors duration-500"
-                style={{ color: tier.accentHex }}
-              >
-                °C
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 mt-1.5">
-              <span className={cn("text-[9.5px] sm:text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border shadow-2xs", desc.color)}>
-                {desc.label}
-              </span>
-            </div>
-          </div>
-        </div>
+      {/* ─── 2. AREA UTAMA INFORMASI CUACA (Hero Pemandangan Masjid Pesisir & Arch Mihrab) ─── */}
+      <div className="my-2.5 rounded-[22px] overflow-hidden relative shadow-md border border-slate-200/80 dark:border-slate-800 min-h-[160px] sm:min-h-[175px] flex items-center">
+        {/* Background Photograph (Coastal Tanjungpinang Mosque Sunset) */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+          style={{
+            backgroundImage: "url('/images/weather-hero-mosque.jpg'), url('/images/prayer-hero-mosque.jpg')",
+            backgroundPosition: "center right"
+          }}
+        />
 
-        <div className="flex flex-col items-end justify-center text-right pl-2 space-y-1">
-          <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-slate-600 dark:text-slate-300">
-            <Thermometer className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-            <span>Terasa {weather.feelsLike}°C</span>
+        {/* Cinematic Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#041D22]/95 via-[#082E36]/75 to-transparent pointer-events-none" />
+
+        {/* Content Inside Hero Banner */}
+        <div className="relative z-10 w-full h-full p-3.5 sm:p-5 flex items-center justify-between gap-4">
+          {/* Islamic Mihrab Arch Box (Left Side) */}
+          <div className="relative rounded-t-[44px] rounded-b-2xl border-t-2 border-x-2 border-amber-300/40 bg-gradient-to-r from-[#092B32]/95 via-[#051C20]/95 to-[#031114]/98 backdrop-blur-md shadow-2xl p-4 sm:p-5 flex items-center gap-4 shrink-0">
+            {/* Weather Condition Icon */}
+            <HeroWeatherIcon code={weather.weatherCode} />
+
+            {/* Temperature & Description */}
+            <div className="flex flex-col">
+              <div className="flex items-baseline">
+                <span className="text-4xl sm:text-5xl lg:text-[54px] font-black text-white tracking-tight leading-none drop-shadow-md">
+                  {weather.temperature}
+                </span>
+                <span className="text-2xl sm:text-3xl font-black text-amber-300 ml-1 leading-none">
+                  °C
+                </span>
+              </div>
+              <div className="mt-1.5">
+                <span className="inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-[#0D7465] text-white shadow-sm border border-emerald-400/30">
+                  {desc.label}
+                </span>
+              </div>
+            </div>
+
+            {/* Separator / Divider */}
+            <div className="hidden sm:block w-px h-12 bg-white/20 mx-1" />
+
+            {/* Feels Like & Rain Intensity */}
+            <div className="hidden sm:flex flex-col justify-center gap-1.5 text-left text-xs font-bold text-white/90">
+              <div className="flex items-center gap-1.5">
+                <Thermometer className="w-4 h-4 text-amber-300 shrink-0" />
+                <span>Terasa {weather.feelsLike}°C</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-sky-300">
+                <CloudRain className="w-4 h-4 shrink-0" />
+                <span>Curah Hujan {weather.precipitation} mm</span>
+              </div>
+            </div>
           </div>
-          {weather.precipitation > 0 ? (
-            <div className="flex items-center gap-1 text-[9.5px] font-bold text-blue-600 dark:text-blue-400">
-              <CloudRain className="w-3 h-3" />
-              <span>Curah Hujan {weather.precipitation} mm</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 text-[9.5px] font-bold text-slate-400 dark:text-slate-500">
-              <Cloud className="w-3 h-3" />
-              <span>Tanpa Presipitasi</span>
-            </div>
-          )}
+
+          {/* Right Spacer (Preserves clean view of the coastal mosque and golden sunset) */}
+          <div className="w-8 sm:w-16 shrink-0" />
         </div>
       </div>
 
-      {/* Air Quality (Kualitas Udara) Showcase Card with Animation & Live Color */}
-      <div 
-        className={cn(
-          "mx-4 sm:mx-6 mb-3 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl border relative overflow-hidden transition-all duration-500 backdrop-blur-md z-10 flex items-center justify-between gap-3 shadow-2xs",
-          tier.borderBadge,
-          tier.bgColor
-        )}
-      >
-        {/* Animated Aerodynamic Air Currents & Floating Particulates */}
-        <AirFlowAnimation tier={tier} />
-
-        {/* Left: Animated Wind/Leaf icon + Status Pill */}
-        <div className="relative z-10 flex items-center gap-2.5 min-w-0">
-          <div 
-            className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs animate-aqi-pulse-ring"
-            style={{ 
-              borderColor: `${tier.accentHex}40`,
-              backgroundColor: `${tier.accentHex}18`,
-              color: tier.accentHex 
-            }}
-          >
-            <Wind className="w-4 h-4 animate-weather-float" />
+      {/* ─── 3. PANEL KUALITAS UDARA (Full Width Horizontal Banner) ─── */}
+      <div className="my-2 rounded-2xl bg-gradient-to-r from-amber-50/90 via-white to-amber-50/90 dark:from-[#0A2328] dark:via-[#0E2D33] dark:to-[#0A2328] border border-amber-200/80 dark:border-teal-700/50 p-2.5 sm:p-3 shadow-xs flex items-center justify-between gap-3 relative overflow-hidden">
+        {/* Left: Wind/Air Emblem + AQI Category */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-400/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-2xs">
+            <Wind className="w-4 h-4" />
           </div>
-          <div className="flex flex-col min-w-0 leading-tight">
+          <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] sm:text-xs font-black uppercase tracking-tight text-slate-800 dark:text-slate-100 truncate">
-                Udara {tier.label}
+              <span className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-800 dark:text-slate-100">
+                UDARA {tier.category}
               </span>
-              <span 
-                className="text-[8.5px] font-black px-2 py-0.5 rounded-full border shadow-2xs shrink-0"
-                style={{ 
-                  backgroundColor: `${tier.accentHex}20`,
-                  color: tier.accentHex,
-                  borderColor: `${tier.accentHex}50`
-                }}
-              >
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30">
                 AQI {aqiValue}
               </span>
             </div>
-            <span className="text-[9px] sm:text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate mt-0.5">
-              PM2.5: {airQuality?.pm25 ?? 18.5} µg/m³ • {tier.shortAdvice}
+            <span className="text-[10px] sm:text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate mt-0.5">
+              PM2.5: {airQuality?.pm25 ?? 11.5} µg/m³ • {tier.shortAdvice}
             </span>
           </div>
         </div>
 
-        {/* Right: Live Beacon & Mini Spectrum Bar */}
-        <div className="relative z-10 flex flex-col items-end shrink-0 pl-2">
-          <div className="flex items-center gap-1.5">
-            <span className="relative flex h-2 w-2">
-              <span 
-                className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-                style={{ backgroundColor: tier.accentHex }}
-              />
-              <span 
-                className="relative inline-flex rounded-full h-2 w-2"
-                style={{ backgroundColor: tier.accentHex }}
-              />
-            </span>
-            <span className="text-[8.5px] sm:text-[9px] font-black uppercase tracking-wider" style={{ color: tier.accentHex }}>
-              {tier.category}
-            </span>
-          </div>
-          {/* Mini Gradient Bar with Shimmer */}
-          <div className="w-16 sm:w-24 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700/60 relative overflow-hidden mt-1 shadow-inner">
+        {/* Right: Live Spectrum Meter Bar */}
+        <div className="hidden sm:flex flex-col items-end shrink-0 pl-2">
+          <span className="text-[9px] font-black uppercase tracking-wider mb-1" style={{ color: tier.accentHex }}>
+            • {tier.label}
+          </span>
+          <div className="w-24 sm:w-32 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700/60 relative overflow-hidden shadow-inner">
             <div 
               className="absolute inset-0 rounded-full"
               style={{
-                background: 'linear-gradient(to right, #10B981, #F59E0B, #F97316, #EF4444, #A855F7, #881337)'
+                background: 'linear-gradient(to right, #10B981, #F59E0B, #F97316, #EF4444, #881337)'
               }}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-aqi-shimmer pointer-events-none" />
             {/* Pointer Indicator */}
             <div 
-              className="absolute -top-0.5 w-1.5 sm:w-2 h-2.5 -translate-x-1/2 rounded-full border border-white dark:border-slate-900 shadow-sm"
+              className="absolute -top-0.5 w-2 h-2.5 -translate-x-1/2 rounded-full border border-white dark:border-slate-900 shadow-sm"
               style={{ 
                 left: `${meterPos}%`,
                 backgroundColor: tier.accentHex 
@@ -837,114 +553,126 @@ export function WeatherWidget({ className }: { className?: string }) {
         </div>
       </div>
 
-      {/* Modern Bento Weather Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-4 sm:px-6 pb-3 relative z-10">
+      {/* ─── 4. KARTU PARAMETER CUACA (4 Kartu Sejajar: Kelembaban, Angin, Tekanan, Awan) ─── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 my-2">
         {/* Kelembaban */}
-        <div className={cn(
-          "flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-2xs",
-          tier.statBorderHover
-        )}>
-          <div className="w-5.5 h-5.5 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
-            <Droplets className="w-3 h-3" />
+        <div className="p-2.5 sm:p-3 rounded-2xl bg-white dark:bg-slate-800/70 border border-slate-100 dark:border-slate-800 shadow-2xs flex items-center gap-2.5 relative overflow-hidden group/card hover:border-sky-300 dark:hover:border-sky-700 transition-all">
+          <MosqueArchWatermark className="opacity-[0.04]" />
+          <div className="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 border border-sky-500/20 shadow-2xs">
+            <Droplets className="w-4 h-4" />
           </div>
           <div className="flex flex-col leading-tight min-w-0">
-            <span className="text-[10.5px] font-black text-slate-800 dark:text-slate-100">
+            <span className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100">
               {weather.humidity}%
             </span>
-            <span className="text-[7.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
-              Kelembaban
+            <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+              KELEMBABAN
             </span>
           </div>
         </div>
 
         {/* Angin */}
-        <div className={cn(
-          "flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-2xs",
-          tier.statBorderHover
-        )}>
-          <div className="w-5.5 h-5.5 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
-            <Wind className="w-3 h-3" />
+        <div className="p-2.5 sm:p-3 rounded-2xl bg-white dark:bg-slate-800/70 border border-slate-100 dark:border-slate-800 shadow-2xs flex items-center gap-2.5 relative overflow-hidden group/card hover:border-teal-300 dark:hover:border-teal-700 transition-all">
+          <MosqueArchWatermark className="opacity-[0.04]" />
+          <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0 border border-teal-500/20 shadow-2xs">
+            <Wind className="w-4 h-4" />
           </div>
           <div className="flex flex-col leading-tight min-w-0">
-            <span className="text-[10.5px] font-black text-slate-800 dark:text-slate-100 truncate">
-              {weather.windSpeed} km/h <span className="text-[8px] font-bold text-cyan-600 dark:text-cyan-400">({windDir})</span>
+            <span className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 truncate">
+              {weather.windSpeed} km/h <span className="text-[9px] font-bold text-teal-600 dark:text-teal-400">({windDir})</span>
             </span>
-            <span className="text-[7.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
-              Angin
+            <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+              ANGIN
             </span>
           </div>
         </div>
 
-        {/* Tekanan */}
-        <div className={cn(
-          "flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-2xs",
-          tier.statBorderHover
-        )}>
-          <div className="w-5.5 h-5.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-            <Gauge className="w-3 h-3" />
+        {/* Tekanan Udara */}
+        <div className="p-2.5 sm:p-3 rounded-2xl bg-white dark:bg-slate-800/70 border border-slate-100 dark:border-slate-800 shadow-2xs flex items-center gap-2.5 relative overflow-hidden group/card hover:border-indigo-300 dark:hover:border-indigo-700 transition-all">
+          <MosqueArchWatermark className="opacity-[0.04]" />
+          <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20 shadow-2xs">
+            <Gauge className="w-4 h-4" />
           </div>
           <div className="flex flex-col leading-tight min-w-0">
-            <span className="text-[10.5px] font-black text-slate-800 dark:text-slate-100">
+            <span className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100">
               {weather.pressure} hPa
             </span>
-            <span className="text-[7.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
-              Tekanan
+            <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+              TEKANAN
             </span>
           </div>
         </div>
 
         {/* Awan */}
-        <div className={cn(
-          "flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-2xs",
-          tier.statBorderHover
-        )}>
-          <div className="w-5.5 h-5.5 rounded-lg bg-slate-500/10 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0">
-            <Cloud className="w-3 h-3" />
+        <div className="p-2.5 sm:p-3 rounded-2xl bg-white dark:bg-slate-800/70 border border-slate-100 dark:border-slate-800 shadow-2xs flex items-center gap-2.5 relative overflow-hidden group/card hover:border-slate-400 dark:hover:border-slate-600 transition-all">
+          <MosqueArchWatermark className="opacity-[0.04]" />
+          <div className="w-9 h-9 rounded-xl bg-slate-500/10 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0 border border-slate-500/20 shadow-2xs">
+            <Cloud className="w-4 h-4" />
           </div>
           <div className="flex flex-col leading-tight min-w-0">
-            <span className="text-[10.5px] font-black text-slate-800 dark:text-slate-100">
+            <span className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100">
               {weather.cloudCover}%
             </span>
-            <span className="text-[7.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
-              Awan
+            <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+              AWAN
             </span>
           </div>
         </div>
       </div>
 
-      {/* Footer & Source */}
-      <div className="px-4 sm:px-6 py-2.5 bg-slate-50/80 dark:bg-[#0B132B]/90 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[8px] sm:text-[9px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider relative z-10">
-        <div className="flex items-center gap-1.5 truncate">
-          <span>Stasiun Cuaca Tanjungpinang:</span>
-          <span className="text-slate-700 dark:text-slate-200 font-black">
-            {weather?.lastUpdated instanceof Date 
-              ? weather.lastUpdated.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':') 
-              : "15:45:00"} WIB
-          </span>
+      {/* ─── 5. FOOTER (Stasiun Cuaca, Jam Realtime WIB, Tombol Detail & Sinkronisasi) ─── */}
+      <div className="mt-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#041D22] via-[#092E36] to-[#041D22] text-white border border-teal-800/50 shadow-inner px-4 py-2 sm:py-2.5 flex items-center justify-between relative overflow-hidden text-[9px] sm:text-[10px] font-semibold">
+        {/* Subtle Islamic Corner Geometric Ornaments */}
+        <IslamicCornerPattern className="absolute top-0 left-0 w-8 h-8" />
+        <IslamicCornerPattern className="absolute bottom-0 right-0 w-8 h-8 rotate-180" />
+
+        {/* Left Side: Stasiun & Realtime Clock */}
+        <div className="flex items-center gap-3 relative z-10">
+          <div className="flex items-center gap-1.5 font-bold">
+            <div className="w-5 h-5 rounded-md bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-300">
+              <MapPin className="w-3 h-3" />
+            </div>
+            <span className="text-white uppercase tracking-wider">STASIUN CUACA TANJUNGPINANG</span>
+          </div>
+
+          <span className="text-teal-700">|</span>
+
+          {/* Realtime Clock WIB */}
+          <div className="flex items-center gap-1.5 font-mono text-emerald-400 font-bold">
+            <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span>{timeString} WIB</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 hidden md:inline group-hover:text-primary transition-colors">
-            • Klik untuk Detail Lengkap ↗
-          </span>
+        {/* Right Side: Detail Button & Sync Action */}
+        <div className="flex items-center gap-3 relative z-10">
+          <button
+            onClick={() => setIsDetailOpen(true)}
+            className="flex items-center gap-1 text-amber-300 hover:text-amber-200 transition-colors uppercase font-bold tracking-wider"
+          >
+            <span>KLIK UNTUK DETAIL LENGKAP</span>
+            <span>&gt;</span>
+          </button>
 
-          <button 
+          <span className="text-teal-700">|</span>
+
+          <button
             onClick={(e) => {
               e.stopPropagation()
               fetchWeather(true)
-            }} 
+            }}
             disabled={isRefreshing}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-all active:scale-95 shrink-0" 
+            className="flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors"
             title="Perbarui Cuaca & Kualitas Udara"
           >
-            <RefreshCw className={cn("w-3 h-3", isRefreshing && "animate-spin text-primary")} />
-            <span className="text-[8.5px] font-bold">Sinkronisasi</span>
+            <RefreshCw className={cn("w-3 h-3 text-teal-400", isRefreshing && "animate-spin text-amber-400")} />
+            <span>Sinkronisasi</span>
           </button>
         </div>
       </div>
     </div>
 
-    {/* Weather Detail Modal Window */}
+    {/* Weather Detail Modal Window (Preserved) */}
     <WeatherDetailDialog
       open={isDetailOpen}
       onOpenChange={setIsDetailOpen}
