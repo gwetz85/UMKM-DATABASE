@@ -12,7 +12,6 @@ import {
   RefreshCw, 
   Thermometer, 
   Clock,
-  AlertCircle,
   Maximize2
 } from 'lucide-react'
 import { WeatherDetailDialog } from '@/components/weather-detail-dialog'
@@ -137,8 +136,8 @@ const DEFAULT_WEATHER: WeatherData = {
   feelsLike: 30,
   humidity: 95,
   windSpeed: 7,
-  windDirection: 90, // Timur (T)
-  weatherCode: 53, // Gerimis
+  windDirection: 90,
+  weatherCode: 53,
   isDay: true,
   pressure: 1012,
   cloudCover: 91,
@@ -186,11 +185,10 @@ function getWindDirectionLabel(deg: number): string {
   return dirs[idx]
 }
 
-// Custom Mosque Emblem Icon (matches Prayer Widget for 100% cohesion)
 function MosqueEmblem({ className }: { className?: string }) {
   return (
-    <div className={cn("w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-[#065F46] to-[#047857] flex items-center justify-center text-white shadow-sm shrink-0 border border-emerald-400/30", className)}>
-      <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <div className={cn("w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-xl bg-gradient-to-br from-[#065F46] to-[#047857] flex items-center justify-center text-white shadow-sm shrink-0 border border-emerald-400/30", className)}>
+      <svg className="w-4.5 h-4.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2 C8 6, 8 10, 12 10 C16 10, 16 6, 12 2 Z" fill="currentColor" fillOpacity="0.2" />
         <path d="M12 2 L12 4" strokeWidth="2" />
         <rect x="5" y="10" width="14" height="11" rx="1.5" />
@@ -202,7 +200,6 @@ function MosqueEmblem({ className }: { className?: string }) {
   )
 }
 
-// Islamic Corner Geometric Ornament SVG
 function IslamicCornerPattern({ className }: { className?: string }) {
   return (
     <svg 
@@ -226,32 +223,25 @@ function IslamicCornerPattern({ className }: { className?: string }) {
   )
 }
 
-// Mosque Arch Watermark for Cards
 function MosqueArchWatermark({ className }: { className?: string }) {
   return (
-    <svg className={cn("absolute bottom-0 right-0 w-16 h-16 pointer-events-none opacity-[0.06] select-none", className)} viewBox="0 0 100 100" fill="currentColor">
+    <svg className={cn("absolute bottom-0 right-0 w-14 h-14 pointer-events-none opacity-[0.06] select-none", className)} viewBox="0 0 100 100" fill="currentColor">
       <path d="M10 100 V40 C10 15, 50 5, 50 5 C50 5, 90 15, 90 40 V100 Z" />
       <path d="M30 100 V60 C30 45, 50 35, 50 35 C50 35, 70 45, 70 60 V100 Z" />
     </svg>
   )
 }
 
-// Stylized Cloud Rain Icon for Hero Arch
 function HeroWeatherIcon({ code, className }: { code: number; className?: string }) {
-  // Cloud Rain Icon with drops matching reference image
   return (
-    <div className={cn("relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center", className)}>
-      {/* Outer Hexagon / Octagonal Islamic Frame */}
-      <div className="absolute inset-0 rounded-2xl bg-[#083038] border border-amber-300/40 shadow-inner flex items-center justify-center" />
-      {/* Weather Graphic */}
-      <svg className="w-9 h-9 sm:w-10 sm:h-10 relative z-10 text-white" viewBox="0 0 64 64" fill="none">
-        {/* Soft Cloud */}
+    <div className={cn("relative w-11 h-11 sm:w-13 sm:h-13 flex items-center justify-center shrink-0", className)}>
+      <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-[#083038] border border-amber-300/40 shadow-inner flex items-center justify-center" />
+      <svg className="w-7 h-7 sm:w-8.5 sm:h-8.5 relative z-10 text-white" viewBox="0 0 64 64" fill="none">
         <path 
           d="M20 40 C15 40 12 36 12 31 C12 26 16 23 21 23 C22 17 28 14 34 16 C39 12 47 14 49 20 C54 21 57 25 57 30 C57 35 53 40 47 40 Z" 
           fill="#FFFFFF" 
           filter="drop-shadow(0 2px 4px rgba(0,0,0,0.2))"
         />
-        {/* Rain Drops */}
         <line x1="22" y1="45" x2="19" y2="52" stroke="#38BDF8" strokeWidth="2.5" strokeLinecap="round" />
         <line x1="30" y1="45" x2="27" y2="52" stroke="#38BDF8" strokeWidth="2.5" strokeLinecap="round" />
         <line x1="38" y1="45" x2="35" y2="52" stroke="#38BDF8" strokeWidth="2.5" strokeLinecap="round" />
@@ -271,11 +261,9 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [nextUpdate, setNextUpdate] = useState(300) // 5 minutes countdown
+  const [nextUpdate, setNextUpdate] = useState(300)
   const [currentTime, setCurrentTime] = useState(new Date())
 
-  // Real-time second clock for WIB
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date())
@@ -283,10 +271,8 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
     return () => clearInterval(timer)
   }, [])
 
-  // Fetch live weather data from Open-Meteo
   const fetchWeather = useCallback(async (isManualRefresh = false) => {
     if (isManualRefresh) setIsRefreshing(true)
-    setError(null)
 
     const cacheKey = 'tpi_weather_v2'
     const aqiCacheKey = 'tpi_aqi_v2'
@@ -360,8 +346,7 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
       try { localStorage.setItem(cacheKey, JSON.stringify(newWeather)) } catch {}
       setNextUpdate(300)
     } catch {
-      // If error, fall back to cached or default
-      setError(null) // Keep smooth UI
+      // Keep smooth UI
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
@@ -379,7 +364,7 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
     return () => clearInterval(timer)
   }, [])
 
-  const aqiValue = airQuality?.aqi ?? 76
+  const aqiValue = airQuality?.aqi ?? 73
   const tier = getAqiTier(aqiValue)
   const desc = getWeatherDescription(weather.weatherCode, weather.isDay)
   const windDir = getWindDirectionLabel(weather.windDirection)
@@ -398,48 +383,48 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
     <>
     <div
       className={cn(
-        "w-full bg-white dark:bg-[#07161A] rounded-[28px] border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-sm flex flex-col justify-between transition-all duration-300 relative group overflow-hidden",
+        "w-full bg-white dark:bg-[#07161A] rounded-[24px] sm:rounded-[28px] border border-slate-200/90 dark:border-slate-800 px-3.5 sm:px-4 py-3 sm:py-3.5 shadow-sm flex flex-col justify-between transition-all duration-300 relative group overflow-hidden",
         className
       )}
     >
-      {/* ─── 1. HEADER (Logo Masjid, Identitas Tanjungpinang, Detail Cuaca, Status Pembaruan) ─── */}
-      <div className="flex items-center justify-between pb-3 shrink-0">
-        <div className="flex items-center gap-2.5">
+      {/* ─── 1. HEADER (Compact & Elegant) ─── */}
+      <div className="flex items-center justify-between pb-2 sm:pb-2.5 shrink-0">
+        <div className="flex items-center gap-2">
           <MosqueEmblem />
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-extrabold text-slate-900 dark:text-white text-base sm:text-lg tracking-tight leading-tight">
+            <div className="flex items-center gap-1.5">
+              <h3 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base tracking-tight leading-tight">
                 {CITY_NAME}
               </h3>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+              <span className="px-1.5 py-0.2 rounded-full text-[8.5px] font-bold bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
                 Pusat Pemerintahan
               </span>
             </div>
-            <div className="flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
+            <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
               <span>{PROVINCE} • REALTIME MONITORING</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Detail Cuaca Button */}
           <button
             onClick={() => setIsDetailOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/90 dark:border-slate-700 transition-all shadow-2xs group-hover:border-primary/50"
-            title="Klik untuk membuka jendela detail perkiraan cuaca lengkap"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/90 dark:border-slate-700 transition-all shadow-2xs group-hover:border-primary/50"
+            title="Klik untuk membuka jendela detail cuaca"
           >
-            <Maximize2 className="w-3 h-3 text-primary" />
+            <Maximize2 className="w-2.5 h-2.5 text-primary" />
             <span>DETAIL CUACA</span>
           </button>
 
           {/* Next Update Beacon */}
           <div 
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-xs sm:text-sm font-bold shadow-2xs"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-[11px] sm:text-xs font-bold shadow-2xs"
             title="Waktu hingga sinkronisasi otomatis berikutnya"
           >
-            <span className="relative flex h-2 w-2">
+            <span className="relative flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500" />
             </span>
             <span className="font-mono font-black tracking-tight">
               {updateMin}:{String(updateSec).padStart(2, '0')}
@@ -449,8 +434,8 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
       </div>
 
       {/* ─── 2. AREA UTAMA INFORMASI CUACA (Hero Pemandangan Masjid Pesisir & Arch Mihrab) ─── */}
-      <div className="my-2.5 rounded-[22px] overflow-hidden relative shadow-md border border-slate-200/80 dark:border-slate-800 min-h-[160px] sm:min-h-[175px] flex items-center">
-        {/* Background Photograph (Coastal Tanjungpinang Mosque Sunset) */}
+      <div className="my-1.5 sm:my-2 rounded-[18px] sm:rounded-[20px] overflow-hidden relative shadow-sm border border-slate-200/80 dark:border-slate-800 min-h-[135px] sm:min-h-[145px] flex items-center">
+        {/* Background Photograph */}
         <div 
           className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
           style={{
@@ -463,85 +448,84 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
         <div className="absolute inset-0 bg-gradient-to-r from-[#041D22]/95 via-[#082E36]/75 to-transparent pointer-events-none" />
 
         {/* Content Inside Hero Banner */}
-        <div className="relative z-10 w-full h-full p-3.5 sm:p-5 flex items-center justify-between gap-4">
-          {/* Islamic Mihrab Arch Box (Left Side) */}
-          <div className="relative rounded-t-[44px] rounded-b-2xl border-t-2 border-x-2 border-amber-300/40 bg-gradient-to-r from-[#092B32]/95 via-[#051C20]/95 to-[#031114]/98 backdrop-blur-md shadow-2xl p-4 sm:p-5 flex items-center gap-4 shrink-0">
+        <div className="relative z-10 w-full h-full p-2.5 sm:p-3.5 flex items-center justify-between gap-3">
+          {/* Islamic Mihrab Arch Box */}
+          <div className="relative rounded-t-[36px] rounded-b-xl border-t-2 border-x-2 border-amber-300/40 bg-gradient-to-r from-[#092B32]/95 via-[#051C20]/95 to-[#031114]/98 backdrop-blur-md shadow-xl p-2.5 sm:p-3.5 flex items-center gap-3 shrink-0">
             {/* Weather Condition Icon */}
             <HeroWeatherIcon code={weather.weatherCode} />
 
             {/* Temperature & Description */}
             <div className="flex flex-col">
               <div className="flex items-baseline">
-                <span className="text-4xl sm:text-5xl lg:text-[54px] font-black text-white tracking-tight leading-none drop-shadow-md">
+                <span className="text-3xl sm:text-4xl lg:text-[42px] font-black text-white tracking-tight leading-none drop-shadow-md">
                   {weather.temperature}
                 </span>
-                <span className="text-2xl sm:text-3xl font-black text-amber-300 ml-1 leading-none">
+                <span className="text-xl sm:text-2xl font-black text-amber-300 ml-0.5 leading-none">
                   °C
                 </span>
               </div>
-              <div className="mt-1.5">
-                <span className="inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-[#0D7465] text-white shadow-sm border border-emerald-400/30">
+              <div className="mt-1">
+                <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-[#0D7465] text-white shadow-sm border border-emerald-400/30">
                   {desc.label}
                 </span>
               </div>
             </div>
 
-            {/* Separator / Divider */}
-            <div className="hidden sm:block w-px h-12 bg-white/20 mx-1" />
+            {/* Divider */}
+            <div className="hidden sm:block w-px h-10 bg-white/20 mx-0.5" />
 
             {/* Feels Like & Rain Intensity */}
-            <div className="hidden sm:flex flex-col justify-center gap-1.5 text-left text-xs font-bold text-white/90">
+            <div className="hidden sm:flex flex-col justify-center gap-1 text-left text-[11px] font-bold text-white/90">
               <div className="flex items-center gap-1.5">
-                <Thermometer className="w-4 h-4 text-amber-300 shrink-0" />
+                <Thermometer className="w-3.5 h-3.5 text-amber-300 shrink-0" />
                 <span>Terasa {weather.feelsLike}°C</span>
               </div>
               <div className="flex items-center gap-1.5 text-sky-300">
-                <CloudRain className="w-4 h-4 shrink-0" />
+                <CloudRain className="w-3.5 h-3.5 shrink-0" />
                 <span>Curah Hujan {weather.precipitation} mm</span>
               </div>
             </div>
           </div>
 
-          {/* Right Spacer (Preserves clean view of the coastal mosque and golden sunset) */}
-          <div className="w-8 sm:w-16 shrink-0" />
+          {/* Right Spacer */}
+          <div className="w-6 sm:w-12 shrink-0" />
         </div>
       </div>
 
-      {/* ─── 3. PANEL KUALITAS UDARA (Full Width Horizontal Banner) ─── */}
-      <div className="my-2 rounded-2xl bg-gradient-to-r from-amber-50/90 via-white to-amber-50/90 dark:from-[#0A2328] dark:via-[#0E2D33] dark:to-[#0A2328] border border-amber-200/80 dark:border-teal-700/50 p-2.5 sm:p-3 shadow-xs flex items-center justify-between gap-3 relative overflow-hidden">
+      {/* ─── 3. PANEL KUALITAS UDARA (Compact Banner) ─── */}
+      <div className="my-1.5 rounded-xl bg-gradient-to-r from-amber-50/90 via-white to-amber-50/90 dark:from-[#0A2328] dark:via-[#0E2D33] dark:to-[#0A2328] border border-amber-200/80 dark:border-teal-700/50 p-2 sm:p-2.5 shadow-2xs flex items-center justify-between gap-2.5 relative overflow-hidden">
         {/* Left: Wind/Air Emblem + AQI Category */}
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-400/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-2xs">
-            <Wind className="w-4 h-4" />
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-7.5 h-7.5 rounded-lg bg-amber-500/15 border border-amber-400/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-2xs">
+            <Wind className="w-3.5 h-3.5" />
           </div>
           <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-800 dark:text-slate-100">
+            <div className="flex items-center gap-1.5 leading-tight">
+              <span className="text-[11px] sm:text-xs font-black uppercase tracking-tight text-slate-800 dark:text-slate-100">
                 UDARA {tier.category}
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30">
+              <span className="px-1.5 py-0.2 rounded-full text-[8.5px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30">
                 AQI {aqiValue}
               </span>
             </div>
-            <span className="text-[10px] sm:text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate mt-0.5">
-              PM2.5: {airQuality?.pm25 ?? 11.5} µg/m³ • {tier.shortAdvice}
+            <span className="text-[9px] sm:text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate mt-0.5">
+              PM2.5: {airQuality?.pm25 ?? 10.7} µg/m³ • {tier.shortAdvice}
             </span>
           </div>
         </div>
 
         {/* Right: Live Spectrum Meter Bar */}
-        <div className="hidden sm:flex flex-col items-end shrink-0 pl-2">
-          <span className="text-[9px] font-black uppercase tracking-wider mb-1" style={{ color: tier.accentHex }}>
+        <div className="hidden sm:flex flex-col items-end shrink-0 pl-1.5">
+          <span className="text-[8.5px] font-black uppercase tracking-wider mb-0.5" style={{ color: tier.accentHex }}>
             • {tier.label}
           </span>
-          <div className="w-24 sm:w-32 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700/60 relative overflow-hidden shadow-inner">
+          <div className="w-20 sm:w-28 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700/60 relative overflow-hidden shadow-inner">
             <div 
               className="absolute inset-0 rounded-full"
               style={{
                 background: 'linear-gradient(to right, #10B981, #F59E0B, #F97316, #EF4444, #881337)'
               }}
             />
-            {/* Pointer Indicator */}
             <div 
               className="absolute -top-0.5 w-2 h-2.5 -translate-x-1/2 rounded-full border border-white dark:border-slate-900 shadow-sm"
               style={{ 
@@ -553,84 +537,83 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
         </div>
       </div>
 
-      {/* ─── 4. KARTU PARAMETER CUACA (4 Kartu Sejajar: Kelembaban, Angin, Tekanan, Awan) ─── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 my-2">
+      {/* ─── 4. KARTU PARAMETER CUACA (4 Kartu Sejajar Compact) ─── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 my-1.5">
         {/* Kelembaban */}
-        <div className="p-2.5 sm:p-3 rounded-2xl bg-white dark:bg-slate-800/70 border border-slate-100 dark:border-slate-800 shadow-2xs flex items-center gap-2.5 relative overflow-hidden group/card hover:border-sky-300 dark:hover:border-sky-700 transition-all">
+        <div className="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-800/70 border border-slate-100 dark:border-slate-800 shadow-2xs flex items-center gap-2 relative overflow-hidden group/card hover:border-sky-300 dark:hover:border-sky-700 transition-all">
           <MosqueArchWatermark className="opacity-[0.04]" />
-          <div className="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 border border-sky-500/20 shadow-2xs">
-            <Droplets className="w-4 h-4" />
+          <div className="w-7.5 h-7.5 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 border border-sky-500/20 shadow-2xs">
+            <Droplets className="w-3.5 h-3.5" />
           </div>
           <div className="flex flex-col leading-tight min-w-0">
-            <span className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100">
+            <span className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">
               {weather.humidity}%
             </span>
-            <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+            <span className="text-[7.5px] sm:text-[8px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
               KELEMBABAN
             </span>
           </div>
         </div>
 
         {/* Angin */}
-        <div className="p-2.5 sm:p-3 rounded-2xl bg-white dark:bg-slate-800/70 border border-slate-100 dark:border-slate-800 shadow-2xs flex items-center gap-2.5 relative overflow-hidden group/card hover:border-teal-300 dark:hover:border-teal-700 transition-all">
+        <div className="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-800/70 border border-slate-100 dark:border-slate-800 shadow-2xs flex items-center gap-2 relative overflow-hidden group/card hover:border-teal-300 dark:hover:border-teal-700 transition-all">
           <MosqueArchWatermark className="opacity-[0.04]" />
-          <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0 border border-teal-500/20 shadow-2xs">
-            <Wind className="w-4 h-4" />
+          <div className="w-7.5 h-7.5 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0 border border-teal-500/20 shadow-2xs">
+            <Wind className="w-3.5 h-3.5" />
           </div>
           <div className="flex flex-col leading-tight min-w-0">
-            <span className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 truncate">
-              {weather.windSpeed} km/h <span className="text-[9px] font-bold text-teal-600 dark:text-teal-400">({windDir})</span>
+            <span className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100 truncate">
+              {weather.windSpeed} km/h <span className="text-[8px] font-bold text-teal-600 dark:text-teal-400">({windDir})</span>
             </span>
-            <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+            <span className="text-[7.5px] sm:text-[8px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
               ANGIN
             </span>
           </div>
         </div>
 
         {/* Tekanan Udara */}
-        <div className="p-2.5 sm:p-3 rounded-2xl bg-white dark:bg-slate-800/70 border border-slate-100 dark:border-slate-800 shadow-2xs flex items-center gap-2.5 relative overflow-hidden group/card hover:border-indigo-300 dark:hover:border-indigo-700 transition-all">
+        <div className="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-800/70 border border-slate-100 dark:border-slate-800 shadow-2xs flex items-center gap-2 relative overflow-hidden group/card hover:border-indigo-300 dark:hover:border-indigo-700 transition-all">
           <MosqueArchWatermark className="opacity-[0.04]" />
-          <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20 shadow-2xs">
-            <Gauge className="w-4 h-4" />
+          <div className="w-7.5 h-7.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20 shadow-2xs">
+            <Gauge className="w-3.5 h-3.5" />
           </div>
           <div className="flex flex-col leading-tight min-w-0">
-            <span className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100">
+            <span className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">
               {weather.pressure} hPa
             </span>
-            <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+            <span className="text-[7.5px] sm:text-[8px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
               TEKANAN
             </span>
           </div>
         </div>
 
         {/* Awan */}
-        <div className="p-2.5 sm:p-3 rounded-2xl bg-white dark:bg-slate-800/70 border border-slate-100 dark:border-slate-800 shadow-2xs flex items-center gap-2.5 relative overflow-hidden group/card hover:border-slate-400 dark:hover:border-slate-600 transition-all">
+        <div className="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-800/70 border border-slate-100 dark:border-slate-800 shadow-2xs flex items-center gap-2 relative overflow-hidden group/card hover:border-slate-400 dark:hover:border-slate-600 transition-all">
           <MosqueArchWatermark className="opacity-[0.04]" />
-          <div className="w-9 h-9 rounded-xl bg-slate-500/10 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0 border border-slate-500/20 shadow-2xs">
-            <Cloud className="w-4 h-4" />
+          <div className="w-7.5 h-7.5 rounded-lg bg-slate-500/10 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0 border border-slate-500/20 shadow-2xs">
+            <Cloud className="w-3.5 h-3.5" />
           </div>
           <div className="flex flex-col leading-tight min-w-0">
-            <span className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100">
+            <span className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">
               {weather.cloudCover}%
             </span>
-            <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+            <span className="text-[7.5px] sm:text-[8px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
               AWAN
             </span>
           </div>
         </div>
       </div>
 
-      {/* ─── 5. FOOTER (Stasiun Cuaca, Jam Realtime WIB, Tombol Detail & Sinkronisasi) ─── */}
-      <div className="mt-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#041D22] via-[#092E36] to-[#041D22] text-white border border-teal-800/50 shadow-inner px-4 py-2 sm:py-2.5 flex items-center justify-between relative overflow-hidden text-[9px] sm:text-[10px] font-semibold">
-        {/* Subtle Islamic Corner Geometric Ornaments */}
-        <IslamicCornerPattern className="absolute top-0 left-0 w-8 h-8" />
-        <IslamicCornerPattern className="absolute bottom-0 right-0 w-8 h-8 rotate-180" />
+      {/* ─── 5. FOOTER (Compact Single Line) ─── */}
+      <div className="mt-1.5 rounded-xl bg-gradient-to-r from-[#041D22] via-[#092E36] to-[#041D22] text-white border border-teal-800/50 shadow-inner px-3 sm:px-3.5 py-1.5 sm:py-2 flex items-center justify-between relative overflow-hidden text-[8.5px] sm:text-[9.5px] font-semibold">
+        <IslamicCornerPattern className="absolute top-0 left-0 w-6 h-6" />
+        <IslamicCornerPattern className="absolute bottom-0 right-0 w-6 h-6 rotate-180" />
 
         {/* Left Side: Stasiun & Realtime Clock */}
-        <div className="flex items-center gap-3 relative z-10">
-          <div className="flex items-center gap-1.5 font-bold">
-            <div className="w-5 h-5 rounded-md bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-300">
-              <MapPin className="w-3 h-3" />
+        <div className="flex items-center gap-2 sm:gap-2.5 relative z-10">
+          <div className="flex items-center gap-1 font-bold">
+            <div className="w-4.5 h-4.5 rounded-md bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-300">
+              <MapPin className="w-2.5 h-2.5" />
             </div>
             <span className="text-white uppercase tracking-wider">STASIUN CUACA TANJUNGPINANG</span>
           </div>
@@ -638,17 +621,17 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
           <span className="text-teal-700">|</span>
 
           {/* Realtime Clock WIB */}
-          <div className="flex items-center gap-1.5 font-mono text-emerald-400 font-bold">
-            <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <div className="flex items-center gap-1 font-mono text-emerald-400 font-bold">
+            <Clock className="w-3 h-3 text-emerald-400 shrink-0" />
             <span>{timeString} WIB</span>
           </div>
         </div>
 
         {/* Right Side: Detail Button & Sync Action */}
-        <div className="flex items-center gap-3 relative z-10">
+        <div className="flex items-center gap-2 sm:gap-2.5 relative z-10">
           <button
             onClick={() => setIsDetailOpen(true)}
-            className="flex items-center gap-1 text-amber-300 hover:text-amber-200 transition-colors uppercase font-bold tracking-wider"
+            className="flex items-center gap-0.5 text-amber-300 hover:text-amber-200 transition-colors uppercase font-bold tracking-wider"
           >
             <span>KLIK UNTUK DETAIL LENGKAP</span>
             <span>&gt;</span>
@@ -662,10 +645,10 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
               fetchWeather(true)
             }}
             disabled={isRefreshing}
-            className="flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors"
+            className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors"
             title="Perbarui Cuaca & Kualitas Udara"
           >
-            <RefreshCw className={cn("w-3 h-3 text-teal-400", isRefreshing && "animate-spin text-amber-400")} />
+            <RefreshCw className={cn("w-2.5 h-2.5 text-teal-400", isRefreshing && "animate-spin text-amber-400")} />
             <span>Sinkronisasi</span>
           </button>
         </div>

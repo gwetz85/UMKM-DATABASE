@@ -13,9 +13,7 @@ import {
   Volume2, 
   VolumeX, 
   RefreshCw, 
-  Calendar,
-  Sparkles,
-  CheckCircle2
+  Calendar
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -142,19 +140,13 @@ function IslamicCornerPattern({ className }: { className?: string }) {
 // Custom Mosque Emblem Icon
 function MosqueEmblem({ className }: { className?: string }) {
   return (
-    <div className={cn("w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-[#065F46] to-[#047857] flex items-center justify-center text-white shadow-sm shrink-0 border border-emerald-400/30", className)}>
-      <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        {/* Main Dome */}
+    <div className={cn("w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-xl bg-gradient-to-br from-[#065F46] to-[#047857] flex items-center justify-center text-white shadow-sm shrink-0 border border-emerald-400/30", className)}>
+      <svg className="w-4.5 h-4.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2 C8 6, 8 10, 12 10 C16 10, 16 6, 12 2 Z" fill="currentColor" fillOpacity="0.2" />
-        {/* Crescent */}
         <path d="M12 2 L12 4" strokeWidth="2" />
-        {/* Building Base */}
         <rect x="5" y="10" width="14" height="11" rx="1.5" />
-        {/* Main Arch Door */}
         <path d="M10 21 V15 C10 13.9 10.9 13 12 13 C13.1 13 14 13.9 14 15 V21" fill="currentColor" fillOpacity="0.3" />
-        {/* Left Minaret */}
         <path d="M3 21 V9 L4 7 L5 9 V21" />
-        {/* Right Minaret */}
         <path d="M19 21 V9 L20 7 L21 9 V21" />
       </svg>
     </div>
@@ -164,7 +156,7 @@ function MosqueEmblem({ className }: { className?: string }) {
 // Mosque Arch Watermark for Prayer Cards
 function MosqueArchWatermark({ className }: { className?: string }) {
   return (
-    <svg className={cn("absolute bottom-0 right-0 w-16 h-16 pointer-events-none opacity-[0.06] select-none", className)} viewBox="0 0 100 100" fill="currentColor">
+    <svg className={cn("absolute bottom-0 right-0 w-14 h-14 pointer-events-none opacity-[0.06] select-none", className)} viewBox="0 0 100 100" fill="currentColor">
       <path d="M10 100 V40 C10 15, 50 5, 50 5 C50 5, 90 15, 90 40 V100 Z" />
       <path d="M30 100 V60 C30 45, 50 35, 50 35 C50 35, 70 45, 70 60 V100 Z" />
     </svg>
@@ -307,7 +299,6 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
       return { ...p, date: d }
     })
 
-    // Active prayer window: within 25 minutes after adzan
     const ENTERED_WINDOW_MS = 25 * 60 * 1000
     let currentEnteredPrayer = null
 
@@ -375,42 +366,42 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
   return (
     <div
       className={cn(
-        "w-full bg-white dark:bg-[#07161A] rounded-[28px] border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-sm flex flex-col justify-between transition-all duration-300 relative group overflow-hidden",
+        "w-full bg-white dark:bg-[#07161A] rounded-[24px] sm:rounded-[28px] border border-slate-200/90 dark:border-slate-800 px-3.5 sm:px-4 py-3 sm:py-3.5 shadow-sm flex flex-col justify-between transition-all duration-300 relative group overflow-hidden",
         className
       )}
     >
-      {/* ─── 1. HEADER (Logo Masjid, Judul, Info Lokasi, Countdown Pill, Suara, Refresh) ─── */}
-      <div className="flex items-center justify-between pb-3 shrink-0">
-        <div className="flex items-center gap-2.5">
+      {/* ─── 1. HEADER (Compact & Elegant) ─── */}
+      <div className="flex items-center justify-between pb-2 sm:pb-2.5 shrink-0">
+        <div className="flex items-center gap-2">
           <MosqueEmblem />
           <div>
             <div className="flex items-center gap-1.5">
-              <h3 className="font-extrabold text-slate-900 dark:text-white text-base sm:text-lg tracking-tight leading-tight">
+              <h3 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base tracking-tight leading-tight">
                 Jadwal Waktu Sholat
               </h3>
-              <span className="relative flex h-2 w-2" title="Waktu Sholat Realtime Aktif">
+              <span className="relative flex h-1.5 w-1.5" title="Waktu Sholat Realtime Aktif">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
               </span>
             </div>
-            <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
-              <MapPin className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+              <MapPin className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>{CITY_NAME}, {PROVINCE} • Kemenag RI</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Top Right Countdown Pill (Matches Reference) */}
+        <div className="flex items-center gap-1.5">
+          {/* Top Right Countdown Pill */}
           <div 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-500/25 text-xs sm:text-sm font-bold shadow-2xs"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-500/25 text-[11px] sm:text-xs font-bold shadow-2xs"
             title={`Hitung mundur menuju ${calculation.nextPrayer.name}`}
           >
-            <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <Clock className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span className="font-semibold text-slate-700 dark:text-slate-300">
               {calculation.isNextTomorrow ? "Subuh Besok" : calculation.nextPrayer.name}
             </span>
-            <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 tracking-tight text-xs sm:text-sm">
+            <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 tracking-tight text-[11px] sm:text-xs">
               {formattedCountdown}
             </span>
           </div>
@@ -422,15 +413,15 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
               setSoundEnabled(nextVal)
               if (nextVal) playChimeTone()
             }}
-            title={soundEnabled ? "Pengingat suara aktif (Klik untuk senyapkan)" : "Aktifkan bunyi pengingat masuk waktu"}
+            title={soundEnabled ? "Pengingat suara aktif" : "Aktifkan pengingat suara"}
             className={cn(
-              "w-7 h-7 rounded-lg flex items-center justify-center transition-all border shadow-2xs",
+              "w-6 h-6 rounded-lg flex items-center justify-center transition-all border shadow-2xs",
               soundEnabled
                 ? "bg-emerald-50 text-emerald-600 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-700"
                 : "bg-slate-50 text-slate-400 border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700 hover:text-slate-600"
             )}
           >
-            {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+            {soundEnabled ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
           </button>
 
           {/* Refresh Button */}
@@ -438,16 +429,16 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
             onClick={() => fetchTimings(true)}
             disabled={isRefreshing}
             title="Perbarui Jadwal"
-            className="w-7 h-7 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 flex items-center justify-center border border-slate-200 dark:border-slate-700 transition-all shadow-2xs active:scale-95"
+            className="w-6 h-6 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 flex items-center justify-center border border-slate-200 dark:border-slate-700 transition-all shadow-2xs active:scale-95"
           >
-            <RefreshCw className={cn("w-3.5 h-3.5", isRefreshing && "animate-spin text-emerald-500")} />
+            <RefreshCw className={cn("w-3 h-3", isRefreshing && "animate-spin text-emerald-500")} />
           </button>
         </div>
       </div>
 
       {/* ─── 2. AREA UTAMA: PANORAMIC MOSQUE HERO + ISLAMIC ARCH DISPLAY ─── */}
-      <div className="my-2.5 rounded-[22px] overflow-hidden relative shadow-md border border-slate-200/80 dark:border-slate-800 min-h-[160px] sm:min-h-[175px] flex items-center">
-        {/* Background Photograph (Coastal Grand Mosque at Golden Sunset) */}
+      <div className="my-1.5 sm:my-2 rounded-[18px] sm:rounded-[20px] overflow-hidden relative shadow-sm border border-slate-200/80 dark:border-slate-800 min-h-[135px] sm:min-h-[145px] flex items-center">
+        {/* Background Photograph */}
         <div 
           className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
           style={{
@@ -456,16 +447,16 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
           }}
         />
 
-        {/* Cinematic Gradient Overlay (Dark Navy on Left -> Translucent on Right) */}
+        {/* Cinematic Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#041D22]/95 via-[#082E36]/75 to-transparent pointer-events-none" />
 
         {/* Content Inside Hero Banner */}
-        <div className="relative z-10 w-full h-full p-3.5 sm:p-5 flex items-center justify-between gap-4">
-          {/* Islamic Mihrab Arch (Left Side - Prominent Focal Point) */}
-          <div className="relative rounded-t-[44px] rounded-b-2xl border-t-2 border-x-2 border-amber-300/40 bg-gradient-to-b from-[#092B32]/95 via-[#051C20]/95 to-[#031114]/98 backdrop-blur-md shadow-2xl px-5 py-3 sm:py-3.5 text-center flex flex-col items-center justify-center shrink-0 min-w-[170px] sm:min-w-[200px]">
+        <div className="relative z-10 w-full h-full p-2.5 sm:p-3.5 flex items-center justify-between gap-3">
+          {/* Islamic Mihrab Arch */}
+          <div className="relative rounded-t-[36px] rounded-b-xl border-t-2 border-x-2 border-amber-300/40 bg-gradient-to-b from-[#092B32]/95 via-[#051C20]/95 to-[#031114]/98 backdrop-blur-md shadow-xl px-4 py-2 sm:py-2.5 text-center flex flex-col items-center justify-center shrink-0 min-w-[155px] sm:min-w-[175px]">
             {/* Top Golden Dome Ornament */}
-            <div className="flex items-center gap-1.5 text-amber-300 text-[10px] sm:text-[11px] font-semibold tracking-wide">
-              <svg className="w-3.5 h-3.5 fill-amber-300" viewBox="0 0 24 24">
+            <div className="flex items-center gap-1 text-amber-300 text-[9px] sm:text-[10px] font-semibold tracking-wide">
+              <svg className="w-3 h-3 fill-amber-300" viewBox="0 0 24 24">
                 <path d="M12 2C8 6, 8 10, 12 10C16 10, 16 6, 12 2Z" />
                 <path d="M5 10H19V12H5z" />
               </svg>
@@ -473,54 +464,53 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
             </div>
 
             {/* Prayer Name */}
-            <h4 className="text-lg sm:text-xl font-black text-white tracking-tight mt-0.5">
+            <h4 className="text-base sm:text-lg font-black text-white tracking-tight mt-0.5">
               {calculation.activeEnteredPrayer ? calculation.activeEnteredPrayer.name : calculation.nextPrayer.name}
             </h4>
 
-            {/* Huge Time / Time Display */}
-            <div className="font-mono text-3xl sm:text-4xl lg:text-[42px] font-black text-white tracking-tight leading-none my-1 drop-shadow-md">
+            {/* Huge Time Display */}
+            <div className="font-mono text-2xl sm:text-3xl lg:text-[36px] font-black text-white tracking-tight leading-none my-0.5 drop-shadow-md">
               {calculation.activeEnteredPrayer ? calculation.activeEnteredPrayer.time : calculation.nextPrayer.time}
             </div>
 
             {/* Status Pill Badge */}
-            <div className="mt-1">
+            <div className="mt-0.5">
               {calculation.activeEnteredPrayer ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-yellow-400 text-slate-950 shadow-sm animate-pulse">
-                  <BellRing className="w-2.5 h-2.5" />
+                <span className="inline-flex items-center gap-0.5 px-2 py-0.2 rounded-full text-[8px] font-black uppercase tracking-wider bg-yellow-400 text-slate-950 shadow-sm animate-pulse">
+                  <BellRing className="w-2 h-2" />
                   SUDAH MASUK WAKTU
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/90 text-white shadow-sm border border-emerald-300/40">
-                  <Clock className="w-2.5 h-2.5" />
+                <span className="inline-flex items-center gap-0.5 px-2 py-0.2 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-500/90 text-white shadow-sm border border-emerald-300/40">
+                  <Clock className="w-2 h-2" />
                   BERIKUTNYA
                 </span>
               )}
             </div>
           </div>
 
-          {/* Center Motivational Quote (Inspirational Islamic Typography) */}
-          <div className="hidden md:flex flex-col items-center justify-center text-center max-w-[280px] lg:max-w-[320px] px-2 py-1 bg-black/25 backdrop-blur-xs rounded-xl border border-white/10">
-            <span className="text-amber-300 text-lg sm:text-xl font-serif leading-none opacity-80">“</span>
-            <p className="text-xs sm:text-sm font-medium text-emerald-50/95 italic leading-snug drop-shadow-sm px-2">
+          {/* Center Motivational Quote */}
+          <div className="hidden md:flex flex-col items-center justify-center text-center max-w-[240px] lg:max-w-[280px] px-2 py-0.5 bg-black/25 backdrop-blur-xs rounded-lg border border-white/10">
+            <span className="text-amber-300 text-base font-serif leading-none opacity-80">“</span>
+            <p className="text-[11px] sm:text-xs font-medium text-emerald-50/95 italic leading-snug drop-shadow-sm px-1.5">
               Semoga setiap langkah kita dalam keberkahan Allah
             </p>
-            <span className="text-amber-300 text-lg sm:text-xl font-serif leading-none opacity-80">”</span>
+            <span className="text-amber-300 text-base font-serif leading-none opacity-80">”</span>
             
-            {/* Elegant Golden Divider Ornament */}
-            <div className="flex items-center gap-2 mt-1 w-full justify-center opacity-70">
-              <div className="h-px bg-gradient-to-r from-transparent via-amber-300 to-transparent w-16" />
-              <div className="w-1.5 h-1.5 rotate-45 bg-amber-400" />
-              <div className="h-px bg-gradient-to-r from-transparent via-amber-300 to-transparent w-16" />
+            <div className="flex items-center gap-1.5 mt-0.5 w-full justify-center opacity-70">
+              <div className="h-px bg-gradient-to-r from-transparent via-amber-300 to-transparent w-12" />
+              <div className="w-1 h-1 rotate-45 bg-amber-400" />
+              <div className="h-px bg-gradient-to-r from-transparent via-amber-300 to-transparent w-12" />
             </div>
           </div>
 
-          {/* Right Spacer (Preserves clean view of the Golden Mosque Dome on right side) */}
-          <div className="w-8 sm:w-16 shrink-0" />
+          {/* Right Spacer */}
+          <div className="w-6 sm:w-12 shrink-0" />
         </div>
       </div>
 
       {/* ─── 3. LIMA KARTU WAKTU SHOLAT (Subuh, Dzuhur, Ashar, Maghrib, Isya) ─── */}
-      <div className="grid grid-cols-5 gap-2 sm:gap-2.5 my-2">
+      <div className="grid grid-cols-5 gap-1.5 sm:gap-2 my-1.5">
         {fivePrayers.map((prayer) => {
           const IconComp = prayer.icon
           const isNext = calculation.nextPrayer.id === prayer.id && !calculation.isNextTomorrow
@@ -535,25 +525,21 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
             <div
               key={prayer.id}
               className={cn(
-                "p-2.5 sm:p-3 rounded-2xl border transition-all duration-300 flex flex-col justify-between text-center relative group/card overflow-hidden",
-                // Active or Next Highlighted Card (Deep Emerald Gradient with Gold/Emerald Ring)
+                "p-1.5 sm:p-2 rounded-xl border transition-all duration-300 flex flex-col justify-between text-center relative group/card overflow-hidden",
                 isCurrentActive || isNext
-                  ? "bg-gradient-to-b from-[#0D5C4E] to-[#083B32] text-white border-emerald-300 dark:border-emerald-400 ring-2 ring-emerald-400/40 shadow-lg shadow-emerald-950/20 scale-[1.02]"
-                  // Passed Card
+                  ? "bg-gradient-to-b from-[#0D5C4E] to-[#083B32] text-white border-emerald-300 dark:border-emerald-400 ring-2 ring-emerald-400/40 shadow-md shadow-emerald-950/20"
                   : isPassed
                   ? "bg-slate-50/70 dark:bg-slate-800/40 border-slate-200/80 dark:border-slate-800 opacity-75"
-                  // Upcoming Card
                   : "bg-white dark:bg-slate-800/70 border-slate-100 dark:border-slate-800 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700"
               )}
             >
-              {/* Subtle Mosque Silhouette Watermark */}
               <MosqueArchWatermark className={isCurrentActive || isNext ? "opacity-[0.12] text-white" : "opacity-[0.05]"} />
 
               {/* Card Header: Icon + Name */}
-              <div className="flex items-center justify-center gap-1.5 mb-1.5 relative z-10">
+              <div className="flex items-center justify-center gap-1 mb-1 relative z-10">
                 <IconComp
                   className={cn(
-                    "w-4 h-4",
+                    "w-3.5 h-3.5",
                     isCurrentActive || isNext
                       ? prayer.activeColor
                       : isPassed
@@ -563,7 +549,7 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
                 />
                 <span
                   className={cn(
-                    "text-xs sm:text-sm font-black tracking-tight",
+                    "text-[11px] sm:text-xs font-black tracking-tight",
                     isCurrentActive || isNext
                       ? "text-white"
                       : "text-slate-900 dark:text-slate-100"
@@ -576,7 +562,7 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
               {/* Card Time Display */}
               <div
                 className={cn(
-                  "font-mono text-base sm:text-lg font-black tracking-tight leading-none my-1 relative z-10",
+                  "font-mono text-xs sm:text-sm font-black tracking-tight leading-none my-0.5 relative z-10",
                   isCurrentActive || isNext
                     ? "text-white drop-shadow-sm"
                     : "text-slate-800 dark:text-slate-200"
@@ -586,21 +572,21 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
               </div>
 
               {/* Card Status Pill Badge */}
-              <div className="mt-1.5 flex items-center justify-center relative z-10">
+              <div className="mt-1 flex items-center justify-center relative z-10">
                 {isCurrentActive ? (
-                  <span className="text-[8px] sm:text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-yellow-400 text-slate-950 shadow-sm animate-pulse">
+                  <span className="text-[7.5px] sm:text-[8px] font-black uppercase px-1.5 py-0.2 rounded-full bg-yellow-400 text-slate-950 shadow-sm animate-pulse">
                     Waktunya
                   </span>
                 ) : isNext ? (
-                  <span className="text-[8px] sm:text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-400 text-slate-950 font-extrabold shadow-sm">
+                  <span className="text-[7.5px] sm:text-[8px] font-black uppercase px-1.5 py-0.2 rounded-full bg-emerald-400 text-slate-950 font-extrabold shadow-sm">
                     Berikutnya
                   </span>
                 ) : isPassed ? (
-                  <span className="text-[8px] sm:text-[8.5px] font-semibold text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-full bg-slate-200/60 dark:bg-slate-700/60">
+                  <span className="text-[7.5px] sm:text-[8px] font-semibold text-slate-500 dark:text-slate-400 px-1.5 py-0.2 rounded-full bg-slate-200/60 dark:bg-slate-700/60">
                     Lewat
                   </span>
                 ) : (
-                  <span className="text-[8px] sm:text-[8.5px] font-semibold text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                  <span className="text-[7.5px] sm:text-[8px] font-semibold text-slate-500 dark:text-slate-400 px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800">
                     Mendatang
                   </span>
                 )}
@@ -611,36 +597,35 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
       </div>
 
       {/* ─── 4. PANEL INFORMASI WAKTU TAMBAHAN (Imsak, Terbit, Dhuha & Jam WIB) ─── */}
-      <div className="mt-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#041D22] via-[#092E36] to-[#041D22] text-white border border-teal-800/50 shadow-inner px-4 py-2 sm:py-2.5 flex items-center justify-between relative overflow-hidden text-[9px] sm:text-[10px] font-semibold">
-        {/* Subtle Islamic Corner Geometric Ornaments */}
-        <IslamicCornerPattern className="absolute top-0 left-0 w-8 h-8" />
-        <IslamicCornerPattern className="absolute bottom-0 right-0 w-8 h-8 rotate-180" />
+      <div className="mt-1.5 rounded-xl bg-gradient-to-r from-[#041D22] via-[#092E36] to-[#041D22] text-white border border-teal-800/50 shadow-inner px-3 sm:px-3.5 py-1.5 sm:py-2 flex items-center justify-between relative overflow-hidden text-[8.5px] sm:text-[9.5px] font-semibold">
+        <IslamicCornerPattern className="absolute top-0 left-0 w-6 h-6" />
+        <IslamicCornerPattern className="absolute bottom-0 right-0 w-6 h-6 rotate-180" />
 
-        {/* Left Timing Stats (Imsak, Terbit, Dhuha) */}
-        <div className="flex items-center gap-3 sm:gap-4 relative z-10">
-          <div className="flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-teal-300 shrink-0" />
+        {/* Left Timing Stats */}
+        <div className="flex items-center gap-2.5 sm:gap-3.5 relative z-10">
+          <div className="flex items-center gap-1">
+            <Calendar className="w-3 h-3 text-teal-300 shrink-0" />
             <span className="text-teal-200/80">Imsak</span>
             <strong className="font-mono text-white font-bold">{timings.Imsak}</strong>
           </div>
           <span className="text-teal-700">|</span>
-          <div className="flex items-center gap-1.5">
-            <Sun className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+          <div className="flex items-center gap-1">
+            <Sun className="w-3 h-3 text-amber-300 shrink-0" />
             <span className="text-teal-200/80">Terbit</span>
             <strong className="font-mono text-white font-bold">{timings.Sunrise}</strong>
           </div>
           <span className="text-teal-700">|</span>
-          <div className="flex items-center gap-1.5">
-            <Moon className="w-3.5 h-3.5 text-amber-200 shrink-0" />
+          <div className="flex items-center gap-1">
+            <Moon className="w-3 h-3 text-amber-200 shrink-0" />
             <span className="text-teal-200/80">Dhuha</span>
             <strong className="font-mono text-white font-bold">{timings.Dhuha || "06:05"}</strong>
           </div>
         </div>
 
-        {/* Right Real-time Clock (WIB) */}
-        <div className="flex items-center gap-1.5 font-mono font-bold text-white relative z-10 shrink-0">
-          <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-          <span className="text-[11px] sm:text-xs tracking-tight">{timeString} WIB</span>
+        {/* Right Real-time Clock */}
+        <div className="flex items-center gap-1 font-mono font-bold text-white relative z-10 shrink-0">
+          <Clock className="w-3 h-3 text-emerald-400 shrink-0" />
+          <span className="text-[10px] sm:text-[11px] tracking-tight">{timeString} WIB</span>
         </div>
       </div>
     </div>
