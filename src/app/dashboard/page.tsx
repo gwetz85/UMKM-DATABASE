@@ -42,7 +42,7 @@ const PrayerWidget = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full min-h-[260px] bg-white dark:bg-slate-800/90 rounded-[28px] border border-slate-100 dark:border-slate-800 p-6 flex flex-col items-center justify-center gap-2.5">
+      <div className="w-full h-full min-h-[220px] bg-white dark:bg-slate-800/90 rounded-[28px] border border-slate-100 dark:border-slate-800 p-6 flex flex-col items-center justify-center gap-2.5">
         <Loader2 className="w-8 h-8 rounded-full text-emerald-500 animate-spin" />
         <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
           Memuat Jadwal Sholat Tanjungpinang...
@@ -57,7 +57,7 @@ const WeatherWidget = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full min-h-[260px] bg-white dark:bg-slate-800/90 rounded-[28px] border border-slate-100 dark:border-slate-800 p-6 flex flex-col items-center justify-center gap-2.5">
+      <div className="w-full h-full min-h-[220px] bg-white dark:bg-slate-800/90 rounded-[28px] border border-slate-100 dark:border-slate-800 p-6 flex flex-col items-center justify-center gap-2.5">
         <Loader2 className="w-8 h-8 rounded-full text-sky-500 animate-spin" />
         <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
           Memuat Informasi Cuaca...
@@ -644,12 +644,12 @@ export default function DashboardStatsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
         {/* Left Bento: Real-time Weather & Air Quality Widget */}
         <div className="lg:col-span-7 xl:col-span-7 flex flex-col">
-          <WeatherWidget className="w-full h-full min-h-[260px]" />
+          <WeatherWidget className="w-full h-full min-h-[220px]" />
         </div>
 
         {/* Right Bento: Real-time Prayer Times Widget (Tanjungpinang, Kepri) */}
         <div className="lg:col-span-5 xl:col-span-5 flex flex-col">
-          <PrayerWidget className="w-full h-full min-h-[260px]" />
+          <PrayerWidget className="w-full h-full min-h-[220px]" />
         </div>
       </div>
 
