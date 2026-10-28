@@ -185,16 +185,47 @@ function getWindDirectionLabel(deg: number): string {
   return dirs[idx]
 }
 
-function MosqueEmblem({ className }: { className?: string }) {
+function WeatherEmblem({ code, isDay, className }: { code: number; isDay: boolean; className?: string }) {
+  const isRain = [51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)
+  const isThunder = [95, 96, 99].includes(code)
+  const isClear = [0, 1].includes(code)
+
   return (
-    <div className={cn("w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-xl bg-gradient-to-br from-[#065F46] to-[#047857] flex items-center justify-center text-white shadow-sm shrink-0 border border-emerald-400/30", className)}>
-      <svg className="w-4.5 h-4.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2 C8 6, 8 10, 12 10 C16 10, 16 6, 12 2 Z" fill="currentColor" fillOpacity="0.2" />
-        <path d="M12 2 L12 4" strokeWidth="2" />
-        <rect x="5" y="10" width="14" height="11" rx="1.5" />
-        <path d="M10 21 V15 C10 13.9 10.9 13 12 13 C13.1 13 14 13.9 14 15 V21" fill="currentColor" fillOpacity="0.3" />
-        <path d="M3 21 V9 L4 7 L5 9 V21" />
-        <path d="M19 21 V9 L20 7 L21 9 V21" />
+    <div className={cn("w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-xl bg-gradient-to-br from-[#065F46] via-[#0D7465] to-teal-700 flex items-center justify-center text-white shadow-sm shrink-0 border border-emerald-400/30", className)}>
+      <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {isClear ? (
+          <g>
+            <circle cx="12" cy="12" r="4" fill="#FDE68A" stroke="#F59E0B" />
+            <path d="M12 2v2" stroke="#FDE68A" />
+            <path d="M12 20v2" stroke="#FDE68A" />
+            <path d="m4.93 4.93 1.41 1.41" stroke="#FDE68A" />
+            <path d="m17.66 17.66 1.41 1.41" stroke="#FDE68A" />
+            <path d="M2 12h2" stroke="#FDE68A" />
+            <path d="M20 12h2" stroke="#FDE68A" />
+            <path d="m6.34 17.66-1.41 1.41" stroke="#FDE68A" />
+            <path d="m19.07 4.93-1.41 1.41" stroke="#FDE68A" />
+          </g>
+        ) : isRain ? (
+          <g>
+            <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" fill="#FFFFFF" fillOpacity="0.9" stroke="#E0F2FE" />
+            <path d="M8 19v2.5" stroke="#38BDF8" strokeWidth="2" />
+            <path d="M12 19v2.5" stroke="#38BDF8" strokeWidth="2" />
+            <path d="M16 19v2.5" stroke="#38BDF8" strokeWidth="2" />
+          </g>
+        ) : isThunder ? (
+          <g>
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" fill="#FFFFFF" fillOpacity="0.85" stroke="#E0F2FE" />
+            <path d="m13 14-3 5h4l-2 5" stroke="#FDE68A" fill="#F59E0B" strokeWidth="1.5" />
+          </g>
+        ) : (
+          <g>
+            <circle cx="16" cy="8" r="3" fill="#FDE68A" stroke="#F59E0B" />
+            <path d="M16 3v1.5" stroke="#FDE68A" />
+            <path d="m19.5 4.5-1 1" stroke="#FDE68A" />
+            <path d="M21 8h-1.5" stroke="#FDE68A" />
+            <path d="M17.5 19H9a6 6 0 1 1 5.9-4.9A4.5 4.5 0 1 1 17.5 19Z" fill="#FFFFFF" fillOpacity="0.95" stroke="#E0F2FE" />
+          </g>
+        )}
       </svg>
     </div>
   )
@@ -390,7 +421,7 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
       {/* ─── 1. HEADER (Compact & Elegant) ─── */}
       <div className="flex items-center justify-between pb-2 sm:pb-2.5 shrink-0">
         <div className="flex items-center gap-2">
-          <MosqueEmblem />
+          <WeatherEmblem code={weather.weatherCode} isDay={weather.isDay} />
           <div>
             <div className="flex items-center gap-1.5">
               <h3 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base tracking-tight leading-tight">
