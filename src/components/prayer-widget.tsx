@@ -14,9 +14,7 @@ import {
   Volume2, 
   VolumeX, 
   RefreshCw, 
-  Sparkles, 
   CheckCircle2, 
-  Calendar,
   Hourglass
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -117,25 +115,12 @@ function calculateLocalPrayerTimes(date: Date): PrayerTimings {
   }
 }
 
-function getFallbackHijriDate(date: Date): string {
-  try {
-    return new Intl.DateTimeFormat("id-ID-u-ca-islamic-umalqura", {
-      day: "numeric",
-      month: "long",
-      year: "numeric"
-    }).format(date)
-  } catch {
-    return "18 Jumadilawal 1448 H"
-  }
-}
-
 interface PrayerWidgetProps {
   className?: string
 }
 
 export function PrayerWidget({ className }: PrayerWidgetProps) {
   const [timings, setTimings] = useState<PrayerTimings>(DEFAULT_TIMINGS)
-  const [hijriDate, setHijriDate] = useState<string>("18 Jumadilawal 1448 H")
   const [currentTime, setCurrentTime] = useState<Date>(new Date())
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false)
@@ -162,7 +147,6 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
           const parsed = JSON.parse(cached)
           if (parsed.timings) {
             setTimings(parsed.timings)
-            if (parsed.hijri) setHijriDate(parsed.hijri)
             return
           }
         }
@@ -190,21 +174,13 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
           Isha: t.Isha || "18:59",
           Dhuha: "06:05"
         }
-        
-        let hijriStr = getFallbackHijriDate(new Date())
-        if (json.data.date?.hijri) {
-          const h = json.data.date.hijri
-          const monthName = h.month?.en || "Jumadilawal"
-          hijriStr = `${h.day} ${monthName} ${h.year} H`
-        }
 
         setTimings(cleanTimings)
-        setHijriDate(hijriStr)
 
         try {
           localStorage.setItem(
             cacheKey,
-            JSON.stringify({ timings: cleanTimings, hijri: hijriStr })
+            JSON.stringify({ timings: cleanTimings })
           )
         } catch {
           // ignore error
@@ -215,7 +191,6 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
     } catch {
       const fallback = calculateLocalPrayerTimes(new Date())
       setTimings(fallback)
-      setHijriDate(getFallbackHijriDate(new Date()))
     } finally {
       setIsRefreshing(false)
     }
@@ -338,6 +313,8 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
     return `${h}:${m}:${s}`
   }, [currentTime])
 
+  const formattedCountdown = `${String(calculation.hours).padStart(2, "0")}:${String(calculation.minutes).padStart(2, "0")}:${String(calculation.seconds).padStart(2, "0")}`
+
   return (
     <div
       className={cn(
@@ -348,8 +325,8 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
       {/* Subtle Dynamic Ambient Background Glow */}
       <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-emerald-500/10 dark:bg-emerald-400/10 blur-2xl pointer-events-none" />
 
-      {/* ─── 1. HEADER (Compact & Aligned with Weather Widget) ─── */}
-      <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
+      {/* ─── 1. HEADER (Countdown menggantikan info tanggal) ─── */}
+      <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-2xs">
             <Compass className="w-3.5 h-3.5" />
@@ -371,10 +348,18 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Hijri Date Badge */}
-          <div className="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 text-[9px] font-bold shadow-2xs">
-            <Calendar className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
-            <span>{hijriDate}</span>
+          {/* 🌟 COUNTDOWN WAKTU SHOLAT SELANJUTNYA (MENGGANTIKAN INFO TANGGAL) */}
+          <div 
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 text-[10px] sm:text-[11px] font-bold shadow-2xs"
+            title={`Hitung mundur menuju Sholat ${calculation.nextPrayer.name} (${calculation.nextPrayer.time} WIB)`}
+          >
+            <Hourglass className="w-3 h-3 text-emerald-600 dark:text-emerald-400 animate-pulse shrink-0" />
+            <span className="text-slate-600 dark:text-slate-300 font-semibold text-[9.5px] sm:text-[10px]">
+              {calculation.isNextTomorrow ? "Subuh Besok" : calculation.nextPrayer.name}:
+            </span>
+            <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+              {formattedCountdown}
+            </span>
           </div>
 
           {/* Sound Toggle */}
@@ -407,69 +392,36 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
         </div>
       </div>
 
-      {/* ─── 2. HERO / ACTIVE BANNER & COUNTDOWN (Compact Strip) ─── */}
-      <div className="my-2.5">
-        {calculation.activeEnteredPrayer ? (
-          /* Active Prayer Entered Banner (Slim & Radiant) */
-          <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white shadow-sm flex items-center justify-between gap-2 animate-in fade-in duration-300">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0 border border-white/30 animate-pulse">
-                <BellRing className="w-3.5 h-3.5 text-yellow-300" />
-              </div>
-              <div className="truncate">
-                <div className="flex items-center gap-1.5 flex-wrap leading-tight">
-                  <span className="text-[8.5px] font-black uppercase tracking-wider bg-white/20 px-1.5 py-0.5 rounded-md border border-white/20">
-                    Masuk Waktu
-                  </span>
-                  <span className="text-xs font-black tracking-tight drop-shadow-sm">
-                    Sholat {calculation.activeEnteredPrayer.name} ({calculation.activeEnteredPrayer.time} WIB)
-                  </span>
-                </div>
-                <span className="text-[9.5px] text-emerald-100 font-medium truncate block mt-0.5">
-                  Waktunya menunaikan sholat untuk wilayah Kota Tanjungpinang.
+      {/* ─── 2. INFO MASUK WAKTU SHOLAT BANNER (Tampil khusus saat masuk waktu) ─── */}
+      {calculation.activeEnteredPrayer && (
+        <div className="my-2 p-2 sm:p-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white shadow-sm flex items-center justify-between gap-2 animate-in fade-in duration-300">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center shrink-0 border border-white/30 animate-pulse">
+              <BellRing className="w-3.5 h-3.5 text-yellow-300" />
+            </div>
+            <div className="truncate">
+              <div className="flex items-center gap-1.5 flex-wrap leading-tight">
+                <span className="text-[8.5px] font-black uppercase tracking-wider bg-white/20 px-1.5 py-0.5 rounded-md border border-white/20">
+                  Masuk Waktu
+                </span>
+                <span className="text-xs font-black tracking-tight drop-shadow-sm">
+                  Sholat {calculation.activeEnteredPrayer.name} ({calculation.activeEnteredPrayer.time} WIB)
                 </span>
               </div>
-            </div>
-
-            <div className="shrink-0 flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-lg border border-white/20 font-mono text-xs font-bold text-yellow-300">
-              <Hourglass className="w-3 h-3 animate-spin-slow" />
-              <span>
-                {String(calculation.hours).padStart(2, "0")}:{String(calculation.minutes).padStart(2, "0")}:{String(calculation.seconds).padStart(2, "0")}
+              <span className="text-[9.5px] text-emerald-100 font-medium truncate block mt-0.5">
+                Waktunya menunaikan sholat untuk wilayah Kota Tanjungpinang.
               </span>
             </div>
           </div>
-        ) : (
-          /* Normal Countdown Card (Slim & Clean) */
-          <div className="p-2 sm:p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">
-                  {calculation.isNextTomorrow ? "Subuh Esok" : "Sholat Berikutnya"}
-                </span>
-                <span className="px-1.5 py-0.2 rounded-full text-[8.5px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  {calculation.nextPrayer.name} • {calculation.nextPrayer.time} WIB
-                </span>
-              </div>
-              <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200 block truncate mt-0.5">
-                Menuju Adzan {calculation.nextPrayer.name} ({calculation.nextPrayer.time} WIB)
-              </span>
-            </div>
 
-            <div className="shrink-0 flex items-center gap-1 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 shadow-2xs font-mono">
-              <Hourglass className="w-3 h-3 text-emerald-600 dark:text-emerald-400 animate-pulse" />
-              <span className="text-xs font-black text-slate-900 dark:text-white">
-                {String(calculation.hours).padStart(2, "0")}:{String(calculation.minutes).padStart(2, "0")}:
-              </span>
-              <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
-                {String(calculation.seconds).padStart(2, "0")}
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
+          <span className="shrink-0 px-2 py-0.5 rounded bg-yellow-400 text-slate-900 text-[8.5px] font-black uppercase tracking-wide">
+            Adzan
+          </span>
+        </div>
+      )}
 
-      {/* ─── 3. 5 WAKTU SHOLAT (Compact Grid) ─── */}
-      <div className="grid grid-cols-5 gap-1.5">
+      {/* ─── 3. DISPLAY 5 WAKTU SHOLAT ─── */}
+      <div className={cn("grid grid-cols-5 gap-1.5", !calculation.activeEnteredPrayer && "my-2")}>
         {fivePrayers.map((prayer) => {
           const IconComp = prayer.icon
           const isNext = calculation.nextPrayer.id === prayer.id && !calculation.isNextTomorrow
