@@ -643,30 +643,20 @@ export default function LayarInformasiPage() {
         <div className="flex items-center gap-3 sm:gap-4">
           <div className="flex items-center gap-3">
             <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full blur-xs opacity-70 group-hover:opacity-100 transition duration-300" />
-              <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-slate-950 flex items-center justify-center p-1.5 shadow-md shrink-0 border border-cyan-400/30">
-                <div className="w-full h-full rounded-full bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center p-1.5 shadow-inner">
-                  <svg viewBox="0 0 24 24" className="w-full h-full text-white fill-current" preserveAspectRatio="none">
-                    <path d="M4 19h16v2H4v-2zm2-4h2v3H6v-3zm4-4h2v7h-2v-7zm4-5h2v12h-2V6zm4-3h2v15h-2V3z"/>
-                    <path d="M5 8l4-4 4 4 6-6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full blur-xs opacity-75 group-hover:opacity-100 transition duration-300" />
+              <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center p-1 shadow-md shrink-0 border border-cyan-400/50">
+                <img
+                  src="/logo.png"
+                  alt="Logo SIMPU"
+                  className="w-full h-full object-contain rounded-full"
+                />
               </div>
             </div>
             
             <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="text-xl sm:text-2xl font-black text-white tracking-tight leading-none drop-shadow-xs">
-                  UMKM
-                </span>
-                <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white p-0.5 shadow-[0_0_12px_rgba(6,182,212,0.45)] border border-cyan-400/60 flex items-center justify-center shrink-0">
-                  <img
-                    src="/logo.png"
-                    alt="Logo SIMPU"
-                    className="w-full h-full object-contain rounded-full"
-                  />
-                </div>
-              </div>
+              <span className="text-xl sm:text-2xl font-black text-white tracking-tight leading-none drop-shadow-xs">
+                UMKM
+              </span>
               <span className="text-[9px] font-extrabold text-cyan-400 tracking-wider uppercase leading-tight mt-0.5">
                 DATA AKURAT, USAHA HEBAT
               </span>
