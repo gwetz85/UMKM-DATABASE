@@ -146,7 +146,15 @@ const ensureStatsStructure = (currentStats: SystemStats | null): SystemStats => 
   if (!base.gender) base.gender = { laki: 0, perempuan: 0, unknown: 0 };
   if (!base.verifiedGender) base.verifiedGender = { 'Laki-laki': 0, 'Perempuan': 0 };
   if (!base.status) base.status = { pending: 0, verified: 0, rejected: 0, finish: 0 };
-  if (!base.detailedStatus) base.detailedStatus = { survey: 0, verifikasi: 0, hasilVerifikasi: 0, lpj: 0, selesai: 0 };
+  if (!base.detailedStatus) {
+    base.detailedStatus = { survey: 0, verifikasi: 0, hasilVerifikasi: 0, lpj: 0, selesai: 0 };
+  } else {
+    if (base.detailedStatus.survey === undefined) base.detailedStatus.survey = 0;
+    if (base.detailedStatus.verifikasi === undefined) base.detailedStatus.verifikasi = 0;
+    if (base.detailedStatus.hasilVerifikasi === undefined) base.detailedStatus.hasilVerifikasi = 0;
+    if (base.detailedStatus.lpj === undefined) base.detailedStatus.lpj = 0;
+    if (base.detailedStatus.selesai === undefined) base.detailedStatus.selesai = 0;
+  }
   if (!base.kelurahan) base.kelurahan = {};
   if (!base.coordinator) base.coordinator = {};
   if (!base.coordinatorRekening) base.coordinatorRekening = {};
@@ -213,11 +221,11 @@ export async function updateStatsOnStatusChange(
   const statsRef = ref(database, 'system_stats');
   const baseActor = actorData || {};
   const oldObj = typeof oldStatusOrData === 'object' 
-    ? { ...baseActor, ...oldStatusOrData } 
+    ? { ...oldStatusOrData } 
     : { ...baseActor, status: oldStatusOrData };
   const newObj = typeof newStatusOrData === 'object' 
-    ? { ...baseActor, ...newStatusOrData } 
-    : { ...baseActor, status: newStatusOrData };
+    ? { ...oldObj, ...baseActor, ...newStatusOrData } 
+    : { ...oldObj, status: newStatusOrData };
   const mergedActor = { ...oldObj, ...newObj };
   
   await runTransaction(statsRef, (rawStats: SystemStats | null) => {

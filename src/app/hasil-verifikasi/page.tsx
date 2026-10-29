@@ -421,21 +421,49 @@ function HasilVerifikasiContent() {
     return coordinatorStats.filter(s => s.count > 0).length
   }, [coordinatorStats])
 
-  const totalLolosCount = useMemo(() => {
-    if ((!selectedCoordinator || selectedCoordinator === 'ALL') && systemStats?.detailedStatus?.hasilVerifikasi !== undefined) {
-      return Number(systemStats.detailedStatus.hasilVerifikasi)
-    }
-    if (filteredActors && filteredActors.length > 0) return filteredActors.length
-    if (localIndex && localIndex.length > 0) {
-      return localIndex.filter(a => a && a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Lolos' && (a as any).berkasDinasVerified).length
-    }
-    return 0
-  }, [systemStats?.detailedStatus?.hasilVerifikasi, selectedCoordinator, filteredActors, localIndex])
-
   const waitingBankCount = useMemo(() => {
     const sourceList = (filteredActors && filteredActors.length > 0) ? filteredActors : (localIndex || [])
     return sourceList.filter(a => a && a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Lolos' && (a as any).berkasDinasVerified && !a.bankNumber).length
   }, [filteredActors, localIndex])
+
+  const totalLolosCount = useMemo(() => {
+    if (selectedCoordinator && selectedCoordinator !== 'ALL' && selectedCoordinator !== 'BELUM_REKENING') {
+      const coordStat = coordinatorStats.find(s => s.name.toUpperCase().trim() === selectedCoordinator.toUpperCase().trim())
+      if (coordStat) return coordStat.count
+      if (filteredActors && filteredActors.length > 0) return filteredActors.length
+      return 0
+    }
+
+    if (selectedCoordinator === 'BELUM_REKENING') {
+      return waitingBankCount
+    }
+
+    const sumFromCoordinators = coordinatorStats.reduce((acc, s) => acc + (s.count || 0), 0)
+    if (sumFromCoordinators > 0) return sumFromCoordinators
+
+    if (filteredActors && filteredActors.length > 0) return filteredActors.length
+    if (localIndex && localIndex.length > 0) {
+      const countFromLocal = localIndex.filter(a => a && a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Lolos' && (a as any).berkasDinasVerified).length
+      if (countFromLocal > 0) return countFromLocal
+    }
+
+    if (systemStats?.detailedStatus?.hasilVerifikasi !== undefined && Number(systemStats.detailedStatus.hasilVerifikasi) > 0) {
+      return Number(systemStats.detailedStatus.hasilVerifikasi)
+    }
+
+    return 0
+  }, [selectedCoordinator, coordinatorStats, filteredActors, localIndex, waitingBankCount, systemStats?.detailedStatus?.hasilVerifikasi])
+
+  // Self-heal systemStats in background if it's out of sync
+  useEffect(() => {
+    if (!database) return
+    const sumFromCoordinators = coordinatorStats.reduce((acc, s) => acc + (s.count || 0), 0)
+    if (sumFromCoordinators > 0 && systemStats && (systemStats.detailedStatus?.hasilVerifikasi === 0 || systemStats.detailedStatus?.hasilVerifikasi === undefined)) {
+      import('@/lib/stats-service').then(({ recalculateAndSaveSystemStats }) => {
+        recalculateAndSaveSystemStats(database).catch(console.error)
+      })
+    }
+  }, [database, coordinatorStats, systemStats])
 
   const currentDataToDisplay = useMemo(() => {
     let list: BusinessActor[] = []
@@ -485,7 +513,7 @@ function HasilVerifikasiContent() {
       // Update global stats (Tahap 3 -> Tahap 4 / Selesai)
       import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
         const updatedActor = { ...inputtingBankActor, ...updates }
-        updateStatsOnStatusChange(database, inputtingBankActor, updatedActor, updatedActor).catch(e => console.error(e))
+        updateStatsOnStatusChange(database, inputtingBankActor, updatedActor, inputtingBankActor).catch(e => console.error(e))
       })
 
       logActivity({
@@ -546,7 +574,7 @@ function HasilVerifikasiContent() {
       // Update global stats (Tahap 3 -> Tahap 1)
       import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
         const updatedActor = { ...returnTargetActor, ...updates }
-        updateStatsOnStatusChange(database, returnTargetActor, updatedActor, updatedActor).catch(e => console.error(e))
+        updateStatsOnStatusChange(database, returnTargetActor, updatedActor, returnTargetActor).catch(e => console.error(e))
       })
 
       logActivity({
@@ -607,7 +635,7 @@ function HasilVerifikasiContent() {
               localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(json.results));
             } catch {}
 
-            const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
+            const freshMap = new Map<string, BusinessActor>(json.results.map((r: any) => [r.id, r]));
             dataToExport = (dataToExport || []).map(a => freshMap.get(a.id) || a);
           }
         } catch (fetchErr) {

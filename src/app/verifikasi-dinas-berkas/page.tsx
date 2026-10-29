@@ -620,7 +620,7 @@ export default function VerifikasiDinasBerkasPage() {
       // Update global stats (Tahap 2 -> Tahap 3)
       import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
         const updatedActor = { ...verifyingActor, ...updates }
-        updateStatsOnStatusChange(database, verifyingActor, updatedActor, updatedActor).catch(e => console.error(e))
+        updateStatsOnStatusChange(database, verifyingActor, updatedActor, verifyingActor).catch(e => console.error(e))
       })
 
       logActivity({
@@ -684,7 +684,7 @@ export default function VerifikasiDinasBerkasPage() {
       // Update global stats (Tahap 2 -> Tahap 1)
       import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
         const updatedActor = { ...returnTargetActor, ...updates }
-        updateStatsOnStatusChange(database, returnTargetActor, updatedActor, updatedActor).catch(e => console.error(e))
+        updateStatsOnStatusChange(database, returnTargetActor, updatedActor, returnTargetActor).catch(e => console.error(e))
       })
 
       logActivity({
