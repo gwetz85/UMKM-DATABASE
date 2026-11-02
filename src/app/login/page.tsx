@@ -563,13 +563,9 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Footer Left: Security indicator */}
-          <div className="absolute bottom-6 left-8 right-8 hidden xl:flex items-center justify-between text-[11px] text-slate-400 font-medium border-t border-emerald-800/40 pt-4">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Koneksi Aman Terenkripsi SSL 256-bit</span>
-            </div>
-            <span>v0.1.1 Production</span>
+          {/* Footer Left: Attribution */}
+          <div className="absolute bottom-6 left-8 right-8 flex items-center justify-center text-[11px] tracking-wider uppercase text-emerald-300/85 font-bold border-t border-emerald-800/40 pt-4">
+            <span>DESIGN BY MT NETWORK - CREATED AGUS SURIYADI</span>
           </div>
         </section>
 
@@ -995,9 +991,12 @@ export default function LoginPage() {
           </div>
 
           {/* Footer Copyright on Bottom of Login */}
-          <div className="mt-6 text-center select-none animate-entrance-up delay-350">
+          <div className="mt-6 text-center select-none animate-entrance-up delay-350 space-y-1">
             <p className="text-xs text-slate-300/80 font-medium drop-shadow">
               © {new Date().getFullYear()} SIMPU Kota Tanjungpinang. All rights reserved.
+            </p>
+            <p className="text-[10px] text-emerald-300/75 font-semibold tracking-wider uppercase drop-shadow lg:hidden">
+              DESIGN BY MT NETWORK - CREATED AGUS SURIYADI
             </p>
           </div>
         </section>
