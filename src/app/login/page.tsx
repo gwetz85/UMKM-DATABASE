@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth, useDatabase, useUser } from "@/firebase"
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth"
@@ -12,17 +12,44 @@ import {
   UserPlus, 
   SearchCheck, 
   CheckCircle2, 
-  ArrowLeft 
+  ArrowLeft,
+  User,
+  Lock,
+  ShieldCheck,
+  Sparkles,
+  ArrowRight,
+  AlertCircle,
+  HelpCircle,
+  X,
+  PhoneCall,
+  Check,
+  Building2,
+  Database,
+  Layers,
+  ChevronRight,
+  TrendingUp,
+  Cpu
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { logActivity, getDeviceType } from "@/lib/logger"
+import { useSoundEffect } from "@/hooks/use-sound-effect"
+import "./login.css"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
+  const [loginSuccess, setLoginSuccess] = useState(false)
   const [registering, setRegistering] = useState(false)
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
+  
+  // Animation states
+  const [hasError, setHasError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isEyeSpinning, setIsEyeSpinning] = useState(false)
+  const [focusedField, setFocusedField] = useState<"identifier" | "password" | "regName" | "regPass" | null>(null)
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false)
   
   // Register States
   const [regName, setRegName] = useState("")
@@ -34,21 +61,35 @@ export default function LoginPage() {
   const database = useDatabase()
   const router = useRouter()
   const { toast } = useToast()
+  const { playSound } = useSoundEffect()
   const { user: existingUser, userProfile: existingProfile, isUserLoading, isProfileLoading } = useUser()
+
+  // Load remembered username on mount
+  useEffect(() => {
+    try {
+      const savedUser = localStorage.getItem("simpu_remembered_username")
+      if (savedUser) {
+        setIdentifier(savedUser)
+        setRememberMe(true)
+      }
+    } catch {
+      // localStorage may fail in private mode
+    }
+  }, [])
 
   // Auto redirect if already authenticated with active role
   useEffect(() => {
     if (!isUserLoading && !isProfileLoading && existingUser && existingProfile) {
-      const role = existingProfile.role || ''
-      if (role === 'petugas_survey' || role === 'petugas') {
+      const role = existingProfile.role || ""
+      if (role === "petugas_survey" || role === "petugas") {
         router.push("/portal-survey")
-      } else if (role === 'petugas_absensi' || role === 'petugas absensi' || role === 'absensi') {
+      } else if (role === "petugas_absensi" || role === "petugas absensi" || role === "absensi") {
         router.push("/daftar-hadir")
-      } else if (role === 'dinas') {
+      } else if (role === "dinas") {
         router.push("/verifikasi-dinas")
-      } else if (role === 'verifikator_dinas') {
+      } else if (role === "verifikator_dinas") {
         router.push("/verifikasi-dinas-berkas")
-      } else if (role === 'koordinator') {
+      } else if (role === "koordinator") {
         router.push("/actor-data")
       } else {
         router.push("/")
@@ -56,18 +97,41 @@ export default function LoginPage() {
     }
   }, [existingUser, existingProfile, isUserLoading, isProfileLoading, router])
 
+  // Trigger eye spinning transition (video reference)
+  const handleTogglePassword = () => {
+    playSound("click", 0.3)
+    setIsEyeSpinning(true)
+    setShowPassword((prev) => !prev)
+    setTimeout(() => {
+      setIsEyeSpinning(false)
+    }, 380)
+  }
+
+  // Trigger error shake animation
+  const triggerErrorShake = (msg: string) => {
+    playSound("error", 0.5)
+    setErrorMessage(msg)
+    setHasError(true)
+    setTimeout(() => {
+      setHasError(false)
+    }, 550)
+  }
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!identifier.trim() || !password) return
+    
     setLoading(true)
+    setErrorMessage(null)
+    playSound("click", 0.4)
 
-    const username = identifier.toLowerCase().trim().replace(/\s+/g, '_')
+    const username = identifier.toLowerCase().trim().replace(/\s+/g, "_")
     const email = `${username}@umkm.id`
 
     try {
-      let user: any;
-      let finalUserRole = '';
-      let userNodeExists = false;
+      let user: any
+      let finalUserRole = ""
+      let userNodeExists = false
 
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password)
@@ -79,9 +143,9 @@ export default function LoginPage() {
 
         if (userSnap.exists()) {
           const userData = userSnap.val()
-          finalUserRole = userData.role || ''
+          finalUserRole = userData.role || ""
 
-          const isHardcodedAdmin = email === 'agus@umkm.id'
+          const isHardcodedAdmin = email === "agus@umkm.id"
           let isRolesAdmin = false
           if (!isHardcodedAdmin && user.uid) {
             const roleRef = ref(database, `roles_admin/${user.uid}`)
@@ -94,11 +158,12 @@ export default function LoginPage() {
 
           if (!hasAdminBypass) {
             if (userData.password && userData.password !== password) {
-               throw new Error("auth/password-changed-by-admin")
+              throw new Error("auth/password-changed-by-admin")
             }
             
-            if (userData.status === 'inactive') {
+            if (userData.status === "inactive") {
               await signOut(auth)
+              triggerErrorShake("Akun ini telah dinonaktifkan oleh Administrator.")
               toast({
                 variant: "destructive",
                 title: "Akun Dinonaktifkan",
@@ -108,8 +173,9 @@ export default function LoginPage() {
               return
             }
 
-            if (userData.role === 'pending') {
+            if (userData.role === "pending") {
               await signOut(auth)
+              triggerErrorShake("Akun Anda sedang menunggu persetujuan (Role) dari Admin.")
               toast({ 
                 variant: "destructive", 
                 title: "Akses Belum Aktif", 
@@ -119,12 +185,13 @@ export default function LoginPage() {
               return
             }
 
-            if (userData.role !== 'dinas' && userData.role !== 'verifikator_dinas') {
+            if (userData.role !== "dinas" && userData.role !== "verifikator_dinas") {
               if (!userData.uid) {
                 await update(userRef, { uid: user.uid })
                 toast({ title: "Perangkat Terkunci", description: "Akun Anda sekarang terikat pada perangkat ini." })
               } else if (userData.uid !== user.uid) {
                 await signOut(auth)
+                triggerErrorShake("Akun terikat pada perangkat lain. Hubungi Admin untuk reset.")
                 toast({ 
                   variant: "destructive", 
                   title: "Akses Ditolak", 
@@ -140,7 +207,7 @@ export default function LoginPage() {
             await update(userRef, { uid: user.uid })
           }
         } else {
-          const isHardcodedAdmin = email === 'agus@umkm.id'
+          const isHardcodedAdmin = email === "agus@umkm.id"
           let hasAdminBypass = isHardcodedAdmin
           if (!hasAdminBypass && user.uid) {
             const roleRef = ref(database, `roles_admin/${user.uid}`)
@@ -152,6 +219,7 @@ export default function LoginPage() {
 
           if (!hasAdminBypass) {
             await signOut(auth)
+            triggerErrorShake("Username ini tidak terdaftar di sistem Manajemen User.")
             toast({ 
               variant: "destructive", 
               title: "Akses Ditolak", 
@@ -161,14 +229,12 @@ export default function LoginPage() {
             return
           }
         }
-
-        toast({ title: "Login Berhasil", description: "Selamat datang kembali." })
       } catch (loginError: any) {
         if (
-          loginError.code === 'auth/user-not-found' || 
-          loginError.code === 'auth/invalid-credential' || 
-          loginError.code === 'auth/invalid-email' || 
-          loginError.message === 'auth/password-changed-by-admin'
+          loginError.code === "auth/user-not-found" || 
+          loginError.code === "auth/invalid-credential" || 
+          loginError.code === "auth/invalid-email" || 
+          loginError.message === "auth/password-changed-by-admin"
         ) {
           const tempUserRef = ref(database, `system_users/${username}`)
           const tempUserSnap = await get(tempUserRef)
@@ -177,7 +243,8 @@ export default function LoginPage() {
             userNodeExists = true
             const preRegisteredData = tempUserSnap.val()
             
-            if (preRegisteredData.role === 'pending') {
+            if (preRegisteredData.role === "pending") {
+              triggerErrorShake("Menunggu Administrator memberikan akses/role untuk akun ini.")
               toast({ 
                 variant: "destructive", 
                 title: "Akun Belum Siap", 
@@ -187,7 +254,8 @@ export default function LoginPage() {
               return
             }
 
-            if (preRegisteredData.status === 'inactive') {
+            if (preRegisteredData.status === "inactive") {
+              triggerErrorShake("User ini telah dinonaktifkan oleh Administrator.")
               toast({
                 variant: "destructive",
                 title: "Akun Dinonaktifkan",
@@ -198,61 +266,56 @@ export default function LoginPage() {
             }
 
             if (preRegisteredData.password === password) {
-              let currentVersion = preRegisteredData.pwdVersion || 0;
-              let newUserCred: any = null;
-              let attempts = 0;
-              const maxAttempts = 15;
+              let currentVersion = preRegisteredData.pwdVersion || 0
+              let newUserCred: any = null
+              let attempts = 0
+              const maxAttempts = 15
 
               while (!newUserCred && attempts < maxAttempts) {
-                attempts++;
-                const versionSuffix = currentVersion ? `_v${currentVersion}` : '';
-                const actualEmail = `${username}${versionSuffix}@umkm.id`;
+                attempts++
+                const versionSuffix = currentVersion ? `_v${currentVersion}` : ""
+                const actualEmail = `${username}${versionSuffix}@umkm.id`
                 
                 try {
-                  newUserCred = await signInWithEmailAndPassword(auth, actualEmail, password);
+                  newUserCred = await signInWithEmailAndPassword(auth, actualEmail, password)
                 } catch (e: any) {
-                  if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
+                  if (e.code === "auth/user-not-found" || e.code === "auth/invalid-credential") {
                     try {
-                      newUserCred = await createUserWithEmailAndPassword(auth, actualEmail, password);
+                      newUserCred = await createUserWithEmailAndPassword(auth, actualEmail, password)
                     } catch (createErr: any) {
-                      if (createErr.code === 'auth/email-already-in-use') {
-                        currentVersion++;
-                        continue;
+                      if (createErr.code === "auth/email-already-in-use") {
+                        currentVersion++
+                        continue
                       } else {
-                        throw createErr;
+                        throw createErr
                       }
                     }
                   } else {
-                    throw e;
+                    throw e
                   }
                 }
               }
 
               if (!newUserCred) {
-                throw new Error("Gagal mengautentikasi akun. Silakan coba lagi.");
+                throw new Error("Gagal mengautentikasi akun. Silakan coba lagi.")
               }
 
               if (currentVersion !== (preRegisteredData.pwdVersion || 0)) {
-                await update(tempUserRef, { pwdVersion: currentVersion });
+                await update(tempUserRef, { pwdVersion: currentVersion })
               }
 
-              user = newUserCred.user;
-              finalUserRole = preRegisteredData.role || '';
+              user = newUserCred.user
+              finalUserRole = preRegisteredData.role || ""
 
               await update(tempUserRef, {
                 uid: user.uid,
                 addedAt: new Date().toISOString()
               })
 
-              if (preRegisteredData.role === 'admin' || preRegisteredData.role === 'superadmin') {
+              if (preRegisteredData.role === "admin" || preRegisteredData.role === "superadmin") {
                 const roleRef = ref(database, `roles_admin/${user.uid}`)
                 await set(roleRef, { admin: true })
               }
-
-              toast({ 
-                title: "Akses Diberikan", 
-                description: "Akun berhasil didaftarkan dan dikunci ke perangkat ini." 
-              })
             } else {
               throw new Error("auth/wrong-password")
             }
@@ -264,13 +327,13 @@ export default function LoginPage() {
         }
       }
 
-      let targetUserKey: string | null = null;
+      let targetUserKey: string | null = null
       if (userNodeExists) {
-        targetUserKey = username;
+        targetUserKey = username
       } else if (user?.uid) {
-        const uidSnap = await get(ref(database, `system_users/${user.uid}`));
+        const uidSnap = await get(ref(database, `system_users/${user.uid}`))
         if (uidSnap.exists()) {
-          targetUserKey = user.uid;
+          targetUserKey = user.uid
         }
       }
 
@@ -278,15 +341,26 @@ export default function LoginPage() {
         query: `LOGIN: ${username.toUpperCase()}`,
         results: "Berhasil Masuk",
         device: getDeviceType(navigator.userAgent),
-        source: 'Web',
-        method: 'LOGIN',
+        source: "Web",
+        method: "LOGIN",
         userId: username.toUpperCase()
       }, database || undefined)
 
-      const sessionId = typeof crypto !== 'undefined' && crypto.randomUUID
+      const sessionId = typeof crypto !== "undefined" && crypto.randomUUID
         ? crypto.randomUUID()
         : Math.random().toString(36).substring(2) + Date.now().toString(36)
-      localStorage.setItem('simpu_session_id', sessionId)
+      localStorage.setItem("simpu_session_id", sessionId)
+
+      // Handle remember me preference
+      try {
+        if (rememberMe) {
+          localStorage.setItem("simpu_remembered_username", identifier.trim())
+        } else {
+          localStorage.removeItem("simpu_remembered_username")
+        }
+      } catch {
+        // ignore
+      }
       
       const loginUpdates: Record<string, any> = {
         lastLogin: new Date().toISOString(),
@@ -296,40 +370,55 @@ export default function LoginPage() {
       if (user?.uid) {
         loginUpdates.uid = user.uid
       }
-      if (finalUserRole !== 'admin' && email !== 'agus@umkm.id') {
+      if (finalUserRole !== "admin" && email !== "agus@umkm.id") {
         loginUpdates.activeSessionId = sessionId
       }
 
       if (targetUserKey) {
-        await update(ref(database, `system_users/${targetUserKey}`), loginUpdates).catch(console.error);
+        await update(ref(database, `system_users/${targetUserKey}`), loginUpdates).catch(console.error)
       }
 
-      if (finalUserRole === 'petugas_survey' || finalUserRole === 'petugas') {
-        router.push("/portal-survey")
-      } else if (finalUserRole === 'petugas_absensi' || finalUserRole === 'petugas absensi' || finalUserRole === 'absensi') {
-        router.push("/daftar-hadir")
-      } else if (finalUserRole === 'dinas') {
-        router.push("/verifikasi-dinas")
-      } else if (finalUserRole === 'verifikator_dinas') {
-        router.push("/verifikasi-dinas-berkas")
-      } else if (finalUserRole === 'koordinator') {
-        router.push("/actor-data")
-      } else {
-        router.push("/")
-      }
+      // Success animation trigger
+      setLoginSuccess(true)
+      playSound("success", 0.6)
+      toast({ title: "Login Berhasil", description: "Selamat datang kembali di SIMPU." })
+
+      // Smooth delayed redirect so user enjoys the success transition
+      setTimeout(() => {
+        if (finalUserRole === "petugas_survey" || finalUserRole === "petugas") {
+          router.push("/portal-survey")
+        } else if (finalUserRole === "petugas_absensi" || finalUserRole === "petugas absensi" || finalUserRole === "absensi") {
+          router.push("/daftar-hadir")
+        } else if (finalUserRole === "dinas") {
+          router.push("/verifikasi-dinas")
+        } else if (finalUserRole === "verifikator_dinas") {
+          router.push("/verifikasi-dinas-berkas")
+        } else if (finalUserRole === "koordinator") {
+          router.push("/actor-data")
+        } else {
+          router.push("/")
+        }
+      }, 600)
     } catch (error: any) {
       let message = `Kesalahan: ${error.message || String(error)}`
-      if (error.code === 'auth/invalid-credential' || error.message === 'auth/wrong-password' || error.code === 'auth/email-already-in-use') {
-        message = "Username atau kata sandi salah."
+      if (
+        error.code === "auth/invalid-credential" || 
+        error.message === "auth/wrong-password" || 
+        error.code === "auth/email-already-in-use"
+      ) {
+        message = "Username atau kata sandi tidak sesuai."
       }
       
+      triggerErrorShake(message)
       toast({
         variant: "destructive",
         title: "Gagal Masuk",
         description: message,
       })
     } finally {
-      setLoading(false)
+      if (!loginSuccess) {
+        setLoading(false)
+      }
     }
   }
 
@@ -339,12 +428,14 @@ export default function LoginPage() {
     if (!regName.trim() || !regPass) return
     
     setRegistering(true)
-    const username = regName.toLowerCase().trim().replace(/\s+/g, '_')
+    playSound("click", 0.4)
+    const username = regName.toLowerCase().trim().replace(/\s+/g, "_")
     const userRef = ref(database, `system_users/${username}`)
 
     try {
       const snap = await get(userRef)
       if (snap.exists()) {
+        triggerErrorShake("Username tersebut sudah digunakan. Silakan pilih username lain.")
         toast({ 
           variant: "destructive", 
           title: "Username Sudah Digunakan", 
@@ -362,10 +453,12 @@ export default function LoginPage() {
         addedAt: new Date().toISOString()
       })
 
+      playSound("success", 0.6)
       setIsRegistered(true)
       setRegName("")
       setRegPass("")
-    } catch (error) {
+    } catch {
+      triggerErrorShake("Terjadi kesalahan koneksi saat registrasi akun.")
       toast({ 
         variant: "destructive", 
         title: "Gagal Mendaftar", 
@@ -377,241 +470,703 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full relative flex flex-col justify-between overflow-x-hidden font-sans bg-[#0B3D21]">
-      {/* Background Graphic Layer */}
+    <div className="min-h-[100dvh] w-full relative flex flex-col justify-between overflow-x-hidden font-sans bg-[#042111] text-slate-100 selection:bg-emerald-500 selection:text-white">
+      {/* =========================================================================
+          BACKGROUND GRAPHIC & GLOWING AMBIENT LAYER (Flutter-Style Mesh Blobs)
+          ========================================================================= */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none">
+        {/* Authentic Background Graphic from App Assets */}
         <img 
           src="/bg-simpu-clean.png" 
           alt="Background SIMPU" 
-          className="w-full h-full object-cover object-left md:object-center"
+          className="w-full h-full object-cover object-left md:object-center opacity-30 mix-blend-luminosity filter blur-[0.5px]"
           loading="eager"
         />
-        {/* Soft responsive overlay for mobile readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-[#0B3D21]/95 md:hidden" />
+
+        {/* Ambient Moving Gradient Blobs */}
+        <div 
+          className="absolute -top-32 -left-32 w-96 sm:w-[520px] h-96 sm:h-[520px] rounded-full bg-emerald-500/20 blur-[100px] animate-blob-1"
+          style={{ willChange: "transform" }}
+        />
+        <div 
+          className="absolute top-1/3 -right-24 w-80 sm:w-[480px] h-80 sm:h-[480px] rounded-full bg-emerald-600/25 blur-[110px] animate-blob-2"
+          style={{ willChange: "transform" }}
+        />
+        <div 
+          className="absolute -bottom-36 left-1/3 w-96 sm:w-[500px] h-96 sm:h-[500px] rounded-full bg-amber-400/15 blur-[120px] animate-blob-3"
+          style={{ willChange: "transform" }}
+        />
+
+        {/* Subtle Tech Grid Overlay */}
+        <div 
+          className="absolute inset-0 opacity-[0.035]"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, #ffffff 1px, transparent 0)`,
+            backgroundSize: "28px 28px"
+          }}
+        />
+
+        {/* Vignette / Deepening Edge Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#041a0e] via-transparent to-[#041a0e]/70" />
       </div>
 
-      {/* TOP LEFT HEADER: Official Application Logo & Title (Clean, Enlarge Logo, No Green Background) */}
-      <header className="relative z-30 pt-5 px-5 sm:pt-8 sm:px-10 flex items-center justify-between w-full">
-        <div className="flex items-center gap-3.5 sm:gap-4.5 select-none">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-white p-2 sm:p-2.5 shadow-2xl border-2 border-amber-400 flex items-center justify-center shrink-0 transition-transform hover:scale-105 duration-300">
-            <img 
-              src="/logo.png" 
-              alt="Logo SIMPU" 
-              className="w-full h-full object-contain"
-            />
+      {/* =========================================================================
+          MAIN CONTAINER: 2-COLUMN SPLIT (Desktop) / 1-COLUMN (Mobile)
+          ========================================================================= */}
+      <div className="relative z-10 w-full flex-1 flex flex-col lg:grid lg:grid-cols-12 min-h-[100dvh]">
+        
+        {/* =======================================================================
+            AREA KIRI / VISUAL (Desktop Showcase: Living Animation & Branding)
+            ======================================================================= */}
+        <section className="hidden lg:flex lg:col-span-7 xl:col-span-7 flex-col justify-between p-8 xl:p-14 relative overflow-hidden select-none">
+          {/* Header Branding */}
+          <div className="flex items-center gap-4 animate-entrance-scale">
+            <div className="w-16 h-16 xl:w-20 xl:h-20 rounded-2xl bg-white p-2.5 shadow-2xl border-2 border-amber-400 flex items-center justify-center shrink-0 transition-transform hover:scale-105 duration-300 relative group">
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-amber-400 to-emerald-400 opacity-40 blur-sm group-hover:opacity-75 transition duration-500" />
+              <img 
+                src="/logo.png" 
+                alt="Logo SIMPU" 
+                className="w-full h-full object-contain relative z-10"
+              />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-3xl xl:text-4xl font-black tracking-wider leading-none uppercase text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+                  SIMPU
+                </span>
+                <span className="text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-200">
+                  OFFICIAL
+                </span>
+              </div>
+              <p className="text-xs xl:text-sm font-semibold text-amber-300 tracking-wider uppercase leading-tight mt-1 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
+                Sistem Informasi Manajemen Pelaku Usaha
+              </p>
+              <p className="text-[11px] text-slate-300/80 font-medium tracking-wide">
+                Pemerintah Kota Tanjungpinang • Dinas Koperasi & Usaha Mikro
+              </p>
+            </div>
           </div>
-          <div className="flex flex-col justify-center">
-            <span className="text-2xl sm:text-3xl md:text-4xl font-black tracking-wider leading-none uppercase text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-              SIMPU
-            </span>
-            <span className="text-[11px] sm:text-xs md:text-sm font-black text-amber-300 tracking-wider uppercase leading-tight mt-1 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
-              Sistem Informasi Manajemen Pelaku Usaha
-            </span>
-          </div>
-        </div>
-      </header>
 
-      {/* MAIN CONTENT: Right-aligned Login Section */}
-      <main className="relative z-20 w-full flex-1 flex flex-col items-center justify-center px-4 py-8 md:py-12 lg:pr-16 xl:pr-24 lg:items-end">
-        <div className="w-full max-w-[360px] sm:max-w-[385px] flex flex-col items-center">
-          {/* Greeting text above card */}
-          <div className="text-center mb-6 sm:mb-7 select-none">
-            <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-bold text-white leading-tight tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-              Selamat Datang
+          {/* Centerpiece Visual Illustration with Animated Rings & Orbiting Widgets */}
+          <div className="relative my-auto py-8 flex flex-col items-center justify-center">
+            {/* Center Dynamic Orbit Container */}
+            <div className="relative w-80 h-80 xl:w-96 xl:h-96 flex items-center justify-center">
+              
+              {/* Outer Radiant Orbit Ring */}
+              <div className="absolute inset-0 rounded-full border border-emerald-400/20 border-dashed animate-spin-very-slow" />
+              
+              {/* Mid Glowing Ring */}
+              <div className="absolute inset-8 rounded-full border border-amber-400/30 animate-spin-reverse-slow" />
+
+              {/* Orbital Nodes / Satellites */}
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-amber-400 shadow-[0_0_15px_#fbbf24] animate-spin-very-slow origin-[50%_160px] xl:origin-[50%_192px]" />
+              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-emerald-400 shadow-[0_0_15px_#34d399] animate-spin-reverse-slow origin-[50%_-160px] xl:origin-[50%_-192px]" />
+
+              {/* Central Glowing Shield / Orb */}
+              <div className="relative z-10 w-44 h-44 xl:w-52 xl:h-52 rounded-full bg-gradient-to-tr from-emerald-950 via-[#0a381f] to-emerald-800 p-1.5 shadow-[0_0_60px_rgba(16,185,129,0.35)] border-2 border-emerald-400/40 flex items-center justify-center animate-entrance-scale">
+                <div className="w-full h-full rounded-full bg-gradient-to-b from-[#0e4828] to-[#041a0e] flex flex-col items-center justify-center p-4 relative overflow-hidden group">
+                  {/* Subtle Inner Glow */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/20 via-transparent to-amber-400/10 pointer-events-none" />
+                  
+                  {/* Central Logo Emblem */}
+                  <div className="w-20 h-20 xl:w-24 xl:h-24 rounded-full bg-white/95 p-3 shadow-xl border border-amber-300 flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
+                    <img 
+                      src="/logo.png" 
+                      alt="SIMPU Logo" 
+                      className="w-full h-full object-contain drop-shadow" 
+                    />
+                  </div>
+
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-300 mt-2">
+                    SIMPU KOTA
+                  </span>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="text-[10px] text-emerald-200/90 font-medium">Sistem Terintegrasi</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating Widget 1: Top-Right (Data Terverifikasi) */}
+              <div className="absolute -top-6 -right-8 xl:-right-12 z-20 animate-float-slow">
+                <div className="px-4 py-2.5 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-emerald-500/30 shadow-xl flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div className="text-left">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-white">Validasi NIK/KK</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    </div>
+                    <span className="text-[10px] text-slate-300 font-medium">Tervalidasi Realtime</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating Widget 2: Mid-Left (Perlindungan Sesi) */}
+              <div className="absolute top-1/2 -left-12 xl:-left-16 -translate-y-1/2 z-20 animate-float-delayed">
+                <div className="px-4 py-2.5 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-amber-400/30 shadow-xl flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-5 h-5 text-amber-400" />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-xs font-bold text-white block">Keamanan Berlapis</span>
+                    <span className="text-[10px] text-slate-300 font-medium">Single-Device Lock</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating Widget 3: Bottom-Right (Sinkronisasi Cloud) */}
+              <div className="absolute -bottom-6 -right-6 xl:-right-10 z-20 animate-float-reverse">
+                <div className="px-4 py-2.5 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-emerald-400/30 shadow-xl flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
+                    <Database className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-xs font-bold text-white block">Sinkronisasi Cloud</span>
+                    <span className="text-[10px] text-slate-300 font-medium">Firebase Realtime DB</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tagline & Feature Overview below Centerpiece */}
+            <div className="mt-8 text-center max-w-lg mx-auto animate-entrance-up delay-200">
+              <h2 className="text-xl xl:text-2xl font-extrabold text-white leading-snug drop-shadow-md">
+                Pusat Pendataan & Verifikasi Usaha
+              </h2>
+              <p className="text-xs xl:text-sm text-slate-300/90 leading-relaxed mt-2 font-normal">
+                Sistem pengelolaan data pelaku usaha terpadu dengan integrasi survei lapangan, verifikasi berkas dinas, dan pelaporan absensi terverifikasi.
+              </p>
+
+              {/* Feature Chips */}
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold">
+                  <Cpu className="w-3.5 h-3.5" />
+                  Kecepatan Akses
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold">
+                  <Layers className="w-3.5 h-3.5" />
+                  Multi-Role Manajemen
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-amber-500/30 text-amber-300 text-[11px] font-semibold">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  Monitoring Akurat
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Left: Security indicator */}
+          <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium border-t border-emerald-800/40 pt-4">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Koneksi Aman Terenkripsi SSL 256-bit</span>
+            </div>
+            <span>v0.1.1 Production</span>
+          </div>
+        </section>
+
+        {/* =======================================================================
+            AREA KANAN / LOGIN (Interactive Animated Card & Form)
+            ======================================================================= */}
+        <section className="flex-1 lg:col-span-5 xl:col-span-5 flex flex-col items-center justify-center p-4 sm:p-8 lg:p-10 relative z-20">
+          
+          {/* Mobile Top Header (Visible on Mobile & Tablet only) */}
+          <div className="lg:hidden w-full max-w-[420px] flex flex-col items-center text-center mb-6 pt-4 animate-entrance-scale">
+            <div className="w-16 h-16 rounded-full bg-white p-2.5 shadow-2xl border-2 border-amber-400 flex items-center justify-center shrink-0 mb-3 hover:scale-105 transition-transform duration-300">
+              <img 
+                src="/logo.png" 
+                alt="Logo SIMPU" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <h1 className="text-2xl font-black tracking-wider leading-none uppercase text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+              SIMPU
             </h1>
-            <p className="text-xl sm:text-2xl lg:text-[26px] font-semibold text-amber-300 leading-tight tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] mt-1">
-              di Aplikasi SIMPU
+            <p className="text-[11px] font-bold text-amber-300 tracking-wider uppercase mt-1 drop-shadow">
+              Sistem Informasi Manajemen Pelaku Usaha
             </p>
           </div>
 
-          {/* Solid White Card: Tampak Sangat Jelas & Tegas */}
-          <div className="w-full bg-white rounded-2xl sm:rounded-[24px] shadow-[0_25px_60px_rgba(0,0,0,0.4)] p-6 sm:p-8 border border-slate-100 ring-1 ring-slate-900/5">
+          {/* MAIN LOGIN CARD CONTAINER (Glassmorphism + Responsive Shadow + Shake on Error) */}
+          <div 
+            className={`w-full max-w-[420px] sm:max-w-[440px] login-glass-card rounded-3xl p-6 sm:p-9 border border-white/60 dark:border-slate-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden transition-all duration-300 ${
+              hasError ? "animate-shake" : "animate-entrance-up"
+            }`}
+          >
+            {/* Top Glowing Ambient Border Ribbon */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-amber-400 to-green-600" />
+
+            {/* View 1: Pendaftaran Berhasil */}
             {isRegistered ? (
-              /* Success State */
-              <div className="text-center py-4 space-y-4 animate-in fade-in zoom-in-95 duration-300">
-                <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-700 shadow-inner">
-                  <CheckCircle2 className="w-8 h-8" />
+              <div className="text-center py-6 space-y-5 animate-entrance-scale">
+                <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/60 rounded-full flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400 shadow-inner ring-8 ring-emerald-50 dark:ring-emerald-900/30 animate-success-ripple">
+                  <CheckCircle2 className="w-10 h-10" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">
                     Pendaftaran Berhasil
                   </h3>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                    Akun Anda telah terdaftar dalam sistem. Menunggu aktivasi role oleh Administrator sebelum dapat digunakan.
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+                    Akun Anda telah tersimpan dengan status <span className="font-bold text-amber-600 dark:text-amber-400">Menunggu (Pending)</span>. Silakan hubungi Administrator untuk pemberian izin role akses sebelum dapat login.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => {
+                    playSound("click", 0.4)
                     setIsRegistered(false)
                     setIsRegisteringView(false)
                   }}
-                  className="w-full h-11 sm:h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-12 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 active:scale-[0.98] text-white font-bold text-sm shadow-lg shadow-emerald-900/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  <span>Kembali ke Login</span>
+                  <span>Kembali ke Halaman Login</span>
                 </button>
               </div>
             ) : isRegisteringView ? (
-              /* Registration Form */
-              <form onSubmit={handleRegister} className="space-y-4 animate-in fade-in duration-300">
-                <div className="text-left mb-2">
-                  <h3 className="text-lg font-bold text-slate-900">
+              /* View 2: Registration Form (Daftar Akun Petugas) */
+              <form onSubmit={handleRegister} className="space-y-4 animate-entrance-scale">
+                <div className="text-left mb-3">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold mb-2">
+                    <UserPlus className="w-3.5 h-3.5" />
+                    Registrasi Petugas Baru
+                  </div>
+                  <h3 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                     Daftar Akun Petugas
                   </h3>
-                  <p className="text-xs text-slate-500">
-                    Silakan isi identitas username dan kata sandi baru.
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Silakan isi nama/username dan kata sandi untuk pengajuan akses petugas.
                   </p>
                 </div>
 
-                <div>
-                  <input
-                    type="text"
-                    value={regName}
-                    onChange={(e) => setRegName(e.target.value)}
-                    placeholder="Username Baru"
-                    required
-                    className="w-full h-11 sm:h-12 px-4 rounded-xl bg-[#F1F5F9] border border-[#CBD5E1] text-slate-900 placeholder:text-slate-400 font-semibold text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 transition-all"
-                  />
+                {/* Error Banner if registration fails */}
+                {errorMessage && (
+                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/80 text-rose-800 dark:text-rose-200 text-xs flex items-start gap-2.5 animate-in fade-in">
+                    <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                    <span className="flex-1 font-medium">{errorMessage}</span>
+                  </div>
+                )}
+
+                {/* Input Username Baru */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1">
+                    <span>Username Baru</span>
+                    <span className="text-emerald-600 dark:text-emerald-400">*</span>
+                  </label>
+                  <div className={`login-input-wrapper flex items-center h-12 px-3.5 rounded-2xl bg-slate-100/80 dark:bg-slate-800/70 border ${
+                    focusedField === "regName" 
+                      ? "border-emerald-600 ring-4 ring-emerald-500/15 bg-white dark:bg-slate-800" 
+                      : "border-slate-200 dark:border-slate-700"
+                  }`}>
+                    <User className={`w-4 h-4 transition-colors ${
+                      focusedField === "regName" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"
+                    }`} />
+                    <input
+                      type="text"
+                      value={regName}
+                      onChange={(e) => setRegName(e.target.value)}
+                      onFocus={() => setFocusedField("regName")}
+                      onBlur={() => setFocusedField(null)}
+                      placeholder="contoh: budi_survey"
+                      required
+                      className="w-full bg-transparent border-none px-3 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <input
-                    type="password"
-                    value={regPass}
-                    onChange={(e) => setRegPass(e.target.value)}
-                    placeholder="Kata Sandi Baru"
-                    required
-                    className="w-full h-11 sm:h-12 px-4 rounded-xl bg-[#F1F5F9] border border-[#CBD5E1] text-slate-900 placeholder:text-slate-400 font-semibold text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 transition-all"
-                  />
+                {/* Input Kata Sandi Baru */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1">
+                    <span>Kata Sandi Baru</span>
+                    <span className="text-emerald-600 dark:text-emerald-400">*</span>
+                  </label>
+                  <div className={`login-input-wrapper flex items-center h-12 px-3.5 rounded-2xl bg-slate-100/80 dark:bg-slate-800/70 border ${
+                    focusedField === "regPass" 
+                      ? "border-emerald-600 ring-4 ring-emerald-500/15 bg-white dark:bg-slate-800" 
+                      : "border-slate-200 dark:border-slate-700"
+                  }`}>
+                    <Lock className={`w-4 h-4 transition-colors ${
+                      focusedField === "regPass" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"
+                    }`} />
+                    <input
+                      type="password"
+                      value={regPass}
+                      onChange={(e) => setRegPass(e.target.value)}
+                      onFocus={() => setFocusedField("regPass")}
+                      onBlur={() => setFocusedField(null)}
+                      placeholder="Minimal 6 karakter"
+                      required
+                      className="w-full bg-transparent border-none px-3 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
+                    />
+                  </div>
                 </div>
 
                 <div className="pt-2 space-y-2">
                   <button
                     type="submit"
                     disabled={registering}
-                    className="w-full h-11 sm:h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold text-sm sm:text-base shadow-lg shadow-emerald-950/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full h-12 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 active:scale-[0.98] text-white font-bold text-sm shadow-lg shadow-emerald-950/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                   >
                     {registering ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Mendaftarkan...</span>
+                        <span>Mendaftarkan Akun...</span>
                       </>
                     ) : (
-                      "Simpan Pendaftaran"
+                      <>
+                        <span>Ajukan Pendaftaran</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
                     )}
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setIsRegisteringView(false)}
-                    className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+                    onClick={() => {
+                      playSound("click", 0.4)
+                      setIsRegisteringView(false)
+                      setErrorMessage(null)
+                    }}
+                    className="w-full py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors"
                   >
-                    Batal & Kembali
+                    Batal & Kembali ke Login
                   </button>
                 </div>
               </form>
             ) : (
-              /* Standard Login Form (No Captcha) */
-              <form onSubmit={handleAuth} className="space-y-4 animate-in fade-in duration-300">
-                {/* Username Input */}
-                <div>
-                  <input
-                    id="identifier"
-                    type="text"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="Username / ID"
-                    autoComplete="username"
-                    required
-                    className="w-full h-11 sm:h-12 px-4 rounded-xl bg-[#F1F5F9] border border-[#CBD5E1] text-slate-900 placeholder:text-slate-400 font-semibold text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 transition-all"
-                  />
+              /* View 3: Standard Interactive Login Form */
+              <form onSubmit={handleAuth} className="space-y-4">
+                
+                {/* Form Header */}
+                <div className="text-left mb-1 animate-entrance-up delay-50">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                      Portal Masuk Petugas
+                    </span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    Selamat Datang
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    Silakan masukkan akun Anda untuk mengakses sistem SIMPU.
+                  </p>
                 </div>
 
-                {/* Password Input */}
-                <div className="relative">
-                  <input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                    required
-                    className="w-full h-11 sm:h-12 px-4 pr-11 rounded-xl bg-[#F1F5F9] border border-[#CBD5E1] text-slate-900 placeholder:text-slate-400 font-semibold text-sm sm:text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    tabIndex={-1}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
-                    title={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                {/* Error Banner on incorrect credentials */}
+                {errorMessage && (
+                  <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-800 dark:text-rose-200 text-xs flex items-start gap-2.5 animate-in fade-in slide-in-from-top-1">
+                    <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <span className="font-bold block">Autentikasi Gagal</span>
+                      <span className="font-medium">{errorMessage}</span>
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={() => setErrorMessage(null)}
+                      className="text-rose-500 hover:text-rose-700 p-0.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Field 1: Username / ID Input (With Interactive Focus & Glowing Ring) */}
+                <div className="space-y-1 animate-entrance-up delay-100">
+                  <label 
+                    htmlFor="identifier"
+                    className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center justify-between"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                    <span className="flex items-center gap-1">
+                      <span>Username / ID</span>
+                      <span className="text-emerald-600 dark:text-emerald-400">*</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+                      Contoh: agus, dewi_survey
+                    </span>
+                  </label>
+                  <div className={`login-input-wrapper flex items-center h-12 px-3.5 rounded-2xl bg-slate-100/90 dark:bg-slate-800/80 border transition-all duration-200 ${
+                    focusedField === "identifier" 
+                      ? "border-emerald-600 ring-4 ring-emerald-500/20 bg-white dark:bg-slate-800 shadow-sm" 
+                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                  }`}>
+                    <User className={`w-4 h-4 transition-colors duration-200 shrink-0 ${
+                      focusedField === "identifier" ? "text-emerald-600 dark:text-emerald-400 scale-110" : "text-slate-400"
+                    }`} />
+                    <input
+                      id="identifier"
+                      type="text"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      onFocus={() => setFocusedField("identifier")}
+                      onBlur={() => setFocusedField(null)}
+                      placeholder="Masukkan username Anda"
+                      autoComplete="username"
+                      required
+                      disabled={loading || loginSuccess}
+                      className="w-full bg-transparent border-none px-3 text-sm sm:text-base font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none disabled:opacity-60"
+                    />
+                    {identifier && !loading && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIdentifier("")
+                          playSound("click", 0.2)
+                        }}
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-full transition-colors"
+                        title="Hapus username"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {/* Login Action Button (Hanya Kuning & Hijau Theme: Solid Vibrant Emerald Green) */}
-                <div className="pt-2">
+                {/* Field 2: Password Input (With Animated Spinning Eye Icon) */}
+                <div className="space-y-1 animate-entrance-up delay-150">
+                  <div className="flex items-center justify-between">
+                    <label 
+                      htmlFor="password"
+                      className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1"
+                    >
+                      <span>Kata Sandi</span>
+                      <span className="text-emerald-600 dark:text-emerald-400">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPasswordModal(true)}
+                      className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 hover:underline transition-colors cursor-pointer"
+                    >
+                      Lupa kata sandi?
+                    </button>
+                  </div>
+                  <div className={`login-input-wrapper flex items-center h-12 px-3.5 rounded-2xl bg-slate-100/90 dark:bg-slate-800/80 border transition-all duration-200 ${
+                    focusedField === "password" 
+                      ? "border-emerald-600 ring-4 ring-emerald-500/20 bg-white dark:bg-slate-800 shadow-sm" 
+                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                  }`}>
+                    <Lock className={`w-4 h-4 transition-colors duration-200 shrink-0 ${
+                      focusedField === "password" ? "text-emerald-600 dark:text-emerald-400 scale-110" : "text-slate-400"
+                    }`} />
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onFocus={() => setFocusedField("password")}
+                      onBlur={() => setFocusedField(null)}
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      required
+                      disabled={loading || loginSuccess}
+                      className="w-full bg-transparent border-none px-3 text-sm sm:text-base font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none disabled:opacity-60"
+                    />
+                    {/* Spinning Eye Toggle Button (Video Reference) */}
+                    <button
+                      type="button"
+                      onClick={handleTogglePassword}
+                      tabIndex={-1}
+                      className={`text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 p-1.5 rounded-full transition-colors cursor-pointer ${
+                        isEyeSpinning ? "animate-eye-spin" : ""
+                      }`}
+                      title={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Remember Me Checkbox */}
+                <div className="flex items-center justify-between pt-1 animate-entrance-up delay-200">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => {
+                        setRememberMe(e.target.checked)
+                        playSound("click", 0.2)
+                      }}
+                      className="w-4 h-4 rounded text-emerald-600 bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer"
+                    />
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      Ingat username saya
+                    </span>
+                  </label>
+                  <span className="text-[10px] text-slate-400 font-medium hidden sm:inline">
+                    Perangkat Aman
+                  </span>
+                </div>
+
+                {/* Morphing Login Button (Idle -> Loading Spinner -> Success Checkmark) */}
+                <div className="pt-2 animate-entrance-up delay-250">
                   <button
                     type="submit"
-                    disabled={loading || !identifier.trim() || !password}
-                    className="w-full h-11 sm:h-12 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 active:scale-[0.99] text-white font-bold text-base shadow-lg shadow-emerald-950/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    disabled={loading || loginSuccess || !identifier.trim() || !password}
+                    className={`w-full h-12 rounded-2xl font-bold text-sm sm:text-base transition-all duration-300 flex items-center justify-center gap-2 relative overflow-hidden cursor-pointer ${
+                      loginSuccess
+                        ? "bg-emerald-500 text-white shadow-xl shadow-emerald-500/30 scale-[1.01]"
+                        : "bg-gradient-to-r from-emerald-600 via-emerald-700 to-green-700 hover:from-emerald-700 hover:to-green-800 active:scale-[0.98] text-white shadow-lg shadow-emerald-950/25 disabled:opacity-60 disabled:cursor-not-allowed"
+                    }`}
                   >
-                    {loading ? (
-                      <>
+                    {/* Shimmer light sweep animation */}
+                    {!loading && !loginSuccess && (
+                      <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-btn-shimmer pointer-events-none" />
+                    )}
+
+                    {loginSuccess ? (
+                      <span className="inline-flex items-center gap-2 animate-entrance-scale">
+                        <CheckCircle2 className="w-5 h-5" />
+                        <span>Berhasil Masuk!</span>
+                      </span>
+                    ) : loading ? (
+                      <span className="inline-flex items-center gap-2">
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Memproses...</span>
-                      </>
+                        <span>Memverifikasi Kredensial...</span>
+                      </span>
                     ) : (
-                      "Login"
+                      <span className="inline-flex items-center gap-2 group">
+                        <span>Masuk ke Sistem</span>
+                        <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                      </span>
                     )}
                   </button>
                 </div>
 
-                {/* Secondary navigation & register link */}
-                <div className="pt-3 border-t border-slate-100 flex flex-col gap-2.5">
-                  <div className="flex items-center justify-between text-xs font-bold">
+                {/* Secondary Links & Divider */}
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3 animate-entrance-up delay-300">
+                  <div className="flex items-center justify-between gap-2">
                     <button
                       type="button"
-                      onClick={() => router.push('/pendaftaran')}
-                      className="text-emerald-700 hover:text-emerald-800 transition-colors flex items-center gap-1.5"
+                      onClick={() => {
+                        playSound("click", 0.3)
+                        router.push("/pendaftaran")
+                      }}
+                      className="flex-1 py-2 px-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200/80 dark:border-slate-700/80 text-emerald-700 dark:text-emerald-400 transition-all text-[11px] font-bold flex items-center justify-center gap-1.5 active:scale-95"
                     >
-                      <UserPlus className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Daftar Pelaku Usaha</span>
+                      <UserPlus className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <span className="truncate">Daftar Pelaku Usaha</span>
                     </button>
+
                     <button
                       type="button"
-                      onClick={() => router.push('/cek-data')}
-                      className="text-amber-700 hover:text-amber-800 transition-colors flex items-center gap-1.5"
+                      onClick={() => {
+                        playSound("click", 0.3)
+                        router.push("/cek-data")
+                      }}
+                      className="flex-1 py-2 px-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-slate-200/80 dark:border-slate-700/80 text-amber-700 dark:text-amber-400 transition-all text-[11px] font-bold flex items-center justify-center gap-1.5 active:scale-95"
                     >
-                      <SearchCheck className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Cek Data Publik</span>
+                      <SearchCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                      <span className="truncate">Cek Data Publik</span>
                     </button>
                   </div>
 
+                  {/* Staff Registration Link */}
                   <div className="text-center pt-1">
                     <button
                       type="button"
-                      onClick={() => setIsRegisteringView(true)}
-                      className="text-[11px] text-slate-400 hover:text-emerald-700 transition-colors"
+                      onClick={() => {
+                        playSound("click", 0.3)
+                        setIsRegisteringView(true)
+                        setErrorMessage(null)
+                      }}
+                      className="text-xs text-slate-500 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors inline-flex items-center gap-1"
                     >
-                      Belum punya akun petugas? <span className="font-semibold text-slate-700 underline hover:text-emerald-700">Daftar di sini</span>
+                      <span>Belum punya akun petugas?</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200 underline decoration-emerald-500/50 hover:decoration-emerald-500">
+                        Daftar di sini
+                      </span>
                     </button>
                   </div>
                 </div>
               </form>
             )}
           </div>
-        </div>
-      </main>
 
-      {/* FOOTER: Subtle copyright / info */}
-      <footer className="relative z-30 pb-4 px-6 text-center lg:text-right lg:pr-16 xl:pr-24 select-none">
-        <p className="text-[11px] text-white/80 font-medium drop-shadow">
-          © {new Date().getFullYear()} SIMPU. All rights reserved.
-        </p>
-      </footer>
+          {/* Footer Copyright on Bottom of Login */}
+          <div className="mt-6 text-center select-none animate-entrance-up delay-350">
+            <p className="text-xs text-slate-300/80 font-medium drop-shadow">
+              © {new Date().getFullYear()} SIMPU Kota Tanjungpinang. All rights reserved.
+            </p>
+          </div>
+        </section>
+      </div>
+
+      {/* =========================================================================
+          MODAL: BANTUAN LUPA KATA SANDI (Official Helpdesk Contact)
+          ========================================================================= */}
+      {showForgotPasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 animate-entrance-scale">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                <HelpCircle className="w-5 h-5" />
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                  Pemulihan Kata Sandi
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowForgotPasswordModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 space-y-3 leading-relaxed">
+              <p>
+                Untuk menjaga keamanan dan integritas data UMKM, pemulihan akun petugas dilakukan secara terverifikasi melalui Administrator Resmi:
+              </p>
+              
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 space-y-2">
+                <div className="flex items-start gap-2.5">
+                  <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-slate-900 dark:text-white block">
+                      Dinas Tenaga Kerja, Koperasi & Usaha Mikro
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Kota Tanjungpinang • Bidang Pemberdayaan UMKM
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2.5 pt-1">
+                  <PhoneCall className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-slate-900 dark:text-white block">
+                      Helpdesk Administrator SIMPU
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Silakan hubungi Superadmin / Koordinator Lapangan Anda untuk reset password.
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-slate-400">
+                * Pastikan Anda menyebutkan nama lengkap dan NIK resmi yang terdaftar saat mengajukan permohonan reset password.
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setShowForgotPasswordModal(false)}
+                className="w-full h-11 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold text-xs transition-colors"
+              >
+                Tutup Panduan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
