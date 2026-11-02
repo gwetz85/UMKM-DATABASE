@@ -24,11 +24,7 @@ import {
   PhoneCall,
   Check,
   Building2,
-  Database,
-  Layers,
-  ChevronRight,
-  TrendingUp,
-  Cpu
+  ChevronRight
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { logActivity, getDeviceType } from "@/lib/logger"
@@ -547,112 +543,32 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Centerpiece Visual Illustration with Animated Rings & Orbiting Widgets */}
+          {/* Centerpiece: Clean Elegant Animated Logo Emblem */}
           <div className="relative my-auto py-8 flex flex-col items-center justify-center">
             {/* Center Dynamic Orbit Container */}
-            <div className="relative w-80 h-80 xl:w-96 xl:h-96 flex items-center justify-center">
+            <div className="relative w-80 h-80 xl:w-[420px] xl:h-[420px] flex items-center justify-center">
               
               {/* Outer Radiant Orbit Ring */}
               <div className="absolute inset-0 rounded-full border border-emerald-400/20 border-dashed animate-spin-very-slow" />
               
               {/* Mid Glowing Ring */}
-              <div className="absolute inset-8 rounded-full border border-amber-400/30 animate-spin-reverse-slow" />
+              <div className="absolute inset-8 xl:inset-10 rounded-full border border-amber-400/25 animate-spin-reverse-slow" />
 
-              {/* Orbital Nodes / Satellites */}
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-amber-400 shadow-[0_0_15px_#fbbf24] animate-spin-very-slow origin-[50%_160px] xl:origin-[50%_192px]" />
-              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-emerald-400 shadow-[0_0_15px_#34d399] animate-spin-reverse-slow origin-[50%_-160px] xl:origin-[50%_-192px]" />
-
-              {/* Central Glowing Shield / Orb */}
-              <div className="relative z-10 w-44 h-44 xl:w-52 xl:h-52 rounded-full bg-gradient-to-tr from-emerald-950 via-[#0a381f] to-emerald-800 p-1.5 shadow-[0_0_60px_rgba(16,185,129,0.35)] border-2 border-emerald-400/40 flex items-center justify-center animate-entrance-scale">
-                <div className="w-full h-full rounded-full bg-gradient-to-b from-[#0e4828] to-[#041a0e] flex flex-col items-center justify-center p-4 relative overflow-hidden group">
+              {/* Central Glowing Shield / Orb with Official SIMPU Logo */}
+              <div className="relative z-10 w-52 h-52 xl:w-64 xl:h-64 rounded-full bg-gradient-to-tr from-emerald-950 via-[#0a381f] to-emerald-800 p-2 shadow-[0_0_80px_rgba(16,185,129,0.35)] border-2 border-emerald-400/40 flex items-center justify-center animate-entrance-scale">
+                <div className="w-full h-full rounded-full bg-gradient-to-b from-[#0e4828] to-[#041a0e] flex items-center justify-center p-4 relative overflow-hidden group">
                   {/* Subtle Inner Glow */}
                   <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/20 via-transparent to-amber-400/10 pointer-events-none" />
                   
                   {/* Central Logo Emblem */}
-                  <div className="w-20 h-20 xl:w-24 xl:h-24 rounded-full bg-white/95 p-3 shadow-xl border border-amber-300 flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
+                  <div className="w-32 h-32 xl:w-40 xl:h-40 rounded-full bg-white p-3.5 shadow-2xl border-2 border-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform duration-500 relative z-10">
                     <img 
                       src="/logo.png" 
                       alt="SIMPU Logo" 
                       className="w-full h-full object-contain drop-shadow" 
                     />
                   </div>
-
-                  <span className="text-xs font-bold uppercase tracking-wider text-amber-300 mt-2">
-                    SIMPU KOTA
-                  </span>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                    <span className="text-[10px] text-emerald-200/90 font-medium">Sistem Terintegrasi</span>
-                  </div>
                 </div>
-              </div>
-
-              {/* Floating Widget 1: Top-Right (Data Terverifikasi) */}
-              <div className="absolute -top-6 -right-8 xl:-right-12 z-20 animate-float-slow">
-                <div className="px-4 py-2.5 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-emerald-500/30 shadow-xl flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <div className="text-left">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-white">Validasi NIK/KK</span>
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    </div>
-                    <span className="text-[10px] text-slate-300 font-medium">Tervalidasi Realtime</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating Widget 2: Mid-Left (Perlindungan Sesi) */}
-              <div className="absolute top-1/2 -left-12 xl:-left-16 -translate-y-1/2 z-20 animate-float-delayed">
-                <div className="px-4 py-2.5 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-amber-400/30 shadow-xl flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0">
-                    <ShieldCheck className="w-5 h-5 text-amber-400" />
-                  </div>
-                  <div className="text-left">
-                    <span className="text-xs font-bold text-white block">Keamanan Berlapis</span>
-                    <span className="text-[10px] text-slate-300 font-medium">Single-Device Lock</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating Widget 3: Bottom-Right (Sinkronisasi Cloud) */}
-              <div className="absolute -bottom-6 -right-6 xl:-right-10 z-20 animate-float-reverse">
-                <div className="px-4 py-2.5 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-emerald-400/30 shadow-xl flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
-                    <Database className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <div className="text-left">
-                    <span className="text-xs font-bold text-white block">Sinkronisasi Cloud</span>
-                    <span className="text-[10px] text-slate-300 font-medium">Firebase Realtime DB</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Tagline & Feature Overview below Centerpiece */}
-            <div className="mt-8 text-center max-w-lg mx-auto animate-entrance-up delay-200">
-              <h2 className="text-xl xl:text-2xl font-extrabold text-white leading-snug drop-shadow-md">
-                Pusat Pendataan & Verifikasi Usaha
-              </h2>
-              <p className="text-xs xl:text-sm text-slate-300/90 leading-relaxed mt-2 font-normal">
-                Sistem pengelolaan data pelaku usaha terpadu dengan integrasi survei lapangan, verifikasi berkas dinas, dan pelaporan absensi terverifikasi.
-              </p>
-
-              {/* Feature Chips */}
-              <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold">
-                  <Cpu className="w-3.5 h-3.5" />
-                  Kecepatan Akses
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold">
-                  <Layers className="w-3.5 h-3.5" />
-                  Multi-Role Manajemen
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-amber-500/30 text-amber-300 text-[11px] font-semibold">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  Monitoring Akurat
-                </span>
               </div>
             </div>
           </div>
