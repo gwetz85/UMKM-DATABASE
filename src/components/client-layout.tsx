@@ -415,11 +415,11 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
               <main className={cn(
                 "flex-1 bg-white dark:bg-slate-900 [[data-theme=liquid-glass]_&]:bg-transparent print:bg-white relative z-0 isolate flex flex-col custom-scrollbar",
-                isLoginPage ? "overflow-y-auto overflow-x-hidden" : isPortalSurveyPage ? "overflow-y-auto overflow-x-hidden" : isSpecialFullscreenPage ? "overflow-hidden" : "overflow-y-auto"
+                isLoginPage ? "overflow-hidden" : isPortalSurveyPage ? "overflow-y-auto overflow-x-hidden" : isSpecialFullscreenPage ? "overflow-hidden" : "overflow-y-auto"
               )}>
                 <div key={pathname} className={cn(
                   "w-full relative z-0 motion-page animate-in fade-in slide-in-from-bottom-1 duration-200 ease-smooth motion-reduce:animate-none",
-                  isLoginPage ? "min-h-full flex-1 flex flex-col p-0" : 
+                  isLoginPage ? "h-full max-h-[100dvh] flex-1 flex flex-col p-0 overflow-hidden" : 
                   isPortalSurveyPage ? "p-0 min-h-full flex-1 flex flex-col" :
                   isSpecialFullscreenPage ? "p-0 min-h-full h-full max-h-full flex-1 flex flex-col overflow-hidden" :
                   isDaftarHadirPage ? "p-0 min-h-full w-full max-w-none" :

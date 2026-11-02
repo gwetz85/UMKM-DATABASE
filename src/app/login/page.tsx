@@ -466,7 +466,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full relative flex flex-col justify-between overflow-x-hidden font-sans bg-[#042111] text-slate-100 selection:bg-emerald-500 selection:text-white">
+    <div className="h-[100dvh] max-h-[100dvh] w-full relative flex flex-col justify-between overflow-hidden font-sans bg-[#042111] text-slate-100 selection:bg-emerald-500 selection:text-white select-none">
       {/* =========================================================================
           BACKGROUND GRAPHIC & GLOWING AMBIENT LAYER (Flutter-Style Mesh Blobs)
           ========================================================================= */}
@@ -507,47 +507,47 @@ export default function LoginPage() {
       </div>
 
       {/* =========================================================================
-          MAIN CONTAINER: 2-COLUMN SPLIT (Desktop) / 1-COLUMN (Mobile)
+          MAIN CONTAINER: 2-COLUMN SPLIT (Desktop) / 1-COLUMN (Mobile) - FIT NO SCROLL
           ========================================================================= */}
-      <div className="relative z-10 w-full flex-1 flex flex-col lg:grid lg:grid-cols-12 min-h-[100dvh]">
+      <div className="relative z-10 w-full flex-1 min-h-0 flex flex-col lg:grid lg:grid-cols-12 overflow-hidden">
         
         {/* =======================================================================
             AREA KIRI / VISUAL (Desktop Showcase: Living Animation & Branding)
             ======================================================================= */}
-        <section className="hidden lg:flex lg:col-span-7 xl:col-span-7 flex-col justify-center items-center p-8 xl:p-14 relative overflow-hidden select-none">
+        <section className="hidden lg:flex lg:col-span-7 xl:col-span-7 flex-col justify-center items-center p-4 xl:p-8 relative overflow-hidden select-none min-h-0 h-full">
           {/* Centerpiece: Enriched & Enlarged Hero Animated Logo Emblem */}
           <div className="relative flex flex-col items-center justify-center my-auto">
             {/* Dynamic Orbit & Aura Container */}
-            <div className="relative w-[440px] h-[440px] xl:w-[560px] xl:h-[560px] flex items-center justify-center">
+            <div className="relative w-[320px] h-[320px] sm:w-[380px] sm:h-[380px] xl:w-[460px] xl:h-[460px] max-h-[60vh] max-w-[60vh] flex items-center justify-center">
               
               {/* Radar Wave Pulse Ring (Expanding Energy Wave) */}
-              <div className="absolute inset-4 rounded-full border border-emerald-400/40 animate-radar-ping pointer-events-none" />
+              <div className="absolute inset-3 rounded-full border border-emerald-400/40 animate-radar-ping pointer-events-none" />
 
               {/* Ambient Glowing Halo Behind Logo */}
-              <div className="absolute w-72 h-72 xl:w-96 xl:h-96 rounded-full bg-gradient-to-tr from-emerald-500/30 via-emerald-400/20 to-amber-400/30 blur-2xl animate-aura-pulse pointer-events-none" />
+              <div className="absolute w-64 h-64 xl:w-88 xl:h-88 rounded-full bg-gradient-to-tr from-emerald-500/30 via-emerald-400/20 to-amber-400/30 blur-2xl animate-aura-pulse pointer-events-none" />
 
               {/* Outer Dashed Neon Orbit Ring (Spinning Clockwise) */}
               <div className="absolute inset-0 rounded-full border-2 border-emerald-400/30 border-dashed animate-spin-very-slow pointer-events-none" />
               
               {/* Mid Amber/Gold Ring (Spinning Counter-Clockwise with Satellites) */}
-              <div className="absolute inset-10 xl:inset-14 rounded-full border-2 border-amber-400/35 animate-spin-reverse-slow pointer-events-none">
+              <div className="absolute inset-8 xl:inset-12 rounded-full border-2 border-amber-400/35 animate-spin-reverse-slow pointer-events-none">
                 {/* Glowing Satellite Nodes on Mid Ring */}
-                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-amber-400 shadow-[0_0_18px_#fbbf24] border border-white/60" />
-                <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-emerald-400 shadow-[0_0_18px_#34d399] border border-white/60" />
+                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-amber-400 shadow-[0_0_18px_#fbbf24] border border-white/60" />
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-emerald-400 shadow-[0_0_18px_#34d399] border border-white/60" />
               </div>
 
               {/* Inner Pulsing Accent Ring */}
-              <div className="absolute inset-20 xl:inset-28 rounded-full border border-emerald-300/30 border-dotted animate-spin-very-slow pointer-events-none" />
+              <div className="absolute inset-16 xl:inset-22 rounded-full border border-emerald-300/30 border-dotted animate-spin-very-slow pointer-events-none" />
 
               {/* Main Floating Shield / Disc with Snug Green Boundary */}
-              <div className="relative z-10 w-72 h-72 sm:w-80 sm:h-80 xl:w-[400px] xl:h-[400px] rounded-full p-2.5 sm:p-3 bg-gradient-to-tr from-emerald-950 via-[#0a381f] to-emerald-800 shadow-[0_0_90px_rgba(16,185,129,0.5)] border-2 border-emerald-400/60 flex items-center justify-center animate-hero-float">
+              <div className="relative z-10 w-60 h-60 sm:w-68 sm:h-68 xl:w-80 xl:h-80 max-h-[50vh] max-w-[50vh] rounded-full p-2 sm:p-2.5 bg-gradient-to-tr from-emerald-950 via-[#0a381f] to-emerald-800 shadow-[0_0_80px_rgba(16,185,129,0.5)] border-2 border-emerald-400/60 flex items-center justify-center animate-hero-float">
                 {/* Snug Emerald Inner Boundary */}
-                <div className="w-full h-full rounded-full bg-gradient-to-b from-[#0e4828] to-[#041a0e] p-2 sm:p-2.5 flex items-center justify-center relative overflow-hidden group shadow-2xl">
+                <div className="w-full h-full rounded-full bg-gradient-to-b from-[#0e4828] to-[#041a0e] p-1.5 sm:p-2 flex items-center justify-center relative overflow-hidden group shadow-2xl">
                   {/* Subtle Inner Glow */}
                   <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/30 via-transparent to-amber-400/20 pointer-events-none" />
 
                   {/* Central Pure White Logo Disc - Fills snuggly up to the green border */}
-                  <div className="w-full h-full rounded-full bg-white p-6 sm:p-7 xl:p-9 shadow-2xl border-[3.5px] border-amber-400 flex items-center justify-center group-hover:scale-[1.02] transition-transform duration-500 relative z-10 overflow-hidden">
+                  <div className="w-full h-full rounded-full bg-white p-5 sm:p-6 xl:p-8 shadow-2xl border-[3.5px] border-amber-400 flex items-center justify-center group-hover:scale-[1.02] transition-transform duration-500 relative z-10 overflow-hidden">
                     {/* Light Sweep Reflection Sheen */}
                     <div className="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/50 to-transparent animate-logo-shine pointer-events-none" />
 
@@ -567,28 +567,28 @@ export default function LoginPage() {
         {/* =======================================================================
             AREA KANAN / LOGIN (Interactive Animated Card & Form)
             ======================================================================= */}
-        <section className="flex-1 lg:col-span-5 xl:col-span-5 flex flex-col items-center justify-center p-4 sm:p-8 lg:p-10 relative z-20">
+        <section className="flex-1 min-h-0 h-full lg:col-span-5 xl:col-span-5 flex flex-col items-center justify-center p-3 sm:p-5 lg:p-6 relative z-20 overflow-hidden">
           
           {/* Mobile Top Header (Visible on Mobile & Tablet only) */}
-          <div className="lg:hidden w-full max-w-[420px] flex flex-col items-center text-center mb-6 pt-4 animate-entrance-scale">
-            <div className="w-16 h-16 rounded-full bg-white p-2.5 shadow-2xl border-2 border-amber-400 flex items-center justify-center shrink-0 mb-3 hover:scale-105 transition-transform duration-300">
+          <div className="lg:hidden w-full max-w-[400px] flex flex-col items-center text-center mb-3 pt-2 animate-entrance-scale shrink-0">
+            <div className="w-12 h-12 rounded-full bg-white p-2 shadow-xl border-2 border-amber-400 flex items-center justify-center shrink-0 mb-1.5 hover:scale-105 transition-transform duration-300">
               <img 
                 src="/logo.png" 
                 alt="Logo SIMPU" 
                 className="w-full h-full object-contain"
               />
             </div>
-            <h1 className="text-2xl font-black tracking-wider leading-none uppercase text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+            <h1 className="text-xl font-black tracking-wider leading-none uppercase text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
               SIMPU
             </h1>
-            <p className="text-[11px] font-bold text-amber-300 tracking-wider uppercase mt-1 drop-shadow">
+            <p className="text-[10px] font-bold text-amber-300 tracking-wider uppercase mt-0.5 drop-shadow">
               Sistem Informasi Manajemen Pelaku Usaha
             </p>
           </div>
 
           {/* MAIN LOGIN CARD CONTAINER (Glassmorphism + Responsive Shadow + Shake on Error) */}
           <div 
-            className={`w-full max-w-[420px] sm:max-w-[440px] login-glass-card rounded-3xl p-6 sm:p-9 border border-white/60 dark:border-slate-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden transition-all duration-300 ${
+            className={`w-full max-w-[390px] sm:max-w-[420px] login-glass-card rounded-3xl p-5 sm:p-6 border border-white/60 dark:border-slate-800 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden transition-all duration-300 shrink-0 ${
               hasError ? "animate-shake" : "animate-entrance-up"
             }`}
           >
@@ -734,27 +734,27 @@ export default function LoginPage() {
               </form>
             ) : (
               /* View 3: Standard Interactive Login Form */
-              <form onSubmit={handleAuth} className="space-y-4">
+              <form onSubmit={handleAuth} className="space-y-3.5">
                 
                 {/* Form Header */}
                 <div className="text-left mb-1 animate-entrance-up delay-50">
-                  <div className="flex items-center gap-2 mb-1.5">
+                  <div className="flex items-center gap-2 mb-1">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                     <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                       Portal Masuk Petugas
                     </span>
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  <h2 className="text-2xl sm:text-[26px] font-black text-slate-900 dark:text-white tracking-tight leading-tight">
                     Selamat Datang
                   </h2>
-                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Silakan masukkan akun Anda untuk mengakses sistem SIMPU.
                   </p>
                 </div>
 
                 {/* Error Banner on incorrect credentials */}
                 {errorMessage && (
-                  <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-800 dark:text-rose-200 text-xs flex items-start gap-2.5 animate-in fade-in slide-in-from-top-1">
+                  <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-800 dark:text-rose-200 text-xs flex items-start gap-2 animate-in fade-in slide-in-from-top-1">
                     <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
                     <div className="flex-1">
                       <span className="font-bold block">Autentikasi Gagal</span>
@@ -784,7 +784,7 @@ export default function LoginPage() {
                       Contoh: agus, dewi_survey
                     </span>
                   </label>
-                  <div className={`login-input-wrapper flex items-center h-12 px-3.5 rounded-2xl bg-slate-100/90 dark:bg-slate-800/80 border transition-all duration-200 ${
+                  <div className={`login-input-wrapper flex items-center h-11 px-3.5 rounded-2xl bg-slate-100/90 dark:bg-slate-800/80 border transition-all duration-200 ${
                     focusedField === "identifier" 
                       ? "border-emerald-600 ring-4 ring-emerald-500/20 bg-white dark:bg-slate-800 shadow-sm" 
                       : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
@@ -803,7 +803,7 @@ export default function LoginPage() {
                       autoComplete="username"
                       required
                       disabled={loading || loginSuccess}
-                      className="w-full bg-transparent border-none px-3 text-sm sm:text-base font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none disabled:opacity-60"
+                      className="w-full bg-transparent border-none px-3 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none disabled:opacity-60"
                     />
                     {identifier && !loading && (
                       <button
@@ -839,7 +839,7 @@ export default function LoginPage() {
                       Lupa kata sandi?
                     </button>
                   </div>
-                  <div className={`login-input-wrapper flex items-center h-12 px-3.5 rounded-2xl bg-slate-100/90 dark:bg-slate-800/80 border transition-all duration-200 ${
+                  <div className={`login-input-wrapper flex items-center h-11 px-3.5 rounded-2xl bg-slate-100/90 dark:bg-slate-800/80 border transition-all duration-200 ${
                     focusedField === "password" 
                       ? "border-emerald-600 ring-4 ring-emerald-500/20 bg-white dark:bg-slate-800 shadow-sm" 
                       : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
@@ -858,7 +858,7 @@ export default function LoginPage() {
                       autoComplete="current-password"
                       required
                       disabled={loading || loginSuccess}
-                      className="w-full bg-transparent border-none px-3 text-sm sm:text-base font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none disabled:opacity-60"
+                      className="w-full bg-transparent border-none px-3 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none disabled:opacity-60"
                     />
                     {/* Spinning Eye Toggle Button (Video Reference) */}
                     <button
@@ -880,7 +880,7 @@ export default function LoginPage() {
                 </div>
 
                 {/* Remember Me Checkbox */}
-                <div className="flex items-center justify-between pt-1 animate-entrance-up delay-200">
+                <div className="flex items-center justify-between pt-0.5 animate-entrance-up delay-200">
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input
                       type="checkbox"
@@ -901,11 +901,11 @@ export default function LoginPage() {
                 </div>
 
                 {/* Morphing Login Button (Idle -> Loading Spinner -> Success Checkmark) */}
-                <div className="pt-2 animate-entrance-up delay-250">
+                <div className="pt-1.5 animate-entrance-up delay-250">
                   <button
                     type="submit"
                     disabled={loading || loginSuccess || !identifier.trim() || !password}
-                    className={`w-full h-12 rounded-2xl font-bold text-sm sm:text-base transition-all duration-300 flex items-center justify-center gap-2 relative overflow-hidden cursor-pointer ${
+                    className={`w-full h-11 sm:h-11.5 rounded-2xl font-bold text-sm sm:text-base transition-all duration-300 flex items-center justify-center gap-2 relative overflow-hidden cursor-pointer ${
                       loginSuccess
                         ? "bg-emerald-500 text-white shadow-xl shadow-emerald-500/30 scale-[1.01]"
                         : "bg-gradient-to-r from-emerald-600 via-emerald-700 to-green-700 hover:from-emerald-700 hover:to-green-800 active:scale-[0.98] text-white shadow-lg shadow-emerald-950/25 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -936,7 +936,7 @@ export default function LoginPage() {
                 </div>
 
                 {/* Secondary Links & Divider */}
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3 animate-entrance-up delay-300">
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2 animate-entrance-up delay-300">
                   <div className="flex items-center justify-between gap-2">
                     <button
                       type="button"
@@ -944,7 +944,7 @@ export default function LoginPage() {
                         playSound("click", 0.3)
                         router.push("/pendaftaran")
                       }}
-                      className="flex-1 py-2 px-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200/80 dark:border-slate-700/80 text-emerald-700 dark:text-emerald-400 transition-all text-[11px] font-bold flex items-center justify-center gap-1.5 active:scale-95"
+                      className="flex-1 py-1.5 px-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200/80 dark:border-slate-700/80 text-emerald-700 dark:text-emerald-400 transition-all text-[11px] font-bold flex items-center justify-center gap-1.5 active:scale-95"
                     >
                       <UserPlus className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       <span className="truncate">Daftar Pelaku Usaha</span>
@@ -956,7 +956,7 @@ export default function LoginPage() {
                         playSound("click", 0.3)
                         router.push("/cek-data")
                       }}
-                      className="flex-1 py-2 px-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-slate-200/80 dark:border-slate-700/80 text-amber-700 dark:text-amber-400 transition-all text-[11px] font-bold flex items-center justify-center gap-1.5 active:scale-95"
+                      className="flex-1 py-1.5 px-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-slate-200/80 dark:border-slate-700/80 text-amber-700 dark:text-amber-400 transition-all text-[11px] font-bold flex items-center justify-center gap-1.5 active:scale-95"
                     >
                       <SearchCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
                       <span className="truncate">Cek Data Publik</span>
@@ -964,7 +964,7 @@ export default function LoginPage() {
                   </div>
 
                   {/* Staff Registration Link */}
-                  <div className="text-center pt-1">
+                  <div className="text-center">
                     <button
                       type="button"
                       onClick={() => {
@@ -972,7 +972,7 @@ export default function LoginPage() {
                         setIsRegisteringView(true)
                         setErrorMessage(null)
                       }}
-                      className="text-xs text-slate-500 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors inline-flex items-center gap-1"
+                      className="text-[11px] text-slate-500 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors inline-flex items-center gap-1"
                     >
                       <span>Belum punya akun petugas?</span>
                       <span className="font-bold text-slate-800 dark:text-slate-200 underline decoration-emerald-500/50 hover:decoration-emerald-500">
@@ -988,9 +988,9 @@ export default function LoginPage() {
       </div>
 
       {/* =========================================================================
-          GLOBAL FOOTER: Centered Horizontally Across the Entire Page
+          GLOBAL FOOTER: Centered Horizontally Across the Entire Page (No Scroll)
           ========================================================================= */}
-      <footer className="relative z-30 w-full py-3.5 px-6 text-center select-none flex flex-col items-center justify-center gap-1 border-t border-emerald-800/40 bg-[#041a0e]/60 backdrop-blur-sm animate-entrance-up delay-350">
+      <footer className="relative z-30 w-full py-2 px-6 shrink-0 text-center select-none flex flex-col items-center justify-center gap-0.5 border-t border-emerald-800/40 bg-[#041a0e]/80 backdrop-blur-sm animate-entrance-up delay-350">
         <p className="text-[11px] sm:text-xs tracking-wider uppercase text-emerald-300 font-bold drop-shadow">
           DESIGN BY MT NETWORK – CREATED AGUS SURIYADI
         </p>
