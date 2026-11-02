@@ -125,11 +125,8 @@ export default function SettingsPage() {
     }
   }, [themeError])
 
-  useEffect(() => {
-    if (themeSettings?.mode) {
-      setTheme(themeSettings.mode)
-    }
-  }, [themeSettings])
+  // Pengaturan mode tema dikelola di level perangkat (localStorage)
+  // agar tidak saling menimpa antar perangkat.
 
 
 
@@ -176,20 +173,20 @@ export default function SettingsPage() {
   };
 
   const toggleTheme = async (val: "light" | "dark") => {
-    const newTheme = { ...themeSettings, mode: val };
+    let currentLocal: any = {};
+    try {
+      const saved = localStorage.getItem('simpu-theme');
+      if (saved) currentLocal = JSON.parse(saved);
+    } catch (e) {}
+
+    const newTheme = { ...themeSettings, ...currentLocal, mode: val };
     setTheme(val);
     applyLocalTheme(newTheme);
     localStorage.setItem('simpu-theme', JSON.stringify(newTheme));
 
-    try {
-      await update(ref(database, 'chats/__system_settings/theme'), { mode: val });
-    } catch (err: any) {
-      console.warn('Firebase theme sync failed (Permission Denied), but setting saved locally.');
-    }
-
     toast({ 
       title: "Tema Diperbarui", 
-      description: `Aplikasi sekarang dalam Mode ${val === "dark" ? "Gelap" : "Terang"}.` 
+      description: `Aplikasi sekarang dalam Mode ${val === "dark" ? "Gelap" : "Terang"} (khusus perangkat ini).` 
     });
   }
 

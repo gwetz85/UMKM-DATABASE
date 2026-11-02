@@ -61,9 +61,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       const themeData = savedTheme ? JSON.parse(savedTheme) : {};
       themeData.mode = newDark ? 'dark' : 'light';
       localStorage.setItem('simpu-theme', JSON.stringify(themeData));
-      if (profile?.role === 'admin' && database) {
-        update(ref(database, 'chats/__system_settings/theme'), { mode: themeData.mode }).catch(() => {});
-      }
+      // Pengaturan tema disimpan lokal di perangkat ini saja
     } catch (e) {
       console.error(e);
     }

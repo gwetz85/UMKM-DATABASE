@@ -21,15 +21,31 @@ export function ThemePersistence() {
 
     if (!database) return;
 
-    // 2. Sync from Firebase (Global settings if available)
+    // 2. Sync from Firebase (Global brand palette only, NEVER overwrite local dark/light mode)
     const themeRef = ref(database, 'chats/__system_settings/theme');
     
     const unsubscribe = onValue(themeRef, (snapshot: DataSnapshot) => {
       const themeData = snapshot.val();
       if (themeData) {
-        applyTheme(themeData);
-        // Backup the global theme to local storage for offline/fast load
-        localStorage.setItem('simpu-theme', JSON.stringify(themeData));
+        // Mode SELALU menggunakan preferensi lokal dari perangkat ini
+        let localMode = 'light';
+        try {
+          const saved = localStorage.getItem('simpu-theme');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed.mode === 'dark' || parsed.mode === 'light') {
+              localMode = parsed.mode;
+            }
+          }
+        } catch (e) {}
+
+        const mergedTheme = {
+          ...themeData,
+          mode: localMode, // Pastikan mode selalu mengikuti pilihan perangkat ini
+        };
+
+        applyTheme(mergedTheme);
+        localStorage.setItem('simpu-theme', JSON.stringify(mergedTheme));
       }
     }, (error: Error) => {
       // Don't log normal permission errors to console to keep it clean
