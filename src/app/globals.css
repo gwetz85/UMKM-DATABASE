@@ -374,11 +374,11 @@ body:not(.dark) h6:not([class*="text-"]) {
   }
 
   .glass-button {
-    @apply bg-white/70 backdrop-blur-md border border-white/60 shadow-xs hover:bg-white/90 dark:bg-slate-800/70 dark:border-white/10 dark:hover:bg-slate-800/90 active:scale-95 transition-all duration-200;
+    @apply bg-white/70 backdrop-blur-md border border-white/60 shadow-sm hover:bg-white/90 dark:bg-slate-800/70 dark:border-white/10 dark:hover:bg-slate-800/90 active:scale-95 transition-all duration-200;
   }
 
   .glass-input {
-    @apply bg-white/80 backdrop-blur-md border border-slate-200/80 focus:border-primary/50 dark:bg-slate-900/80 dark:border-slate-800 dark:focus:border-primary/50 shadow-xs transition-all duration-200;
+    @apply bg-white/80 backdrop-blur-md border border-slate-200/80 focus:border-primary/50 dark:bg-slate-900/80 dark:border-slate-800 dark:focus:border-primary/50 shadow-sm transition-all duration-200;
   }
   
   .text-gradient {

@@ -91,6 +91,8 @@ export default {
         sm: 'calc(var(--radius) - 8px)',
       },
       boxShadow: {
+        '2xs': '0 1px 1px 0 rgba(0, 0, 0, 0.03)',
+        'xs': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
         'glass-sm': '0 4px 16px 0 rgba(0, 0, 0, 0.08)',
         'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.12)',
         'glass-hover': '0 16px 40px 0 rgba(0, 0, 0, 0.18)',
