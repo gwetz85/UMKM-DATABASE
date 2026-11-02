@@ -52,6 +52,16 @@
     --glass-text-primary: #0f172a; /* Slate 900 - WCAG AAA */
     --glass-text-secondary: #334155; /* Slate 700 - WCAG AA */
     --glass-text-muted: #475569; /* Slate 600 - WCAG AA */
+
+    /* ==========================================================================
+       GLOBAL PREMIUM MOTION TOKENS (Phase 4 - SaaS Standard)
+       ========================================================================== */
+    --motion-duration-micro: 120ms;
+    --motion-duration-standard: 180ms;
+    --motion-duration-page: 220ms;
+    --motion-duration-complex: 280ms;
+    --motion-ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+    --motion-ease-natural: cubic-bezier(0.2, 0, 0, 1);
   }
 
   .dark {
@@ -1679,5 +1689,81 @@ body.theme-liquid-glass:not(.dark) {
   .glass-nav,
   .glass-button {
     background-color: var(--glass-fallback-bg) !important;
+  }
+}
+
+
+/* ==========================================================================
+   GLOBAL PREMIUM MOTION SYSTEM & ACCESSIBILITY (PHASE 4, 5, 6)
+   Ultra-smooth 60 FPS transitions prioritizing transform and opacity
+   ========================================================================== */
+
+/* Page transition container */
+.motion-page {
+  animation: motionPageFadeIn var(--motion-duration-page) var(--motion-ease-smooth) forwards;
+  will-change: opacity, transform;
+}
+
+@keyframes motionPageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Micro-interaction for buttons, pills, chips */
+.motion-press {
+  transition: transform var(--motion-duration-micro) var(--motion-ease-smooth),
+              opacity var(--motion-duration-micro) var(--motion-ease-smooth),
+              background-color var(--motion-duration-standard) ease-out,
+              border-color var(--motion-duration-standard) ease-out,
+              box-shadow var(--motion-duration-standard) ease-out;
+}
+.motion-press:active {
+  transform: scale(0.97);
+}
+
+/* Smooth card elevation on hover */
+.motion-card {
+  transition: transform var(--motion-duration-standard) var(--motion-ease-smooth),
+              box-shadow var(--motion-duration-standard) var(--motion-ease-smooth),
+              border-color var(--motion-duration-standard) ease-out,
+              background-color var(--motion-duration-standard) ease-out;
+}
+.motion-card:hover {
+  transform: translateY(-1.5px);
+}
+
+/* Smooth table/list row appearance */
+.motion-row {
+  transition: background-color var(--motion-duration-standard) ease-out,
+              color var(--motion-duration-standard) ease-out;
+}
+
+/* Shimmer skeleton animation */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Accessibility: Full reduced-motion compliance */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .motion-page,
+  .motion-press,
+  .motion-card {
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
   }
 }

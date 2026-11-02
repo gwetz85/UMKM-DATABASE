@@ -418,7 +418,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 isLoginPage ? "overflow-hidden" : isPortalSurveyPage ? "overflow-y-auto overflow-x-hidden" : isSpecialFullscreenPage ? "overflow-hidden" : "overflow-y-auto"
               )}>
                 <div key={pathname} className={cn(
-                  "w-full relative z-0 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out",
+                  "w-full relative z-0 motion-page animate-in fade-in slide-in-from-bottom-1 duration-200 ease-smooth motion-reduce:animate-none",
                   isLoginPage ? "flex-1 flex flex-col min-h-0 p-0 overflow-hidden" : 
                   isPortalSurveyPage ? "p-0 min-h-full flex-1 flex flex-col" :
                   isSpecialFullscreenPage ? "p-0 min-h-full h-full max-h-full flex-1 flex flex-col overflow-hidden" :

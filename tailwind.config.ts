@@ -110,36 +110,68 @@ export default {
         '150': '1.5',
         '180': '1.8',
       },
+      transitionTimingFunction: {
+        'smooth': 'cubic-bezier(0.16, 1, 0.3, 1)',
+        'natural': 'cubic-bezier(0.2, 0, 0, 1)',
+        'standard': 'cubic-bezier(0.4, 0, 0.2, 1)',
+      },
+      transitionDuration: {
+        'micro': '120ms',
+        'standard': '180ms',
+        'page': '220ms',
+        'complex': '280ms',
+        '2000': '2000ms',
+        '12000': '12000ms',
+      },
       keyframes: {
         'accordion-down': {
           from: {
             height: '0',
+            opacity: '0',
           },
           to: {
             height: 'var(--radix-accordion-content-height)',
+            opacity: '1',
           },
         },
         'accordion-up': {
           from: {
             height: 'var(--radix-accordion-content-height)',
+            opacity: '1',
           },
           to: {
             height: '0',
+            opacity: '0',
           },
         },
         'liquid-pulse': {
           '0%, 100%': { opacity: '0.8', transform: 'scale(1)' },
           '50%': { opacity: '1', transform: 'scale(1.02)' },
         },
+        'fade-in': {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
+        'fade-up': {
+          from: { opacity: '0', transform: 'translateY(4px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'scale-in': {
+          from: { opacity: '0', transform: 'scale(0.97)' },
+          to: { opacity: '1', transform: 'scale(1)' },
+        },
+        'shimmer': {
+          '100%': { transform: 'translateX(100%)' },
+        },
       },
       animation: {
-        'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out',
+        'accordion-down': 'accordion-down 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+        'accordion-up': 'accordion-up 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
         'liquid-pulse': 'liquid-pulse 4s ease-in-out infinite',
-      },
-      transitionDuration: {
-        '2000': '2000ms',
-        '12000': '12000ms',
+        'fade-in': 'fade-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'fade-up': 'fade-up 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'scale-in': 'scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'shimmer': 'shimmer 2s infinite ease-in-out',
       },
     },
   },
@@ -156,7 +188,7 @@ export default {
           borderColor: 'var(--glass-border, rgba(255, 255, 255, 0.45))',
           boxShadow: 'var(--glass-specular-shadow, inset 0 1px 1px 0 rgba(255, 255, 255, 0.5), 0 8px 32px 0 rgba(0, 0, 0, 0.12))',
           color: 'var(--glass-text-primary, #0f172a)',
-          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
         },
         '.glass-card': {
           position: 'relative',
@@ -168,10 +200,10 @@ export default {
           borderColor: 'var(--glass-border, rgba(255, 255, 255, 0.45))',
           boxShadow: 'var(--glass-specular-shadow, inset 0 1px 1px 0 rgba(255, 255, 255, 0.5), 0 8px 32px 0 rgba(0, 0, 0, 0.12))',
           color: 'var(--glass-text-primary, #0f172a)',
-          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease',
           overflow: 'hidden',
           '&:hover': {
-            transform: 'translateY(-2px)',
+            transform: 'translateY(-1.5px)',
             boxShadow: 'var(--glass-shadow-hover, 0 16px 40px 0 rgba(0, 0, 0, 0.18))',
             borderColor: 'var(--glass-border-specular, rgba(255, 255, 255, 0.70))',
           },
@@ -185,7 +217,7 @@ export default {
           borderColor: 'var(--glass-border, rgba(255, 255, 255, 0.35))',
           boxShadow: '0 4px 20px 0 rgba(0, 0, 0, 0.05)',
           color: 'var(--glass-text-primary, #0f172a)',
-          transition: 'all 0.3s ease',
+          transition: 'background-color 0.2s ease, border-color 0.2s ease',
         },
         '.glass-button': {
           display: 'inline-flex',
@@ -201,7 +233,7 @@ export default {
           borderColor: 'var(--glass-border, rgba(255, 255, 255, 0.45))',
           boxShadow: 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.4), 0 2px 8px 0 rgba(0, 0, 0, 0.06)',
           color: 'var(--glass-text-primary, #0f172a)',
-          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition: 'transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease',
           '&:hover': {
             backgroundColor: 'var(--glass-bg-elevated, rgba(255, 255, 255, 0.65))',
             borderColor: 'var(--glass-border-specular, rgba(255, 255, 255, 0.8))',

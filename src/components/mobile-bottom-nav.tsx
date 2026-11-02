@@ -214,7 +214,7 @@ export function MobileBottomNav() {
                 type="button"
                 onClick={(item as any).onClick}
                 className={cn(
-                  'flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all duration-200 min-w-[56px] active:scale-95 outline-none',
+                  'flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-[transform,color,background-color] duration-150 ease-smooth min-w-[56px] active:scale-90 motion-reduce:active:scale-100 outline-none cursor-pointer',
                   item.active
                     ? 'text-primary font-black'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 font-bold'
@@ -230,7 +230,7 @@ export function MobileBottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all duration-200 min-w-[56px] active:scale-95',
+                'flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-[transform,color,background-color] duration-150 ease-smooth min-w-[56px] active:scale-90 motion-reduce:active:scale-100',
                 item.active
                   ? 'text-primary font-black'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 font-bold'
