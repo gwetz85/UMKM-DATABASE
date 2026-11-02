@@ -539,22 +539,23 @@ export default function LoginPage() {
               {/* Inner Pulsing Accent Ring */}
               <div className="absolute inset-20 xl:inset-28 rounded-full border border-emerald-300/30 border-dotted animate-spin-very-slow pointer-events-none" />
 
-              {/* Main Floating Shield / Disc with Breathing Animation */}
-              <div className="relative z-10 w-64 h-64 sm:w-72 sm:h-72 xl:w-88 xl:h-88 rounded-full bg-gradient-to-tr from-emerald-950 via-[#0a381f] to-emerald-800 p-2.5 shadow-[0_0_90px_rgba(16,185,129,0.45)] border-2 border-emerald-400/50 flex items-center justify-center animate-hero-float">
-                <div className="w-full h-full rounded-full bg-gradient-to-b from-[#0e4828] via-[#082a17] to-[#041a0e] flex items-center justify-center p-5 relative overflow-hidden group">
-                  {/* Internal Radiant Gradient Glow */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/25 via-transparent to-amber-400/15 pointer-events-none" />
-                  
-                  {/* Central Pure White Logo Container (Enlarged + Gold Ring + Shimmer) */}
-                  <div className="w-44 h-44 sm:w-52 sm:h-52 xl:w-64 xl:h-64 rounded-full bg-white p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-[3.5px] border-amber-400 ring-8 ring-amber-400/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-500 relative z-10 overflow-hidden">
-                    {/* Light Sweep Reflection Sheen */}
-                    <div className="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/40 to-transparent animate-logo-shine pointer-events-none" />
+              {/* Main Floating Shield / Disc with Snug Green Boundary */}
+              <div className="relative z-10 w-72 h-72 sm:w-80 sm:h-80 xl:w-[400px] xl:h-[400px] rounded-full p-2.5 sm:p-3 bg-gradient-to-tr from-emerald-950 via-[#0a381f] to-emerald-800 shadow-[0_0_90px_rgba(16,185,129,0.5)] border-2 border-emerald-400/60 flex items-center justify-center animate-hero-float">
+                {/* Snug Emerald Inner Boundary */}
+                <div className="w-full h-full rounded-full bg-gradient-to-b from-[#0e4828] to-[#041a0e] p-2 sm:p-2.5 flex items-center justify-center relative overflow-hidden group shadow-2xl">
+                  {/* Subtle Inner Glow */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/30 via-transparent to-amber-400/20 pointer-events-none" />
 
-                    {/* The SIMPU Logo */}
+                  {/* Central Pure White Logo Disc - Fills snuggly up to the green border */}
+                  <div className="w-full h-full rounded-full bg-white p-6 sm:p-7 xl:p-9 shadow-2xl border-[3.5px] border-amber-400 flex items-center justify-center group-hover:scale-[1.02] transition-transform duration-500 relative z-10 overflow-hidden">
+                    {/* Light Sweep Reflection Sheen */}
+                    <div className="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/50 to-transparent animate-logo-shine pointer-events-none" />
+
+                    {/* The SIMPU Logo - Filling the circle */}
                     <img 
                       src="/logo.png" 
                       alt="SIMPU Logo" 
-                      className="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.15)] relative z-10" 
+                      className="w-full h-full object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.12)] relative z-10" 
                     />
                   </div>
                 </div>
