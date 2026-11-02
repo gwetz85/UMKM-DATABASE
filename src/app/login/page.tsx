@@ -562,11 +562,6 @@ export default function LoginPage() {
               </div>
             </div>
           </div>
-
-          {/* Footer Left: Attribution */}
-          <div className="absolute bottom-6 left-8 right-8 flex items-center justify-center text-[11px] tracking-wider uppercase text-emerald-300/85 font-bold border-t border-emerald-800/40 pt-4">
-            <span>DESIGN BY MT NETWORK - CREATED AGUS SURIYADI</span>
-          </div>
         </section>
 
         {/* =======================================================================
@@ -989,18 +984,20 @@ export default function LoginPage() {
               </form>
             )}
           </div>
-
-          {/* Footer Copyright on Bottom of Login */}
-          <div className="mt-6 text-center select-none animate-entrance-up delay-350 space-y-1">
-            <p className="text-xs text-slate-300/80 font-medium drop-shadow">
-              © {new Date().getFullYear()} SIMPU Kota Tanjungpinang. All rights reserved.
-            </p>
-            <p className="text-[10px] text-emerald-300/75 font-semibold tracking-wider uppercase drop-shadow lg:hidden">
-              DESIGN BY MT NETWORK - CREATED AGUS SURIYADI
-            </p>
-          </div>
         </section>
       </div>
+
+      {/* =========================================================================
+          GLOBAL FOOTER: Centered Horizontally Across the Entire Page
+          ========================================================================= */}
+      <footer className="relative z-30 w-full py-3.5 px-6 text-center select-none flex flex-col items-center justify-center gap-1 border-t border-emerald-800/40 bg-[#041a0e]/60 backdrop-blur-sm animate-entrance-up delay-350">
+        <p className="text-[11px] sm:text-xs tracking-wider uppercase text-emerald-300 font-bold drop-shadow">
+          DESIGN BY MT NETWORK – CREATED AGUS SURIYADI
+        </p>
+        <p className="text-[10px] text-slate-400 font-medium drop-shadow">
+          © {new Date().getFullYear()} SIMPU Kota Tanjungpinang. All rights reserved.
+        </p>
+      </footer>
 
       {/* =========================================================================
           MODAL: BANTUAN LUPA KATA SANDI (Official Helpdesk Contact)
