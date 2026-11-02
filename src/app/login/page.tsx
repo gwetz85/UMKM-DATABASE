@@ -514,58 +514,47 @@ export default function LoginPage() {
         {/* =======================================================================
             AREA KIRI / VISUAL (Desktop Showcase: Living Animation & Branding)
             ======================================================================= */}
-        <section className="hidden lg:flex lg:col-span-7 xl:col-span-7 flex-col justify-between p-8 xl:p-14 relative overflow-hidden select-none">
-          {/* Header Branding */}
-          <div className="flex items-center gap-4 animate-entrance-scale">
-            <div className="w-16 h-16 xl:w-20 xl:h-20 rounded-2xl bg-white p-2.5 shadow-2xl border-2 border-amber-400 flex items-center justify-center shrink-0 transition-transform hover:scale-105 duration-300 relative group">
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-amber-400 to-emerald-400 opacity-40 blur-sm group-hover:opacity-75 transition duration-500" />
-              <img 
-                src="/logo.png" 
-                alt="Logo SIMPU" 
-                className="w-full h-full object-contain relative z-10"
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-3xl xl:text-4xl font-black tracking-wider leading-none uppercase text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-                  SIMPU
-                </span>
-                <span className="text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-200">
-                  OFFICIAL
-                </span>
+        <section className="hidden lg:flex lg:col-span-7 xl:col-span-7 flex-col justify-center items-center p-8 xl:p-14 relative overflow-hidden select-none">
+          {/* Centerpiece: Enriched & Enlarged Hero Animated Logo Emblem */}
+          <div className="relative flex flex-col items-center justify-center my-auto">
+            {/* Dynamic Orbit & Aura Container */}
+            <div className="relative w-[440px] h-[440px] xl:w-[560px] xl:h-[560px] flex items-center justify-center">
+              
+              {/* Radar Wave Pulse Ring (Expanding Energy Wave) */}
+              <div className="absolute inset-4 rounded-full border border-emerald-400/40 animate-radar-ping pointer-events-none" />
+
+              {/* Ambient Glowing Halo Behind Logo */}
+              <div className="absolute w-72 h-72 xl:w-96 xl:h-96 rounded-full bg-gradient-to-tr from-emerald-500/30 via-emerald-400/20 to-amber-400/30 blur-2xl animate-aura-pulse pointer-events-none" />
+
+              {/* Outer Dashed Neon Orbit Ring (Spinning Clockwise) */}
+              <div className="absolute inset-0 rounded-full border-2 border-emerald-400/30 border-dashed animate-spin-very-slow pointer-events-none" />
+              
+              {/* Mid Amber/Gold Ring (Spinning Counter-Clockwise with Satellites) */}
+              <div className="absolute inset-10 xl:inset-14 rounded-full border-2 border-amber-400/35 animate-spin-reverse-slow pointer-events-none">
+                {/* Glowing Satellite Nodes on Mid Ring */}
+                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-amber-400 shadow-[0_0_18px_#fbbf24] border border-white/60" />
+                <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-emerald-400 shadow-[0_0_18px_#34d399] border border-white/60" />
               </div>
-              <p className="text-xs xl:text-sm font-semibold text-amber-300 tracking-wider uppercase leading-tight mt-1 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
-                Sistem Informasi Manajemen Pelaku Usaha
-              </p>
-              <p className="text-[11px] text-slate-300/80 font-medium tracking-wide">
-                Pemerintah Kota Tanjungpinang • Dinas Koperasi & Usaha Mikro
-              </p>
-            </div>
-          </div>
 
-          {/* Centerpiece: Clean Elegant Animated Logo Emblem */}
-          <div className="relative my-auto py-8 flex flex-col items-center justify-center">
-            {/* Center Dynamic Orbit Container */}
-            <div className="relative w-80 h-80 xl:w-[420px] xl:h-[420px] flex items-center justify-center">
-              
-              {/* Outer Radiant Orbit Ring */}
-              <div className="absolute inset-0 rounded-full border border-emerald-400/20 border-dashed animate-spin-very-slow" />
-              
-              {/* Mid Glowing Ring */}
-              <div className="absolute inset-8 xl:inset-10 rounded-full border border-amber-400/25 animate-spin-reverse-slow" />
+              {/* Inner Pulsing Accent Ring */}
+              <div className="absolute inset-20 xl:inset-28 rounded-full border border-emerald-300/30 border-dotted animate-spin-very-slow pointer-events-none" />
 
-              {/* Central Glowing Shield / Orb with Official SIMPU Logo */}
-              <div className="relative z-10 w-52 h-52 xl:w-64 xl:h-64 rounded-full bg-gradient-to-tr from-emerald-950 via-[#0a381f] to-emerald-800 p-2 shadow-[0_0_80px_rgba(16,185,129,0.35)] border-2 border-emerald-400/40 flex items-center justify-center animate-entrance-scale">
-                <div className="w-full h-full rounded-full bg-gradient-to-b from-[#0e4828] to-[#041a0e] flex items-center justify-center p-4 relative overflow-hidden group">
-                  {/* Subtle Inner Glow */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/20 via-transparent to-amber-400/10 pointer-events-none" />
+              {/* Main Floating Shield / Disc with Breathing Animation */}
+              <div className="relative z-10 w-64 h-64 sm:w-72 sm:h-72 xl:w-88 xl:h-88 rounded-full bg-gradient-to-tr from-emerald-950 via-[#0a381f] to-emerald-800 p-2.5 shadow-[0_0_90px_rgba(16,185,129,0.45)] border-2 border-emerald-400/50 flex items-center justify-center animate-hero-float">
+                <div className="w-full h-full rounded-full bg-gradient-to-b from-[#0e4828] via-[#082a17] to-[#041a0e] flex items-center justify-center p-5 relative overflow-hidden group">
+                  {/* Internal Radiant Gradient Glow */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/25 via-transparent to-amber-400/15 pointer-events-none" />
                   
-                  {/* Central Logo Emblem */}
-                  <div className="w-32 h-32 xl:w-40 xl:h-40 rounded-full bg-white p-3.5 shadow-2xl border-2 border-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform duration-500 relative z-10">
+                  {/* Central Pure White Logo Container (Enlarged + Gold Ring + Shimmer) */}
+                  <div className="w-44 h-44 sm:w-52 sm:h-52 xl:w-64 xl:h-64 rounded-full bg-white p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-[3.5px] border-amber-400 ring-8 ring-amber-400/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-500 relative z-10 overflow-hidden">
+                    {/* Light Sweep Reflection Sheen */}
+                    <div className="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/40 to-transparent animate-logo-shine pointer-events-none" />
+
+                    {/* The SIMPU Logo */}
                     <img 
                       src="/logo.png" 
                       alt="SIMPU Logo" 
-                      className="w-full h-full object-contain drop-shadow" 
+                      className="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.15)] relative z-10" 
                     />
                   </div>
                 </div>
@@ -574,7 +563,7 @@ export default function LoginPage() {
           </div>
 
           {/* Footer Left: Security indicator */}
-          <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium border-t border-emerald-800/40 pt-4">
+          <div className="absolute bottom-6 left-8 right-8 hidden xl:flex items-center justify-between text-[11px] text-slate-400 font-medium border-t border-emerald-800/40 pt-4">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span>Koneksi Aman Terenkripsi SSL 256-bit</span>
