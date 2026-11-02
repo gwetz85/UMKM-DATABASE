@@ -43,6 +43,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
 import { ConfirmDialog } from "@/components/confirm-dialog"
+import { LiquidGlassShowcase } from "@/components/liquid-glass-showcase"
+import { applyThemeMode } from "@/components/theme-provider"
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -54,13 +56,13 @@ export default function SettingsPage() {
   const [changingPassword, setChangingPassword] = useState(false)
   const [uploadingExcel, setUploadingExcel] = useState(false)
   const [downloadingTarget, setDownloadingTarget] = useState<'master_2024' | 'master_2023' | 'master_2025' | 'blacklist' | 'bpjs' | 'all' | null>(null)
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
+  const [theme, setTheme] = useState<"light" | "dark" | "liquid-glass">(() => {
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('simpu-theme');
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (parsed.mode === 'dark' || parsed.mode === 'light') return parsed.mode;
+          if (parsed.mode === 'dark' || parsed.mode === 'light' || parsed.mode === 'liquid-glass') return parsed.mode;
         }
         if (document.documentElement.classList.contains('dark')) return 'dark';
       } catch (e) {}
@@ -172,7 +174,7 @@ export default function SettingsPage() {
     }
   };
 
-  const toggleTheme = async (val: "light" | "dark") => {
+  const toggleTheme = async (val: "light" | "dark" | "liquid-glass") => {
     let currentLocal: any = {};
     try {
       const saved = localStorage.getItem('simpu-theme');
@@ -186,7 +188,7 @@ export default function SettingsPage() {
 
     toast({ 
       title: "Tema Diperbarui", 
-      description: `Aplikasi sekarang dalam Mode ${val === "dark" ? "Gelap" : "Terang"} (khusus perangkat ini).` 
+      description: `Aplikasi sekarang dalam Mode ${val === "liquid-glass" ? "Liquid Glass" : val === "dark" ? "Gelap" : "Terang"} (khusus perangkat ini).` 
     });
   }
 

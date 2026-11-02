@@ -5,6 +5,7 @@ import {Toaster} from '@/components/ui/toaster';
 import {FirebaseClientProvider} from '@/firebase';
 import {ClientLayout} from '@/components/client-layout';
 import {PwaRegister} from '@/components/pwa-register';
+import {ThemeProvider} from '@/components/theme-provider';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -45,14 +46,15 @@ export default function RootLayout({
     <html lang="id" className={`${poppins.variable} ${poppins.className}`}>
       <body className="font-body antialiased bg-transparent selection:bg-primary/20 selection:text-primary">
         <FirebaseClientProvider>
-          <ClientLayout>
-            {children}
-          </ClientLayout>
-          <Toaster />
-          <PwaRegister />
+          <ThemeProvider>
+            <ClientLayout>
+              {children}
+            </ClientLayout>
+            <Toaster />
+            <PwaRegister />
+          </ThemeProvider>
         </FirebaseClientProvider>
       </body>
     </html>
   );
 }
-

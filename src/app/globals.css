@@ -31,7 +31,27 @@
     --sidebar-accent: 210 40% 96%;
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 174 100% 19%;
+        --sidebar-ring: 174 100% 19%;
+
+    /* ==========================================================================
+       LIQUID GLASS TOKENS (LIGHT GLASS VARIANT)
+       iOS-style Glassmorphism tokens
+       ========================================================================== */
+    --glass-bg: rgba(255, 255, 255, 0.55);
+    --glass-bg-subtle: rgba(255, 255, 255, 0.35);
+    --glass-bg-elevated: rgba(255, 255, 255, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.45);
+    --glass-border-specular: rgba(255, 255, 255, 0.75);
+    --glass-border-subtle: rgba(255, 255, 255, 0.20);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
+    --glass-shadow-hover: 0 16px 40px 0 rgba(0, 0, 0, 0.18);
+    --glass-specular-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.60), 0 8px 32px 0 rgba(0, 0, 0, 0.12);
+    --glass-blur: 20px;
+    --glass-saturate: 180%;
+    --glass-fallback-bg: rgba(248, 250, 252, 0.96);
+    --glass-text-primary: #0f172a; /* Slate 900 - WCAG AAA */
+    --glass-text-secondary: #334155; /* Slate 700 - WCAG AA */
+    --glass-text-muted: #475569; /* Slate 600 - WCAG AA */
   }
 
   .dark {
@@ -61,8 +81,48 @@
     --sidebar-accent: 0 0% 12%;
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 0 0% 18%;
-    --sidebar-ring: 212 90% 55%;
+        --sidebar-ring: 212 90% 55%;
+
+    /* ==========================================================================
+       LIQUID GLASS TOKENS (DARK GLASS VARIANT)
+       iOS-style Glassmorphism tokens for dark surfaces
+       ========================================================================== */
+    --glass-bg: rgba(18, 18, 24, 0.65);
+    --glass-bg-subtle: rgba(18, 18, 24, 0.45);
+    --glass-bg-elevated: rgba(26, 26, 36, 0.78);
+    --glass-border: rgba(255, 255, 255, 0.14);
+    --glass-border-specular: rgba(255, 255, 255, 0.28);
+    --glass-border-subtle: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.38);
+    --glass-shadow-hover: 0 16px 44px 0 rgba(0, 0, 0, 0.50);
+    --glass-specular-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.20), 0 8px 32px 0 rgba(0, 0, 0, 0.38);
+    --glass-fallback-bg: rgba(18, 18, 24, 0.96);
+    --glass-text-primary: #f8fafc; /* Slate 50 - WCAG AAA */
+    --glass-text-secondary: #cbd5e1; /* Slate 300 - WCAG AA */
+    --glass-text-muted: #94a3b8; /* Slate 400 - WCAG AA */
   }
+  /* ==========================================================================
+     LIQUID GLASS THEME COMPATIBILITY SELECTORS (No Conflict with Light/Dark)
+     ========================================================================== */
+  [data-theme="liquid-glass"]:not(.dark),
+  .theme-liquid-glass:not(.dark) {
+    --card: 0 0% 100% / 0.65;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100% / 0.75;
+    --popover-foreground: 222 47% 11%;
+    --border: 214.3 31.8% 91.4% / 0.45;
+  }
+
+  [data-theme="liquid-glass"].dark,
+  .theme-liquid-glass.dark,
+  [data-theme="liquid-glass-dark"] {
+    --card: 240 14% 8% / 0.65;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 14% 8% / 0.75;
+    --popover-foreground: 0 0% 98%;
+    --border: 0 0% 100% / 0.14;
+  }
+
 }
 
 @layer base {
@@ -1473,4 +1533,151 @@ body:not(.dark) h6:not([class*="text-"]) {
 .dark .border-dashed {
   border-color: #333333 !important;
   background-color: #000000 !important;
-}
+}
+
+/* ==========================================================================
+   LIQUID GLASS THEME - WALLPAPER & ADAPTIVE BACKDROP
+   Vibrant, high-saturation mesh gradient wallpaper for glassmorphism optics
+   ========================================================================== */
+
+html[data-theme="liquid-glass"] body,
+html.theme-liquid-glass body,
+body.theme-liquid-glass {
+  background-color: #080c14;
+  background-image: 
+    radial-gradient(at 10% 10%, rgba(56, 189, 248, 0.35) 0px, transparent 50%),
+    radial-gradient(at 90% 15%, rgba(168, 85, 247, 0.32) 0px, transparent 50%),
+    radial-gradient(at 80% 85%, rgba(236, 72, 153, 0.28) 0px, transparent 50%),
+    radial-gradient(at 15% 85%, rgba(34, 197, 94, 0.22) 0px, transparent 55%),
+    linear-gradient(135deg, #090d16 0%, #0f172a 45%, #1e1b4b 100%) !important;
+  background-attachment: fixed !important;
+  background-size: cover !important;
+}
+
+html[data-theme="liquid-glass"]:not(.dark) body,
+html.theme-liquid-glass:not(.dark) body,
+body.theme-liquid-glass:not(.dark) {
+  background-color: #f0f9ff;
+  background-image: 
+    radial-gradient(at 12% 12%, rgba(56, 189, 248, 0.40) 0px, transparent 50%),
+    radial-gradient(at 88% 18%, rgba(168, 85, 247, 0.30) 0px, transparent 50%),
+    radial-gradient(at 78% 82%, rgba(236, 72, 153, 0.25) 0px, transparent 50%),
+    radial-gradient(at 18% 82%, rgba(34, 197, 94, 0.20) 0px, transparent 55%),
+    linear-gradient(135deg, #e0f2fe 0%, #f1f5f9 50%, #fae8ff 100%) !important;
+  background-attachment: fixed !important;
+  background-size: cover !important;
+}
+
+/* ==========================================================================
+   LIQUID GLASS REUSABLE UTILITIES & WCAG AA CONTRAST
+   ========================================================================== */
+
+.glass-panel {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-specular-shadow);
+  color: var(--glass-text-primary);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card {
+  position: relative;
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-specular-shadow);
+  color: var(--glass-text-primary);
+  border-radius: 1.25rem;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Specular edge top reflection for authentic iOS liquid glass */
+.glass-card::before,
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--glass-border-specular) 30%, var(--glass-border-specular) 70%, transparent 100%);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow-hover);
+  border-color: var(--glass-border-specular);
+}
+
+.glass-nav {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05);
+  color: var(--glass-text-primary);
+  transition: all 0.3s ease;
+}
+
+.glass-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+  background-color: var(--glass-bg-subtle);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.4), 0 2px 8px 0 rgba(0, 0, 0, 0.06);
+  color: var(--glass-text-primary);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.glass-button:hover {
+  background-color: var(--glass-bg-elevated);
+  border-color: var(--glass-border-specular);
+  transform: scale(1.02);
+}
+
+.glass-button:active {
+  transform: scale(0.97);
+}
+
+/* WCAG AA / AAA Typography Legibility over Glass */
+[data-theme="liquid-glass"] .glass-title,
+.theme-liquid-glass .glass-title,
+.glass-title {
+  color: var(--glass-text-primary) !important;
+  font-weight: 700;
+}
+
+[data-theme="liquid-glass"] .glass-subtitle,
+.theme-liquid-glass .glass-subtitle,
+.glass-subtitle {
+  color: var(--glass-text-secondary) !important;
+  font-weight: 500;
+}
+
+[data-theme="liquid-glass"] .glass-muted,
+.theme-liquid-glass .glass-muted,
+.glass-muted {
+  color: var(--glass-text-muted) !important;
+}
+
+/* Fallback for browsers without backdrop-filter */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-panel,
+  .glass-card,
+  .glass-nav,
+  .glass-button {
+    background-color: var(--glass-fallback-bg) !important;
+  }
+}

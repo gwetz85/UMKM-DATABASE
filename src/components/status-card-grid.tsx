@@ -75,7 +75,7 @@ export function StatusBadge({ status, label }: { status: StatusType; label: stri
 // Komponen Kartu Responsif
 export function StatusCard({ item }: { item: DataItem }) {
   return (
-    <article className="flex flex-col justify-between p-5 rounded-2xl transition-all duration-200 border bg-white text-zinc-900 border-zinc-200 shadow-sm hover:shadow-md hover:border-zinc-300 dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-800 dark:hover:border-zinc-700">
+    <article className="flex flex-col justify-between p-5 rounded-2xl transition-all duration-200 border bg-white text-zinc-900 border-zinc-200 shadow-sm hover:shadow-md hover:border-zinc-300 dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-800 dark:hover:border-zinc-700 [[data-theme=liquid-glass]_&]:glass-card">
       
       {/* Header Kartu: Menggunakan Flexbox responsif */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">

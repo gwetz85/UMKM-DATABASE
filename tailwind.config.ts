@@ -1,4 +1,5 @@
 import type {Config} from 'tailwindcss';
+import plugin from 'tailwindcss/plugin';
 
 export default {
   darkMode: ['class'],
@@ -66,6 +67,19 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
+        // Liquid Glass Theme Color Tokens
+        glass: {
+          light: 'rgba(255, 255, 255, 0.55)',
+          'light-subtle': 'rgba(255, 255, 255, 0.35)',
+          'light-elevated': 'rgba(255, 255, 255, 0.70)',
+          dark: 'rgba(18, 18, 24, 0.65)',
+          'dark-subtle': 'rgba(18, 18, 24, 0.45)',
+          'dark-elevated': 'rgba(26, 26, 36, 0.75)',
+          'border-light': 'rgba(255, 255, 255, 0.45)',
+          'border-dark': 'rgba(255, 255, 255, 0.14)',
+          'specular-light': 'rgba(255, 255, 255, 0.75)',
+          'specular-dark': 'rgba(255, 255, 255, 0.25)',
+        },
       },
       borderRadius: {
         '4xl': 'calc(var(--radius) + 20px)',
@@ -75,6 +89,24 @@ export default {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 4px)',
         sm: 'calc(var(--radius) - 8px)',
+      },
+      boxShadow: {
+        'glass-sm': '0 4px 16px 0 rgba(0, 0, 0, 0.08)',
+        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.12)',
+        'glass-hover': '0 16px 40px 0 rgba(0, 0, 0, 0.18)',
+        'glass-dark': '0 8px 32px 0 rgba(0, 0, 0, 0.38)',
+        'glass-dark-hover': '0 16px 44px 0 rgba(0, 0, 0, 0.50)',
+        'glass-specular': 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.60), 0 8px 32px 0 rgba(0, 0, 0, 0.12)',
+        'glass-specular-dark': 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.20), 0 8px 32px 0 rgba(0, 0, 0, 0.38)',
+      },
+      backdropBlur: {
+        'xs': '2px',
+        '2xl': '40px',
+        '3xl': '64px',
+      },
+      backdropSaturate: {
+        '150': '1.5',
+        '180': '1.8',
       },
       keyframes: {
         'accordion-down': {
@@ -92,11 +124,16 @@ export default {
           to: {
             height: '0',
           },
-        }
+        },
+        'liquid-pulse': {
+          '0%, 100%': { opacity: '0.8', transform: 'scale(1)' },
+          '50%': { opacity: '1', transform: 'scale(1.02)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'liquid-pulse': 'liquid-pulse 4s ease-in-out infinite',
       },
       transitionDuration: {
         '2000': '2000ms',
@@ -104,5 +141,100 @@ export default {
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [
+    require('tailwindcss-animate'),
+    plugin(function ({ addComponents, addUtilities }) {
+      addComponents({
+        '.glass-panel': {
+          position: 'relative',
+          backgroundColor: 'var(--glass-bg, rgba(255, 255, 255, 0.55))',
+          backdropFilter: 'blur(var(--glass-blur, 20px)) saturate(var(--glass-saturate, 180%))',
+          WebkitBackdropFilter: 'blur(var(--glass-blur, 20px)) saturate(var(--glass-saturate, 180%))',
+          borderWidth: '1px',
+          borderColor: 'var(--glass-border, rgba(255, 255, 255, 0.45))',
+          boxShadow: 'var(--glass-specular-shadow, inset 0 1px 1px 0 rgba(255, 255, 255, 0.5), 0 8px 32px 0 rgba(0, 0, 0, 0.12))',
+          color: 'var(--glass-text-primary, #0f172a)',
+          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        },
+        '.glass-card': {
+          position: 'relative',
+          borderRadius: '1.25rem',
+          backgroundColor: 'var(--glass-bg, rgba(255, 255, 255, 0.55))',
+          backdropFilter: 'blur(var(--glass-blur, 20px)) saturate(var(--glass-saturate, 180%))',
+          WebkitBackdropFilter: 'blur(var(--glass-blur, 20px)) saturate(var(--glass-saturate, 180%))',
+          borderWidth: '1px',
+          borderColor: 'var(--glass-border, rgba(255, 255, 255, 0.45))',
+          boxShadow: 'var(--glass-specular-shadow, inset 0 1px 1px 0 rgba(255, 255, 255, 0.5), 0 8px 32px 0 rgba(0, 0, 0, 0.12))',
+          color: 'var(--glass-text-primary, #0f172a)',
+          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          overflow: 'hidden',
+          '&:hover': {
+            transform: 'translateY(-2px)',
+            boxShadow: 'var(--glass-shadow-hover, 0 16px 40px 0 rgba(0, 0, 0, 0.18))',
+            borderColor: 'var(--glass-border-specular, rgba(255, 255, 255, 0.70))',
+          },
+        },
+        '.glass-nav': {
+          position: 'relative',
+          backgroundColor: 'var(--glass-bg, rgba(255, 255, 255, 0.60))',
+          backdropFilter: 'blur(var(--glass-blur, 20px)) saturate(var(--glass-saturate, 180%))',
+          WebkitBackdropFilter: 'blur(var(--glass-blur, 20px)) saturate(var(--glass-saturate, 180%))',
+          borderBottomWidth: '1px',
+          borderColor: 'var(--glass-border, rgba(255, 255, 255, 0.35))',
+          boxShadow: '0 4px 20px 0 rgba(0, 0, 0, 0.05)',
+          color: 'var(--glass-text-primary, #0f172a)',
+          transition: 'all 0.3s ease',
+        },
+        '.glass-button': {
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: '600',
+          borderRadius: '9999px',
+          padding: '0.5rem 1rem',
+          backgroundColor: 'var(--glass-bg-subtle, rgba(255, 255, 255, 0.35))',
+          backdropFilter: 'blur(12px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(12px) saturate(160%)',
+          borderWidth: '1px',
+          borderColor: 'var(--glass-border, rgba(255, 255, 255, 0.45))',
+          boxShadow: 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.4), 0 2px 8px 0 rgba(0, 0, 0, 0.06)',
+          color: 'var(--glass-text-primary, #0f172a)',
+          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          '&:hover': {
+            backgroundColor: 'var(--glass-bg-elevated, rgba(255, 255, 255, 0.65))',
+            borderColor: 'var(--glass-border-specular, rgba(255, 255, 255, 0.8))',
+            transform: 'scale(1.02)',
+          },
+          '&:active': {
+            transform: 'scale(0.97)',
+          },
+        },
+        '.glass-badge': {
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.375rem',
+          fontSize: '0.75rem',
+          fontWeight: '700',
+          padding: '0.25rem 0.625rem',
+          borderRadius: '9999px',
+          backdropFilter: 'blur(10px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(10px) saturate(160%)',
+          borderWidth: '1px',
+          boxShadow: 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.35)',
+        },
+      });
+
+      // Browser fallback for clients without backdrop-filter support
+      addUtilities({
+        '@supports not (backdrop-filter: blur(1px))': {
+          '.glass-panel, .glass-card, .glass-nav, .glass-button': {
+            backgroundColor: 'var(--glass-fallback-bg, rgba(248, 250, 252, 0.96)) !important',
+          },
+          '.dark .glass-panel, .dark .glass-card, .dark .glass-nav, .dark .glass-button': {
+            backgroundColor: 'var(--glass-fallback-bg, rgba(18, 18, 24, 0.96)) !important',
+          },
+        },
+      });
+    }),
+  ],
 } satisfies Config;

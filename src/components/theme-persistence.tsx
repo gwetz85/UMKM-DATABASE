@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useDatabase } from '@/firebase';
 import { ref, onValue, DataSnapshot } from 'firebase/database';
+import { applyThemeMode } from '@/components/theme-provider';
 
 export function ThemePersistence() {
   const database = useDatabase();
@@ -21,7 +22,7 @@ export function ThemePersistence() {
 
     if (!database) return;
 
-    // 2. Sync from Firebase (Global brand palette only, NEVER overwrite local dark/light mode)
+    // 2. Sync from Firebase (Global brand palette only, NEVER overwrite local dark/light/liquid-glass mode)
     const themeRef = ref(database, 'chats/__system_settings/theme');
     
     const unsubscribe = onValue(themeRef, (snapshot: DataSnapshot) => {
@@ -33,7 +34,7 @@ export function ThemePersistence() {
           const saved = localStorage.getItem('simpu-theme');
           if (saved) {
             const parsed = JSON.parse(saved);
-            if (parsed.mode === 'dark' || parsed.mode === 'light') {
+            if (parsed.mode === 'dark' || parsed.mode === 'light' || parsed.mode === 'liquid-glass') {
               localMode = parsed.mode;
             }
           }
@@ -57,15 +58,12 @@ export function ThemePersistence() {
 
   const applyTheme = (themeData: any) => {
     if (!themeData) return;
-    const root = document.documentElement;
 
-    // Apply Mode (Light/Dark)
-    if (themeData.mode === 'dark') {
-      root.classList.add('dark');
-      document.body?.classList.add('dark');
+    // Apply Mode (Light / Dark / Liquid Glass)
+    if (themeData.mode === 'liquid-glass' || themeData.mode === 'dark' || themeData.mode === 'light') {
+      applyThemeMode(themeData.mode);
     } else {
-      root.classList.remove('dark');
-      document.body?.classList.remove('dark');
+      applyThemeMode('light');
     }
 
     // Apply Palette
@@ -100,6 +98,10 @@ export function ThemePersistence() {
           --ring: ${palette} !important;
           --accent: ${palette} !important;
           --accent-foreground: 0 0% 100% !important;
+        }
+        [data-theme="liquid-glass"] {
+          --primary: ${palette} !important;
+          --ring: ${palette} !important;
         }
       `;
     }

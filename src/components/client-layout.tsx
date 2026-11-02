@@ -9,10 +9,11 @@ import { GlobalStatsAutoSync } from '@/components/GlobalStatsAutoSync';
 import { useUser, useDatabase, useMemoFirebase, useObject, useAuth } from '@/firebase'
 import { ref, onValue, set, update, onDisconnect, serverTimestamp } from 'firebase/database'
 import { signOut } from 'firebase/auth'
-import { User as UserIcon, LogOut, AlertCircle, MonitorOff, ArrowLeft, Moon, Sun, Share2, MoreHorizontal, ChevronRight } from 'lucide-react'
+import { User as UserIcon, LogOut, AlertCircle, MonitorOff, ArrowLeft, Moon, Sun, Share2, MoreHorizontal, ChevronRight, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { Toaster } from '@/components/ui/toaster';
 import { ThemePersistence } from '@/components/theme-persistence';
+import { useTheme } from '@/components/theme-provider';
 import { useSoundEffect } from '@/hooks/use-sound-effect';
 import { cn } from '@/lib/utils';
 import { MessageNotification } from './MessageNotification';
@@ -292,20 +293,20 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             "flex w-full h-full overflow-hidden transition-all duration-300",
             isLoginPage || isSpecialFullscreenPage || isPortalSurveyPage
               ? "rounded-none max-w-full"
-              : "w-full rounded-none bg-white dark:bg-slate-900"
+              : "w-full rounded-none bg-white dark:bg-slate-900 [[data-theme=liquid-glass]_&]:bg-transparent/20"
           )}>
             {user && !isLoginPage && !isSpecialFullscreenPage && !isPortalSurveyPage && (
               <AppSidebar />
             )}
 
-            <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden bg-white dark:bg-slate-900">
+            <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden bg-white dark:bg-slate-900 [[data-theme=liquid-glass]_&]:bg-transparent">
               {user && !isLoginPage && <GlobalStatsAutoSync />}
               {user && !isLoginPage && <MessageNotification />}
               <Toaster />
 
               {!isLoginPage && !isSpecialFullscreenPage && !isPortalSurveyPage && (
                 <>
-                  <header className="relative flex items-center justify-between px-3 sm:px-6 h-14 sm:h-16 border-b border-slate-100 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shrink-0 print:hidden gap-2 sm:gap-3">
+                  <header className="relative flex items-center justify-between px-3 sm:px-6 h-14 sm:h-16 border-b border-slate-100 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 [[data-theme=liquid-glass]_&]:glass-nav [[data-theme=liquid-glass]_&]:border-white/20 backdrop-blur-md shrink-0 print:hidden gap-2 sm:gap-3 transition-colors duration-300">
                     {/* Breadcrumbs matching Growly LMS */}
                     <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 shrink-0 z-10">
                       {user && (
@@ -413,7 +414,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               )}
 
               <main className={cn(
-                "flex-1 bg-white dark:bg-slate-900 print:bg-white relative z-0 isolate flex flex-col custom-scrollbar",
+                "flex-1 bg-white dark:bg-slate-900 [[data-theme=liquid-glass]_&]:bg-transparent print:bg-white relative z-0 isolate flex flex-col custom-scrollbar",
                 isLoginPage ? "overflow-hidden" : isPortalSurveyPage ? "overflow-y-auto overflow-x-hidden" : isSpecialFullscreenPage ? "overflow-hidden" : "overflow-y-auto"
               )}>
                 <div key={pathname} className={cn(
