@@ -30,6 +30,7 @@ import { useToast } from "@/hooks/use-toast"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { useSoundEffect } from "@/hooks/use-sound-effect"
 import "./login.css"
+import { SimpuOrbitalBadge } from "@/components/simpu-orbital-badge"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -517,50 +518,7 @@ export default function LoginPage() {
         <section className="hidden lg:flex lg:col-span-7 xl:col-span-7 flex-col justify-center items-center p-4 xl:p-8 relative overflow-hidden select-none min-h-0 h-full">
           {/* Centerpiece: Enriched & Enlarged Hero Animated Logo Emblem */}
           <div className="relative flex flex-col items-center justify-center my-auto">
-            {/* Dynamic Orbit & Aura Container */}
-            <div className="relative w-[320px] h-[320px] sm:w-[380px] sm:h-[380px] xl:w-[460px] xl:h-[460px] max-h-[60vh] max-w-[60vh] flex items-center justify-center">
-              
-              {/* Radar Wave Pulse Ring (Expanding Energy Wave) */}
-              <div className="absolute inset-3 rounded-full border border-emerald-400/40 animate-radar-ping pointer-events-none" />
-
-              {/* Ambient Glowing Halo Behind Logo */}
-              <div className="absolute w-64 h-64 xl:w-88 xl:h-88 rounded-full bg-gradient-to-tr from-emerald-500/30 via-emerald-400/20 to-amber-400/30 blur-2xl animate-aura-pulse pointer-events-none" />
-
-              {/* Outer Dashed Neon Orbit Ring (Spinning Clockwise) */}
-              <div className="absolute inset-0 rounded-full border-2 border-emerald-400/30 border-dashed animate-spin-very-slow pointer-events-none" />
-              
-              {/* Mid Amber/Gold Ring (Spinning Counter-Clockwise with Satellites) */}
-              <div className="absolute inset-8 xl:inset-12 rounded-full border-2 border-amber-400/35 animate-spin-reverse-slow pointer-events-none">
-                {/* Glowing Satellite Nodes on Mid Ring */}
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-amber-400 shadow-[0_0_18px_#fbbf24] border border-white/60" />
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-emerald-400 shadow-[0_0_18px_#34d399] border border-white/60" />
-              </div>
-
-              {/* Inner Pulsing Accent Ring */}
-              <div className="absolute inset-16 xl:inset-22 rounded-full border border-emerald-300/30 border-dotted animate-spin-very-slow pointer-events-none" />
-
-              {/* Main Floating Shield / Disc with Snug Green Boundary */}
-              <div className="relative z-10 w-60 h-60 sm:w-68 sm:h-68 xl:w-80 xl:h-80 max-h-[50vh] max-w-[50vh] rounded-full p-2 sm:p-2.5 bg-gradient-to-tr from-emerald-950 via-[#0a381f] to-emerald-800 shadow-[0_0_80px_rgba(16,185,129,0.5)] border-2 border-emerald-400/60 flex items-center justify-center animate-hero-float">
-                {/* Snug Emerald Inner Boundary */}
-                <div className="w-full h-full rounded-full bg-gradient-to-b from-[#0e4828] to-[#041a0e] p-1.5 sm:p-2 flex items-center justify-center relative overflow-hidden group shadow-2xl">
-                  {/* Subtle Inner Glow */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/30 via-transparent to-amber-400/20 pointer-events-none" />
-
-                  {/* Central Pure White Logo Disc - Fills snuggly up to the green border */}
-                  <div className="w-full h-full rounded-full bg-white p-5 sm:p-6 xl:p-8 shadow-2xl border-[3.5px] border-amber-400 flex items-center justify-center group-hover:scale-[1.02] transition-transform duration-500 relative z-10 overflow-hidden">
-                    {/* Light Sweep Reflection Sheen */}
-                    <div className="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/50 to-transparent animate-logo-shine pointer-events-none" />
-
-                    {/* The SIMPU Logo - Filling the circle */}
-                    <img 
-                      src="/logo.png" 
-                      alt="SIMPU Logo" 
-                      className="w-full h-full object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.12)] relative z-10" 
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <SimpuOrbitalBadge size="lg" />
           </div>
         </section>
 
