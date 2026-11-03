@@ -946,7 +946,7 @@ export default function LoginPage() {
           ========================================================================= */}
       <footer className="relative z-30 w-full py-2 px-6 shrink-0 text-center select-none flex flex-col items-center justify-center gap-0.5 border-t border-emerald-800/40 bg-[#041a0e]/80 backdrop-blur-sm animate-entrance-up delay-350">
         <p className="text-[11px] sm:text-xs tracking-wider uppercase text-emerald-300 font-bold drop-shadow">
-          DESIGN BY MT NETWORK – CREATED AGUS SURIYADI
+          DESIGN BY MTNETWORK MANDIRI SOLUTION - AGUS SURIYADI
         </p>
         <p className="text-[10px] text-slate-400 font-medium drop-shadow">
           © {new Date().getFullYear()} SIMPU Kota Tanjungpinang. All rights reserved.
