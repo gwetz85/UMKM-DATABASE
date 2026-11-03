@@ -16,397 +16,159 @@ export function SimpuOrbitalBadge({
   showText = false,
   interactive = true,
 }: SimpuOrbitalBadgeProps) {
-  // Dimension presets for different contexts
+  // Dimension presets
   const sizeClasses = {
-    sm: "w-[180px] h-[180px] sm:w-[210px] sm:h-[210px]",
-    md: "w-[280px] h-[280px] sm:w-[330px] sm:h-[330px]",
-    lg: "w-[380px] h-[380px] sm:w-[440px] sm:h-[440px] lg:w-[480px] lg:h-[480px] xl:w-[530px] xl:h-[530px]",
+    sm: "w-[150px] h-[150px] sm:w-[175px] sm:h-[175px]",
+    md: "w-[260px] h-[260px] sm:w-[320px] sm:h-[320px]",
+    lg: "w-[340px] h-[340px] sm:w-[400px] sm:h-[400px] xl:w-[480px] xl:h-[480px]",
     responsive:
-      "w-[190px] h-[190px] sm:w-[250px] sm:h-[250px] md:w-[320px] md:h-[320px] lg:w-[450px] lg:h-[450px] xl:w-[510px] xl:h-[510px]",
+      "w-[150px] h-[150px] sm:w-[200px] sm:h-[200px] md:w-[300px] md:h-[300px] lg:w-[420px] lg:h-[420px] xl:w-[480px] xl:h-[480px]",
   }[size]
 
   return (
     <div
       className={cn(
-        "relative flex flex-col items-center justify-center select-none group",
+        "relative flex flex-col items-center justify-center select-none",
         className
       )}
     >
-      <style jsx global>{`
-        @keyframes simpu-orbit-cw {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
+      {/* Standard CSS keyframes injected directly into component */}
+      <style>{`
+        @keyframes simpuOrbitCW {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
-
-        @keyframes simpu-orbit-ccw {
-          from {
-            transform: rotate(360deg);
-          }
-          to {
-            transform: rotate(0deg);
-          }
+        @keyframes simpuOrbitCCW {
+          0% { transform: rotate(360deg); }
+          100% { transform: rotate(0deg); }
         }
-
-        @keyframes simpu-spin-slow {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
+        @keyframes simpuRadarPing {
+          0% { transform: scale(0.85); opacity: 0.85; }
+          100% { transform: scale(1.48); opacity: 0; }
         }
-
-        @keyframes simpu-radar-wave-1 {
-          0% {
-            r: 132px;
-            opacity: 0.7;
-            stroke-width: 2.2px;
-          }
-          50% {
-            opacity: 0.35;
-          }
-          100% {
-            r: 285px;
-            opacity: 0;
-            stroke-width: 0.5px;
-          }
+        @keyframes simpuHeroFloat {
+          0%, 100% { transform: translateY(0px) scale(1); }
+          50% { transform: translateY(-9px) scale(1.02); }
         }
-
-        @keyframes simpu-radar-wave-2 {
-          0% {
-            r: 132px;
-            opacity: 0.7;
-            stroke-width: 2.2px;
-          }
-          50% {
-            opacity: 0.35;
-          }
-          100% {
-            r: 285px;
-            opacity: 0;
-            stroke-width: 0.5px;
-          }
+        @keyframes simpuShineSweep {
+          0%, 55% { transform: translateX(-220%) translateY(-220%) rotate(45deg); }
+          100% { transform: translateX(220%) translateY(220%) rotate(45deg); }
         }
-
-        @keyframes simpu-float-badge {
-          0%, 100% {
-            transform: translateY(0px) scale(1);
-          }
-          50% {
-            transform: translateY(-5px) scale(1.012);
-          }
-        }
-
-        @keyframes simpu-ambient-breathe {
-          0%, 100% {
-            opacity: 0.45;
-            transform: scale(0.96);
-          }
-          50% {
-            opacity: 0.8;
-            transform: scale(1.06);
-          }
-        }
-
-        .animate-simpu-orbit-cw {
-          animation: simpu-orbit-cw 18s linear infinite;
-          transform-origin: 300px 300px;
-        }
-
-        .animate-simpu-orbit-ccw {
-          animation: simpu-orbit-ccw 24s linear infinite;
-          transform-origin: 300px 300px;
-        }
-
-        .animate-simpu-spin-slow {
-          animation: simpu-spin-slow 65s linear infinite;
-          transform-origin: 300px 300px;
-        }
-
-        .animate-simpu-radar-1 {
-          animation: simpu-radar-wave-1 4.2s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
-        }
-
-        .animate-simpu-radar-2 {
-          animation: simpu-radar-wave-2 4.2s cubic-bezier(0.2, 0.6, 0.4, 1) infinite 2.1s;
-        }
-
-        .animate-simpu-float {
-          animation: simpu-float-badge 4.5s ease-in-out infinite;
-        }
-
-        .animate-simpu-ambient {
-          animation: simpu-ambient-breathe 5s ease-in-out infinite;
+        @keyframes simpuAuraPulse {
+          0%, 100% { transform: scale(0.94); opacity: 0.45; }
+          50% { transform: scale(1.1); opacity: 0.85; }
         }
       `}</style>
 
       {/* Main Orbital System Container */}
       <div className={cn("relative flex items-center justify-center", sizeClasses)}>
-        {/* Atmospheric Ambient Glow Aura */}
-        <div
-          className="absolute inset-0 rounded-full animate-simpu-ambient pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, rgba(245, 158, 11, 0.18) 36%, transparent 72%)",
-            filter: "blur(24px)",
-          }}
+        
+        {/* Layer 0: Ambient Glowing Halo Aura */}
+        <div 
+          className="absolute inset-4 rounded-full bg-gradient-to-tr from-emerald-500/35 via-emerald-400/20 to-amber-400/30 blur-2xl pointer-events-none"
+          style={{ animation: "simpuAuraPulse 4.5s ease-in-out infinite" }}
         />
 
-        {/* SVG Orbital Rings & Animated Satellites */}
-        <svg
-          viewBox="0 0 600 600"
-          className="w-full h-full absolute inset-0 pointer-events-none overflow-visible"
+        {/* Layer 1: Radar Shockwave Pulse 1 */}
+        <div 
+          className="absolute inset-3 rounded-full border-2 border-emerald-400/50 pointer-events-none"
+          style={{ animation: "simpuRadarPing 3.5s cubic-bezier(0, 0, 0.2, 1) infinite" }}
+        />
+
+        {/* Layer 2: Radar Shockwave Pulse 2 (Offset by 1.75s) */}
+        <div 
+          className="absolute inset-3 rounded-full border-2 border-emerald-300/40 pointer-events-none"
+          style={{ animation: "simpuRadarPing 3.5s cubic-bezier(0, 0, 0.2, 1) infinite 1.75s" }}
+        />
+
+        {/* Layer 3: Outermost Dashed Tech Orbit (Rotates Slow Clockwise) */}
+        <div 
+          className="absolute inset-0 rounded-full border-2 border-dashed border-emerald-400/45 pointer-events-none"
+          style={{ animation: "simpuOrbitCW 55s linear infinite" }}
         >
-          <defs>
-            {/* Filter for Yellow Orb Glow */}
-            <filter id="simpu-glow-yellow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur1" />
-              <feGaussianBlur in="SourceGraphic" stdDeviation="11" result="blur2" />
-              <feMerge>
-                <feMergeNode in="blur2" />
-                <feMergeNode in="blur1" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-
-            {/* Filter for Mint Orb Glow */}
-            <filter id="simpu-glow-mint" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur1" />
-              <feGaussianBlur in="SourceGraphic" stdDeviation="11" result="blur2" />
-              <feMerge>
-                <feMergeNode in="blur2" />
-                <feMergeNode in="blur1" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-
-            {/* Gradient Trail for Yellow Orbit (Clockwise trailing arc) */}
-            <linearGradient
-              id="simpu-trail-yellow"
-              gradientUnits="userSpaceOnUse"
-              x1="168"
-              y1="168"
-              x2="300"
-              y2="114"
-            >
-              <stop offset="0%" stopColor="#FACC15" stopOpacity="0" />
-              <stop offset="65%" stopColor="#FACC15" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#FDE047" stopOpacity="0.95" />
-            </linearGradient>
-
-            {/* Gradient Trail for Mint Orbit (Counter-Clockwise trailing arc) */}
-            <linearGradient
-              id="simpu-trail-mint"
-              gradientUnits="userSpaceOnUse"
-              x1="133"
-              y1="467"
-              x2="300"
-              y2="536"
-            >
-              <stop offset="0%" stopColor="#34D399" stopOpacity="0" />
-              <stop offset="65%" stopColor="#34D399" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#6EE7B7" stopOpacity="0.95" />
-            </linearGradient>
-          </defs>
-
-          {/* Radar Wave 1 (Shockwave pulse expanding outward) */}
-          <circle
-            cx="300"
-            cy="300"
-            fill="none"
-            stroke="#34D399"
-            className="animate-simpu-radar-1"
-          />
-
-          {/* Radar Wave 2 (Offset pulse) */}
-          <circle
-            cx="300"
-            cy="300"
-            fill="none"
-            stroke="#10B981"
-            className="animate-simpu-radar-2"
-          />
-
-          {/* Outermost Dashed Tech Orbit (r = 270) */}
-          <g className="animate-simpu-spin-slow">
-            <circle
-              cx="300"
-              cy="300"
-              r="270"
-              fill="none"
-              stroke="#34D399"
-              strokeWidth="1.3"
-              strokeDasharray="4 7"
-              strokeOpacity="0.45"
-            />
-            {/* Cardinal Micro Satellite Dots on outer ring */}
-            <circle cx="300" cy="30" r="2.5" fill="#34D399" fillOpacity="0.8" />
-            <circle cx="570" cy="300" r="2.5" fill="#34D399" fillOpacity="0.8" />
-            <circle cx="300" cy="570" r="2.5" fill="#34D399" fillOpacity="0.8" />
-            <circle cx="30" cy="300" r="2.5" fill="#34D399" fillOpacity="0.8" />
-          </g>
-
-          {/* Orbit Ring 2 Guide Track (r = 236) */}
-          <circle
-            cx="300"
-            cy="300"
-            r="236"
-            fill="none"
-            stroke="#10B981"
-            strokeWidth="1.4"
-            strokeOpacity="0.42"
-          />
-
-          {/* Mid Guide Ring (r = 210) */}
-          <circle
-            cx="300"
-            cy="300"
-            r="210"
-            fill="none"
-            stroke="#059669"
-            strokeWidth="1"
-            strokeOpacity="0.32"
-          />
-
-          {/* Orbit Ring 1 Guide Track (r = 186) */}
-          <circle
-            cx="300"
-            cy="300"
-            r="186"
-            fill="none"
-            stroke="#34D399"
-            strokeWidth="1.4"
-            strokeOpacity="0.48"
-          />
-
-          {/* Inner Glow Ring (r = 152) */}
-          <circle
-            cx="300"
-            cy="300"
-            r="152"
-            fill="none"
-            stroke="#10B981"
-            strokeWidth="2.2"
-            strokeOpacity="0.55"
-          />
-
-          {/* ROTATING ORBIT 1: Amber/Yellow Orb (Top, 12 o'clock, rotates Clockwise) */}
-          <g className="animate-simpu-orbit-cw">
-            {/* Trailing Arc behind Yellow Orb (curves along r=186) */}
-            <path
-              d="M 168.5 168.5 A 186 186 0 0 1 300 114"
-              fill="none"
-              stroke="url(#simpu-trail-yellow)"
-              strokeWidth="2.8"
-              strokeLinecap="round"
-            />
-
-            {/* Glowing Amber Orb Group at Top (300, 114) */}
-            <g transform="translate(300, 114)">
-              {/* Outer Corona Pulse */}
-              <circle
-                cx="0"
-                cy="0"
-                r="13"
-                fill="#FACC15"
-                fillOpacity="0.3"
-                className="animate-ping"
-                style={{ animationDuration: "2.4s" }}
-              />
-              {/* Diffused Glow Halo */}
-              <circle
-                cx="0"
-                cy="0"
-                r="9.5"
-                fill="#FACC15"
-                filter="url(#simpu-glow-yellow)"
-              />
-              {/* Core Solid Orb */}
-              <circle
-                cx="0"
-                cy="0"
-                r="6.5"
-                fill="#FEF08A"
-                stroke="#EAB308"
-                strokeWidth="1.8"
-              />
-              {/* Center Highlight */}
-              <circle cx="-1.5" cy="-1.5" r="2" fill="#FFFFFF" fillOpacity="0.95" />
-            </g>
-          </g>
-
-          {/* ROTATING ORBIT 2: Mint/Cyan Orb (Bottom, 6 o'clock, rotates Counter-Clockwise) */}
-          <g className="animate-simpu-orbit-ccw">
-            {/* Trailing Arc behind Mint Orb (curves along r=236) */}
-            <path
-              d="M 133.1 466.9 A 236 236 0 0 0 300 536"
-              fill="none"
-              stroke="url(#simpu-trail-mint)"
-              strokeWidth="2.8"
-              strokeLinecap="round"
-            />
-
-            {/* Glowing Mint Orb Group at Bottom (300, 536) */}
-            <g transform="translate(300, 536)">
-              {/* Outer Corona Pulse */}
-              <circle
-                cx="0"
-                cy="0"
-                r="13"
-                fill="#34D399"
-                fillOpacity="0.3"
-                className="animate-ping"
-                style={{ animationDuration: "2.8s" }}
-              />
-              {/* Diffused Glow Halo */}
-              <circle
-                cx="0"
-                cy="0"
-                r="9.5"
-                fill="#34D399"
-                filter="url(#simpu-glow-mint)"
-              />
-              {/* Core Solid Orb */}
-              <circle
-                cx="0"
-                cy="0"
-                r="6.5"
-                fill="#A7F3D0"
-                stroke="#10B981"
-                strokeWidth="1.8"
-              />
-              {/* Center Highlight */}
-              <circle cx="-1.5" cy="-1.5" r="2" fill="#FFFFFF" fillOpacity="0.95" />
-            </g>
-          </g>
-        </svg>
-
-        {/* Central SIMPU Disc Badge */}
-        <div
-          className={cn(
-            "relative z-10 w-[44%] h-[44%] rounded-full bg-white p-2 sm:p-2.5 md:p-3",
-            "border-[3.5px] sm:border-[4.5px] md:border-[5.5px] border-amber-400",
-            "shadow-[0_12px_36px_rgba(0,0,0,0.65),0_0_24px_rgba(245,158,11,0.45)]",
-            "flex items-center justify-center animate-simpu-float",
-            interactive &&
-              "transition-transform duration-300 hover:scale-105 hover:shadow-[0_16px_45px_rgba(0,0,0,0.75),0_0_35px_rgba(245,158,11,0.7)] cursor-pointer"
-          )}
-        >
-          <img
-            src="/logo.png"
-            alt="SIMPU Badge"
-            className="w-full h-full object-contain pointer-events-none select-none drop-shadow-sm"
-          />
+          {/* Cardinal Micro Satellite Dots */}
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-emerald-300 shadow-[0_0_8px_#34d399]" />
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-emerald-300 shadow-[0_0_8px_#34d399]" />
+          <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-emerald-300 shadow-[0_0_8px_#34d399]" />
+          <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-emerald-300 shadow-[0_0_8px_#34d399]" />
         </div>
+
+        {/* Layer 4: Outer Orbit Track with MINT/CYAN Orb (Bottom 6 o'clock - Rotating Counter-Clockwise) */}
+        <div 
+          className="absolute inset-5 sm:inset-6 xl:inset-8 rounded-full border border-emerald-400/50 pointer-events-none"
+          style={{ animation: "simpuOrbitCCW 22s linear infinite" }}
+        >
+          {/* Glowing Mint Satellite at Bottom (6 o'clock) */}
+          <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 flex items-center justify-center">
+            {/* Corona Pulse */}
+            <div className="absolute w-7 h-7 rounded-full bg-emerald-400/35 animate-ping" style={{ animationDuration: "2.8s" }} />
+            {/* Core Orb with intense glow */}
+            <div className="relative w-4 h-4 rounded-full bg-emerald-400 shadow-[0_0_16px_#34d399,0_0_30px_#10b981] border-2 border-white flex items-center justify-center">
+              <div className="w-1.5 h-1.5 rounded-full bg-white" />
+            </div>
+          </div>
+        </div>
+
+        {/* Layer 5: Mid Emerald Guide Track */}
+        <div className="absolute inset-10 sm:inset-12 xl:inset-16 rounded-full border border-emerald-500/30 pointer-events-none" />
+
+        {/* Layer 6: Inner Orbit Track with AMBER/YELLOW Orb (Top 12 o'clock - Rotating Clockwise) */}
+        <div 
+          className="absolute inset-14 sm:inset-16 xl:inset-22 rounded-full border border-amber-400/50 pointer-events-none"
+          style={{ animation: "simpuOrbitCW 16s linear infinite" }}
+        >
+          {/* Glowing Amber Satellite at Top (12 o'clock) */}
+          <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 flex items-center justify-center">
+            {/* Corona Pulse */}
+            <div className="absolute w-7 h-7 rounded-full bg-amber-400/35 animate-ping" style={{ animationDuration: "2.2s" }} />
+            {/* Core Orb with intense glow */}
+            <div className="relative w-4 h-4 rounded-full bg-amber-400 shadow-[0_0_16px_#fbbf24,0_0_30px_#f59e0b] border-2 border-white flex items-center justify-center">
+              <div className="w-1.5 h-1.5 rounded-full bg-white" />
+            </div>
+          </div>
+        </div>
+
+        {/* Layer 7: Innermost Emerald Guide Ring */}
+        <div className="absolute inset-20 sm:inset-24 xl:inset-30 rounded-full border border-emerald-300/30 border-dotted pointer-events-none" />
+
+        {/* Layer 8: Central Floating SIMPU Badge with 3D Float, Golden Rim & Active Shine Sweep */}
+        <div 
+          className="relative z-10 w-[52%] h-[52%] rounded-full p-2 bg-gradient-to-tr from-emerald-950 via-[#0a381f] to-emerald-800 shadow-[0_0_60px_rgba(16,185,129,0.5),0_20px_45px_rgba(0,0,0,0.65)] border-2 border-emerald-400/60 flex items-center justify-center"
+          style={{ animation: "simpuHeroFloat 5s ease-in-out infinite" }}
+        >
+          {/* Snug Inner Boundary */}
+          <div className="w-full h-full rounded-full bg-gradient-to-b from-[#0e4828] to-[#041a0e] p-1.5 sm:p-2 flex items-center justify-center relative overflow-hidden group shadow-2xl">
+            {/* Inner Glow */}
+            <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/30 via-transparent to-amber-400/20 pointer-events-none" />
+
+            {/* Central Pure White Logo Disc with Gold Ring */}
+            <div 
+              className={cn(
+                "w-full h-full rounded-full bg-white p-2.5 sm:p-3.5 md:p-4 xl:p-6 shadow-2xl border-[3.5px] border-amber-400 flex items-center justify-center relative z-10 overflow-hidden",
+                interactive && "transition-transform duration-300 hover:scale-105 cursor-pointer"
+              )}
+            >
+              {/* Dynamic Light Sweep Reflection Sheen (Active Animation across the logo) */}
+              <div 
+                className="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/70 to-transparent pointer-events-none" 
+                style={{ animation: "simpuShineSweep 3.8s ease-in-out infinite" }}
+              />
+
+              {/* The SIMPU Logo */}
+              <img
+                src="/logo.png"
+                alt="SIMPU Logo"
+                className="w-full h-full object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.15)] relative z-10 pointer-events-none select-none"
+              />
+            </div>
+          </div>
+        </div>
+
       </div>
 
       {/* Optional Descriptive Title Below Badge */}
       {showText && (
-        <div className="mt-4 text-center select-none animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="mt-3 text-center select-none animate-entrance-up">
           <span className="block text-xl sm:text-2xl md:text-3xl font-black tracking-wider uppercase text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
             SIMPU
           </span>

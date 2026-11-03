@@ -529,12 +529,8 @@ export default function LoginPage() {
           
           {/* Mobile Top Header (Visible on Mobile & Tablet only) */}
           <div className="lg:hidden w-full max-w-[400px] flex flex-col items-center text-center mb-3 pt-2 animate-entrance-scale shrink-0">
-            <div className="w-12 h-12 rounded-full bg-white p-2 shadow-xl border-2 border-amber-400 flex items-center justify-center shrink-0 mb-1.5 hover:scale-105 transition-transform duration-300">
-              <img 
-                src="/logo.png" 
-                alt="Logo SIMPU" 
-                className="w-full h-full object-contain"
-              />
+            <div className="mb-2 flex justify-center">
+              <SimpuOrbitalBadge size="sm" />
             </div>
             <h1 className="text-xl font-black tracking-wider leading-none uppercase text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
               SIMPU

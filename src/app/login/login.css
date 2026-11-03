@@ -345,7 +345,7 @@
 .delay-450 { animation-delay: 450ms; }
 .delay-500 { animation-delay: 500ms; }
 
-/* Reduced motion preference */
+/* Reduced motion preference (preserve essential brand animations) */
 @media (prefers-reduced-motion: reduce) {
   .animate-blob-1,
   .animate-blob-2,
@@ -353,21 +353,16 @@
   .animate-float-slow,
   .animate-float-delayed,
   .animate-float-reverse,
-  .animate-spin-very-slow,
-  .animate-spin-reverse-slow,
   .animate-glow-pulse,
   .animate-btn-shimmer,
   .animate-shake,
   .animate-success-ripple,
   .animate-eye-spin,
   .animate-entrance-up,
-  .animate-entrance-scale,
-  .animate-hero-float,
-  .animate-aura-pulse,
-  .animate-radar-ping,
-  .animate-logo-shine {
+  .animate-entrance-scale {
     animation: none !important;
     transition: none !important;
     transform: none !important;
   }
 }
+
