@@ -58,6 +58,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { logActivity, getDeviceType } from "@/lib/logger"
+import { KtpKkScannerDialog } from "@/components/ktp-kk-scanner-dialog"
 
 function KkDetailCard({ item }: { item: any }) {
   const srcUpper = (item._source || "").toUpperCase()
@@ -282,6 +283,42 @@ export default function InputDataPage() {
   const [nik, setNik] = useState("")
   const [noKK, setNoKK] = useState("")
   const [comparisonPhotoUrl, setComparisonPhotoUrl] = useState("")
+
+  // Scanner KTP/KK Dialog State
+  const [isScannerOpen, setIsScannerOpen] = useState(false)
+  const [scannerMode, setScannerMode] = useState<"ktp" | "noKK">("ktp")
+
+  const handleScanComplete = (extractedNumber: string, scanMode: "ktp" | "noKK") => {
+    const cleanNumber = extractedNumber.replace(/\D/g, "")
+    if (scanMode === "ktp") {
+      setNik(cleanNumber)
+      if (cleanNumber.length >= 12) {
+        const extractedDob = extractDobFromNik(cleanNumber)
+        if (extractedDob && !isEditingDob) {
+          setDob(extractedDob)
+        }
+        const extractedGender = extractGenderFromNik(cleanNumber)
+        if (extractedGender) {
+          setGender(extractedGender)
+        }
+      } else if (!isEditingDob) {
+        setDob("")
+      }
+      if (!nikKepalaKeluarga) {
+        setNikKepalaKeluarga(cleanNumber)
+      }
+      toast({
+        title: "NIK Berhasil Dipindai",
+        description: `NIK ${cleanNumber} telah terisi ke formulir.`,
+      })
+    } else {
+      setNoKK(cleanNumber)
+      toast({
+        title: "Nomor KK Berhasil Dipindai",
+        description: `Nomor KK ${cleanNumber} telah terisi, pengecekan database sedang berjalan...`,
+      })
+    }
+  }
 
   // ==========================================================
   // TAHAPAN 2: Data Pelaku Usaha (1 - 12)
@@ -1113,31 +1150,47 @@ export default function InputDataPage() {
                       {nik.length} / 16 DIGIT
                     </span>
                   </div>
-                  <Input
-                    id="nik"
-                    name="nik"
-                    maxLength={16}
-                    placeholder="Masukkan 16 digit NIK..."
-                    required
-                    value={nik}
-                    className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-mono font-bold tracking-wider border-slate-200 dark:border-slate-800"
-                    onChange={(e) => {
-                      const cleanNik = e.target.value.replace(/[^0-9]/g, "")
-                      setNik(cleanNik)
-                      if (cleanNik.length >= 12) {
-                        const extractedDob = extractDobFromNik(cleanNik)
-                        if (extractedDob && !isEditingDob) {
-                          setDob(extractedDob)
+                  <div className="flex gap-2">
+                    <Input
+                      id="nik"
+                      name="nik"
+                      maxLength={16}
+                      placeholder="Masukkan 16 digit NIK..."
+                      required
+                      value={nik}
+                      className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-mono font-bold tracking-wider border-slate-200 dark:border-slate-800 flex-1"
+                      onChange={(e) => {
+                        const cleanNik = e.target.value.replace(/[^0-9]/g, "")
+                        setNik(cleanNik)
+                        if (cleanNik.length >= 12) {
+                          const extractedDob = extractDobFromNik(cleanNik)
+                          if (extractedDob && !isEditingDob) {
+                            setDob(extractedDob)
+                          }
+                          const extractedGender = extractGenderFromNik(cleanNik)
+                          if (extractedGender) {
+                            setGender(extractedGender)
+                          }
+                        } else if (!isEditingDob) {
+                          setDob("")
                         }
-                        const extractedGender = extractGenderFromNik(cleanNik)
-                        if (extractedGender) {
-                          setGender(extractedGender)
-                        }
-                      } else if (!isEditingDob) {
-                        setDob("")
-                      }
-                    }}
-                  />
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setScannerMode("ktp")
+                        setIsScannerOpen(true)
+                      }}
+                      className="h-11 sm:h-12 px-3 sm:px-4 rounded-xl sm:rounded-2xl border-teal-500/60 dark:border-teal-500/40 bg-teal-50/80 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-300 font-bold text-xs tracking-wide shrink-0 flex items-center gap-1.5 shadow-xs transition-all hover:border-teal-600"
+                      title="Pindai NIK KTP menggunakan kamera atau galeri"
+                    >
+                      <Camera className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                      <span className="hidden sm:inline">Scan KTP</span>
+                      <span className="sm:hidden">Scan</span>
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Nomor KK + Pengecekan Otomatis */}
@@ -1170,31 +1223,47 @@ export default function InputDataPage() {
                     </div>
                   </div>
 
-                  <div className="relative">
-                    <Input
-                      id="noKK"
-                      name="noKK"
-                      maxLength={16}
-                      placeholder="Masukkan 16 digit Nomor KK..."
-                      required
-                      value={noKK}
-                      className={cn(
-                        "h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-mono font-bold tracking-wider transition-all",
-                        isFormBlocked
-                          ? "border-rose-400 bg-rose-50/50 dark:bg-rose-950/30 text-rose-900 dark:text-rose-100 focus-visible:ring-rose-400"
-                          : isKkSheet3Match
-                          ? "border-amber-400 bg-amber-50/40 dark:bg-amber-950/20 text-amber-900 dark:text-amber-100"
-                          : noKK.length === 16 && !isCheckingKk
-                          ? "border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-100"
-                          : "border-slate-200 dark:border-slate-800"
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        id="noKK"
+                        name="noKK"
+                        maxLength={16}
+                        placeholder="Masukkan 16 digit Nomor KK..."
+                        required
+                        value={noKK}
+                        className={cn(
+                          "h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-mono font-bold tracking-wider transition-all",
+                          isFormBlocked
+                            ? "border-rose-400 bg-rose-50/50 dark:bg-rose-950/30 text-rose-900 dark:text-rose-100 focus-visible:ring-rose-400"
+                            : isKkSheet3Match
+                            ? "border-amber-400 bg-amber-50/40 dark:bg-amber-950/20 text-amber-900 dark:text-amber-100"
+                            : noKK.length === 16 && !isCheckingKk
+                            ? "border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-100"
+                            : "border-slate-200 dark:border-slate-800"
+                        )}
+                        onChange={(e) => setNoKK(e.target.value.replace(/[^0-9]/g, ""))}
+                      />
+                      {isCheckingKk && (
+                        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 text-primary animate-spin" />
+                        </div>
                       )}
-                      onChange={(e) => setNoKK(e.target.value.replace(/[^0-9]/g, ""))}
-                    />
-                    {isCheckingKk && (
-                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 text-primary animate-spin" />
-                      </div>
-                    )}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setScannerMode("noKK")
+                        setIsScannerOpen(true)
+                      }}
+                      className="h-11 sm:h-12 px-3 sm:px-4 rounded-xl sm:rounded-2xl border-teal-500/60 dark:border-teal-500/40 bg-teal-50/80 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-300 font-bold text-xs tracking-wide shrink-0 flex items-center gap-1.5 shadow-xs transition-all hover:border-teal-600"
+                      title="Pindai Nomor KK menggunakan kamera atau galeri"
+                    >
+                      <Camera className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                      <span className="hidden sm:inline">Scan KK</span>
+                      <span className="sm:hidden">Scan</span>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -2143,6 +2212,14 @@ export default function InputDataPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog Scanner Kamera KTP & KK */}
+      <KtpKkScannerDialog
+        open={isScannerOpen}
+        onOpenChange={setIsScannerOpen}
+        initialMode={scannerMode}
+        onScanComplete={handleScanComplete}
+      />
     </div>
   )
 }

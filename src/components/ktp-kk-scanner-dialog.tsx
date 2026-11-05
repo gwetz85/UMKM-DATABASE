@@ -23,7 +23,6 @@ import {
   Loader2,
   RefreshCw,
   Search,
-  Check,
   CreditCard,
   FileText,
   X,
@@ -49,12 +48,13 @@ export function KtpKkScannerDialog({
   const { toast } = useToast()
 
   const [mode, setMode] = useState<"ktp" | "noKK">(initialMode)
-  const [stream, setStream] = useState<MediaStream | null>(null)
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("")
   const [torchEnabled, setTorchEnabled] = useState(false)
   const [hasTorch, setHasTorch] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
+  const [activeStream, setActiveStream] = useState<MediaStream | null>(null)
+  const [isVideoReady, setIsVideoReady] = useState(false)
 
   // Scanning states
   const [isProcessing, setIsProcessing] = useState(false)
@@ -66,10 +66,14 @@ export function KtpKkScannerDialog({
   const [ocrResult, setOcrResult] = useState<OcrResult | null>(null)
   const [editableNumber, setEditableNumber] = useState("")
 
+  // Refs: streamRef adalah single source of truth untuk MediaStream
+  const streamRef = useRef<MediaStream | null>(null)
+  const isStartingRef = useRef<boolean>(false)
+  const selectedDeviceIdRef = useRef<string>("")
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
-  // Update mode when initialMode changes
+  // Update mode dan reset form ketika dialog dibuka
   useEffect(() => {
     if (open) {
       setMode(initialMode)
@@ -77,73 +81,221 @@ export function KtpKkScannerDialog({
       setOcrResult(null)
       setEditableNumber("")
       setIsProcessing(false)
+      setCameraError(null)
     }
   }, [open, initialMode])
 
-  // Stop camera stream helper
+  // Stop camera stream helper stabil tanpa dependency
   const stopStream = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop())
-      setStream(null)
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop()
+        } catch (e) {
+          console.warn("Track stop error:", e)
+        }
+      })
+      streamRef.current = null
     }
-  }, [stream])
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+    }
+    setActiveStream(null)
+    setIsVideoReady(false)
+    setTorchEnabled(false)
+    setHasTorch(false)
+  }, [])
 
-  // Initialize camera
-  const startCamera = useCallback(async (deviceId?: string) => {
-    setCameraError(null)
-    stopStream()
+  // Start camera helper dengan constraints bertahap & error handling lengkap
+  const startCamera = useCallback(
+    async (preferredDeviceId?: string) => {
+      // Guard: mencegah eksekusi ganda bersamaan
+      if (isStartingRef.current) return
+      isStartingRef.current = true
 
-    try {
-      const constraints: MediaStreamConstraints = {
-        video: deviceId
-          ? { deviceId: { exact: deviceId } }
-          : {
-              facingMode: { ideal: "environment" },
-              width: { ideal: 1920 },
-              height: { ideal: 1080 },
+      setCameraError(null)
+      setIsVideoReady(false)
+
+      // 1. Cek secure context (HTTPS / localhost)
+      if (typeof window !== "undefined") {
+        const isLocal =
+          window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1" ||
+          window.location.hostname === "::1"
+        if (!window.isSecureContext && !isLocal) {
+          setCameraError(
+            "Akses kamera memerlukan koneksi aman (HTTPS). Harap buka aplikasi melalui protokol HTTPS agar browser mengizinkan kamera."
+          )
+          isStartingRef.current = false
+          return
+        }
+      }
+
+      // 2. Cek ketersediaan API getUserMedia di browser
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+      ) {
+        setCameraError(
+          "Browser Anda tidak mendukung akses kamera (MediaDevices API tidak tersedia). Gunakan browser modern seperti Google Chrome atau gunakan opsi Unggah Galeri."
+        )
+        isStartingRef.current = false
+        return
+      }
+
+      // Hentikan stream yang sedang berjalan terlebih dahulu
+      stopStream()
+
+      const targetDeviceId = preferredDeviceId || selectedDeviceIdRef.current
+
+      // Daftar constraint bertahap:
+      // Mulai dari 1280x720 kamera belakang -> 640x480 -> generic video (jangan paksa 1920x1080)
+      const constraintList: MediaStreamConstraints[] = targetDeviceId
+        ? [
+            {
+              video: {
+                deviceId: { exact: targetDeviceId },
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+              },
+              audio: false,
             },
-        audio: false,
+            {
+              video: {
+                deviceId: { ideal: targetDeviceId },
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+              },
+              audio: false,
+            },
+            {
+              video: { deviceId: targetDeviceId },
+              audio: false,
+            },
+            {
+              video: true,
+              audio: false,
+            },
+          ]
+        : [
+            {
+              video: {
+                facingMode: { ideal: "environment" },
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+              },
+              audio: false,
+            },
+            {
+              video: {
+                facingMode: { ideal: "environment" },
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+              },
+              audio: false,
+            },
+            {
+              video: { facingMode: "environment" },
+              audio: false,
+            },
+            {
+              video: {
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+              },
+              audio: false,
+            },
+            {
+              video: true,
+              audio: false,
+            },
+          ]
+
+      let acquiredStream: MediaStream | null = null
+      let lastError: any = null
+
+      for (const constraints of constraintList) {
+        try {
+          acquiredStream = await navigator.mediaDevices.getUserMedia(constraints)
+          if (acquiredStream) break
+        } catch (err: any) {
+          lastError = err
+        }
       }
 
-      const newStream = await navigator.mediaDevices.getUserMedia(constraints)
-      setStream(newStream)
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = newStream
-        videoRef.current.play().catch(() => {})
+      if (!acquiredStream) {
+        isStartingRef.current = false
+        console.warn("Semua fallback constraints kamera gagal:", lastError)
+        if (
+          lastError?.name === "NotAllowedError" ||
+          lastError?.name === "PermissionDeniedError"
+        ) {
+          setCameraError(
+            "Izin akses kamera ditolak. Untuk mengaktifkan kembali di Chrome: klik ikon gembok / setelan situs di samping URL address bar, pilih 'Izin Situs' (Site Settings) -> Kamera -> pilih 'Izinkan' (Allow), lalu klik Coba Kamera Lagi."
+          )
+        } else if (
+          lastError?.name === "NotFoundError" ||
+          lastError?.name === "DevicesNotFoundError"
+        ) {
+          setCameraError(
+            "Kamera tidak ditemukan pada perangkat ini. Pastikan kamera terpasang dengan benar atau gunakan opsi Unggah Galeri."
+          )
+        } else if (
+          lastError?.name === "NotReadableError" ||
+          lastError?.name === "TrackStartError"
+        ) {
+          setCameraError(
+            "Kamera sedang digunakan oleh aplikasi lain (seperti WhatsApp, Zoom, atau tab browser lain). Tutup aplikasi tersebut lalu coba lagi."
+          )
+        } else if (lastError?.name === "OverconstrainedError") {
+          setCameraError(
+            "Resolusi kamera yang diminta tidak didukung oleh sensor kamera perangkat Anda."
+          )
+        } else {
+          setCameraError(
+            `Tidak dapat mengaktifkan kamera (${
+              lastError?.message || lastError?.name || "Terjadi kesalahan"
+            }). Silakan gunakan opsi Unggah Galeri.`
+          )
+        }
+        return
       }
 
-      // Check capabilities for torch
-      const videoTrack = newStream.getVideoTracks()[0]
+      streamRef.current = acquiredStream
+      setActiveStream(acquiredStream)
+
+      // Cek kemampuan flash / torch
+      const videoTrack = acquiredStream.getVideoTracks()[0]
       if (videoTrack) {
-        const capabilities = (videoTrack.getCapabilities?.() || {}) as any
-        setHasTorch(!!capabilities.torch)
+        try {
+          const capabilities = (videoTrack.getCapabilities?.() || {}) as any
+          setHasTorch(!!capabilities.torch)
+          const actualDeviceId = videoTrack.getSettings?.()?.deviceId
+          if (actualDeviceId) {
+            selectedDeviceIdRef.current = actualDeviceId
+            setSelectedDeviceId(actualDeviceId)
+          }
+        } catch (e) {
+          // Abaikan jika browser tidak mendukung getCapabilities
+        }
       }
 
-      // Enumerate devices if not already done
+      // Daftar perangkat kamera yang tersedia
       try {
         const allDevices = await navigator.mediaDevices.enumerateDevices()
         const videoDevs = allDevices.filter((d) => d.kind === "videoinput")
         setDevices(videoDevs)
-        if (!selectedDeviceId && videoDevs.length > 0) {
-          setSelectedDeviceId(videoTrack?.getSettings()?.deviceId || videoDevs[0].deviceId)
-        }
       } catch (e) {
-        // Ignore enumerate error
+        // Abaikan enumerate error
       }
-    } catch (err: any) {
-      console.warn("Camera init error:", err)
-      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-        setCameraError("Izin akses kamera ditolak. Silakan izinkan kamera di browser atau gunakan opsi Unggah Foto.")
-      } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
-        setCameraError("Kamera tidak ditemukan pada perangkat ini. Silakan gunakan opsi Unggah Foto.")
-      } else {
-        setCameraError("Tidak dapat mengaktifkan kamera. Silakan gunakan opsi Unggah Foto.")
-      }
-    }
-  }, [stopStream, selectedDeviceId])
 
-  // Lifecycle for opening/closing dialog
+      isStartingRef.current = false
+    },
+    [stopStream]
+  )
+
+  // Lifecycle useEffect dialog: HANYA bergantung pada open!
   useEffect(() => {
     if (open) {
       startCamera()
@@ -153,24 +305,66 @@ export function KtpKkScannerDialog({
       setOcrResult(null)
       setEditableNumber("")
       setIsProcessing(false)
+      setCameraError(null)
     }
     return () => {
       stopStream()
     }
   }, [open, startCamera, stopStream])
 
+  // Pasang stream ke elemen <video> melalui useEffect terpisah
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || !activeStream) {
+      setIsVideoReady(false)
+      return
+    }
+
+    video.srcObject = activeStream
+    let isMounted = true
+
+    const handleLoadedMetadata = () => {
+      video
+        .play()
+        .then(() => {
+          if (isMounted) setIsVideoReady(true)
+        })
+        .catch((err) => {
+          console.warn("Video play error:", err)
+        })
+    }
+
+    video.addEventListener("loadedmetadata", handleLoadedMetadata)
+    if (video.readyState >= 1) {
+      video
+        .play()
+        .then(() => {
+          if (isMounted) setIsVideoReady(true)
+        })
+        .catch(() => {})
+    }
+
+    return () => {
+      isMounted = false
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata)
+    }
+  }, [activeStream])
+
   // Switch camera device
   const handleSwitchCamera = () => {
     if (devices.length <= 1) return
-    const currentIndex = devices.findIndex((d) => d.deviceId === selectedDeviceId)
+    const currentId = selectedDeviceIdRef.current
+    const currentIndex = devices.findIndex((d) => d.deviceId === currentId)
     const nextIndex = (currentIndex + 1) % devices.length
     const nextDevice = devices[nextIndex]
+    selectedDeviceIdRef.current = nextDevice.deviceId
     setSelectedDeviceId(nextDevice.deviceId)
     startCamera(nextDevice.deviceId)
   }
 
   // Toggle torch / flash
   const handleToggleTorch = async () => {
+    const stream = streamRef.current
     if (!stream || !hasTorch) return
     const track = stream.getVideoTracks()[0]
     if (track) {
@@ -189,7 +383,7 @@ export function KtpKkScannerDialog({
   // Process image for OCR
   const processImageForOcr = async (canvas: HTMLCanvasElement) => {
     setIsProcessing(true)
-    setProgressStatus("Menyiapkan OCR...")
+    setProgressStatus("Menyiapkan OCR Multi-Pass...")
     setProgressPercent(15)
 
     try {
@@ -203,12 +397,15 @@ export function KtpKkScannerDialog({
         setEditableNumber(result.extractedNumber)
         toast({
           title: "Nomor Berhasil Terbaca!",
-          description: `${mode === "ktp" ? "NIK" : "No. KK"}: ${result.extractedNumber} (${result.provinceName || "Terdeteksi"})`,
+          description: `${mode === "ktp" ? "NIK" : "No. KK"}: ${
+            result.extractedNumber
+          } (${result.provinceName || "Terdeteksi"})`,
         })
       } else {
         toast({
           title: "Nomor Kurang Jelas",
-          description: "Pastikan kartu berada tepat di dalam kotak panduan dan tidak buram.",
+          description:
+            "Pastikan kartu berada tepat di dalam kotak panduan dan tidak buram atau gelap.",
           variant: "destructive",
         })
       }
@@ -216,7 +413,8 @@ export function KtpKkScannerDialog({
       console.error("OCR Processing error:", err)
       toast({
         title: "Gagal Membaca Dokumen",
-        description: "Terjadi kesalahan saat memproses OCR. Silakan coba kembali.",
+        description:
+          err.message || "Terjadi kesalahan saat memproses OCR. Silakan coba kembali.",
         variant: "destructive",
       })
     } finally {
@@ -228,14 +426,18 @@ export function KtpKkScannerDialog({
   const handleCapture = () => {
     if (!videoRef.current) return
     const video = videoRef.current
+    const width = video.videoWidth || 1280
+    const height = video.videoHeight || 720
+    if (width === 0 || height === 0) return
+
     const canvas = document.createElement("canvas")
-    canvas.width = video.videoWidth || 1280
-    canvas.height = video.videoHeight || 720
+    canvas.width = width
+    canvas.height = height
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.92)
+    ctx.drawImage(video, 0, 0, width, height)
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.94)
     setCapturedImage(dataUrl)
 
     // Stop camera while viewing result
@@ -278,7 +480,7 @@ export function KtpKkScannerDialog({
     setOcrResult(null)
     setEditableNumber("")
     setIsProcessing(false)
-    startCamera(selectedDeviceId)
+    startCamera(selectedDeviceIdRef.current)
   }
 
   // Confirm and proceed with check
@@ -301,7 +503,11 @@ export function KtpKkScannerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl w-[96vw] max-h-[94vh] p-0 flex flex-col overflow-hidden rounded-2xl border bg-slate-950 text-white shadow-2xl">
+      <DialogContent
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        className="max-w-2xl w-[96vw] max-h-[94vh] p-0 flex flex-col overflow-hidden rounded-2xl border bg-slate-950 text-white shadow-2xl"
+      >
         {/* Header Dialog */}
         <div className="px-4 py-3 md:px-6 md:py-3.5 border-b border-slate-800 bg-slate-900/90 backdrop-blur-sm flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
@@ -312,7 +518,7 @@ export function KtpKkScannerDialog({
               <DialogTitle className="text-base md:text-lg font-black tracking-tight text-white flex items-center gap-2">
                 <span>Scan Dokumen Kependudukan</span>
                 <Badge className="bg-teal-500/20 text-teal-300 border-teal-500/30 text-[10px] uppercase font-bold px-2 py-0.5">
-                  OCR Akurat
+                  OCR Multi-Pass
                 </Badge>
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-400 mt-0.5">
@@ -320,6 +526,14 @@ export function KtpKkScannerDialog({
               </DialogDescription>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            title="Tutup Scanner"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Mode Selector Tab */}
@@ -369,7 +583,9 @@ export function KtpKkScannerDialog({
                     <Sparkles className="w-4 h-4 text-teal-200 absolute -top-1 -right-1 animate-pulse" />
                   </div>
                   <div>
-                    <p className="text-sm font-black text-white uppercase tracking-wider">{progressStatus}</p>
+                    <p className="text-sm font-black text-white uppercase tracking-wider">
+                      {progressStatus}
+                    </p>
                     <p className="text-xs text-teal-400 font-mono mt-1">{progressPercent}%</p>
                   </div>
                   <div className="w-48 bg-slate-800 h-1.5 rounded-full overflow-hidden">
@@ -387,19 +603,30 @@ export function KtpKkScannerDialog({
               <div className="p-3.5 bg-rose-500/10 text-rose-400 rounded-2xl border border-rose-500/20">
                 <AlertTriangle className="w-8 h-8" />
               </div>
-              <div>
-                <p className="text-sm font-bold text-slate-200">{cameraError}</p>
-                <p className="text-xs text-slate-400 mt-1">
+              <div className="space-y-1.5">
+                <p className="text-sm font-bold text-slate-200 leading-snug">{cameraError}</p>
+                <p className="text-xs text-slate-400">
                   Anda tetap dapat memindai dengan memilih foto KTP/KK dari galeri atau berkas perangkat.
                 </p>
               </div>
-              <Button
-                variant="secondary"
-                onClick={() => fileInputRef.current?.click()}
-                className="bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-xl gap-2 shadow-lg"
-              >
-                <Upload className="w-4 h-4" /> Pilih Foto KTP/KK dari Galeri
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => startCamera(selectedDeviceIdRef.current)}
+                  className="rounded-xl border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white font-bold text-xs gap-1.5"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Coba Kamera Lagi
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-xl text-xs gap-1.5 shadow-lg"
+                >
+                  <Upload className="w-3.5 h-3.5" /> Pilih Foto KTP/KK dari Galeri
+                </Button>
+              </div>
             </div>
           ) : (
             /* Live Camera Viewfinder */
@@ -412,13 +639,21 @@ export function KtpKkScannerDialog({
                 className="w-full h-full object-cover"
               />
 
+              {!isVideoReady && (
+                <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-2 z-10 text-slate-400">
+                  <Loader2 className="w-7 h-7 animate-spin text-teal-400" />
+                  <span className="text-xs font-semibold">Mengaktifkan kamera...</span>
+                </div>
+              )}
+
               {/* ID Card Target Frame Overlay */}
               <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-4">
-                {/* Responsive ID Card Aspect Ratio Box (85.6mm x 54mm = ~1.586) */}
                 <div
                   className={cn(
                     "relative w-full max-w-[320px] sm:max-w-[420px] rounded-2xl border-2 transition-all duration-300",
-                    mode === "ktp" ? "aspect-[1.58/1]" : "aspect-[1.4/1] max-w-[340px] sm:max-w-[440px]",
+                    mode === "ktp"
+                      ? "aspect-[1.58/1]"
+                      : "aspect-[1.4/1] max-w-[340px] sm:max-w-[440px]",
                     "border-teal-400/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.55)]"
                   )}
                 >
@@ -434,7 +669,8 @@ export function KtpKkScannerDialog({
                   {/* Target NIK / KK area guide */}
                   <div className="absolute top-4 left-4 right-4 bg-teal-950/40 border border-teal-400/40 rounded-lg p-2 text-center backdrop-blur-[2px]">
                     <span className="text-[11px] font-black uppercase tracking-wider text-teal-300 flex items-center justify-center gap-1.5">
-                      <Sparkles className="w-3 h-3" /> Area Nomor {mode === "ktp" ? "NIK KTP (16 Digit)" : "No. KK (16 Digit)"}
+                      <Sparkles className="w-3 h-3" /> Area Nomor{" "}
+                      {mode === "ktp" ? "NIK KTP (16 Digit)" : "No. KK (16 Digit)"}
                     </span>
                   </div>
 
@@ -456,7 +692,11 @@ export function KtpKkScannerDialog({
                     className="p-2 bg-black/60 hover:bg-black/80 text-white rounded-xl border border-white/10 backdrop-blur-sm transition-colors"
                     title={torchEnabled ? "Matikan Flash" : "Nyalakan Flash"}
                   >
-                    {torchEnabled ? <Zap className="w-4 h-4 text-amber-400" /> : <ZapOff className="w-4 h-4 text-slate-300" />}
+                    {torchEnabled ? (
+                      <Zap className="w-4 h-4 text-amber-400" />
+                    ) : (
+                      <ZapOff className="w-4 h-4 text-slate-300" />
+                    )}
                   </button>
                 )}
                 {devices.length > 1 && (
@@ -489,7 +729,10 @@ export function KtpKkScannerDialog({
                       <CheckCircle2 className="w-3 h-3" /> 16 Digit Valid
                     </Badge>
                   ) : (
-                    <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] font-bold uppercase gap-1">
+                    <Badge
+                      className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] font-bold uppercase gap-1"
+                      title={validation.message}
+                    >
                       <AlertTriangle className="w-3 h-3" /> Periksa Kembali
                     </Badge>
                   )}
@@ -501,22 +744,33 @@ export function KtpKkScannerDialog({
                     maxLength={16}
                     value={editableNumber}
                     onChange={(e) => setEditableNumber(e.target.value.replace(/\D/g, ""))}
-                    placeholder={`Masukkan atau sesuaikan 16 digit ${mode === "ktp" ? "NIK" : "No KK"}`}
+                    placeholder={`Masukkan atau sesuaikan 16 digit ${
+                      mode === "ktp" ? "NIK" : "No KK"
+                    }`}
                     className="font-mono text-base md:text-lg font-black tracking-widest text-teal-300 bg-slate-950 border-slate-700 h-11 px-3 focus:border-teal-500"
                   />
                 </div>
 
                 {/* Province or Details Tag */}
                 <div className="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
-                  <span>
+                  <span className="truncate max-w-[260px]">
                     {validation.provinceName ? (
-                      <span className="text-teal-400 font-semibold">Provinsi: {validation.provinceName}</span>
+                      <span className="text-teal-400 font-semibold">
+                        Provinsi: {validation.provinceName}
+                      </span>
+                    ) : validation.message ? (
+                      <span className="text-amber-400 font-medium">
+                        {validation.message}
+                      </span>
                     ) : (
                       "Pastikan 16 digit terisi lengkap"
                     )}
                   </span>
                   {ocrResult?.detectedName && (
-                    <span className="text-slate-300 font-bold uppercase truncate max-w-[200px]" title={ocrResult.detectedName}>
+                    <span
+                      className="text-slate-300 font-bold uppercase truncate max-w-[180px]"
+                      title={ocrResult.detectedName}
+                    >
                       Nama: {ocrResult.detectedName}
                     </span>
                   )}
@@ -570,8 +824,8 @@ export function KtpKkScannerDialog({
               <Button
                 type="button"
                 onClick={handleCapture}
-                disabled={!!cameraError}
-                className="flex-1 max-w-[240px] rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs md:text-sm h-10 gap-2 shadow-lg shadow-teal-900/50 transition-all hover:scale-[1.02]"
+                disabled={!isVideoReady || isProcessing || !!cameraError}
+                className="flex-1 max-w-[240px] rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs md:text-sm h-10 gap-2 shadow-lg shadow-teal-900/50 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:scale-100"
               >
                 <Camera className="w-4 h-4" /> Ambil Foto & Pindai
               </Button>
