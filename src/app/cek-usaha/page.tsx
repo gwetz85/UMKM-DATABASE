@@ -727,7 +727,85 @@ export default function CekUsahaPage() {
         </CardHeader>
 
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          {/* Mobile Card View (md:hidden) */}
+          <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800 p-2 sm:p-3 space-y-2.5">
+            {loading && filteredAndSorted.length === 0 ? (
+              <div className="py-12 text-center flex flex-col items-center justify-center space-y-2">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <p className="text-xs font-medium text-muted-foreground">Sedang mencari data pelaku usaha...</p>
+              </div>
+            ) : paginatedData.length === 0 ? (
+              <div className="py-12 text-center text-muted-foreground">
+                <Store className="w-10 h-10 mx-auto mb-2 text-slate-300 stroke-1" />
+                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Tidak ditemukan data pelaku usaha</p>
+              </div>
+            ) : (
+              paginatedData.map((item, index) => {
+                const rowNumber = (currentPage - 1) * pageSize + index + 1;
+                return (
+                  <div key={item._id || index} className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs flex items-center justify-center shrink-0">
+                          {item._displayName ? item._displayName.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-extrabold text-sm text-slate-900 dark:text-white uppercase truncate">
+                            {item._displayName}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-mono">
+                            NIK: {item._displayNik || '-'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="shrink-0">
+                        {renderSourceBadge(item._sourceType, item._sourceLabel)}
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 font-medium text-[11px]">Usaha:</span>
+                        <span className="font-black text-primary uppercase truncate max-w-[200px]">
+                          {item._displayBusiness || '-'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-500">Alamat:</span>
+                        <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[200px]">
+                          {item._displayAddress || '-'}
+                        </span>
+                      </div>
+                      {item._coordinator && item._coordinator !== '-' && (
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-500">Koordinator:</span>
+                          <span className="font-bold text-slate-700 dark:text-slate-300">
+                            {item._coordinator}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[10px] font-mono font-bold text-slate-400">
+                        #{rowNumber}
+                      </span>
+                      <Button
+                        size="sm"
+                        onClick={() => setSelectedDetail(item)}
+                        className="h-8 px-3 text-xs font-bold bg-primary text-white rounded-xl active:scale-95"
+                      >
+                        <Eye className="w-3.5 h-3.5 mr-1" /> Detail
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader className="bg-slate-50 dark:bg-slate-800/60">
                 <TableRow>

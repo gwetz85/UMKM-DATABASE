@@ -635,40 +635,35 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
         </div>
       </div>
 
-      {/* ─── 5. FOOTER (Compact Single Line) ─── */}
-      <div className="mt-1.5 rounded-xl bg-gradient-to-r from-[#041D22] via-[#092E36] to-[#041D22] text-white border border-teal-800/50 shadow-inner px-3 sm:px-3.5 py-1.5 sm:py-2 flex items-center justify-between relative overflow-hidden text-[8.5px] sm:text-[9.5px] font-semibold">
+      {/* ─── 5. FOOTER (Stasiun Cuaca Tanjungpinang & Sync Bar) ─── */}
+      <div className="mt-2 rounded-2xl bg-gradient-to-r from-[#041D22] via-[#092E36] to-[#041D22] text-white border border-teal-800/50 shadow-inner p-2.5 sm:px-3.5 sm:py-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 relative overflow-hidden text-xs">
         <IslamicCornerPattern className="absolute top-0 left-0 w-6 h-6" />
         <IslamicCornerPattern className="absolute bottom-0 right-0 w-6 h-6 rotate-180" />
 
         {/* Left Side: Stasiun & Realtime Clock */}
-        <div className="flex items-center gap-2 sm:gap-2.5 relative z-10">
-          <div className="flex items-center gap-1 font-bold">
-            <div className="w-4.5 h-4.5 rounded-md bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-300">
-              <MapPin className="w-2.5 h-2.5" />
+        <div className="flex items-center justify-between sm:justify-start gap-2 relative z-10 flex-wrap">
+          <div className="flex items-center gap-1.5 font-bold">
+            <div className="w-5 h-5 rounded-lg bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-300 shrink-0">
+              <MapPin className="w-3 h-3" />
             </div>
-            <span className="text-white uppercase tracking-wider">STASIUN CUACA TANJUNGPINANG</span>
+            <span className="text-white uppercase tracking-wider text-[10px] sm:text-[11px] font-black">STASIUN CUACA TANJUNGPINANG</span>
           </div>
 
-          <span className="text-teal-700">|</span>
-
-          {/* Realtime Clock WIB */}
-          <div className="flex items-center gap-1 font-mono text-emerald-400 font-bold">
+          <div className="flex items-center gap-1 font-mono text-emerald-400 font-bold text-xs bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30 shrink-0">
             <Clock className="w-3 h-3 text-emerald-400 shrink-0" />
             <span>{timeString} WIB</span>
           </div>
         </div>
 
         {/* Right Side: Detail Button & Sync Action */}
-        <div className="flex items-center gap-2 sm:gap-2.5 relative z-10">
+        <div className="flex items-center justify-end gap-2 relative z-10 pt-1 sm:pt-0 border-t border-teal-800/40 sm:border-t-0">
           <button
             onClick={() => setIsDetailOpen(true)}
-            className="flex items-center gap-0.5 text-amber-300 hover:text-amber-200 transition-colors uppercase font-bold tracking-wider"
+            className="flex items-center gap-1 text-amber-300 hover:text-amber-200 transition-colors uppercase font-bold text-[10px] sm:text-[11px] px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 active:scale-95"
           >
-            <span>KLIK UNTUK DETAIL LENGKAP</span>
-            <span>&gt;</span>
+            <span>Detail Cuaca</span>
+            <Maximize2 className="w-2.5 h-2.5" />
           </button>
-
-          <span className="text-teal-700">|</span>
 
           <button
             onClick={(e) => {
@@ -676,10 +671,10 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
               fetchWeather(true)
             }}
             disabled={isRefreshing}
-            className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors"
+            className="flex items-center gap-1 text-slate-200 hover:text-white transition-colors text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/10 border border-white/20 active:scale-95"
             title="Perbarui Cuaca & Kualitas Udara"
           >
-            <RefreshCw className={cn("w-2.5 h-2.5 text-teal-400", isRefreshing && "animate-spin text-amber-400")} />
+            <RefreshCw className={cn("w-3 h-3 text-teal-400", isRefreshing && "animate-spin text-amber-400")} />
             <span>Sinkronisasi</span>
           </button>
         </div>

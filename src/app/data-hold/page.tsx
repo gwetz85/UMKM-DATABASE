@@ -1088,7 +1088,85 @@ export default function DataHoldPage() {
 
       {/* ── DATA TABLE ── */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
-        <div className="overflow-x-auto custom-scrollbar">
+        {/* Mobile Card View (md:hidden) */}
+        <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800 p-2 sm:p-3 space-y-2.5">
+          {isListLoading ? (
+            <div className="py-12 text-center text-slate-400">
+              <Clock className="w-6 h-6 animate-spin mx-auto mb-2 text-amber-500" />
+              Memuat data hold...
+            </div>
+          ) : filteredList.length === 0 ? (
+            <div className="py-12 text-center text-slate-400">
+              <PauseCircle className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+              Belum ada data hold yang ditemukan.
+            </div>
+          ) : (
+            filteredList.map((item, index) => {
+              const b = item.kelengkapanBerkas;
+              const score = getBerkasScore(b);
+              const isLengkap = score === 4;
+
+              return (
+                <div key={item.id} className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-extrabold text-sm text-slate-900 dark:text-white uppercase leading-snug">
+                        {item.fullName}
+                      </p>
+                      <p className="font-mono text-slate-500 text-[11px]">
+                        NIK: {item.nik}
+                      </p>
+                    </div>
+                    <span className={cn(
+                      "text-[9px] font-black uppercase px-2 py-0.5 rounded-full border shrink-0",
+                      isLengkap ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"
+                    )}>
+                      {isLengkap ? "Lengkap (4/4)" : `Belum (${score}/4)`}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-xs space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Usaha:</span>
+                      <span className="font-bold text-slate-900 dark:text-white truncate max-w-[180px]">{item.businessName || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">HP:</span>
+                      <span className="font-mono font-semibold text-emerald-600">{item.phone || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Alamat:</span>
+                      <span className="font-medium text-slate-600 truncate max-w-[180px]">{item.address || '-'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[10px] font-mono font-bold text-slate-400">
+                      #{index + 1}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => openDetailDialog(item)}
+                        className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100"
+                      >
+                        Detail
+                      </button>
+                      <button
+                        onClick={() => openEditDialog(item)}
+                        className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-primary text-white"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto custom-scrollbar">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px]">

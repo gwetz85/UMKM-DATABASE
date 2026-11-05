@@ -30,16 +30,16 @@ export function HeaderOfficeHoursCountdown() {
           ? "Kantor sedang buka. Sisa waktu operasional hari ini."
           : `Kantor saat ini tutup. Menghitung mundur menuju buka kantor (${subLabel}).`
       }
-      className={`group relative flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 sm:px-3.5 sm:py-1 rounded-full border-2 transition-all duration-300 shadow-xs select-none ${
+      className={`group relative flex items-center gap-1 sm:gap-2 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full border transition-all duration-300 shadow-xs select-none shrink-0 ${
         isOpen
-          ? "bg-emerald-100/90 border-emerald-500 text-emerald-950 dark:bg-[#072416] dark:border-emerald-400 dark:text-emerald-50 dark:shadow-[0_0_16px_rgba(52,211,153,0.25)]"
+          ? "bg-emerald-50 border-emerald-500 text-emerald-950 dark:bg-[#072416] dark:border-emerald-400 dark:text-emerald-50"
           : isHoliday
-          ? "bg-rose-100/90 border-rose-500 text-rose-950 dark:bg-[#280812] dark:border-rose-400 dark:text-rose-50 dark:shadow-[0_0_16px_rgba(244,63,94,0.25)]"
-          : "bg-amber-100/90 border-amber-500 text-amber-950 dark:bg-[#281804] dark:border-amber-400 dark:text-amber-50 dark:shadow-[0_0_16px_rgba(251,191,36,0.25)]"
+          ? "bg-rose-50 border-rose-500 text-rose-950 dark:bg-[#280812] dark:border-rose-400 dark:text-rose-50"
+          : "bg-amber-50 border-amber-500 text-amber-950 dark:bg-[#281804] dark:border-amber-400 dark:text-amber-50"
       }`}
     >
       {/* Pulsing Status Dot */}
-      <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5 shrink-0">
+      <span className="relative flex h-2 w-2 shrink-0">
         <span
           className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
             isOpen
@@ -50,7 +50,7 @@ export function HeaderOfficeHoursCountdown() {
           }`}
         />
         <span
-          className={`relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 ${
+          className={`relative inline-flex rounded-full h-2 w-2 ${
             isOpen
               ? "bg-emerald-600 dark:bg-emerald-400"
               : isHoliday
@@ -100,16 +100,10 @@ export function HeaderOfficeHoursCountdown() {
       {/* Digital Countdown Timer */}
       <div className="flex items-center gap-1 shrink-0">
         <Clock
-          className={`w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 ${
-            isOpen
-              ? "text-emerald-800 dark:text-emerald-300"
-              : isHoliday
-              ? "text-rose-800 dark:text-rose-300"
-              : "text-amber-800 dark:text-amber-300"
-          }`}
+          className={`w-3 h-3 text-current opacity-80 shrink-0 hidden sm:inline-block`}
         />
         <span
-          className={`font-mono font-black text-xs sm:text-sm tracking-tight leading-none ${
+          className={`font-mono font-black text-xs tracking-tight leading-none tabular-nums ${
             isOpen
               ? "text-emerald-950 dark:text-emerald-100"
               : isHoliday
@@ -121,7 +115,7 @@ export function HeaderOfficeHoursCountdown() {
         </span>
       </div>
 
-      {/* Sub-label badge (e.g. Buka Pk 10:00 / Tutup Pk 15:00) */}
+      {/* Sub-label badge (Desktop) */}
       <span
         className={`hidden lg:inline-flex items-center text-[10px] font-black px-1.5 py-0.2 rounded border shadow-2xs ${
           isOpen

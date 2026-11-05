@@ -371,7 +371,7 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
       )}
     >
       {/* ─── 1. HEADER (Compact & Elegant) ─── */}
-      <div className="flex items-center justify-between pb-2 sm:pb-2.5 shrink-0">
+      <div className="flex items-center justify-between pb-2 sm:pb-2.5 shrink-0 gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <MosqueEmblem />
           <div>
@@ -510,7 +510,7 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
       </div>
 
       {/* ─── 3. LIMA KARTU WAKTU SHOLAT (Subuh, Dzuhur, Ashar, Maghrib, Isya) ─── */}
-      <div className="grid grid-cols-5 gap-1.5 sm:gap-2 my-1.5">
+      <div className="grid grid-cols-5 gap-1 sm:gap-2 my-1.5">
         {fivePrayers.map((prayer) => {
           const IconComp = prayer.icon
           const isNext = calculation.nextPrayer.id === prayer.id && !calculation.isNextTomorrow
@@ -525,7 +525,7 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
             <div
               key={prayer.id}
               className={cn(
-                "p-1.5 sm:p-2 rounded-xl border transition-all duration-300 flex flex-col justify-between text-center relative group/card overflow-hidden",
+                "p-1 sm:p-2 rounded-xl border transition-all duration-300 flex flex-col justify-between text-center relative group/card overflow-hidden min-w-0",
                 isCurrentActive || isNext
                   ? "bg-gradient-to-b from-[#0D5C4E] to-[#083B32] text-white border-emerald-300 dark:border-emerald-400 ring-2 ring-emerald-400/40 shadow-md shadow-emerald-950/20"
                   : isPassed
@@ -549,7 +549,7 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
                 />
                 <span
                   className={cn(
-                    "text-[11px] sm:text-xs font-black tracking-tight",
+                    "text-[9.5px] sm:text-xs font-black tracking-tight truncate",
                     isCurrentActive || isNext
                       ? "text-white"
                       : "text-slate-900 dark:text-slate-100"

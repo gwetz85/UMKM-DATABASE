@@ -1950,7 +1950,7 @@ function ActorDataContent() {
                 {!isMonitoring && (
                   <Button 
                     onClick={() => handleExportExcel()} 
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 hover:shadow-lg h-11 rounded-2xl text-xs sm:text-sm transition-all"
+                    className="bg-[#0e9e63] hover:bg-[#0c8a57] text-white font-black shadow-md shadow-[#0e9e63]/25 hover:shadow-lg h-11 sm:h-12 rounded-2xl text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
                   >
                     <FileSpreadsheet className="w-4 h-4 mr-1.5" /> EKSPOR EXCEL
                   </Button>
@@ -2207,7 +2207,7 @@ function ActorDataContent() {
                         setIsGeneratingPdf(false);
                       }
                     }}
-                    className="bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-md shadow-rose-600/20 hover:shadow-lg h-11 rounded-2xl text-xs sm:text-sm transition-all"
+                    className="bg-[#e0342c] hover:bg-[#c92821] text-white font-black shadow-md shadow-[#e0342c]/25 hover:shadow-lg h-11 sm:h-12 rounded-2xl text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
                   >
                     {isGeneratingPdf ? (
                       <>
@@ -2910,7 +2910,7 @@ function ActorDataContent() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4 md:gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-4 md:gap-5">
             {(!coordinatorStats.some(s => s.count > 0) && (isKuotaLoading || (!systemStats && isStatsLoading))) ? (
               [...Array(12)].map((_, i) => (
                 <div 
@@ -2930,7 +2930,7 @@ function ActorDataContent() {
               ))
             ) : coordinatorStats.filter(stat => stat.count > 0).map((stat) => {
               const quotaPercent = stat.quota > 0 ? Math.min(100, Math.round((stat.count / stat.quota) * 100)) : 0;
-              const themeColor = stat.isFull ? '#10b981' : '#6366f1';
+              const themeColor = stat.isFull ? '#0b5a48' : '#1f7ac4';
               return (
                 <div 
                   key={stat.name}
@@ -2939,7 +2939,7 @@ function ActorDataContent() {
                     borderColor: `${themeColor}50`,
                     boxShadow: `0 4px 18px -2px ${themeColor}20`
                   }}
-                  className="group relative flex flex-col justify-between p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all duration-300 ease-out overflow-hidden cursor-pointer active:scale-95 min-h-[165px] border-2 bg-white dark:bg-slate-900 hover:shadow-xl hover:-translate-y-1.5 animate-in fade-in slide-in-from-bottom-3"
+                  className="group relative flex flex-col justify-between p-3 sm:p-5 rounded-2xl sm:rounded-3xl transition-all duration-300 ease-out overflow-hidden cursor-pointer active:scale-95 min-h-[150px] border-2 bg-white dark:bg-slate-900 hover:shadow-xl hover:-translate-y-1.5 animate-in fade-in slide-in-from-bottom-3"
                 >
                   {/* Glowing Top Accent Stripe */}
                   <div 

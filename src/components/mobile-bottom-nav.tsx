@@ -6,23 +6,18 @@ import { usePathname } from 'next/navigation';
 import { 
   Home, 
   Search, 
-  User, 
-  PlusCircle, 
-  ClipboardCheck, 
+  Plus, 
   MessageSquare, 
-  Database,
-  LogIn,
-  Menu
+  Menu,
+  LogIn
 } from 'lucide-react';
 import { useUser } from '@/firebase';
-import { useNavigation } from '@/hooks/use-navigation';
 import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const { user } = useUser();
-  const { isPetugas, isDinas, isVerifikatorDinas, isAdmin, isStaff } = useNavigation();
   const { toggleSidebar, openMobile } = useSidebar();
 
   // Do not show on login, fullscreen layar informasi, or survey portal
@@ -50,7 +45,7 @@ export function MobileBottomNav() {
       {
         label: 'Daftar',
         href: '/daftar',
-        icon: PlusCircle,
+        icon: Plus,
         active: pathname === '/daftar' || pathname?.startsWith('/pendaftaran'),
         highlight: true,
       },
@@ -64,8 +59,12 @@ export function MobileBottomNav() {
     ];
 
     return (
-      <nav className="md:hidden fixed bottom-2 left-3 right-3 z-50 bg-white/80 dark:bg-slate-900/85 backdrop-blur-2xl border border-white/70 dark:border-white/10 rounded-3xl px-3 py-2 shadow-[0_8px_32px_rgba(15,23,42,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)] pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]">
-        <div className="flex items-center justify-around max-w-md mx-auto">
+      <nav 
+        aria-label="Navigasi Bawah Publik"
+        className="md:hidden fixed left-1/2 -translate-x-1/2 z-50 w-[calc(100%-20px)] max-w-md bg-white/95 dark:bg-[#12211d]/95 backdrop-blur-xl border border-slate-200/90 dark:border-[#22382f] rounded-[24px] px-3 py-2 shadow-lg dark:shadow-2xl"
+        style={{ bottom: 'calc(10px + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <div className="grid grid-cols-3 items-center">
           {publicItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -73,27 +72,23 @@ export function MobileBottomNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all duration-200 active:scale-95',
-                  item.highlight
-                    ? 'text-primary font-black'
-                    : item.active
-                    ? 'text-primary font-black'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 font-bold'
+                  'flex flex-col items-center justify-center min-h-[44px] py-1 px-2 rounded-2xl transition-all duration-150 active:scale-95 select-none',
+                  item.active ? 'text-[#0b5a48] dark:text-[#2fbf94] font-bold' : 'text-slate-600 dark:text-slate-400 font-semibold'
                 )}
               >
-                <div
-                  className={cn(
-                    'p-2 rounded-2xl transition-all',
-                    item.highlight
-                      ? 'bg-primary text-white shadow-lg shadow-primary/30 -mt-3.5 ring-4 ring-white/80 dark:ring-slate-900'
-                      : item.active
-                      ? 'bg-primary/15 text-primary'
-                      : ''
-                  )}
-                >
-                  <Icon className="w-5 h-5" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider mt-0.5">{item.label}</span>
+                {item.highlight ? (
+                  <div className="w-12 h-12 -mt-6 rounded-full bg-[#0b5a48] dark:bg-[#2fbf94] text-white dark:text-[#06231b] flex items-center justify-center shadow-lg border-4 border-slate-100 dark:border-[#0a1412] active:scale-95 transition-transform">
+                    <Icon className="w-6 h-6 stroke-[2.5]" />
+                  </div>
+                ) : (
+                  <div className={cn(
+                    'w-10 h-7 rounded-xl flex items-center justify-center transition-colors',
+                    item.active ? 'bg-[#e2f1ea] dark:bg-[#17352c] text-[#0b5a48] dark:text-[#2fbf94]' : ''
+                  )}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                )}
+                <span className="text-[11px] font-bold mt-0.5 leading-tight">{item.label}</span>
               </Link>
             );
           })}
@@ -102,39 +97,7 @@ export function MobileBottomNav() {
     );
   }
 
-  // Logged-in user nav items
-  let centerAction = {
-    label: 'Data UMKM',
-    href: '/actor-data',
-    icon: Database,
-  };
-
-  if (isPetugas) {
-    centerAction = {
-      label: 'Survey',
-      href: '/portal-survey',
-      icon: ClipboardCheck,
-    };
-  } else if (isDinas) {
-    centerAction = {
-      label: 'Survey',
-      href: '/verifikasi-dinas',
-      icon: ClipboardCheck,
-    };
-  } else if (isVerifikatorDinas) {
-    centerAction = {
-      label: 'Verif',
-      href: '/verifikasi-dinas-berkas',
-      icon: ClipboardCheck,
-    };
-  } else if (isAdmin || isStaff) {
-    centerAction = {
-      label: 'Input',
-      href: '/input',
-      icon: PlusCircle,
-    };
-  }
-
+  // 5 Logged-in items: Dashboard, Cek Data, Input (+ di tengah), Pesan, Menu
   const navItems = [
     {
       label: 'Dashboard',
@@ -151,10 +114,10 @@ export function MobileBottomNav() {
       highlight: false,
     },
     {
-      label: centerAction.label,
-      href: centerAction.href,
-      icon: centerAction.icon,
-      active: pathname === centerAction.href,
+      label: 'Input',
+      href: '/input',
+      icon: Plus,
+      active: pathname === '/input',
       highlight: true,
     },
     {
@@ -178,30 +141,39 @@ export function MobileBottomNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-2 left-3 right-3 z-50 bg-white/80 dark:bg-slate-900/85 backdrop-blur-2xl border border-white/70 dark:border-white/10 rounded-3xl px-2.5 py-1.5 shadow-[0_8px_32px_rgba(15,23,42,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)] pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] print:hidden">
-      <div className="flex items-center justify-around max-w-md mx-auto">
+    <nav 
+      aria-label="Navigasi Bawah SIMPU"
+      className="md:hidden fixed left-1/2 -translate-x-1/2 z-50 w-[calc(100%-16px)] max-w-[500px] bg-white/95 dark:bg-[#12211d]/95 backdrop-blur-xl border border-slate-200/90 dark:border-[#22382f] rounded-[24px] px-1 py-1.5 shadow-[0_12px_36px_-10px_rgba(11,90,72,0.25)] dark:shadow-[0_12px_36px_-10px_rgba(0,0,0,0.7)] print:hidden"
+      style={{ bottom: 'calc(8px + env(safe-area-inset-bottom, 0px))' }}
+    >
+      <div className="grid grid-cols-5 items-center">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const content = (
+          const isCurrentActive = item.active;
+
+          const innerContent = (
             <>
-              <div
-                className={cn(
-                  'p-2 rounded-2xl transition-all',
-                  item.highlight
-                    ? 'bg-primary text-white shadow-lg shadow-primary/30 -mt-3.5 ring-4 ring-white/80 dark:ring-slate-900'
-                    : item.active
-                    ? 'bg-primary/15 text-primary'
-                    : ''
-                )}
-              >
-                <Icon className={cn('w-5 h-5', item.highlight && 'w-5.5 h-5.5')} />
-              </div>
-              <span
-                className={cn(
-                  'text-[9.5px] font-black uppercase tracking-wider mt-0.5 truncate max-w-[62px]',
-                  item.active ? 'text-primary' : 'text-slate-600 dark:text-slate-400'
-                )}
-              >
+              {item.highlight ? (
+                <div 
+                  className="w-12 h-12 -mt-5 rounded-full bg-[#0b5a48] dark:bg-[#2fbf94] text-white dark:text-[#06231b] flex items-center justify-center shadow-lg border-4 border-slate-100 dark:border-[#0a1412] active:scale-90 transition-transform"
+                  aria-hidden="true"
+                >
+                  <Plus className="w-6 h-6 stroke-[2.8]" />
+                </div>
+              ) : (
+                <div 
+                  className={cn(
+                    'w-10 h-7 rounded-xl flex items-center justify-center transition-colors',
+                    isCurrentActive ? 'bg-[#e2f1ea] dark:bg-[#17352c] text-[#0b5a48] dark:text-[#2fbf94]' : 'text-slate-500 dark:text-slate-400'
+                  )}
+                >
+                  <Icon className="w-5 h-5 stroke-[2.2]" />
+                </div>
+              )}
+              <span className={cn(
+                'text-[10.5px] font-bold mt-0.5 leading-tight whitespace-nowrap',
+                isCurrentActive ? 'text-[#0b5a48] dark:text-[#2fbf94] font-black' : 'text-slate-600 dark:text-slate-400'
+              )}>
                 {item.label}
               </span>
             </>
@@ -213,30 +185,28 @@ export function MobileBottomNav() {
                 key={item.label}
                 type="button"
                 onClick={(item as any).onClick}
+                aria-label={item.label}
                 className={cn(
-                  'flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-[transform,color,background-color] duration-150 ease-smooth min-w-[56px] active:scale-90 motion-reduce:active:scale-100 outline-none cursor-pointer',
-                  item.active
-                    ? 'text-primary font-black'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 font-bold'
+                  'flex flex-col items-center justify-center min-h-[44px] py-1 px-1 rounded-2xl transition-all duration-150 active:scale-95 outline-none select-none cursor-pointer',
+                  isCurrentActive ? 'text-[#0b5a48] dark:text-[#2fbf94]' : 'text-slate-600 dark:text-slate-400'
                 )}
               >
-                {content}
+                {innerContent}
               </button>
             );
           }
 
           return (
             <Link
-              key={item.href}
+              key={item.label}
               href={item.href}
+              aria-label={item.label}
               className={cn(
-                'flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-[transform,color,background-color] duration-150 ease-smooth min-w-[56px] active:scale-90 motion-reduce:active:scale-100',
-                item.active
-                  ? 'text-primary font-black'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 font-bold'
+                'flex flex-col items-center justify-center min-h-[44px] py-1 px-1 rounded-2xl transition-all duration-150 active:scale-95 select-none',
+                isCurrentActive ? 'text-[#0b5a48] dark:text-[#2fbf94]' : 'text-slate-600 dark:text-slate-400'
               )}
             >
-              {content}
+              {innerContent}
             </Link>
           );
         })}

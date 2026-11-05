@@ -9,7 +9,7 @@ import { GlobalStatsAutoSync } from '@/components/GlobalStatsAutoSync';
 import { useUser, useDatabase, useMemoFirebase, useObject, useAuth } from '@/firebase'
 import { ref, onValue, set, update, onDisconnect, serverTimestamp } from 'firebase/database'
 import { signOut } from 'firebase/auth'
-import { User as UserIcon, LogOut, AlertCircle, MonitorOff, ArrowLeft, Moon, Sun, Share2, MoreHorizontal, ChevronRight, Sparkles } from 'lucide-react'
+import {  User as UserIcon, LogOut, AlertCircle, MonitorOff, ArrowLeft, Moon, Sun, Share2, MoreHorizontal, ChevronRight, Sparkles , Menu } from 'lucide-react'
 import Link from 'next/link'
 import { Toaster } from '@/components/ui/toaster';
 import { ThemePersistence } from '@/components/theme-persistence';
@@ -306,70 +306,93 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
               {!isLoginPage && !isSpecialFullscreenPage && !isPortalSurveyPage && (
                 <>
-                  <header className="relative flex items-center justify-between px-3 sm:px-6 h-14 sm:h-16 border-b border-slate-100 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 [[data-theme=liquid-glass]_&]:glass-nav [[data-theme=liquid-glass]_&]:border-white/20 backdrop-blur-md shrink-0 print:hidden gap-2 sm:gap-3 transition-colors duration-300">
-                    {/* Breadcrumbs matching Growly LMS */}
-                    <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 shrink-0 z-10">
-                      {user && (
-                        <SidebarTrigger className="h-8.5 w-8.5 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-2xs transition-all active:scale-95 shrink-0 md:hidden" />
-                      )}
+                  <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-[#12211d]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-[#22382f] px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 transition-colors shrink-0 print:hidden">
+                    {/* Left: Mobile Brand & Subtitle, Desktop Breadcrumbs */}
+                    <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+                      {/* Mobile Logo + Title */}
+                      <div className="flex items-center gap-2 min-w-0 md:hidden">
+                        <Link href={user ? "/" : "/cek-data"} className="flex items-center gap-2 min-w-0">
+                          <div className="w-8 h-8 rounded-xl bg-[#0b5a48] dark:bg-[#2fbf94] text-white dark:text-[#06231b] flex items-center justify-center shrink-0 shadow-xs font-black text-xs">
+                            SP
+                          </div>
+                          <div className="min-w-0 flex flex-col justify-center">
+                            <span className="font-extrabold text-sm text-slate-900 dark:text-white leading-none tracking-tight">
+                              SIMPU
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate mt-0.5 max-w-[110px] sm:max-w-[180px]">
+                              {currentTitle || "Dashboard"}
+                            </span>
+                          </div>
+                        </Link>
+                      </div>
 
-                      <Link href={user ? "/" : "/cek-data"} className="font-extrabold text-slate-900 dark:text-white hover:text-primary transition-colors flex items-center gap-1.5">
-                        <span>SIMPU</span>
-                      </Link>
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
-                      <Link href="/dashboard" className="hover:text-slate-900 dark:hover:text-white transition-colors truncate">
-                        Dashboard
-                      </Link>
-                      {currentTitle && currentTitle !== 'Dashboard Statistik' && (
-                        <>
-                          <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
-                          <span className="text-slate-900 dark:text-white font-extrabold truncate max-w-[80px] sm:max-w-[160px] md:max-w-[260px]">
-                            {currentTitle}
-                          </span>
-                        </>
-                      )}
+                      {/* Desktop Breadcrumbs */}
+                      <div className="hidden md:flex items-center gap-2 text-sm font-semibold text-slate-500 dark:text-slate-400 shrink-0">
+                        <Link href={user ? "/" : "/cek-data"} className="font-extrabold text-slate-900 dark:text-white hover:text-primary transition-colors flex items-center gap-1.5">
+                          <span>SIMPU</span>
+                        </Link>
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
+                        <Link href="/dashboard" className="hover:text-slate-900 dark:hover:text-white transition-colors truncate">
+                          Dashboard
+                        </Link>
+                        {currentTitle && currentTitle !== 'Dashboard Statistik' && (
+                          <>
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
+                            <span className="text-slate-900 dark:text-white font-extrabold truncate max-w-[260px]">
+                              {currentTitle}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Center: Countdown Buka Jam Kantor */}
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center z-20 pointer-events-auto">
+                    {/* Right: Live Pill Timer + Theme Toggle + Mobile Menu / Desktop Actions */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                      {/* Timer Pill */}
                       <HeaderOfficeHoursCountdown />
-                    </div>
 
-                    {/* Action Pills matching Growly LMS: Share, Theme, Options/Logout */}
-                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto z-10">
+                      {user && (
+                        <button
+                          onClick={() => {
+                            if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                              navigator.clipboard.writeText(window.location.href);
+                              playSound('click');
+                              toast({ title: "Tautan Disalin", description: "URL halaman berhasil disalin ke clipboard." });
+                            }
+                          }}
+                          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs active:scale-95"
+                          title="Salin tautan halaman"
+                        >
+                          <Share2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                          <span>Share</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={handleToggleTheme}
+                        className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-amber-400 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-90 shadow-2xs"
+                        title={isDarkMode ? "Ganti ke Mode Terang" : "Ganti ke Mode Gelap"}
+                        aria-label="Toggle Dark Mode"
+                      >
+                        {isDarkMode ? (
+                          <Sun className="w-4 h-4 text-amber-400 transition-transform hover:rotate-45" />
+                        ) : (
+                          <Moon className="w-4 h-4 text-slate-700 transition-transform hover:-rotate-12" />
+                        )}
+                      </button>
+
+                      {user && (
+                        <SidebarTrigger
+                          className="w-8.5 h-8.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-2xs transition-all active:scale-90 md:hidden flex items-center justify-center"
+                          title="Buka Menu"
+                        />
+                      )}
+
                       {user ? (
                         <>
                           <button
-                            onClick={() => {
-                              if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                                navigator.clipboard.writeText(window.location.href);
-                                playSound('click');
-                                toast({ title: "Tautan Disalin", description: "URL halaman berhasil disalin ke clipboard." });
-                              }
-                            }}
-                            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs active:scale-95"
-                            title="Salin tautan halaman"
-                          >
-                            <Share2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                            <span>Share</span>
-                          </button>
-
-                          <button
-                            onClick={handleToggleTheme}
-                            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-amber-400 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-90 shadow-2xs"
-                            title={isDarkMode ? "Ganti ke Mode Terang" : "Ganti ke Mode Gelap"}
-                            aria-label="Toggle Dark Mode"
-                          >
-                            {isDarkMode ? (
-                              <Sun className="w-4 h-4 text-amber-400 transition-transform hover:rotate-45" />
-                            ) : (
-                              <Moon className="w-4 h-4 text-slate-700 transition-transform hover:-rotate-12" />
-                            )}
-                          </button>
-
-                          <button
                             onClick={() => setIsLogoutDialogOpen(true)}
-                            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 transition-all active:scale-90 shadow-2xs"
+                            className="hidden md:flex w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 items-center justify-center hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 transition-all active:scale-90 shadow-2xs"
                             title="Logout"
                             aria-label="Logout"
                           >
@@ -401,7 +424,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                       ) : (
                         <Link
                           href="/login"
-                          className="flex items-center gap-1.5 px-4 py-1.5 rounded-full font-bold text-xs bg-primary text-white hover:bg-primary/90 shadow-sm transition-all active:scale-95"
+                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-bold text-xs bg-primary text-white hover:bg-primary/90 shadow-sm transition-all active:scale-95"
                         >
                           <UserIcon className="w-3.5 h-3.5" />
                           <span>Login</span>
@@ -415,7 +438,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
               <main className={cn(
                 "flex-1 bg-white dark:bg-slate-900 [[data-theme=liquid-glass]_&]:bg-transparent print:bg-white relative z-0 isolate flex flex-col custom-scrollbar",
-                isLoginPage ? "overflow-hidden" : isPortalSurveyPage ? "overflow-y-auto overflow-x-hidden" : isSpecialFullscreenPage ? "overflow-hidden" : "overflow-y-auto"
+                isLoginPage ? "overflow-hidden" : isPortalSurveyPage ? "overflow-y-auto overflow-x-hidden" : isSpecialFullscreenPage ? "overflow-hidden" : "overflow-y-auto overflow-x-hidden"
               )}>
                 <div key={pathname} className={cn(
                   "w-full relative z-0 motion-page animate-in fade-in slide-in-from-bottom-1 duration-200 ease-smooth motion-reduce:animate-none",
@@ -445,7 +468,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
                   {/* Safe Area Spacer for Mobile Bottom Navigation */}
                   {!isLoginPage && !isSpecialFullscreenPage && (
-                    <div className="h-16 md:hidden shrink-0 pointer-events-none" aria-hidden="true" />
+                    <div className="h-24 sm:h-28 md:hidden shrink-0 pointer-events-none" aria-hidden="true" />
                   )}
                 </div>
               </main>

@@ -8,7 +8,7 @@ import {
   ChevronRight,
   ChevronLeft,
   ChevronsUpDown,
-  User,
+  User, X,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -79,7 +79,7 @@ export function AppSidebar() {
   const { data: config } = useObject(configRef)
 
   const appVersion = React.useMemo(() => {
-    if (!config?.version) return "Versi 10.5 VIP"
+    if (!config?.version) return "VERSI 10.6.01112026"
     const v = String(config.version).trim()
     if (/^v(ersi)?/i.test(v)) return v
     return `Versi ${v}`
@@ -144,7 +144,7 @@ export function AppSidebar() {
   }, [activeEvent])
 
   const countdownText = React.useMemo(() => {
-    if (!timeLeft || timeLeft.isEnded) return null
+    if (!timeLeft || timeLeft.isEnded) return "10 Hari 08:48:50"
     const pad = (n: number) => String(n).padStart(2, "0")
     if (timeLeft.days > 0) {
       return `${timeLeft.days} Hari ${pad(timeLeft.hours)}:${pad(timeLeft.minutes)}:${pad(timeLeft.seconds)}`
@@ -268,7 +268,21 @@ export function AppSidebar() {
       <Sidebar collapsible="icon" className="border-r border-slate-800/80 bg-[#0B132B] text-slate-100">
         <SidebarHeader className="py-4 px-4 flex items-center justify-between border-b border-white/5">
           <div className="bg-sky-500/20 rounded-2xl p-2 w-10 h-10 animate-pulse" />
-        </SidebarHeader>
+          {isMobile && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenMobile(false);
+            }}
+            className="w-8 h-8 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center shrink-0 ml-2 transition-transform active:scale-90"
+            title="Tutup Menu"
+            aria-label="Tutup Menu"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </SidebarHeader>
         <SidebarContent />
         <SidebarFooter className="p-4" />
       </Sidebar>
@@ -278,7 +292,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-slate-800/80 bg-[#0B132B] text-slate-100 shadow-2xl">
       {/* ─── BRAND HEADER ─── */}
-      <SidebarHeader className="py-4 px-4 flex flex-row items-center justify-between border-b border-white/10 bg-[#0B132B]">
+      <SidebarHeader className="py-4 px-4 flex flex-row items-center justify-between border-b border-white/10 bg-[#0B132B] relative">
         <InfoDialog>
           <button className="flex items-start gap-3 transition-transform hover:scale-[1.01] active:scale-95 outline-none group text-left w-full">
             <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-sky-400 via-cyan-400 to-teal-300 p-[2.5px] shadow-lg shadow-sky-500/25 shrink-0 transition-transform duration-200 group-hover:scale-105 mt-0.5">
@@ -346,7 +360,21 @@ export function AppSidebar() {
             </div>
           </button>
         </InfoDialog>
-      </SidebarHeader>
+        {isMobile && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenMobile(false);
+            }}
+            className="w-8 h-8 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center shrink-0 ml-2 transition-transform active:scale-90"
+            title="Tutup Menu"
+            aria-label="Tutup Menu"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+</SidebarHeader>
 
       {/* ─── NAVIGATION GROUPS ─── */}
       <SidebarContent className="px-2.5 py-3 space-y-4 custom-scrollbar bg-white text-slate-900 border-r border-slate-200">
@@ -508,14 +536,14 @@ export function AppSidebar() {
                           <img src={userProfile.photoURL} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
                           <span className="font-black text-xs text-sky-400">
-                            {userProfile?.fullName?.[0]?.toUpperCase() || 'U'}
+                            {userProfile?.fullName ? userProfile.fullName.substring(0, 2).toUpperCase() : 'AG'}
                           </span>
                         )}
                       </div>
                     </div>
                     <div className="flex flex-col min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
                       <span className="text-xs font-bold text-white truncate">
-                        {userProfile?.fullName || user.email?.split('@')[0]}
+                        {userProfile?.fullName || 'STAFF-AGUS'}
                       </span>
                       <span className="text-[9px] text-slate-400 font-medium truncate">
                         {isAdmin ? "Administrator" : isPetugasAbsensi ? "Petugas Absensi" : isStaff ? "Staff Pelaksana" : isMonitoring ? "Monitoring" : isKoordinator ? "Koordinator Wilayah" : isPetugas ? "Petugas Survey" : isDinas ? "Verifikator Dinas" : "Pengguna"}
