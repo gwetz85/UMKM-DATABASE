@@ -1217,7 +1217,13 @@ function ActorDataContent() {
                 stats.detailedStatus.hasilVerifikasi = (stats.detailedStatus.hasilVerifikasi || 0) + 1
               }
               
-              if (s === 'bank_pending') stats.detailedStatus.verifikasi++
+              if (s === 'bank_pending') {
+                if (actor.bankNumber && String(actor.bankNumber).trim() !== '') {
+                  stats.detailedStatus.selesai++
+                } else {
+                  stats.detailedStatus.verifikasi++
+                }
+              }
               
               // "LPJ" menu queries finish + readyForLPJ + !lpjNominal
               if (s === 'finish' && actor.readyForLPJ && !actor.lpjNominal) stats.detailedStatus.lpj++
@@ -1445,11 +1451,13 @@ function ActorDataContent() {
     e.preventDefault()
     if (!database || isMonitoring || !viewingActor) return
     const formData = new FormData(e.currentTarget)
-    const updates = {
+    const isVerifiedDinas = viewingActor.hasilVerifikasiDinas === 'Lolos' || viewingActor.berkasDinasVerified || viewingActor.status === 'finish' || viewingActor.status === 'bank_pending'
+    const updates: any = {
       bankNumber: formData.get('bankNumber'),
       bankOwner: formData.get('bankOwner'),
       bankName: formData.get('bankName'),
-      status: 'bank_pending'
+      status: isVerifiedDinas ? 'finish' : 'bank_pending',
+      ...(isVerifiedDinas ? { readyForLPJ: false } : {})
     }
     updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
     
@@ -1467,7 +1475,7 @@ function ActorDataContent() {
       userId: user?.email || user?.uid || 'Admin'
     })
     
-    toast({ title: "Tersimpan", description: "Data rekening telah dikirim." })
+    toast({ title: "Tersimpan", description: isVerifiedDinas ? "Data rekening telah disimpan & status diselesaikan (finish)." : "Data rekening telah dikirim." })
     setEditingBankMode(false)
     setViewingActor(null)
   }

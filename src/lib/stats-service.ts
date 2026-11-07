@@ -102,7 +102,10 @@ export const getDetailedStage = (actorData: any): keyof NonNullable<SystemStats[
     if (Boolean(actorData.berkasDinasVerified)) return 'hasilVerifikasi';
     return 'verifikasi';
   }
-  if (s === 'bank_pending') return 'verifikasi';
+  if (s === 'bank_pending') {
+    if (actorData.bankNumber && String(actorData.bankNumber).trim() !== '') return 'selesai';
+    return 'verifikasi';
+  }
   if (s === 'finish') {
     if (actorData.readyForLPJ && !actorData.lpjNominal) return 'lpj';
     return 'selesai';

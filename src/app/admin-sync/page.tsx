@@ -83,7 +83,13 @@ export default function AdminSyncPage() {
           if (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Lolos' && actor.berkasDinasVerified) {
             stats.detailedStatus.hasilVerifikasi = (stats.detailedStatus.hasilVerifikasi || 0) + 1
           }
-          if (s === 'bank_pending') stats.detailedStatus.verifikasi++
+          if (s === 'bank_pending') {
+            if (actor.bankNumber && String(actor.bankNumber).trim() !== '') {
+              stats.detailedStatus.selesai++
+            } else {
+              stats.detailedStatus.verifikasi++
+            }
+          }
           if (s === 'finish' && actor.readyForLPJ && !actor.lpjNominal) stats.detailedStatus.lpj++
           if (s === 'finish' && (!actor.readyForLPJ || actor.lpjNominal)) stats.detailedStatus.selesai++
           
