@@ -92,23 +92,25 @@ import {
   Trash2,
   UploadCloud,
   FileUp,
-  Download
+  Download,
+  Camera
 } from "lucide-react"
 
 import ExcelJS from "exceljs"
 import * as XLSX from "xlsx"
+import { KtpKkScannerDialog } from "@/components/ktp-kk-scanner-dialog"
 
 // Tipe Status Kehadiran
 export type AttendanceStatus = 'hadir' | 'belum_hadir' | 'izin' | 'sakit';
 
 // Helper Penentu Data yang TERVERIFIKASI
-export const isCancelDinas = (actorData: any): boolean => {
+const isCancelDinas = (actorData: any): boolean => {
   if (!actorData) return false;
   const status = (actorData.status || "").toLowerCase();
   return (status === 'verified_dinas' && actorData.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(actorData.alasanCancelDinas);
 };
 
-export const isActorVerified = (actorData: any): boolean => {
+const isActorVerified = (actorData: any): boolean => {
   if (!actorData) return false;
   if (isCancelDinas(actorData)) return false;
   const status = (actorData.status || "").toLowerCase();
@@ -212,6 +214,7 @@ function DaftarHadirContent() {
   const [scannerNikInput, setScannerNikInput] = useState("")
   const [scannerResult, setScannerResult] = useState<BusinessActor | null>(null)
   const [scannerStatus, setScannerStatus] = useState<'idle' | 'found' | 'not_found'>('idle')
+  const [isKtpScannerOpen, setIsKtpScannerOpen] = useState(false)
   const inputScannerRef = React.useRef<HTMLInputElement | null>(null)
 
   // 1. Role-Based Access Control (RBAC)
@@ -1115,6 +1118,52 @@ function DaftarHadirContent() {
     }
   }
 
+  // ─── HANDLER SELESAI SCAN KTP (OCR KAMERA) ───
+  const handleKtpScanComplete = (extractedNumber: string) => {
+    setIsKtpScannerOpen(false)
+    const cleanNik = extractedNumber.trim().replace(/\D/g, '').slice(0, 16)
+    if (!cleanNik) return
+
+    setScannerNikInput(cleanNik)
+    setSearchQuery(cleanNik)
+
+    // Cari di verifiedActorsList
+    const found = verifiedActorsList.find(a => {
+      const cleanActorNik = (a.nik || "").trim().replace(/\D/g, '')
+      return cleanActorNik === cleanNik || (cleanNik.length >= 12 && cleanActorNik.includes(cleanNik))
+    })
+
+    if (found) {
+      setScannerResult(found)
+      setScannerStatus('found')
+      if ((found as any).attendanceStatus === 'hadir') {
+        playSound('click', 0.4)
+      } else {
+        playSound('success', 0.5)
+      }
+
+      toast({
+        title: "KTP Berhasil Terbaca!",
+        description: `NIK: ${cleanNik} • ${found.fullName} (${(found as any).attendanceStatus === 'hadir' ? 'Sudah Hadir' : 'Belum Hadir'})`,
+      })
+
+      // Otomatis aktifkan mode scanner agar petugas langsung melihat kartu kehadiran dan tombol presensi
+      setViewMode('scanner')
+    } else {
+      setScannerResult(null)
+      setScannerStatus('not_found')
+      playSound('error', 0.45)
+
+      toast({
+        variant: "destructive",
+        title: "KTP Tidak Ditemukan",
+        description: `NIK ${cleanNik} dari hasil scan KTP tidak terdaftar dalam Daftar Hadir atau belum lolos verifikasi dinas.`,
+      })
+
+      setViewMode('scanner')
+    }
+  }
+
   const handleScannerMarkHadir = async (actor: BusinessActor) => {
     if (!database || !user) return
     setIsSubmitting(true)
@@ -1915,6 +1964,18 @@ function DaftarHadirContent() {
               <span className="font-bold text-slate-700 dark:text-slate-300">{counts.semua} Total</span>
             </div>
 
+            {/* Tombol Scan KTP Kamera */}
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setIsKtpScannerOpen(true)}
+              className="text-xs font-bold gap-1.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white shadow-xs"
+              title="Buka Kamera untuk Membaca NIK KTP (OCR)"
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span>Scan KTP</span>
+            </Button>
+
             {/* Tombol Buka Layar Landscape Petugas */}
             <Button
               type="button"
@@ -2016,6 +2077,22 @@ function DaftarHadirContent() {
               <p className="text-[11px] text-muted-foreground">
                 Masukkan 16 digit NIK pelaku usaha. Sistem otomatis mencari saat 16 digit lengkap atau tekan tombol <strong>Enter</strong>.
               </p>
+
+              {/* Tombol Cepat Buka Kamera OCR KTP */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800">
+                <Button
+                  type="button"
+                  onClick={() => setIsKtpScannerOpen(true)}
+                  className="h-11 px-5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-sm gap-2 shrink-0"
+                  title="Arahkan kamera ke fisik KTP untuk membaca NIK"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>Buka Kamera Scan KTP (OCR)</span>
+                </Button>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Arahkan kamera ke fisik KTP untuk mengekstrak 16 digit NIK secara otomatis menggunakan kecerdasan optik (OCR).
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -2054,6 +2131,19 @@ function DaftarHadirContent() {
                     className="bg-white/10 hover:bg-white/20 text-white border-white/30 text-xs font-bold"
                   >
                     Batal Hadir
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      handleScannerReset();
+                      setIsKtpScannerOpen(true);
+                    }}
+                    className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold gap-1 shadow-xs border border-white/20"
+                    title="Buka Kamera untuk Memindai KTP Berikutnya"
+                  >
+                    <Camera className="w-3 h-3" />
+                    <span>Scan KTP Lain</span>
                   </Button>
                   <Button
                     type="button"
@@ -2319,6 +2409,14 @@ function DaftarHadirContent() {
             )}
           </div>
         )}
+
+        {/* ─── DIALOG SCAN KTP KAMERA (OCR) ─── */}
+        <KtpKkScannerDialog
+          open={isKtpScannerOpen}
+          onOpenChange={setIsKtpScannerOpen}
+          initialMode="ktp"
+          onScanComplete={handleKtpScanComplete}
+        />
       </div>
     )
   }
@@ -2390,6 +2488,18 @@ function DaftarHadirContent() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+
+          {/* Tombol Mode Scan KTP Kamera (OCR) */}
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setIsKtpScannerOpen(true)}
+            className="h-10 px-3.5 text-xs font-bold bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white gap-1.5 shadow-2xs rounded-xl transition-all"
+            title="Scan NIK KTP menggunakan Kamera (OCR)"
+          >
+            <Camera className="w-3.5 h-3.5" />
+            <span>Scan KTP</span>
+          </Button>
 
           {/* Tombol Mode Scan NIK (Pencarian 1 Kolom Petugas) */}
           <Button
@@ -4277,6 +4387,14 @@ function DaftarHadirContent() {
         confirmText="Ya, Kosongkan Semua"
         variant="destructive"
         icon={<AlertTriangle className="w-8 h-8 text-destructive" />}
+      />
+
+      {/* ─── DIALOG SCAN KTP KAMERA (OCR) ─── */}
+      <KtpKkScannerDialog
+        open={isKtpScannerOpen}
+        onOpenChange={setIsKtpScannerOpen}
+        initialMode="ktp"
+        onScanComplete={handleKtpScanComplete}
       />
 
     </div>
