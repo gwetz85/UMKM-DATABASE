@@ -1244,6 +1244,7 @@ function DaftarHadirContent() {
     setScannerNikInput('')
     setScannerResult(null)
     setScannerStatus('idle')
+    setSuggestedActors([])
     setTimeout(() => {
       inputScannerRef.current?.focus()
     }, 50)
@@ -2023,19 +2024,19 @@ function DaftarHadirContent() {
                   id="scanner-nik-input"
                   ref={inputScannerRef}
                   type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={16}
-                  placeholder="Ketik atau Scan 16 Digit NIK di sini..."
+                  maxLength={50}
+                  placeholder="Ketik NIK (16 Digit) atau Nama Pelaku Usaha..."
                   value={scannerNikInput}
                   onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, '').slice(0, 16)
+                    const val = e.target.value
                     setScannerNikInput(val)
-                    if (val.length === 16) {
-                      handleSearchScanner(val)
-                    } else if (val.length === 0) {
+                    const clean = val.replace(/\D/g, '')
+                    if (clean.length === 16) {
+                      handleSearchScanner(clean)
+                    } else if (val.trim().length === 0) {
                       setScannerResult(null)
                       setScannerStatus('idle')
+                      setSuggestedActors([])
                     }
                   }}
                   onKeyDown={(e) => {
@@ -2044,7 +2045,7 @@ function DaftarHadirContent() {
                       handleSearchScanner()
                     }
                   }}
-                  className="h-14 pl-12 pr-28 text-lg sm:text-xl font-mono font-bold tracking-wider rounded-xl border-2 border-primary/30 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/20 bg-slate-50/50 dark:bg-zinc-800/50"
+                  className="h-14 pl-12 pr-28 text-base sm:text-lg font-mono font-bold tracking-wider rounded-xl border-2 border-primary/30 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/20 bg-slate-50/50 dark:bg-zinc-800/50"
                   autoFocus
                 />
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary">
@@ -2320,7 +2321,7 @@ function DaftarHadirContent() {
 
         {/* ─── HASIL TIDAK DITEMUKAN ─── */}
         {scannerStatus === 'not_found' && (
-          <Card className="border-2 border-destructive/30 bg-destructive/5 p-6 rounded-2xl text-center space-y-3">
+          <Card className="border-2 border-destructive/30 bg-destructive/5 p-6 rounded-2xl text-center space-y-4">
             <div className="w-14 h-14 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mx-auto">
               <XCircle className="w-8 h-8" />
             </div>
@@ -2329,10 +2330,60 @@ function DaftarHadirContent() {
                 NIK Tidak Ditemukan!
               </h3>
               <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 max-w-md mx-auto">
-                Nomor NIK <strong className="font-mono font-bold text-slate-900 dark:text-white">"{scannerNikInput}"</strong> tidak terdaftar dalam Daftar Hadir atau belum lolos verifikasi dinas.
+                Nomor <strong className="font-mono font-bold text-slate-900 dark:text-white">"{scannerNikInput}"</strong> tidak terdaftar dalam Daftar Hadir atau belum lolos verifikasi dinas.
               </p>
             </div>
-            <div className="pt-2">
+
+            {/* ── SARAN REKOMENDASI CERDAS (JIKA 1-2 DIGIT SALAH BACA OCR) ── */}
+            {suggestedActors.length > 0 && (
+              <div className="text-left bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700/60 rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-black text-xs sm:text-sm">
+                  <Sparkles className="w-4 h-4 text-amber-600 animate-bounce shrink-0" />
+                  <span>Ditemukan Data yang Sangat Mirip (Kemungkinan Salah Baca OCR pada KTP):</span>
+                </div>
+                <div className="space-y-2">
+                  {suggestedActors.map(({ actor, diffCount, reason }) => (
+                    <div 
+                      key={actor.id} 
+                      className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-amber-200 dark:border-amber-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs"
+                    >
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-black text-slate-900 dark:text-slate-100 text-sm">{actor.fullName}</span>
+                          <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-[10px] font-bold">
+                            Beda {diffCount} Angka
+                          </Badge>
+                        </div>
+                        <p className="text-xs font-mono font-black text-primary tracking-wide">
+                          NIK Database: {actor.nik}
+                        </p>
+                        <p className="text-[11px] text-amber-800 dark:text-amber-400 font-medium">
+                          {reason}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {actor.businessName || "-"} • Kel: {actor.kelurahan || "-"} • Koordinator: {normalizeCoordinator(actor.coordinator) || "-"}
+                        </p>
+                      </div>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          setScannerNikInput(actor.nik)
+                          handleSearchScanner(actor.nik)
+                        }}
+                        className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-2.5 px-4 rounded-xl gap-1.5 shadow-sm shrink-0"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Gunakan Data {actor.fullName.split(' ')[0]} & Absen</span>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -2340,6 +2391,18 @@ function DaftarHadirContent() {
                 className="font-bold border-destructive/30 text-destructive hover:bg-destructive/10"
               >
                 Coba Cari NIK Lain
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  handleScannerReset();
+                  setIsKtpScannerOpen(true);
+                }}
+                className="font-bold bg-primary hover:bg-primary/90 text-white gap-1.5"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Scan Ulang KTP</span>
               </Button>
             </div>
           </Card>
