@@ -1932,37 +1932,37 @@ function DaftarHadirContent() {
   // ─── TAMPILAN KHUSUS MODE SCANNER NIK (ROLE PETUGAS ABSENSI / ADMIN SCAN MODE) ───
   if (viewMode === 'scanner' || (isPetugasAbsensi && !isAdmin)) {
     return (
-      <div className="w-full min-h-[90vh] p-2 sm:p-4 max-w-4xl mx-auto space-y-4">
+      <div className="w-full p-2 sm:p-3 max-w-4xl mx-auto space-y-2.5">
         {/* Top Header Card */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-xs">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-white dark:bg-zinc-900 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-2xs">
+          <div className="flex items-center gap-2.5">
             <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
             <div>
-              <div className="flex items-center gap-2">
-                <span className="p-1.5 rounded-lg bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300">
-                  <ScanLine className="w-5 h-5" />
+              <div className="flex items-center gap-1.5">
+                <span className="p-1 rounded-md bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300">
+                  <ScanLine className="w-4 h-4" />
                 </span>
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 font-headline">
+                <h1 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 font-headline leading-tight">
                   Presensi Kehadiran Pelaku Usaha
                 </h1>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-[11px] text-muted-foreground mt-0.5">
                 Petugas: <strong className="text-slate-800 dark:text-slate-200">{userProfile?.fullName || user?.email}</strong> 
-                <span className="mx-1.5">•</span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 uppercase">
+                <span className="mx-1">•</span>
+                <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 uppercase">
                   {isAdmin ? "Administrator" : "Petugas Absensi"}
                 </span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
             {/* Quick stats mini */}
-            <div className="flex items-center gap-2 text-xs bg-slate-50 dark:bg-zinc-800/80 px-3 py-1.5 rounded-xl border border-slate-200/80 dark:border-zinc-700">
-              <span className="text-slate-500 font-medium">Hadir Hari Ini:</span>
+            <div className="flex items-center gap-1.5 text-xs bg-slate-50 dark:bg-zinc-800/80 px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-zinc-700">
+              <span className="text-slate-500 font-medium text-[11px]">Hadir:</span>
               <span className="font-black text-emerald-600 dark:text-emerald-400">{counts.hadir}</span>
               <span className="text-slate-300 dark:text-zinc-600">/</span>
-              <span className="font-bold text-slate-700 dark:text-slate-300">{counts.semua} Total</span>
+              <span className="font-bold text-slate-700 dark:text-slate-300">{counts.semua}</span>
             </div>
 
             {/* Tombol Scan KTP Kamera */}
@@ -1970,7 +1970,7 @@ function DaftarHadirContent() {
               type="button"
               size="sm"
               onClick={() => setIsKtpScannerOpen(true)}
-              className="text-xs font-bold gap-1.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white shadow-xs"
+              className="h-8 text-xs font-bold gap-1 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white shadow-2xs px-2.5"
               title="Buka Kamera untuk Membaca NIK KTP (OCR)"
             >
               <Camera className="w-3.5 h-3.5" />
@@ -1983,7 +1983,7 @@ function DaftarHadirContent() {
               variant="outline"
               size="sm"
               onClick={() => window.open('/cek-daftar-hadir', '_blank')}
-              className="text-xs font-bold gap-1.5 border-sky-300 text-sky-700 bg-sky-50 hover:bg-sky-100"
+              className="h-8 text-xs font-bold gap-1 border-sky-300 text-sky-700 bg-sky-50 hover:bg-sky-100 px-2.5"
               title="Buka Layar Pengecekan Petugas Orientasi Landscape"
             >
               <ExternalLink className="w-3.5 h-3.5" />
@@ -1996,7 +1996,7 @@ function DaftarHadirContent() {
                 variant="outline"
                 size="sm"
                 onClick={() => setViewMode('table')}
-                className="text-xs font-bold gap-1.5 border-slate-300"
+                className="h-8 text-xs font-bold gap-1 border-slate-300 px-2.5"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Mode Tabel</span>
@@ -2005,27 +2005,27 @@ function DaftarHadirContent() {
           </div>
         </div>
 
-        {/* ─── HANYA 1 KOLOM SEARCH: PENCARIAN NIK ─── */}
-        <Card className="border-2 border-primary/20 shadow-md bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
-          <CardContent className="p-4 sm:p-6 space-y-4">
-            <div className="space-y-1.5">
-              <label htmlFor="scanner-nik-input" className="text-sm font-black uppercase tracking-wider text-slate-700 dark:text-slate-200 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <SearchCheck className="w-4 h-4 text-primary" />
-                  Pencarian NIK (Nomor Induk Kependudukan)
-                </span>
-                <span className="text-xs font-mono font-normal text-muted-foreground">
-                  {scannerNikInput.replace(/\D/g, '').length} / 16 Digit
-                </span>
+        {/* ─── PENCARIAN NIK & SCAN KTP (KOMPAK) ─── */}
+        <Card className="border border-primary/20 shadow-xs bg-white dark:bg-zinc-900 rounded-xl overflow-hidden">
+          <CardContent className="p-2.5 sm:p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <label htmlFor="scanner-nik-input" className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                <SearchCheck className="w-3.5 h-3.5 text-primary" />
+                <span>Pencarian NIK (Nomor Induk Kependudukan)</span>
               </label>
+              <span className="text-[11px] font-mono font-bold text-muted-foreground">
+                {scannerNikInput.replace(/\D/g, '').length} / 16 Digit
+              </span>
+            </div>
 
-              <div className="relative">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
                 <Input
                   id="scanner-nik-input"
                   ref={inputScannerRef}
                   type="text"
                   maxLength={50}
-                  placeholder="Ketik NIK (16 Digit) atau Nama Pelaku Usaha..."
+                  placeholder="Ketik 16 Digit NIK atau Nama..."
                   value={scannerNikInput}
                   onChange={(e) => {
                     const val = e.target.value
@@ -2045,91 +2045,83 @@ function DaftarHadirContent() {
                       handleSearchScanner()
                     }
                   }}
-                  className="h-14 pl-12 pr-28 text-base sm:text-lg font-mono font-bold tracking-wider rounded-xl border-2 border-primary/30 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/20 bg-slate-50/50 dark:bg-zinc-800/50"
+                  className="h-10 pl-9 pr-14 text-sm sm:text-base font-mono font-bold tracking-wider rounded-lg border-2 border-primary/30 focus-visible:border-primary bg-slate-50/50 dark:bg-zinc-800/50"
                   autoFocus
                 />
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary">
-                  <ScanLine className="w-6 h-6 animate-pulse" />
+                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-primary">
+                  <ScanLine className="w-4 h-4 animate-pulse" />
                 </div>
 
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  {scannerNikInput && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleScannerReset}
-                      className="h-9 px-2 text-xs text-muted-foreground hover:text-slate-900"
-                    >
-                      Batal
-                    </Button>
-                  )}
+                {scannerNikInput && (
                   <Button
                     type="button"
+                    variant="ghost"
                     size="sm"
-                    onClick={() => handleSearchScanner()}
-                    className="h-9 px-4 text-xs font-bold bg-primary hover:bg-primary/90 text-white rounded-lg shadow-xs"
+                    onClick={handleScannerReset}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-2 text-xs text-muted-foreground hover:text-slate-900"
                   >
-                    <Search className="w-3.5 h-3.5 mr-1" /> Cari
+                    Batal
                   </Button>
-                </div>
+                )}
               </div>
 
-              <p className="text-[11px] text-muted-foreground">
-                Masukkan 16 digit NIK pelaku usaha. Sistem otomatis mencari saat 16 digit lengkap atau tekan tombol <strong>Enter</strong>.
-              </p>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => handleSearchScanner()}
+                className="h-10 px-4 text-xs font-bold bg-primary hover:bg-primary/90 text-white rounded-lg shadow-xs shrink-0"
+              >
+                <Search className="w-3.5 h-3.5 mr-1" /> Cari
+              </Button>
 
-              {/* Tombol Cepat Buka Kamera OCR KTP */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800">
-                <Button
-                  type="button"
-                  onClick={() => setIsKtpScannerOpen(true)}
-                  className="h-11 px-5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-sm gap-2 shrink-0"
-                  title="Arahkan kamera ke fisik KTP untuk membaca NIK"
-                >
-                  <Camera className="w-4 h-4" />
-                  <span>Buka Kamera Scan KTP (OCR)</span>
-                </Button>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Arahkan kamera ke fisik KTP untuk mengekstrak 16 digit NIK secara otomatis menggunakan kecerdasan optik (OCR).
-                </p>
-              </div>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setIsKtpScannerOpen(true)}
+                className="h-10 px-3.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold text-xs rounded-lg shadow-xs gap-1.5 shrink-0"
+                title="Buka Kamera untuk Membaca NIK KTP (OCR)"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Scan KTP</span>
+              </Button>
             </div>
           </CardContent>
         </Card>
 
         {/* ─── HASIL PENGECEKAN NIK ─── */}
         {scannerStatus === 'found' && scannerResult && (
-          <Card className="border-2 border-slate-200 dark:border-zinc-800 shadow-lg rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 animate-in fade-in-50 zoom-in-95 duration-200">
+          <Card className="border border-slate-200 dark:border-zinc-800 shadow-sm rounded-xl overflow-hidden bg-white dark:bg-zinc-900 animate-in fade-in-50 zoom-in-95 duration-200">
             {/* Status Header Banner */}
             {((scannerResult as any).attendanceStatus === 'hadir') ? (
-              <div className="p-4 bg-emerald-500 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-inner">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-7 h-7 text-white" />
+              <div className="p-2.5 sm:p-3 bg-emerald-600 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shadow-inner">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-5 h-5 text-white" />
                   </div>
-                  <div>
-                    <span className="text-[11px] font-black uppercase tracking-widest bg-white/25 px-2.5 py-0.5 rounded-full inline-block">
-                      STATUS: TELAH HADIR
-                    </span>
-                    <h2 className="text-lg font-black mt-0.5">
-                      Pelaku Usaha Sudah Melakukan Presensi
-                    </h2>
-                    <p className="text-xs text-emerald-100 flex items-center gap-1 mt-0.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      Diverifikasi oleh: <strong>{(scannerResult as any).attendanceUpdatedBy || "Petugas Absensi"}</strong> pada {formatDateTimeIndo((scannerResult as any).attendanceUpdatedAt)}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full inline-block">
+                        STATUS: TELAH HADIR
+                      </span>
+                      <span className="text-xs sm:text-sm font-black truncate">
+                        Pelaku Usaha Sudah Presensi
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-emerald-100 flex items-center gap-1 mt-0.5 truncate">
+                      <Clock className="w-3 h-3 shrink-0" />
+                      Diverifikasi: <strong>{(scannerResult as any).attendanceUpdatedBy || "Petugas"}</strong> • {formatDateTimeIndo((scannerResult as any).attendanceUpdatedAt)}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                <div className="flex items-center gap-1.5 shrink-0 w-full sm:w-auto justify-end">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => handleScannerCancelHadir(scannerResult)}
                     disabled={isSubmitting}
-                    className="bg-white/10 hover:bg-white/20 text-white border-white/30 text-xs font-bold"
+                    className="h-8 px-2.5 bg-white/10 hover:bg-white/20 text-white border-white/30 text-xs font-bold"
                   >
                     Batal Hadir
                   </Button>
@@ -2140,7 +2132,7 @@ function DaftarHadirContent() {
                       handleScannerReset();
                       setIsKtpScannerOpen(true);
                     }}
-                    className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold gap-1 shadow-xs border border-white/20"
+                    className="h-8 px-2.5 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold gap-1 shadow-xs border border-white/20"
                     title="Buka Kamera untuk Memindai KTP Berikutnya"
                   >
                     <Camera className="w-3 h-3" />
@@ -2150,27 +2142,29 @@ function DaftarHadirContent() {
                     type="button"
                     size="sm"
                     onClick={handleScannerReset}
-                    className="bg-white text-emerald-700 hover:bg-emerald-50 text-xs font-black shadow-xs"
+                    className="h-8 px-2.5 bg-white text-emerald-800 hover:bg-emerald-50 text-xs font-black shadow-xs"
                   >
                     Cari NIK Lain
                   </Button>
                 </div>
               </div>
             ) : (
-              <div className="p-4 bg-amber-500 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-inner">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                    <Clock className="w-7 h-7 text-white" />
+              <div className="p-2.5 sm:p-3 bg-amber-500 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shadow-inner">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                    <Clock className="w-5 h-5 text-white" />
                   </div>
-                  <div>
-                    <span className="text-[11px] font-black uppercase tracking-widest bg-white/25 px-2.5 py-0.5 rounded-full inline-block">
-                      STATUS: BELUM HADIR
-                    </span>
-                    <h2 className="text-lg font-black mt-0.5">
-                      Siap Untuk Melakukan Presensi
-                    </h2>
-                    <p className="text-xs text-amber-100 mt-0.5">
-                      Silakan periksa posisi meja dan jadwal sesi di bawah, lalu klik tombol <strong>Tandai Hadir</strong>.
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full inline-block">
+                        STATUS: BELUM HADIR
+                      </span>
+                      <span className="text-xs sm:text-sm font-black truncate">
+                        Siap Presensi
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-amber-100 mt-0.5 truncate">
+                      Periksa meja & jadwal di bawah, lalu klik tombol Tandai Hadir.
                     </p>
                   </div>
                 </div>
@@ -2178,15 +2172,15 @@ function DaftarHadirContent() {
                 <div className="shrink-0 w-full sm:w-auto flex justify-end">
                   <Button
                     type="button"
-                    size="lg"
+                    size="sm"
                     onClick={() => handleScannerMarkHadir(scannerResult)}
                     disabled={isSubmitting}
-                    className="w-full sm:w-auto bg-white text-emerald-800 hover:bg-emerald-50 text-base font-black px-6 py-6 shadow-md gap-2"
+                    className="w-full sm:w-auto h-9 sm:h-10 px-4 sm:px-5 bg-white text-emerald-800 hover:bg-emerald-50 text-xs sm:text-sm font-black shadow-md gap-1.5"
                   >
                     {isSubmitting ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <Check className="w-6 h-6 text-emerald-600" />
+                      <Check className="w-4 h-4 text-emerald-600" />
                     )}
                     <span>TANDAI HADIR</span>
                   </Button>
@@ -2194,124 +2188,118 @@ function DaftarHadirContent() {
               </div>
             )}
 
-            <CardContent className="p-5 sm:p-6 space-y-6">
+            <CardContent className="p-2.5 sm:p-3 space-y-2.5">
               {/* Highlight Dua Kotak: POSISI MEJA & JADWAL SESI */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {/* Posisi Absensi (Meja) */}
-                <div className="p-4 rounded-xl bg-sky-50 dark:bg-sky-950/40 border-2 border-sky-200 dark:border-sky-800 flex items-start gap-3.5">
-                  <div className="w-11 h-11 rounded-xl bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                    <MapPin className="w-6 h-6" />
+                <div className="p-2 sm:p-2.5 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                    <MapPin className="w-4 h-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-sky-700 dark:text-sky-300">
+                    <span className="text-[9.5px] font-black uppercase tracking-wider text-sky-700 dark:text-sky-300 block">
                       POSISI ABSENSI (MEJA / LOKET)
                     </span>
-                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 leading-snug">
+                    <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 truncate">
                       {(scannerResult as any).attendanceDesk || (
                         <span className="text-amber-600 dark:text-amber-400 italic font-semibold">
                           Belum Ditentukan
                         </span>
                       )}
                     </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                      Arahkan pelaku usaha menuju loket meja di atas
-                    </p>
                   </div>
                 </div>
 
                 {/* Jadwal Absensi (Sesi) */}
-                <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-200 dark:border-amber-800 flex items-start gap-3.5">
-                  <div className="w-11 h-11 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                    <Clock className="w-6 h-6" />
+                <div className="p-2 sm:p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                    <Clock className="w-4 h-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                    <span className="text-[9.5px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300 block">
                       JADWAL ABSENSI (SESI / WAKTU)
                     </span>
-                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 leading-snug">
+                    <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 truncate">
                       {(scannerResult as any).attendanceSchedule || (
                         <span className="text-amber-600 dark:text-amber-400 italic font-semibold">
                           Belum Ditentukan
                         </span>
                       )}
                     </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                      Waktu kehadiran sesuai gelombang undangan
-                    </p>
                   </div>
                 </div>
               </div>
 
               {/* Data Lengkap Pelaku Usaha */}
-              <div className="border border-slate-200 dark:border-zinc-800 rounded-xl p-4 bg-slate-50/60 dark:bg-zinc-800/40 space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-700 pb-2">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                    <UserCheck className="w-4 h-4 text-primary" />
+              <div className="border border-slate-200 dark:border-zinc-800 rounded-lg p-2.5 bg-slate-50/60 dark:bg-zinc-800/40 space-y-2">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-700 pb-1">
+                  <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                    <UserCheck className="w-3.5 h-3.5 text-primary" />
                     Biodata Pelaku Usaha
                   </h4>
-                  <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-bold">
+                  <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[9.5px] font-bold py-0 h-4.5">
                     ✓ Lolos Verifikasi Dinas
                   </Badge>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                   <div>
-                    <span className="text-slate-500 dark:text-slate-400 text-[10.5px] font-bold block">NAMA LENGKAP</span>
-                    <span className="font-black text-slate-900 dark:text-slate-100 text-sm">{scannerResult.fullName}</span>
+                    <span className="text-slate-500 dark:text-slate-400 text-[10px] font-bold block">NAMA LENGKAP</span>
+                    <span className="font-black text-slate-900 dark:text-slate-100 text-xs sm:text-sm block truncate">{scannerResult.fullName}</span>
                   </div>
 
                   <div>
-                    <span className="text-slate-500 dark:text-slate-400 text-[10.5px] font-bold block">NOMOR NIK</span>
-                    <span className="font-mono font-black text-primary text-sm tracking-wider">{scannerResult.nik}</span>
+                    <span className="text-slate-500 dark:text-slate-400 text-[10px] font-bold block">NOMOR NIK</span>
+                    <span className="font-mono font-black text-primary text-xs sm:text-sm tracking-wider block">{scannerResult.nik}</span>
                   </div>
 
                   <div>
-                    <span className="text-slate-500 dark:text-slate-400 text-[10.5px] font-bold block">NAMA USAHA</span>
-                    <span className="font-black text-slate-800 dark:text-slate-200">{scannerResult.businessName || "-"}</span>
+                    <span className="text-slate-500 dark:text-slate-400 text-[10px] font-bold block">NAMA USAHA</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block truncate">{scannerResult.businessName || "-"}</span>
                   </div>
 
                   <div>
-                    <span className="text-slate-500 dark:text-slate-400 text-[10.5px] font-bold block">BIDANG / KATEGORI</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{scannerResult.businessCategory || "-"}</span>
+                    <span className="text-slate-500 dark:text-slate-400 text-[10px] font-bold block">BIDANG / KATEGORI</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-200 block truncate">{scannerResult.businessCategory || "-"}</span>
                   </div>
 
                   <div>
-                    <span className="text-slate-500 dark:text-slate-400 text-[10.5px] font-bold block">WILAYAH (KECAMATAN / KELURAHAN)</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    <span className="text-slate-500 dark:text-slate-400 text-[10px] font-bold block">WILAYAH (KEC / KEL)</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-200 block truncate">
                       {scannerResult.kecamatan || "-"} / {scannerResult.kelurahan || "-"}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-slate-500 dark:text-slate-400 text-[10.5px] font-bold block">KOORDINATOR WILAYAH</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">{normalizeCoordinator(scannerResult.coordinator) || "-"}</span>
+                    <span className="text-slate-500 dark:text-slate-400 text-[10px] font-bold block">KOORDINATOR</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block truncate">{normalizeCoordinator(scannerResult.coordinator) || "-"}</span>
                   </div>
 
-                  <div className="sm:col-span-2 md:col-span-3">
-                    <span className="text-slate-500 dark:text-slate-400 text-[10.5px] font-bold block">ALAMAT USAHA / DOMISILI</span>
-                    <span className="font-medium text-slate-800 dark:text-slate-200">
+                  <div className="col-span-2 sm:col-span-3">
+                    <span className="text-slate-500 dark:text-slate-400 text-[10px] font-bold block">ALAMAT USAHA / DOMISILI</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-200 block truncate">
                       {scannerResult.address || "-"} {scannerResult.rtRw ? `(${scannerResult.rtRw})` : ""}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Bottom Big Action Button if status is not yet hadir */}
+              {/* Bottom Quick Action if not yet hadir */}
               {((scannerResult as any).attendanceStatus !== 'hadir') && (
-                <div className="pt-2 flex justify-center">
+                <div className="pt-0.5 flex justify-center">
                   <Button
                     type="button"
-                    size="lg"
+                    size="sm"
                     onClick={() => handleScannerMarkHadir(scannerResult)}
                     disabled={isSubmitting}
-                    className="w-full sm:w-2/3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-base py-6 rounded-xl shadow-lg gap-2"
+                    className="w-full sm:w-auto h-9 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm rounded-lg shadow-xs gap-1.5"
                   >
                     {isSubmitting ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <CheckCircle2 className="w-6 h-6" />
+                      <CheckCircle2 className="w-4 h-4" />
                     )}
-                    <span>KLIK DI SINI: TANDAI HADIR</span>
+                    <span>KLIK UNTUK TANDAI HADIR</span>
                   </Button>
                 </div>
               )}
@@ -2321,47 +2309,47 @@ function DaftarHadirContent() {
 
         {/* ─── HASIL TIDAK DITEMUKAN ─── */}
         {scannerStatus === 'not_found' && (
-          <Card className="border-2 border-destructive/30 bg-destructive/5 p-6 rounded-2xl text-center space-y-4">
-            <div className="w-14 h-14 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mx-auto">
-              <XCircle className="w-8 h-8" />
+          <Card className="border border-destructive/30 bg-destructive/5 p-4 rounded-xl text-center space-y-3">
+            <div className="w-10 h-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mx-auto">
+              <XCircle className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-destructive">
+              <h3 className="text-base font-black text-destructive">
                 NIK Tidak Ditemukan!
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 max-w-md mx-auto">
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 max-w-md mx-auto">
                 Nomor <strong className="font-mono font-bold text-slate-900 dark:text-white">"{scannerNikInput}"</strong> tidak terdaftar dalam Daftar Hadir atau belum lolos verifikasi dinas.
               </p>
             </div>
 
             {/* ── SARAN REKOMENDASI CERDAS (JIKA 1-2 DIGIT SALAH BACA OCR) ── */}
             {suggestedActors.length > 0 && (
-              <div className="text-left bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700/60 rounded-xl p-4 space-y-3">
-                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-black text-xs sm:text-sm">
-                  <Sparkles className="w-4 h-4 text-amber-600 animate-bounce shrink-0" />
-                  <span>Ditemukan Data yang Sangat Mirip (Kemungkinan Salah Baca OCR pada KTP):</span>
+              <div className="text-left bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 rounded-xl p-3 space-y-2">
+                <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 font-black text-xs">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-bounce shrink-0" />
+                  <span>Ditemukan Data Sangat Mirip (Kemungkinan Salah Baca OCR):</span>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {suggestedActors.map(({ actor, diffCount, reason }) => (
                     <div 
                       key={actor.id} 
-                      className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-amber-200 dark:border-amber-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs"
+                      className="p-2 bg-white dark:bg-zinc-900 rounded-lg border border-amber-200 dark:border-amber-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shadow-2xs"
                     >
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-black text-slate-900 dark:text-slate-100 text-sm">{actor.fullName}</span>
-                          <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-[10px] font-bold">
+                      <div className="space-y-0.5 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-black text-slate-900 dark:text-slate-100 text-xs">{actor.fullName}</span>
+                          <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-[9px] font-bold py-0 h-4">
                             Beda {diffCount} Angka
                           </Badge>
                         </div>
                         <p className="text-xs font-mono font-black text-primary tracking-wide">
                           NIK Database: {actor.nik}
                         </p>
-                        <p className="text-[11px] text-amber-800 dark:text-amber-400 font-medium">
+                        <p className="text-[10px] text-amber-800 dark:text-amber-400 font-medium">
                           {reason}
                         </p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {actor.businessName || "-"} • Kel: {actor.kelurahan || "-"} • Koordinator: {normalizeCoordinator(actor.coordinator) || "-"}
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {actor.businessName || "-"} • Kel: {actor.kelurahan || "-"} • Koord: {normalizeCoordinator(actor.coordinator) || "-"}
                         </p>
                       </div>
 
@@ -2372,10 +2360,10 @@ function DaftarHadirContent() {
                           setScannerNikInput(actor.nik)
                           handleSearchScanner(actor.nik)
                         }}
-                        className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-2.5 px-4 rounded-xl gap-1.5 shadow-sm shrink-0"
+                        className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs h-8 px-3 rounded-lg gap-1 shadow-2xs shrink-0"
                       >
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Gunakan Data {actor.fullName.split(' ')[0]} & Absen</span>
+                        <Check className="w-3 h-3" />
+                        <span>Gunakan Data & Absen</span>
                       </Button>
                     </div>
                   ))}
@@ -2383,12 +2371,12 @@ function DaftarHadirContent() {
               </div>
             )}
 
-            <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
+            <div className="pt-1 flex flex-wrap items-center justify-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleScannerReset}
-                className="font-bold border-destructive/30 text-destructive hover:bg-destructive/10"
+                className="h-8 text-xs font-bold border-destructive/30 text-destructive hover:bg-destructive/10"
               >
                 Coba Cari NIK Lain
               </Button>
@@ -2399,9 +2387,9 @@ function DaftarHadirContent() {
                   handleScannerReset();
                   setIsKtpScannerOpen(true);
                 }}
-                className="font-bold bg-primary hover:bg-primary/90 text-white gap-1.5"
+                className="h-8 text-xs font-bold bg-primary hover:bg-primary/90 text-white gap-1"
               >
-                <Camera className="w-3.5 h-3.5" />
+                <Camera className="w-3 h-3" />
                 <span>Scan Ulang KTP</span>
               </Button>
             </div>
@@ -2410,31 +2398,31 @@ function DaftarHadirContent() {
 
         {/* ─── IDLE STATE: PETUNJUK & RIWAYAT TERAKHIR ─── */}
         {scannerStatus === 'idle' && (
-          <div className="space-y-4">
-            <Card className="border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl p-6 text-center space-y-2">
-              <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
-                <SearchCheck className="w-6 h-6" />
+          <div className="space-y-2.5">
+            <Card className="border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl p-4 text-center space-y-1.5">
+              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                <SearchCheck className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-black text-slate-800 dark:text-slate-100">
+              <h3 className="text-sm font-black text-slate-800 dark:text-slate-100">
                 Pencarian NIK Siap Digunakan
               </h3>
               <p className="text-xs text-muted-foreground max-w-md mx-auto">
-                Masukkan 16 digit NIK pelaku usaha pada kolom pencarian di atas untuk memeriksa jadwal sesi, posisi meja absensi, dan melakukan verifikasi presensi kehadiran.
+                Ketik 16 digit NIK atau klik <strong>Scan KTP</strong> untuk membaca otomatis via kamera KTP (OCR).
               </p>
             </Card>
 
             {/* Riwayat 5 Presensi Terakhir */}
             {recentOfficerScans.length > 0 && (
-              <Card className="border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl p-4 space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-2">
+              <Card className="border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl p-3 space-y-2">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-1.5">
                   <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                    <History className="w-4 h-4 text-emerald-600" />
+                    <History className="w-3.5 h-3.5 text-emerald-600" />
                     Riwayat Presensi Terakhir
                   </h4>
                   <span className="text-[10px] text-muted-foreground">5 Data Terkini</span>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {recentOfficerScans.map((actor) => (
                     <div 
                       key={actor.id}
@@ -2442,7 +2430,7 @@ function DaftarHadirContent() {
                         setScannerNikInput(actor.nik)
                         handleSearchScanner(actor.nik)
                       }}
-                      className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-800/60 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center justify-between gap-3 cursor-pointer border border-slate-200/60 dark:border-zinc-700"
+                      className="p-2 rounded-lg bg-slate-50 dark:bg-zinc-800/60 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center justify-between gap-2.5 cursor-pointer border border-slate-200/60 dark:border-zinc-700"
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
