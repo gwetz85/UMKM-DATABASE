@@ -145,9 +145,27 @@ export default function SettingsMusicPage() {
   // Sync songs list from Firebase
   useEffect(() => {
     if (songsData && typeof songsData === 'object') {
-      const parsed: BacksoundSong[] = Array.isArray(songsData)
-        ? songsData.filter(Boolean)
-        : Object.values(songsData).filter(Boolean);
+      const parsed: BacksoundSong[] = [];
+      if (Array.isArray(songsData)) {
+        songsData.forEach((item, index) => {
+          if (item && typeof item === 'object') {
+            parsed.push({
+              ...item,
+              id: item.id || `song_${index}`
+            });
+          }
+        });
+      } else {
+        Object.entries(songsData).forEach(([key, val]: [string, any]) => {
+          // Ignore the injected 'id' property from useObject (where val is a string or key === 'id')
+          if (key !== 'id' && val && typeof val === 'object') {
+            parsed.push({
+              ...val,
+              id: val.id || key
+            });
+          }
+        });
+      }
 
       // Sort by createdAt ascending
       parsed.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));

@@ -95,9 +95,20 @@ export function BackgroundMusicPlayer() {
   // Determine active song from Firebase songs list
   const activeSong = React.useMemo(() => {
     if (!songsData || typeof songsData !== 'object') return null;
-    const songList: BacksoundSong[] = Array.isArray(songsData)
-      ? songsData.filter(Boolean)
-      : Object.values(songsData).filter(Boolean);
+    const songList: BacksoundSong[] = [];
+    if (Array.isArray(songsData)) {
+      songsData.forEach((s, idx) => {
+        if (s && typeof s === 'object') {
+          songList.push({ ...s, id: s.id || `song_${idx}` });
+        }
+      });
+    } else {
+      Object.entries(songsData).forEach(([key, val]: [string, any]) => {
+        if (key !== 'id' && val && typeof val === 'object') {
+          songList.push({ ...val, id: val.id || key });
+        }
+      });
+    }
 
     if (songList.length === 0) return null;
 
