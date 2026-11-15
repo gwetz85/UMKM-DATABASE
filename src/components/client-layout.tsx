@@ -22,6 +22,7 @@ import { MobileBottomNav } from './mobile-bottom-nav';
 import { AppSidebar } from '@/components/app-sidebar';
 import { RunningText } from '@/components/running-text';
 import { HeaderOfficeHoursCountdown } from '@/components/HeaderOfficeHoursCountdown';
+import { BackgroundMusicPlayer } from '@/components/background-music-player';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -273,6 +274,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       case '/cek-data': return 'Cek Data Publik';
       case '/profile': return 'Profil Saya';
       case '/settings': return 'Pengaturan';
+      case '/settings-music': return 'Music Backsound';
       case '/users': return 'Manajemen User';
       case '/lpj': return 'LPJ';
       case '/hasil-verifikasi': return 'Hasil Verifikasi';
@@ -287,6 +289,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <ThemePersistence />
+      <BackgroundMusicPlayer />
       <SidebarProvider defaultOpen={true}>
         <div className="flex h-[100dvh] w-full overflow-hidden p-0">
           <div className={cn(

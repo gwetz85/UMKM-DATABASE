@@ -25,7 +25,8 @@ import {
   Tv,
   ScanLine,
   Store,
-  PauseCircle
+  PauseCircle,
+  Music
 } from "lucide-react"
 import { useUser, useObject, useMemoFirebase, useList, useDatabase } from "@/firebase"
 import { ref } from "firebase/database"
@@ -341,6 +342,14 @@ export function useNavigation() {
       show: !!user && !isDinas && !isVerifikatorDinas && !isInspektorat && !isKoordinator && !isPetugas,
       color: "#94a3b8",
       description: "Konfigurasi Profil & Sistem"
+    },
+    {
+      name: "Music Backsound",
+      href: "/settings-music",
+      icon: Music,
+      show: isAdmin, // HANYA ADMINISTRATOR
+      color: "#10b981",
+      description: "Upload & Atur Volume Musik Backsound Realtime"
     },
     {
       name: "Pengaturan Teks",

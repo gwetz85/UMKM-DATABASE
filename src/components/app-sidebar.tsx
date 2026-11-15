@@ -231,6 +231,7 @@ export function AppSidebar() {
         hrefs: [
           "/users",
           "/settings",
+          "/settings-music",
           "/settings-running-text",
           "/settings-event",
           "/settings-info",

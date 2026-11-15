@@ -378,6 +378,9 @@ export default function LoginPage() {
       // Success animation trigger
       setLoginSuccess(true)
       playSound("success", 0.6)
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("simpu:play-music"))
+      }
       toast({ title: "Login Berhasil", description: "Selamat datang kembali di SIMPU." })
 
       // Smooth delayed redirect so user enjoys the success transition
