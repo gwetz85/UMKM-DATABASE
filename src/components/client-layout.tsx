@@ -289,7 +289,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <ThemePersistence />
-      <BackgroundMusicPlayer />
       <SidebarProvider defaultOpen={true}>
         <div className="flex h-[100dvh] w-full overflow-hidden p-0">
           <div className={cn(
@@ -353,6 +352,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                       {/* Timer Pill */}
                       <HeaderOfficeHoursCountdown />
+
+                      {/* Music Backsound Pill */}
+                      <BackgroundMusicPlayer />
 
                       {user && (
                         <button

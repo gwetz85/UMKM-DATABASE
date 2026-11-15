@@ -2,17 +2,29 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { useUser, useDatabase, useMemoFirebase, useObject } from '@/firebase';
 import { ref, get } from 'firebase/database';
 import { BacksoundConfig, BacksoundSong } from '@/types/music-backsound';
 import { chunksToBlobUrl, audioBlobUrlCache } from '@/lib/music-service';
-import { Disc3, Volume2, VolumeX, Play, Pause, ChevronUp, ChevronDown, Music2, Sparkles } from 'lucide-react';
+import {
+  Disc3,
+  Volume2,
+  VolumeX,
+  Volume1,
+  Play,
+  Pause,
+  ChevronDown,
+  Music2,
+  Settings2,
+  ExternalLink
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Slider } from '@/components/ui/slider';
 
 export function BackgroundMusicPlayer() {
   const pathname = usePathname();
-  const { user } = useUser();
+  const { user, userProfile } = useUser();
   const database = useDatabase();
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -21,17 +33,28 @@ export function BackgroundMusicPlayer() {
   const [isLoadingSong, setIsLoadingSong] = useState(false);
   const [currentSong, setCurrentSong] = useState<BacksoundSong | null>(null);
   const [isAutoplayBlocked, setIsAutoplayBlocked] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(true);
-  const [showVolumePopup, setShowVolumePopup] = useState(false);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isPlayingRef = useRef(false);
 
   const isLoginPage = pathname === '/login';
   const isCekDataPage = pathname === '/cek-data' || pathname?.startsWith('/cek-data');
-  const isCekDaftarHadirPage = pathname === '/cek-daftar-hadir' || pathname?.startsWith('/cek-daftar-hadir') || pathname === '/daftar-hadir/cek' || pathname?.startsWith('/daftar-hadir/cek');
+  const isCekDaftarHadirPage =
+    pathname === '/cek-daftar-hadir' ||
+    pathname?.startsWith('/cek-daftar-hadir') ||
+    pathname === '/daftar-hadir/cek' ||
+    pathname?.startsWith('/daftar-hadir/cek');
   const isLayarInformasiPage = pathname === '/layar-informasi' || pathname?.startsWith('/layar-informasi');
   const isSpecialFullscreenPage = isLayarInformasiPage || isCekDaftarHadirPage;
+
+  const roleStr = String(userProfile?.role || '').toLowerCase().trim();
+  const isAdmin =
+    roleStr === 'admin' ||
+    roleStr === 'administrator' ||
+    roleStr === 'superadmin' ||
+    user?.email?.toLowerCase() === 'agus@umkm.id';
 
   // Listen to Music Backsound Config
   const configRef = useMemoFirebase(() => {
@@ -48,7 +71,22 @@ export function BackgroundMusicPlayer() {
   }, [database]);
   const { data: songsData } = useObject(songsRef);
 
-  // Initialize Audio element once
+  // Close popover when clicking outside
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsPopoverOpen(false);
+      }
+    };
+    if (isPopoverOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [isPopoverOpen]);
+
+  // Initialize native HTML5 Audio element once
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!audioRef.current) {
@@ -84,7 +122,7 @@ export function BackgroundMusicPlayer() {
     };
   }, []);
 
-  // Update volume in real-time whenever config volume changes
+  // Update volume in real-time whenever config volume or local volume changes
   useEffect(() => {
     if (!audioRef.current) return;
     const targetVolume = localVolume !== null ? localVolume : (config?.volume ?? 50);
@@ -92,7 +130,7 @@ export function BackgroundMusicPlayer() {
     audioRef.current.volume = isMuted ? 0 : normalizedVol;
   }, [config?.volume, localVolume, isMuted]);
 
-  // Determine active song from Firebase songs list
+  // Determine active song from Firebase songs list safely
   const activeSong = React.useMemo(() => {
     if (!songsData || typeof songsData !== 'object') return null;
     const songList: BacksoundSong[] = [];
@@ -104,6 +142,7 @@ export function BackgroundMusicPlayer() {
       });
     } else {
       Object.entries(songsData).forEach(([key, val]: [string, any]) => {
+        // Exclude the injected 'id' property from useObject
         if (key !== 'id' && val && typeof val === 'object') {
           songList.push({ ...val, id: val.id || key });
         }
@@ -195,7 +234,7 @@ export function BackgroundMusicPlayer() {
               setIsAutoplayBlocked(false);
             })
             .catch((err) => {
-              // Browser blocked autoplay due to user gesture requirement
+              // Browser blocked autoplay due to user interaction requirement
               if (err.name === 'NotAllowedError') {
                 setIsAutoplayBlocked(true);
 
@@ -269,7 +308,7 @@ export function BackgroundMusicPlayer() {
     return null;
   }
 
-  // If no active song exists or music is completely disabled and not playing, show minimal or hide
+  // If no active song exists or music is completely disabled and not playing, return null
   if (!activeSong && !isPlaying) {
     return null;
   }
@@ -277,102 +316,117 @@ export function BackgroundMusicPlayer() {
   const effectiveVolume = localVolume !== null ? localVolume : (config?.volume ?? 50);
 
   return (
-    <div
-      className={cn(
-        'fixed z-50 transition-all duration-300 print:hidden select-none',
-        'bottom-20 md:bottom-5 right-3 md:right-5'
-      )}
-    >
-      {/* Minimized Pill */}
-      {isMinimized ? (
-        <button
-          onClick={() => setIsMinimized(false)}
+    <div ref={containerRef} className="relative inline-flex items-center shrink-0">
+      {/* Top Bar Header Pill (Next to Countdown Jam Kantor) */}
+      <button
+        type="button"
+        onClick={() => setIsPopoverOpen((prev) => !prev)}
+        className={cn(
+          'group relative flex items-center gap-1 sm:gap-2 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full border transition-all duration-300 shadow-xs select-none shrink-0 active:scale-95',
+          isPlaying
+            ? 'bg-[#0b5a48] dark:bg-[#134e40] text-white border-emerald-400/40 shadow-emerald-500/20'
+            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700'
+        )}
+        title={`Backsound: ${currentSong?.title || 'Musik Aplikasi'} (Klik untuk buka kontrol volume)`}
+        aria-label="Kontrol Musik Backsound"
+      >
+        {/* Rotating Disc Icon */}
+        <Disc3
           className={cn(
-            'group flex items-center gap-2 px-3 py-2 rounded-full border shadow-xl backdrop-blur-xl transition-all active:scale-95 duration-200',
+            'w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 transition-transform',
             isPlaying
-              ? 'bg-[#0b5a48]/90 dark:bg-[#16382e]/90 text-white border-emerald-400/40 shadow-emerald-500/20'
-              : 'bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-800'
+              ? 'animate-spin text-emerald-300'
+              : 'text-slate-400 dark:text-slate-400 group-hover:rotate-45'
           )}
-          title={`Backsound: ${currentSong?.title || 'Musik Aplikasi'} (Klik untuk buka kontrol)`}
-          aria-label="Kontrol Musik Backsound"
-        >
-          <Disc3
-            className={cn(
-              'w-4 h-4 shrink-0 transition-transform',
-              isPlaying ? 'animate-spin text-emerald-300' : 'text-slate-400 group-hover:rotate-45'
-            )}
-            style={{ animationDuration: '3.5s' }}
-          />
+          style={{ animationDuration: '3.5s' }}
+        />
 
-          {isPlaying && (
-            <div className="flex items-center gap-0.5 h-3 shrink-0">
-              <span className="w-0.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.3s] h-2.5" />
-              <span className="w-0.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.15s] h-3.5" />
-              <span className="w-0.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.45s] h-2" />
-            </div>
-          )}
-
-          <span className="text-[11px] font-bold max-w-[110px] sm:max-w-[140px] truncate">
-            {currentSong?.title || 'Music Backsound'}
+        {/* Animated Equalizer Soundbars when Playing */}
+        {isPlaying ? (
+          <div className="flex items-center gap-0.5 h-3 shrink-0">
+            <span className="w-0.5 bg-emerald-400 dark:bg-emerald-300 rounded-full animate-bounce [animation-delay:-0.3s] h-2.5" />
+            <span className="w-0.5 bg-emerald-400 dark:bg-emerald-300 rounded-full animate-bounce [animation-delay:-0.15s] h-3.5" />
+            <span className="w-0.5 bg-emerald-400 dark:bg-emerald-300 rounded-full animate-bounce [animation-delay:-0.45s] h-2" />
+          </div>
+        ) : (
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-slate-400 dark:bg-slate-500" />
           </span>
+        )}
 
-          <ChevronUp className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
-        </button>
-      ) : (
-        /* Expanded Floating Card */
-        <div className="flex flex-col bg-white/95 dark:bg-[#0f1d24]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-[#1d3540] rounded-2xl p-3 shadow-2xl w-[260px] sm:w-[280px] animate-in fade-in zoom-in-95 duration-200">
-          {/* Header */}
-          <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-2 mb-2">
+        {/* Song Title Text */}
+        <span className="text-[11px] sm:text-xs font-extrabold max-w-[85px] sm:max-w-[130px] md:max-w-[170px] truncate leading-tight">
+          {currentSong?.title || 'Backsound Music'}
+        </span>
+
+        {/* Dropdown Chevron */}
+        <ChevronDown
+          className={cn(
+            'w-3.5 h-3.5 shrink-0 opacity-70 transition-transform duration-200',
+            isPopoverOpen && 'rotate-180 opacity-100'
+          )}
+        />
+      </button>
+
+      {/* Popover Dropdown Card Anchored Directly Under Top Bar Pill */}
+      {isPopoverOpen && (
+        <div className="absolute right-0 top-full mt-2 z-50 flex flex-col bg-white dark:bg-[#0f1d24] border border-slate-200/90 dark:border-[#1d3540] rounded-2xl p-3.5 shadow-2xl w-[270px] sm:w-[290px] animate-in fade-in zoom-in-95 duration-150">
+          {/* Header Inside Card */}
+          <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-2.5 mb-2.5">
             <div className="flex items-center gap-2 min-w-0">
               <div
                 className={cn(
-                  'w-7 h-7 rounded-xl flex items-center justify-center shrink-0 shadow-xs',
+                  'w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs',
                   isPlaying
                     ? 'bg-gradient-to-tr from-emerald-600 to-teal-500 text-white'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
                 )}
               >
-                <Music2 className="w-3.5 h-3.5" />
+                <Music2 className="w-4 h-4" />
               </div>
               <div className="min-w-0">
                 <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block leading-none">
                   Music Backsound
                 </span>
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate block mt-0.5">
+                <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100 truncate block mt-0.5">
                   {currentSong?.title || 'Memuat lagu...'}
                 </span>
               </div>
             </div>
 
-            <button
-              onClick={() => setIsMinimized(true)}
-              className="w-6 h-6 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors"
-              title="Kecilkan"
-              aria-label="Kecilkan widget musik"
+            <span
+              className={cn(
+                'text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0',
+                isPlaying
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300'
+                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+              )}
             >
-              <ChevronDown className="w-4 h-4" />
-            </button>
+              {isPlaying ? 'Diputar' : 'Dijeda'}
+            </span>
           </div>
 
-          {/* Autoplay blocked banner */}
+          {/* Autoplay Blocked Banner */}
           {isAutoplayBlocked && (
-            <div className="mb-2 p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-[10px] leading-tight flex items-center justify-between gap-1.5">
-              <span>Klik untuk mulai putar musik:</span>
+            <div className="mb-2.5 p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-[10px] leading-tight flex items-center justify-between gap-1.5">
+              <span>Browser membatasi suara:</span>
               <button
+                type="button"
                 onClick={() => {
                   if (audioRef.current) audioRef.current.play().catch(() => {});
                 }}
-                className="px-2 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] shrink-0"
+                className="px-2 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] shrink-0 active:scale-95"
               >
                 Putar
               </button>
             </div>
           )}
 
-          {/* Controls Bar */}
-          <div className="flex items-center justify-between gap-2 pt-1">
+          {/* Player Actions Row */}
+          <div className="flex items-center justify-between gap-2 py-1">
             {/* Play/Pause Button */}
             <button
+              type="button"
               onClick={togglePlay}
               disabled={isLoadingSong}
               className={cn(
@@ -395,44 +449,73 @@ export function BackgroundMusicPlayer() {
               )}
             </button>
 
-            {/* Volume Controls */}
-            <div className="flex items-center gap-1.5 flex-1 justify-end">
-              <button
-                onClick={toggleMute}
-                className={cn(
-                  'w-8 h-8 rounded-xl flex items-center justify-center transition-colors',
-                  isMuted
-                    ? 'bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+            {/* Mute Button */}
+            <button
+              type="button"
+              onClick={toggleMute}
+              className={cn(
+                'w-8 h-8 rounded-xl flex items-center justify-center transition-colors active:scale-95',
+                isMuted
+                  ? 'bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+              )}
+              title={isMuted ? 'Bunyikan' : 'Bisukan'}
+            >
+              {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            </button>
+          </div>
+
+          {/* Real-time Volume Slider */}
+          <div className="pt-2 pb-1 space-y-1.5 border-t border-slate-100 dark:border-slate-800/80 mt-2">
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-400">
+              <span className="flex items-center gap-1">
+                {effectiveVolume === 0 || isMuted ? (
+                  <VolumeX className="w-3.5 h-3.5 text-rose-500" />
+                ) : effectiveVolume < 50 ? (
+                  <Volume1 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                ) : (
+                  <Volume2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 )}
-                title={isMuted ? 'Bunyikan' : 'Bisukan'}
-              >
-                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-              </button>
-
-              <div className="w-20 sm:w-24">
-                <Slider
-                  value={[isMuted ? 0 : effectiveVolume]}
-                  min={0}
-                  max={100}
-                  step={1}
-                  onValueChange={(vals) => {
-                    const newVol = vals[0] ?? 50;
-                    setLocalVolume(newVol);
-                    if (isMuted) setIsMuted(false);
-                    if (audioRef.current) {
-                      audioRef.current.volume = newVol / 100;
-                    }
-                  }}
-                  className="cursor-pointer"
-                />
-              </div>
-
-              <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 w-7 text-right">
+                <span>Volume</span>
+              </span>
+              <span className="font-mono text-emerald-600 dark:text-emerald-400">
                 {isMuted ? '0%' : `${effectiveVolume}%`}
               </span>
             </div>
+
+            <Slider
+              value={[isMuted ? 0 : effectiveVolume]}
+              min={0}
+              max={100}
+              step={1}
+              onValueChange={(vals) => {
+                const newVol = vals[0] ?? 50;
+                setLocalVolume(newVol);
+                if (isMuted) setIsMuted(false);
+                if (audioRef.current) {
+                  audioRef.current.volume = newVol / 100;
+                }
+              }}
+              className="cursor-pointer"
+            />
           </div>
+
+          {/* Admin Direct Shortcut to Settings Music */}
+          {isAdmin && (
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 mt-1">
+              <Link
+                href="/settings-music"
+                onClick={() => setIsPopoverOpen(false)}
+                className="flex items-center justify-between w-full px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors text-[11px] font-bold group"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Settings2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Pengaturan Backsound</span>
+                </span>
+                <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100 transition-opacity" />
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>
