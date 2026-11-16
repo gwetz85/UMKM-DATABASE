@@ -36,14 +36,7 @@ import {
   RotateCcw,
   ClipboardCheck,
   Power,
-  Copy,
-  Mail,
-  ShieldOff,
-  KeyRound,
-  QrCode,
-  Smartphone,
-  Edit3,
-  CheckCircle2
+  Copy
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -177,26 +170,6 @@ export default function UserManagementPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<{id: string, fullName: string, userUid: string | null} | null>(null)
 
-  const [show2FAToggleDialog, setShow2FAToggleDialog] = useState(false)
-  const [target2FAToggle, setTarget2FAToggle] = useState<{id: string, fullName: string, currentEnabled: boolean} | null>(null)
-  
-  const [show2FAResetDialog, setShow2FAResetDialog] = useState(false)
-  const [target2FAReset, setTarget2FAReset] = useState<{id: string, fullName: string} | null>(null)
-
-  // Edit Email states (Menghindari saltik & pergantian email resmi petugas)
-  const [editEmailUser, setEditEmailUser] = useState<any>(null)
-  const [newEmailInput, setNewEmailInput] = useState("")
-  const [isSavingEmail, setIsSavingEmail] = useState(false)
-
-  // 2FA Configuration states (Google Authenticator / Email / Both)
-  const [config2FAUser, setConfig2FAUser] = useState<any>(null)
-  const [config2FAEnabled, setConfig2FAEnabled] = useState(true)
-  const [config2FAMethod, setConfig2FAMethod] = useState<'email' | 'authenticator' | 'both'>('email')
-  const [totpSetupData, setTotpSetupData] = useState<{ secret: string, formattedSecret: string, qrCodeDataUrl: string } | null>(null)
-  const [totpVerifyCode, setTotpVerifyCode] = useState("")
-  const [isSettingUpTotp, setIsSettingUpTotp] = useState(false)
-  const [isSaving2FAConfig, setIsSaving2FAConfig] = useState(false)
-
   const [detailUser, setDetailUser] = useState<any>(null)
   const [showPassword, setShowPassword] = useState(false)
 
@@ -255,7 +228,6 @@ export default function UserManagementPage() {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
     const fullName = formData.get("fullName") as string
-    const email = (formData.get("email") as string || "").trim().toLowerCase()
     const password = formData.get("password") as string
     const role = formData.get("role") as string
     const nipppk = (formData.get("nipppk") as string || "").trim()
@@ -264,15 +236,6 @@ export default function UserManagementPage() {
 
     if (!fullName || !password || !role) return
 
-    if (!email || !email.includes('@')) {
-      toast({
-        variant: "destructive",
-        title: "Email Wajib Diisi",
-        description: "Email pengguna wajib diisi dengan format valid untuk keperluan Verifikasi 2FA."
-      })
-      return
-    }
-
     const username = (nipppk && nipppk.length >= 4)
       ? nipppk.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
       : fullName.toLowerCase().trim().replace(/\s+/g, '_')
@@ -280,8 +243,6 @@ export default function UserManagementPage() {
     
     const newUserData: any = {
       fullName,
-      email,
-      twoFactorEnabled: true,
       password,
       role,
       nipppk,
@@ -331,7 +292,6 @@ export default function UserManagementPage() {
     const formData = new FormData(e.currentTarget)
     const role = formData.get("role") as string
     const fullName = formData.get("fullName") as string
-    const email = (formData.get("email") as string || "").trim().toLowerCase()
     const phoneNumber = formData.get("phoneNumber") as string
     const nik = formData.get("nik") as string
     const address = formData.get("address") as string
@@ -352,13 +312,6 @@ export default function UserManagementPage() {
       nipppk,
       pangkat,
       jabatan
-    }
-
-    if (email) {
-      updates.email = email
-      if (editingUser.email && editingUser.email !== email) {
-        updates.twoFactorOtp = null
-      }
     }
 
     // Update pejabatData if exists or applicable
@@ -487,314 +440,6 @@ export default function UserManagementPage() {
     toast({ title: "Perangkat Direset", description: `Penguncian perangkat ${fullName} telah dihapus dan memiliki 24 jam untuk login kembali.` })
   }
 
-  const handleToggle2FA = (u: any) => {
-    const isCurrentlyEnabled = u.twoFactorEnabled !== false
-    setTarget2FAToggle({
-      id: u.id,
-      fullName: u.fullName || u.id,
-      currentEnabled: isCurrentlyEnabled
-    })
-    setShow2FAToggleDialog(true)
-  }
-
-  const executeToggle2FA = () => {
-    if (!database || !target2FAToggle) return
-    const { id, fullName, currentEnabled } = target2FAToggle
-    setShow2FAToggleDialog(false)
-    setTarget2FAToggle(null)
-
-    const newEnabled = !currentEnabled
-    const userRef = ref(database, `system_users/${id}`)
-    const updates: Record<string, any> = { twoFactorEnabled: newEnabled }
-    if (!newEnabled) {
-      updates.twoFactorOtp = null
-    }
-
-    updateDocumentNonBlocking(userRef, updates)
-
-    logActivity({
-      query: `${newEnabled ? 'AKTIFKAN' : 'NONAKTIFKAN'} 2FA: ${id}`,
-      results: "Berhasil",
-      device: getDeviceType(navigator.userAgent),
-      source: 'Web',
-      method: 'MANAJEMEN USER',
-      userId: user?.email || user?.uid || 'Admin'
-    })
-
-    toast({
-      title: newEnabled ? "2FA Diaktifkan" : "2FA Dinonaktifkan",
-      description: newEnabled 
-        ? `Verifikasi 2FA untuk ${fullName} telah diaktifkan.` 
-        : `Verifikasi 2FA untuk ${fullName} telah dinonaktifkan. Pengguna dapat login tanpa OTP.`
-    })
-  }
-
-  const handleReset2FA = (u: any) => {
-    setTarget2FAReset({
-      id: u.id,
-      fullName: u.fullName || u.id
-    })
-    setShow2FAResetDialog(true)
-  }
-
-  const executeReset2FA = () => {
-    if (!database || !target2FAReset) return
-    const { id, fullName } = target2FAReset
-    setShow2FAResetDialog(false)
-    setTarget2FAReset(null)
-
-    const userRef = ref(database, `system_users/${id}`)
-    updateDocumentNonBlocking(userRef, { 
-      twoFactorOtp: null,
-      twoFactorFailedAttempts: null 
-    })
-
-    // Also call API to ensure full reset
-    fetch('/api/auth/2fa/manage', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'reset',
-        userKey: id,
-        adminId: user?.email || user?.uid || 'Admin'
-      })
-    }).catch(console.error)
-
-    logActivity({
-      query: `RESET 2FA: ${id}`,
-      results: "Berhasil",
-      device: getDeviceType(navigator.userAgent),
-      source: 'Web',
-      method: 'MANAJEMEN USER',
-      userId: user?.email || user?.uid || 'Admin'
-    })
-
-    toast({
-      title: "2FA Direset",
-      description: `Sesi OTP dan batasan percobaan verifikasi untuk ${fullName} telah dibersihkan.`
-    })
-  }
-
-  // ---------------------------------------------------------------------------
-  // EDIT EMAIL HANDLERS
-  // ---------------------------------------------------------------------------
-  const handleOpenEditEmail = (u: any) => {
-    setEditEmailUser(u)
-    setNewEmailInput(u.email || "")
-  }
-
-  const handleSaveEmail = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!editEmailUser || !database) return
-
-    const cleanEmail = newEmailInput.trim().toLowerCase()
-    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
-      toast({
-        variant: "destructive",
-        title: "Email Tidak Valid",
-        description: "Harap masukkan format alamat email yang valid (contoh: user@gmail.com)."
-      })
-      return
-    }
-
-    setIsSavingEmail(true)
-    try {
-      const res = await fetch('/api/auth/2fa/manage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'update-email',
-          userKey: editEmailUser.id,
-          newEmail: cleanEmail,
-          adminId: user?.email || user?.uid || 'Admin'
-        })
-      })
-
-      const data = await res.json()
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Gagal memperbarui email.")
-      }
-
-      const userRef = ref(database, `system_users/${editEmailUser.id}`)
-      updateDocumentNonBlocking(userRef, {
-        email: cleanEmail,
-        twoFactorOtp: null
-      })
-
-      if (detailUser && detailUser.id === editEmailUser.id) {
-        setDetailUser({ ...detailUser, email: cleanEmail, twoFactorOtp: null })
-      }
-
-      toast({
-        title: "Email Berhasil Diperbarui",
-        description: `Email untuk ${editEmailUser.fullName} telah diubah menjadi ${cleanEmail}.`
-      })
-      setEditEmailUser(null)
-    } catch (err: any) {
-      toast({
-        variant: "destructive",
-        title: "Gagal Mengubah Email",
-        description: err.message || "Terjadi kesalahan sistem saat memperbarui email."
-      })
-    } finally {
-      setIsSavingEmail(false)
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // 2FA CONFIGURATION & GOOGLE AUTHENTICATOR SETUP HANDLERS
-  // ---------------------------------------------------------------------------
-  const handleOpen2FAConfig = (u: any) => {
-    setConfig2FAUser(u)
-    setConfig2FAEnabled(u.twoFactorEnabled !== false)
-    setConfig2FAMethod(u.twoFactorMethod || 'email')
-    setTotpSetupData(null)
-    setTotpVerifyCode("")
-  }
-
-  const handleGenerateTotp = async () => {
-    if (!config2FAUser) return
-    setIsSettingUpTotp(true)
-    try {
-      const res = await fetch('/api/auth/2fa/manage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'setup-totp',
-          userKey: config2FAUser.id
-        })
-      })
-      const data = await res.json()
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Gagal menghasilkan QR Code Authenticator.")
-      }
-      setTotpSetupData({
-        secret: data.secret,
-        formattedSecret: data.formattedSecret,
-        qrCodeDataUrl: data.qrCodeDataUrl
-      })
-      toast({
-        title: "Kunci QR Code Dihasilkan",
-        description: "Pindai QR code atau masukkan kunci manual ke aplikasi Google Authenticator."
-      })
-    } catch (err: any) {
-      toast({
-        variant: "destructive",
-        title: "Gagal Setup Authenticator",
-        description: err.message || "Terjadi kendala saat membuat kunci Google Authenticator."
-      })
-    } finally {
-      setIsSettingUpTotp(false)
-    }
-  }
-
-  const handleSave2FAConfig = async () => {
-    if (!config2FAUser || !database) return
-
-    const isTotp = config2FAMethod === 'authenticator' || config2FAMethod === 'both'
-    const currentSecret = totpSetupData?.secret || config2FAUser.twoFactorTotpSecret
-
-    if (config2FAEnabled && isTotp && !currentSecret) {
-      toast({
-        variant: "destructive",
-        title: "Kunci Authenticator Diperlukan",
-        description: "Harap klik 'Buat Kunci / Pindai QR Code' terlebih dahulu untuk menghubungkan Google Authenticator."
-      })
-      return
-    }
-
-    setIsSaving2FAConfig(true)
-    try {
-      const res = await fetch('/api/auth/2fa/manage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'save-config',
-          userKey: config2FAUser.id,
-          enabled: config2FAEnabled,
-          method: config2FAMethod,
-          totpSecret: currentSecret,
-          verifyCode: totpVerifyCode.trim() || undefined,
-          adminId: user?.email || user?.uid || 'Admin'
-        })
-      })
-
-      const data = await res.json()
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Gagal menyimpan konfigurasi 2FA.")
-      }
-
-      const updates: Record<string, any> = {
-        twoFactorEnabled: config2FAEnabled,
-        twoFactorMethod: config2FAMethod,
-        twoFactorOtp: null,
-        twoFactorFailedAttempts: null
-      }
-      if (isTotp && currentSecret) {
-        updates.twoFactorTotpSecret = currentSecret
-      }
-
-      updateDocumentNonBlocking(ref(database, `system_users/${config2FAUser.id}`), updates)
-
-      if (detailUser && detailUser.id === config2FAUser.id) {
-        setDetailUser({
-          ...detailUser,
-          ...updates
-        })
-      }
-
-      toast({
-        title: "Konfigurasi 2FA Disimpan",
-        description: data.message || "Pengaturan 2FA berhasil diperbarui."
-      })
-      setConfig2FAUser(null)
-    } catch (err: any) {
-      toast({
-        variant: "destructive",
-        title: "Gagal Menyimpan",
-        description: err.message || "Terjadi kesalahan saat menyimpan pengaturan 2FA."
-      })
-    } finally {
-      setIsSaving2FAConfig(false)
-    }
-  }
-
-  const handleResetTotpSecret = async () => {
-    if (!config2FAUser || !database) return
-    try {
-      const res = await fetch('/api/auth/2fa/manage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'reset-totp',
-          userKey: config2FAUser.id,
-          adminId: user?.email || user?.uid || 'Admin'
-        })
-      })
-      const data = await res.json()
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Gagal mereset kunci Authenticator.")
-      }
-      setTotpSetupData(null)
-      setConfig2FAMethod('email')
-      updateDocumentNonBlocking(ref(database, `system_users/${config2FAUser.id}`), {
-        twoFactorTotpSecret: null,
-        twoFactorMethod: 'email',
-        twoFactorOtp: null
-      })
-      toast({
-        title: "Kunci Authenticator Direset",
-        description: `Kunci Google Authenticator untuk ${config2FAUser.fullName} berhasil dihapus. Metode kembali ke OTP Email.`
-      })
-    } catch (err: any) {
-      toast({
-        variant: "destructive",
-        title: "Gagal Mereset",
-        description: err.message || "Terjadi kesalahan."
-      })
-    }
-  }
-
   const isCurrentSelfAccount = (u: any) => {
     if (!u) return false
     // Akun admin utama yang sedang aktif: ID di system_users sama dengan auth UID
@@ -881,25 +526,6 @@ export default function UserManagementPage() {
                   <Input name="fullName" placeholder="Contoh: Budi Santoso" required />
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-bold flex items-center justify-between">
-                    <span>Email Pengguna (Wajib untuk 2FA)</span>
-                    <span className="text-[10px] text-amber-600 font-bold">*Wajib Diisi</span>
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input 
-                      name="email" 
-                      type="email" 
-                      placeholder="contoh: budi.santoso@gmail.com" 
-                      className="pl-10" 
-                      required 
-                    />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    Kode verifikasi 2FA akan dikirim ke email ini saat login. Email ini tidak dapat diubah sendiri oleh petugas.
-                  </p>
-                </div>
-                <div className="space-y-2">
                   <Label className="font-bold">Kata Sandi</Label>
                   <div className="relative">
                     <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -974,12 +600,6 @@ export default function UserManagementPage() {
                           )}
                           <span className="text-slate-400 font-normal">@{u.username || u.id}</span>
                         </div>
-                        {u.email && (
-                          <div className="flex items-center gap-1 text-[10px] text-slate-500 font-medium mt-1">
-                            <Mail className="w-3 h-3 text-slate-400 shrink-0" />
-                            <span className="truncate max-w-[200px]">{u.email}</span>
-                          </div>
-                        )}
                       </div>
                       <div>
                         {u.status === 'inactive' ? (
@@ -1032,27 +652,6 @@ export default function UserManagementPage() {
                           <Badge variant="destructive" className="animate-pulse font-black uppercase text-[9px] gap-1 bg-red-100 text-red-600 border-red-200">
                             <ShieldQuestion className="w-3 h-3" /> Menunggu Aktivasi
                           </Badge>
-                        )}
-                        {(u.role === 'petugas' || u.role === 'petugas_survey' || u.role === 'admin' || u.role === 'superadmin') && (
-                          <div className="mt-1 flex items-center gap-1 flex-wrap">
-                            {u.twoFactorEnabled === false ? (
-                              <Badge variant="outline" className="text-amber-700 bg-amber-50 dark:bg-amber-950/40 border-amber-300 font-bold text-[9px] gap-1">
-                                <ShieldOff className="w-3 h-3" /> 2FA Nonaktif
-                              </Badge>
-                            ) : u.twoFactorMethod === 'authenticator' ? (
-                              <Badge variant="secondary" className="text-blue-700 bg-blue-50 dark:bg-blue-950/40 border-blue-300 font-bold text-[9px] gap-1">
-                                <Smartphone className="w-3 h-3 text-blue-600" /> 2FA: Authenticator
-                              </Badge>
-                            ) : u.twoFactorMethod === 'both' ? (
-                              <Badge variant="secondary" className="text-purple-700 bg-purple-50 dark:bg-purple-950/40 border-purple-300 font-bold text-[9px] gap-1">
-                                <ShieldCheck className="w-3 h-3 text-purple-600" /> 2FA: Email &amp; App
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary" className="text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 font-bold text-[9px] gap-1">
-                                <Mail className="w-3 h-3 text-emerald-600" /> 2FA: OTP Email
-                              </Badge>
-                            )}
-                          </div>
                         )}
                       </div>
 
@@ -1120,17 +719,6 @@ export default function UserManagementPage() {
                       </Button>
                       {isAdmin && (
                         <Button 
-                          variant="outline" 
-                          size="icon" 
-                          onClick={() => handleOpenEditEmail(u)} 
-                          className="h-8 w-8 rounded-xl border-sky-200 text-sky-700 hover:bg-sky-50"
-                          title="Edit Email Terdaftar (2FA)"
-                        >
-                          <Mail className="w-3.5 h-3.5" />
-                        </Button>
-                      )}
-                      {isAdmin && (
-                        <Button 
                           variant={u.status === 'inactive' ? "secondary" : "destructive"} 
                           size="icon" 
                           onClick={() => handleToggleStatus(u.id, u.status)} 
@@ -1139,28 +727,6 @@ export default function UserManagementPage() {
                         >
                           <Power className="w-3.5 h-3.5" />
                         </Button>
-                      )}
-                      {isAdmin && (u.role === 'petugas' || u.role === 'petugas_survey' || u.role === 'admin' || u.role === 'superadmin') && (
-                        <>
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
-                            onClick={() => handleOpen2FAConfig(u)} 
-                            className={`h-8 w-8 rounded-xl ${u.twoFactorEnabled === false ? 'border-amber-300 text-amber-700 hover:bg-amber-50' : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'}`}
-                            title="Pengaturan 2FA (Email / Google Authenticator)"
-                          >
-                            {u.twoFactorEnabled === false ? <ShieldOff className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
-                            onClick={() => handleReset2FA(u)} 
-                            className="h-8 w-8 rounded-xl border-purple-200 text-purple-700 hover:bg-purple-50"
-                            title="Reset Sesi 2FA (Bersihkan OTP & Percobaan)"
-                          >
-                            <KeyRound className="w-3.5 h-3.5" />
-                          </Button>
-                        </>
                       )}
                       <Button 
                         variant="outline" 
@@ -1233,12 +799,6 @@ export default function UserManagementPage() {
                               )}
                               <span className="text-slate-400 font-normal">@{u.username || u.id}</span>
                             </div>
-                            {u.email && (
-                              <div className="flex items-center gap-1 text-[10px] text-slate-500 font-medium mt-1">
-                                <Mail className="w-3 h-3 text-slate-400 shrink-0" />
-                                <span className="font-mono truncate max-w-[220px]">{u.email}</span>
-                              </div>
-                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1289,27 +849,6 @@ export default function UserManagementPage() {
                             <Badge variant="destructive" className="animate-pulse font-black uppercase text-[9px] gap-1 bg-red-100 text-red-600 border-red-200">
                               <ShieldQuestion className="w-3 h-3" /> Menunggu Aktivasi
                             </Badge>
-                          )}
-                          {(u.role === 'petugas' || u.role === 'petugas_survey' || u.role === 'admin' || u.role === 'superadmin') && (
-                            <div className="mt-1 flex items-center gap-1 flex-wrap">
-                              {u.twoFactorEnabled === false ? (
-                                <Badge variant="outline" className="text-amber-700 bg-amber-50 border-amber-300 font-bold text-[9px] gap-1">
-                                  <ShieldOff className="w-3 h-3" /> 2FA Nonaktif
-                                </Badge>
-                              ) : u.twoFactorMethod === 'authenticator' ? (
-                                <Badge variant="secondary" className="text-blue-700 bg-blue-50 border-blue-300 font-bold text-[9px] gap-1">
-                                  <Smartphone className="w-3 h-3 text-blue-600" /> 2FA: Authenticator
-                                </Badge>
-                              ) : u.twoFactorMethod === 'both' ? (
-                                <Badge variant="secondary" className="text-purple-700 bg-purple-50 border-purple-300 font-bold text-[9px] gap-1">
-                                  <ShieldCheck className="w-3 h-3 text-purple-600" /> 2FA: Email &amp; App
-                                </Badge>
-                              ) : (
-                                <Badge variant="secondary" className="text-emerald-700 bg-emerald-50 border-emerald-300 font-bold text-[9px] gap-1">
-                                  <Mail className="w-3 h-3 text-emerald-600" /> 2FA: OTP Email
-                                </Badge>
-                              )}
-                            </div>
                           )}
                         </TableCell>
                         <TableCell>
@@ -1380,17 +919,6 @@ export default function UserManagementPage() {
                             </Button>
                             {isAdmin && (
                               <Button 
-                                variant="outline" 
-                                size="icon" 
-                                onClick={() => handleOpenEditEmail(u)} 
-                                className="h-8 w-8 text-sky-700 hover:bg-sky-50 border-sky-200"
-                                title="Edit Email Terdaftar (2FA)"
-                              >
-                                <Mail className="w-4 h-4" />
-                              </Button>
-                            )}
-                            {isAdmin && (
-                              <Button 
                                 variant={u.status === 'inactive' ? "secondary" : "destructive"} 
                                 size="icon" 
                                 onClick={() => handleToggleStatus(u.id, u.status)} 
@@ -1399,28 +927,6 @@ export default function UserManagementPage() {
                               >
                                 <Power className="w-4 h-4" />
                               </Button>
-                            )}
-                            {isAdmin && (u.role === 'petugas' || u.role === 'petugas_survey' || u.role === 'admin' || u.role === 'superadmin') && (
-                              <>
-                                <Button 
-                                  variant="outline" 
-                                  size="icon" 
-                                  onClick={() => handleOpen2FAConfig(u)} 
-                                  className={`h-8 w-8 ${u.twoFactorEnabled === false ? 'border-amber-300 text-amber-700 hover:bg-amber-50' : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'}`}
-                                  title="Pengaturan 2FA (Email / Google Authenticator)"
-                                >
-                                  {u.twoFactorEnabled === false ? <ShieldOff className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="icon" 
-                                  onClick={() => handleReset2FA(u)} 
-                                  className="h-8 w-8 text-purple-700 hover:bg-purple-50 border-purple-200"
-                                  title="Reset Sesi 2FA (Bersihkan OTP & Percobaan)"
-                                >
-                                  <KeyRound className="w-4 h-4" />
-                                </Button>
-                              </>
                             )}
                             <Button 
                               variant="outline" 
@@ -1486,23 +992,6 @@ export default function UserManagementPage() {
                   <div className="space-y-2">
                     <Label className="font-bold">Nama Lengkap</Label>
                     <Input name="fullName" defaultValue={editingUser.fullName} key={`fn-${editingUser.id}`} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="font-bold flex items-center justify-between">
-                      <span>Email Terdaftar (2FA)</span>
-                      <span className="text-[10px] text-muted-foreground">Ubah jika petugas kehilangan akses email lamanya</span>
-                    </Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input 
-                        name="email" 
-                        type="email" 
-                        defaultValue={editingUser.email || ""} 
-                        placeholder="contoh: user@gmail.com" 
-                        className="pl-10" 
-                        key={`em-${editingUser.id}`} 
-                      />
-                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="font-bold">Nomor Ponsel</Label>
@@ -1599,30 +1088,6 @@ export default function UserManagementPage() {
         confirmText="Ya, Hapus"
       />
 
-      <ConfirmDialog
-        open={show2FAToggleDialog}
-        onOpenChange={setShow2FAToggleDialog}
-        title={target2FAToggle?.currentEnabled ? "Nonaktifkan 2FA" : "Aktifkan 2FA"}
-        description={target2FAToggle?.currentEnabled 
-          ? `Nonaktifkan verifikasi 2FA untuk ${target2FAToggle?.fullName}? Petugas akan dapat login langsung menggunakan kata sandi tanpa kode OTP email.` 
-          : `Aktifkan kembali verifikasi 2FA untuk ${target2FAToggle?.fullName}? Pastikan email terdaftar aktif untuk menerima kode OTP.`}
-        onConfirm={executeToggle2FA}
-        variant={target2FAToggle?.currentEnabled ? "destructive" : "default"}
-        icon={target2FAToggle?.currentEnabled ? <ShieldOff className="w-6 h-6" /> : <ShieldCheck className="w-6 h-6" />}
-        confirmText={target2FAToggle?.currentEnabled ? "Ya, Nonaktifkan" : "Ya, Aktifkan"}
-      />
-
-      <ConfirmDialog
-        open={show2FAResetDialog}
-        onOpenChange={setShow2FAResetDialog}
-        title="Reset Sesi 2FA"
-        description={`Reset sesi 2FA untuk ${target2FAReset?.fullName}? Sesi OTP yang sedang aktif, riwayat percobaan salah, dan limit kirim ulang akan dibersihkan sehingga petugas dapat login dengan kode OTP baru.`}
-        onConfirm={executeReset2FA}
-        variant="default"
-        icon={<KeyRound className="w-6 h-6" />}
-        confirmText="Ya, Reset 2FA"
-      />
-
       <Dialog open={!!detailUser} onOpenChange={(open) => { if (!open) { setDetailUser(null); setShowPassword(false); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -1645,76 +1110,6 @@ export default function UserManagementPage() {
                   <span className="text-muted-foreground text-xs font-semibold">Nama Lengkap</span>
                   <span className="font-bold text-slate-800">{detailUser.fullName || '-'}</span>
                 </div>
-
-                <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
-                  <span className="text-muted-foreground text-xs font-semibold">Email Terdaftar (2FA)</span>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="font-mono font-bold text-slate-800 text-xs">{detailUser.email || '- (Belum Diatur)'}</span>
-                    </div>
-                    {isAdmin && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-6 px-2 text-[10px] font-bold text-sky-700 border-sky-200 hover:bg-sky-50 gap-1"
-                        onClick={() => handleOpenEditEmail(detailUser)}
-                      >
-                        <Edit3 className="w-2.5 h-2.5" /> Ubah Email
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
-                  <span className="text-muted-foreground text-xs font-semibold">Status &amp; Metode 2FA</span>
-                  <div className="flex items-center gap-2">
-                    <span className={`font-bold text-xs px-2 py-0.5 rounded-full ${
-                      detailUser.twoFactorEnabled === false 
-                        ? 'bg-amber-100 text-amber-700' 
-                        : detailUser.twoFactorMethod === 'authenticator'
-                        ? 'bg-blue-100 text-blue-700'
-                        : detailUser.twoFactorMethod === 'both'
-                        ? 'bg-purple-100 text-purple-700'
-                        : 'bg-emerald-100 text-emerald-700'
-                    }`}>
-                      {detailUser.twoFactorEnabled === false 
-                        ? 'Nonaktif' 
-                        : detailUser.twoFactorMethod === 'authenticator'
-                        ? 'Google Authenticator'
-                        : detailUser.twoFactorMethod === 'both'
-                        ? 'Email & App'
-                        : 'OTP Email'}
-                    </span>
-                    {isAdmin && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-6 px-2 text-[10px] font-bold"
-                        onClick={() => handleOpen2FAConfig(detailUser)}
-                      >
-                        Kelola 2FA
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {detailUser.twoFactorOtp && (
-                  <div className="flex justify-between items-center pb-2 border-b border-slate-200/60 bg-amber-50/50 p-2 rounded-lg">
-                    <span className="text-amber-800 text-xs font-semibold">Sesi OTP Berjalan</span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-6 px-2 text-[10px] font-bold text-purple-700 border-purple-200 hover:bg-purple-50"
-                      onClick={() => handleReset2FA(detailUser)}
-                    >
-                      <RotateCcw className="w-3 h-3 mr-1" /> Reset Sesi OTP
-                    </Button>
-                  </div>
-                )}
 
                 <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
                   <span className="text-muted-foreground text-xs font-semibold">Kata Sandi Login</span>
@@ -1845,360 +1240,6 @@ export default function UserManagementPage() {
               Tutup
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* =========================================================================
-          MODAL: EDIT EMAIL TERDAFTAR (2FA)
-          ========================================================================= */}
-      <Dialog open={!!editEmailUser} onOpenChange={(open) => { if (!open) setEditEmailUser(null) }}>
-        <DialogContent className="max-w-md">
-          {editEmailUser && (
-            <form onSubmit={handleSaveEmail}>
-              <DialogHeader>
-                <DialogTitle className="text-primary font-black uppercase flex items-center gap-2">
-                  <Mail className="w-5 h-5" /> Edit Alamat Email Petugas
-                </DialogTitle>
-                <CardDescription>
-                  Perbarui alamat email terdaftar untuk keperluan verifikasi 2FA jika terjadi kesalahan input atau pergantian email resmi.
-                </CardDescription>
-              </DialogHeader>
-
-              <div className="py-4 space-y-4">
-                <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground font-semibold">Nama Petugas:</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">{editEmailUser.fullName}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground font-semibold">Username / ID:</span>
-                    <span className="font-mono font-bold bg-slate-200/80 dark:bg-slate-700 px-2 py-0.5 rounded">@{editEmailUser.id}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground font-semibold">Email Saat Ini:</span>
-                    <span className="font-mono text-slate-600 dark:text-slate-300">
-                      {editEmailUser.email || '(Belum Didaftarkan)'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="font-bold text-xs flex items-center gap-1">
-                    <span>Alamat Email Baru</span>
-                    <span className="text-destructive">*</span>
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      type="email"
-                      value={newEmailInput}
-                      onChange={(e) => setNewEmailInput(e.target.value)}
-                      placeholder="contoh: petugas.resmi@gmail.com"
-                      className="pl-9 font-mono text-sm"
-                      required
-                      autoFocus
-                    />
-                  </div>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed mt-1">
-                    Pastikan email aktif dan dapat menerima pesan. Sesi kode OTP yang sedang aktif akan dibersihkan secara otomatis saat email diubah.
-                  </p>
-                </div>
-              </div>
-
-              <DialogFooter className="gap-2 sm:gap-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEditEmailUser(null)}
-                  disabled={isSavingEmail}
-                >
-                  Batal
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSavingEmail || !newEmailInput.trim()}
-                  className="font-bold bg-primary hover:bg-primary/90 text-white gap-2"
-                >
-                  {isSavingEmail ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Menyimpan...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Mail className="w-4 h-4" />
-                      <span>Simpan Email</span>
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* =========================================================================
-          MODAL: PENGATURAN KEAMANAN VERIFIKASI 2FA (EMAIL / AUTHENTICATOR / KEDUANYA)
-          ========================================================================= */}
-      <Dialog open={!!config2FAUser} onOpenChange={(open) => { if (!open) setConfig2FAUser(null) }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          {config2FAUser && (
-            <div className="space-y-4">
-              <DialogHeader>
-                <DialogTitle className="text-primary font-black uppercase flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-emerald-600" /> Pengaturan Verifikasi 2FA
-                </DialogTitle>
-                <CardDescription>
-                  Konfigurasi metode autentikasi dua langkah untuk akun <strong className="text-slate-800 dark:text-slate-100">{config2FAUser.fullName}</strong> (@{config2FAUser.id}).
-                </CardDescription>
-              </DialogHeader>
-
-              {/* Status 2FA Switch */}
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                <div>
-                  <span className="font-bold text-sm block text-slate-800 dark:text-slate-200">Status 2FA</span>
-                  <span className="text-xs text-muted-foreground">
-                    {config2FAEnabled ? "Fitur verifikasi dua langkah aktif" : "Nonaktif (Login hanya dengan kata sandi)"}
-                  </span>
-                </div>
-                <Button
-                  type="button"
-                  variant={config2FAEnabled ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setConfig2FAEnabled(!config2FAEnabled)}
-                  className={`font-bold text-xs gap-1.5 ${config2FAEnabled ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "border-amber-300 text-amber-700"}`}
-                >
-                  {config2FAEnabled ? <ShieldCheck className="w-4 h-4" /> : <ShieldOff className="w-4 h-4" />}
-                  <span>{config2FAEnabled ? "Aktif" : "Nonaktif"}</span>
-                </Button>
-              </div>
-
-              {config2FAEnabled && (
-                <div className="space-y-3">
-                  <Label className="font-bold text-xs block text-slate-700 dark:text-slate-300">
-                    Pilih Metode Autentikasi (2FA):
-                  </Label>
-
-                  {/* Method Option Cards */}
-                  <div className="grid grid-cols-1 gap-2.5">
-                    {/* Method 1: Email OTP */}
-                    <div 
-                      onClick={() => setConfig2FAMethod('email')}
-                      className={`p-3 rounded-2xl border-2 transition-all cursor-pointer flex items-start gap-3 ${
-                        config2FAMethod === 'email'
-                          ? 'border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/40 ring-2 ring-emerald-500/20'
-                          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 bg-white dark:bg-slate-900'
-                      }`}
-                    >
-                      <div className={`p-2 rounded-xl mt-0.5 shrink-0 ${
-                        config2FAMethod === 'email' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'
-                      }`}>
-                        <Mail className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-sm text-slate-800 dark:text-slate-200">1. OTP Email</span>
-                          {config2FAMethod === 'email' && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                          Kode 6 angka dikirimkan ke email terdaftar ({config2FAUser.email || 'belum ada email'}). Berlaku 10 menit.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Method 2: Google Authenticator */}
-                    <div 
-                      onClick={() => setConfig2FAMethod('authenticator')}
-                      className={`p-3 rounded-2xl border-2 transition-all cursor-pointer flex items-start gap-3 ${
-                        config2FAMethod === 'authenticator'
-                          ? 'border-blue-600 bg-blue-50/70 dark:bg-blue-950/40 ring-2 ring-blue-500/20'
-                          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 bg-white dark:bg-slate-900'
-                      }`}
-                    >
-                      <div className={`p-2 rounded-xl mt-0.5 shrink-0 ${
-                        config2FAMethod === 'authenticator' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
-                      }`}>
-                        <Smartphone className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-sm text-slate-800 dark:text-slate-200">2. Google Authenticator</span>
-                          {config2FAMethod === 'authenticator' && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                          Kode 6 angka didapatkan langsung dari aplikasi Google Authenticator / Authy. Instan &amp; tanpa menunggu email.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Method 3: Keduanya (Pilihan Saat Login) */}
-                    <div 
-                      onClick={() => setConfig2FAMethod('both')}
-                      className={`p-3 rounded-2xl border-2 transition-all cursor-pointer flex items-start gap-3 ${
-                        config2FAMethod === 'both'
-                          ? 'border-purple-600 bg-purple-50/70 dark:bg-purple-950/40 ring-2 ring-purple-500/20'
-                          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 bg-white dark:bg-slate-900'
-                      }`}
-                    >
-                      <div className={`p-2 rounded-xl mt-0.5 shrink-0 ${
-                        config2FAMethod === 'both' ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-500'
-                      }`}>
-                        <ShieldCheck className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-sm text-slate-800 dark:text-slate-200">3. Keduanya (Pilihan Saat Login)</span>
-                          {config2FAMethod === 'both' && <CheckCircle2 className="w-4 h-4 text-purple-600" />}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                          Petugas dapat memilih masuk via Google Authenticator atau via kode OTP Email pada saat login.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Section: Google Authenticator Configuration */}
-                  {(config2FAMethod === 'authenticator' || config2FAMethod === 'both') && (
-                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <QrCode className="w-4 h-4 text-blue-600" />
-                          <span className="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                            Konfigurasi Google Authenticator
-                          </span>
-                        </div>
-                        {config2FAUser.twoFactorTotpSecret && !totpSetupData && (
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-300">
-                            Terkonfigurasi
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Display QR code & secret */}
-                      {totpSetupData ? (
-                        <div className="space-y-3 animate-in fade-in">
-                          <div className="flex flex-col items-center justify-center p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
-                            <img
-                              src={totpSetupData.qrCodeDataUrl}
-                              alt="QR Code Google Authenticator"
-                              className="w-44 h-44 object-contain rounded-lg"
-                            />
-                            <p className="text-[11px] text-muted-foreground mt-2 text-center">
-                              Buka Google Authenticator &gt; Pindai Kode QR ini
-                            </p>
-                          </div>
-
-                          <div className="space-y-1">
-                            <Label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                              Kunci Rahasia (Setup Manual):
-                            </Label>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono font-bold text-xs bg-slate-200/80 dark:bg-slate-700 px-3 py-1.5 rounded-lg flex-1 text-center tracking-wider text-slate-800 dark:text-slate-200 select-all">
-                                {totpSetupData.formattedSecret}
-                              </span>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(totpSetupData.secret);
-                                  toast({ title: "Kunci Disalin", description: "Kunci rahasia Base32 berhasil disalin ke clipboard." });
-                                }}
-                                className="h-8 px-2.5 text-xs gap-1 border-slate-300"
-                              >
-                                <Copy className="w-3.5 h-3.5" /> Salin
-                              </Button>
-                            </div>
-                          </div>
-
-                          <div className="space-y-1.5 pt-1">
-                            <Label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 flex items-center justify-between">
-                              <span>Uji Coba Kode 6 Angka (Opsional):</span>
-                              <span className="text-[10px] text-muted-foreground">Pastikan jam HP sinkron</span>
-                            </Label>
-                            <Input
-                              type="text"
-                              inputMode="numeric"
-                              maxLength={6}
-                              value={totpVerifyCode}
-                              onChange={(e) => setTotpVerifyCode(e.target.value.replace(/[^0-9]/g, ''))}
-                              placeholder="Masukkan 6 angka dari HP"
-                              className="font-mono text-center tracking-widest text-sm font-bold"
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            {config2FAUser.twoFactorTotpSecret
-                              ? "Akun ini sudah memiliki kunci Google Authenticator. Anda dapat membuat kunci baru atau menghubungkan ulang perangkat baru."
-                              : "Pengguna belum memiliki kunci Google Authenticator. Klik tombol di bawah untuk menghasilkan QR Code dan Kunci Rahasia."}
-                          </p>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={handleGenerateTotp}
-                              disabled={isSettingUpTotp}
-                              className="font-bold text-xs gap-1.5 border-blue-300 text-blue-700 hover:bg-blue-50"
-                            >
-                              {isSettingUpTotp ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <QrCode className="w-3.5 h-3.5" />
-                              )}
-                              <span>{config2FAUser.twoFactorTotpSecret ? "Pindai / Hubungkan Ulang QR Code" : "Hasilkan QR Code & Kunci"}</span>
-                            </Button>
-                            {config2FAUser.twoFactorTotpSecret && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleResetTotpSecret}
-                                className="font-bold text-xs text-destructive hover:bg-destructive/10"
-                              >
-                                Hapus Kunci Authenticator
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t border-slate-200 dark:border-slate-800">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setConfig2FAUser(null)}
-                  disabled={isSaving2FAConfig}
-                >
-                  Batal
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleSave2FAConfig}
-                  disabled={isSaving2FAConfig}
-                  className="font-bold bg-primary hover:bg-primary/90 text-white gap-2"
-                >
-                  {isSaving2FAConfig ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Menyimpan...</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck className="w-4 h-4" />
-                      <span>Simpan Pengaturan 2FA</span>
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
         </DialogContent>
       </Dialog>
     </div>

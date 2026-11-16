@@ -28,7 +28,7 @@
     },
     "system_users": {
       ".read": "true",
-      ".indexOn": ["uid", "role", "fullName", "email"],
+      ".indexOn": ["uid", "role", "fullName"],
       "$username": {
         ".write": "auth != null || newData.child('role').val() == 'pending' || $username == 'monitoring'"
       }

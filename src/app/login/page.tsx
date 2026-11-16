@@ -35,7 +35,6 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { useSoundEffect } from "@/hooks/use-sound-effect"
-import { isTwoFactorRole } from "@/lib/two-factor"
 import "./login.css"
 import { SimpuOrbitalBadge } from "@/components/simpu-orbital-badge"
 
@@ -61,29 +60,6 @@ export default function LoginPage() {
   const [isRegisteringView, setIsRegisteringView] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
 
-  // 2FA Verification States (Ketentuan 2, 3, 4 + Google Authenticator)
-  const [is2FAView, setIs2FAView] = useState(false)
-  const [twoFactorSession, setTwoFactorSession] = useState<{
-    userKey: string
-    emailMasked?: string
-    sessionToken?: string
-    finalUserRole: string
-    targetUserKey: string
-    user: any
-    email: string
-    username: string
-    twoFactorMethod: 'email' | 'authenticator' | 'both'
-    hasTotp?: boolean
-  } | null>(null)
-  const [selected2FAMethod, setSelected2FAMethod] = useState<'authenticator' | 'email'>('authenticator')
-  const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""])
-  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([])
-  const [otpCooldown, setOtpCooldown] = useState(0)
-  const [resendCount, setResendCount] = useState(0)
-  const [failedAttempts, setFailedAttempts] = useState(0)
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
-  const [isResendingOtp, setIsResendingOtp] = useState(false)
-
   const auth = useAuth()
   const database = useDatabase()
   const router = useRouter()
@@ -106,7 +82,6 @@ export default function LoginPage() {
 
   // Auto redirect if already authenticated with active role
   useEffect(() => {
-    if (is2FAView) return // DO NOT auto redirect while waiting for 2FA OTP verification!
     if (!isUserLoading && !isProfileLoading && existingUser && existingProfile) {
       const role = existingProfile.role || ""
       if (role === "petugas_survey" || role === "petugas") {
@@ -123,87 +98,7 @@ export default function LoginPage() {
         router.push("/")
       }
     }
-  }, [existingUser, existingProfile, isUserLoading, isProfileLoading, router, is2FAView])
-
-  // Cooldown countdown timer for 2FA Resend button (Ketentuan 4: Jeda 60 detik)
-  useEffect(() => {
-    if (!is2FAView || otpCooldown <= 0) return
-    const timer = setInterval(() => {
-      setOtpCooldown((prev) => (prev > 0 ? prev - 1 : 0))
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [is2FAView, otpCooldown])
-
-  // OTP Digit Input Handlers (Clean mobile & desktop keyboard/paste support)
-  const handleDigitChange = (index: number, val: string) => {
-    const cleaned = val.replace(/[^0-9]/g, "")
-    const newDigits = [...otpDigits]
-
-    if (cleaned.length === 0) {
-      newDigits[index] = ""
-      setOtpDigits(newDigits)
-      return
-    }
-
-    if (cleaned.length > 1) {
-      handlePastedCode(cleaned)
-      return
-    }
-
-    newDigits[index] = cleaned
-    setOtpDigits(newDigits)
-
-    if (index < 5 && cleaned) {
-      otpInputRefs.current[index + 1]?.focus()
-    }
-
-    if (index === 5 && cleaned) {
-      const fullCode = newDigits.join("")
-      if (fullCode.length === 6) {
-        setTimeout(() => {
-          handleVerify2FA(undefined, fullCode)
-        }, 60)
-      }
-    }
-  }
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace") {
-      if (!otpDigits[index] && index > 0) {
-        otpInputRefs.current[index - 1]?.focus()
-      }
-    } else if (e.key === "ArrowLeft" && index > 0) {
-      otpInputRefs.current[index - 1]?.focus()
-    } else if (e.key === "ArrowRight" && index < 5) {
-      otpInputRefs.current[index + 1]?.focus()
-    }
-  }
-
-  const handlePastedCode = (code: string) => {
-    const digits = code.replace(/[^0-9]/g, "").slice(0, 6).split("")
-    if (digits.length === 0) return
-
-    const newDigits = ["", "", "", "", "", ""]
-    digits.forEach((d, i) => {
-      if (i < 6) newDigits[i] = d
-    })
-    setOtpDigits(newDigits)
-
-    const focusIdx = Math.min(digits.length, 5)
-    otpInputRefs.current[focusIdx]?.focus()
-
-    if (digits.length === 6) {
-      setTimeout(() => {
-        handleVerify2FA(undefined, digits.join(""))
-      }, 60)
-    }
-  }
-
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    e.preventDefault()
-    const text = e.clipboardData.getData("text")
-    handlePastedCode(text)
-  }
+  }, [existingUser, existingProfile, isUserLoading, isProfileLoading, router])
 
   // Trigger eye spinning transition (video reference)
   const handleTogglePassword = () => {
@@ -445,106 +340,68 @@ export default function LoginPage() {
         }
       }
 
-      // Check if user requires 2FA: role Petugas, Admin, Superadmin (Ketentuan 1, 2)
-      const is2FARole = isTwoFactorRole(finalUserRole, username)
-      let userRecord: any = null
+      await logActivity({
+        query: `LOGIN: ${username.toUpperCase()}`,
+        results: "Berhasil Masuk",
+        device: getDeviceType(navigator.userAgent),
+        source: "Web",
+        method: "LOGIN SISTEM",
+        userId: user.email || username,
+        userName: username
+      }, database || undefined)
+
+      const sessionId = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : Math.random().toString(36).substring(2) + Date.now().toString(36)
+      try {
+        localStorage.setItem("simpu_session_id", sessionId)
+        if (rememberMe) {
+          localStorage.setItem("simpu_remembered_username", identifier.trim())
+        } else {
+          localStorage.removeItem("simpu_remembered_username")
+        }
+      } catch {
+        // ignore
+      }
+      
+      const loginUpdates: Record<string, any> = {
+        lastLogin: new Date().toISOString(),
+        isOnline: true,
+        lastSeen: Date.now()
+      }
+      if (user?.uid) {
+        loginUpdates.uid = user.uid
+      }
+      if (finalUserRole !== "admin" && email !== "agus@umkm.id") {
+        loginUpdates.activeSessionId = sessionId
+      }
+
       if (targetUserKey) {
-        const uSnap = await get(ref(database, `system_users/${targetUserKey}`))
-        if (uSnap.exists()) {
-          userRecord = uSnap.val()
-        }
+        await update(ref(database, `system_users/${targetUserKey}`), loginUpdates).catch(console.error)
       }
 
-      const is2FAExplicitlyDisabled = userRecord && userRecord.twoFactorEnabled === false
-      const requires2FA = is2FARole && !is2FAExplicitlyDisabled
-
-      if (requires2FA) {
-        try {
-          const res = await fetch("/api/auth/2fa/send", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userKey: targetUserKey || username,
-              isResend: false,
-            }),
-          })
-
-          const data = await res.json()
-
-          if (!res.ok || !data.success) {
-            triggerErrorShake(data.error || "Gagal mengirim kode verifikasi 2FA.")
-            toast({
-              variant: "destructive",
-              title: "Verifikasi 2FA Gagal",
-              description: data.error || "Gagal mengirim kode OTP ke email terdaftar.",
-            })
-            setLoading(false)
-            return
-          }
-
-          // Transition to 2FA verification screen
-          const methodFromApi = data.twoFactorMethod || 'email'
-          setTwoFactorSession({
-            userKey: targetUserKey || username,
-            emailMasked: data.emailMasked,
-            sessionToken: data.sessionToken,
-            finalUserRole,
-            targetUserKey: targetUserKey || username,
-            user,
-            email,
-            username,
-            twoFactorMethod: methodFromApi,
-            hasTotp: data.hasTotp,
-          })
-          setSelected2FAMethod(methodFromApi === 'email' ? 'email' : 'authenticator')
-          setIs2FAView(true)
-          setOtpCooldown(60)
-          setResendCount(0)
-          setFailedAttempts(0)
-          setOtpDigits(["", "", "", "", "", ""])
-          setLoading(false)
-          playSound("success", 0.4)
-
-          if (methodFromApi === 'authenticator') {
-            toast({
-              title: "Google Authenticator",
-              description: "Masukkan 6 angka kode dari aplikasi Google Authenticator Anda.",
-            })
-          } else if (methodFromApi === 'both') {
-            toast({
-              title: "Pilih Metode 2FA",
-              description: `Anda dapat menggunakan Google Authenticator atau kode OTP Email (${data.emailMasked || 'terdaftar'}).`,
-            })
-          } else {
-            toast({
-              title: "Kode OTP Terkirim",
-              description: `Kode 6 angka telah dikirim ke ${data.emailMasked}.`,
-            })
-          }
-          setTimeout(() => {
-            otpInputRefs.current[0]?.focus()
-          }, 150)
-          return
-        } catch {
-          triggerErrorShake("Terjadi gangguan koneksi saat meminta kode OTP.")
-          toast({
-            variant: "destructive",
-            title: "Koneksi Gagal",
-            description: "Gagal terhubung ke layanan verifikasi OTP. Silakan coba lagi.",
-          })
-          setLoading(false)
-          return
-        }
+      setLoginSuccess(true)
+      playSound("success", 0.6)
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("simpu:play-music"))
       }
+      toast({ title: "Login Berhasil", description: "Verifikasi berhasil. Selamat datang di SIMPU." })
 
-      // If 2FA not required or disabled by Admin (Ketentuan 6), finalize login directly
-      await finalizeLoginSession({
-        user,
-        finalUserRole,
-        targetUserKey,
-        username,
-        email,
-      })
+      setTimeout(() => {
+        if (finalUserRole === "petugas_survey" || finalUserRole === "petugas") {
+          router.push("/portal-survey")
+        } else if (finalUserRole === "petugas_absensi" || finalUserRole === "petugas absensi" || finalUserRole === "absensi") {
+          router.push("/daftar-hadir")
+        } else if (finalUserRole === "dinas") {
+          router.push("/verifikasi-dinas")
+        } else if (finalUserRole === "verifikator_dinas") {
+          router.push("/verifikasi-dinas-berkas")
+        } else if (finalUserRole === "koordinator") {
+          router.push("/actor-data")
+        } else {
+          router.push("/")
+        }
+      }, 600)
     } catch (error: any) {
       let message = `Kesalahan: ${error.message || String(error)}`
       if (
@@ -562,231 +419,10 @@ export default function LoginPage() {
         description: message,
       })
     } finally {
-      if (!loginSuccess && !is2FAView) {
+      if (!loginSuccess) {
         setLoading(false)
       }
     }
-  }
-
-  // Finalizes authenticated login session across SIMPU
-  const finalizeLoginSession = async (sessionData: {
-    user: any
-    finalUserRole: string
-    targetUserKey: string | null
-    username: string
-    email: string
-  }) => {
-    const { user, finalUserRole, targetUserKey, username, email } = sessionData
-
-    await logActivity({
-      query: `LOGIN: ${username.toUpperCase()}`,
-      results: "Berhasil Masuk",
-      device: getDeviceType(navigator.userAgent),
-      source: "Web",
-      method: "LOGIN",
-      userId: username.toUpperCase()
-    }, database || undefined)
-
-    const sessionId = typeof crypto !== "undefined" && crypto.randomUUID
-      ? crypto.randomUUID()
-      : Math.random().toString(36).substring(2) + Date.now().toString(36)
-    localStorage.setItem("simpu_session_id", sessionId)
-
-    try {
-      if (rememberMe) {
-        localStorage.setItem("simpu_remembered_username", identifier.trim())
-      } else {
-        localStorage.removeItem("simpu_remembered_username")
-      }
-    } catch {
-      // ignore
-    }
-    
-    const loginUpdates: Record<string, any> = {
-      lastLogin: new Date().toISOString(),
-      isOnline: true,
-      lastSeen: Date.now()
-    }
-    if (user?.uid) {
-      loginUpdates.uid = user.uid
-    }
-    if (finalUserRole !== "admin" && email !== "agus@umkm.id") {
-      loginUpdates.activeSessionId = sessionId
-    }
-
-    if (targetUserKey) {
-      await update(ref(database, `system_users/${targetUserKey}`), loginUpdates).catch(console.error)
-    }
-
-    setLoginSuccess(true)
-    playSound("success", 0.6)
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("simpu:play-music"))
-    }
-    toast({ title: "Login Berhasil", description: "Verifikasi berhasil. Selamat datang di SIMPU." })
-
-    setTimeout(() => {
-      if (finalUserRole === "petugas_survey" || finalUserRole === "petugas") {
-        router.push("/portal-survey")
-      } else if (finalUserRole === "petugas_absensi" || finalUserRole === "petugas absensi" || finalUserRole === "absensi") {
-        router.push("/daftar-hadir")
-      } else if (finalUserRole === "dinas") {
-        router.push("/verifikasi-dinas")
-      } else if (finalUserRole === "verifikator_dinas") {
-        router.push("/verifikasi-dinas-berkas")
-      } else if (finalUserRole === "koordinator") {
-        router.push("/actor-data")
-      } else {
-        router.push("/")
-      }
-    }, 600)
-  }
-
-  // Verifies 6-digit OTP code (Ketentuan 3: Maks 5x percobaan salah, 1x pakai)
-  const handleVerify2FA = async (e?: React.FormEvent, directCode?: string) => {
-    if (e) e.preventDefault()
-    const code = directCode || otpDigits.join("")
-
-    if (code.length !== 6) {
-      triggerErrorShake("Masukkan 6 digit kode OTP lengkap.")
-      return
-    }
-    if (!twoFactorSession) return
-
-    setIsVerifyingOtp(true)
-    setErrorMessage(null)
-    playSound("click", 0.4)
-
-    const activeMethod =
-      twoFactorSession.twoFactorMethod === 'both'
-        ? selected2FAMethod
-        : twoFactorSession.twoFactorMethod || 'email'
-
-    try {
-      const res = await fetch("/api/auth/2fa/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userKey: twoFactorSession.userKey,
-          otpCode: code,
-          methodType: activeMethod,
-          sessionToken: twoFactorSession.sessionToken,
-        }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok || !data.success) {
-        const attempts = data.attempts || failedAttempts + 1
-        setFailedAttempts(attempts)
-
-        // Ketentuan 3: Maksimal 5 kali percobaan salah sebelum sesi dibatalkan
-        if (data.sessionCancelled || attempts >= 5) {
-          playSound("error", 0.7)
-          triggerErrorShake("Sesi dibatalkan karena telah melebihi batas 5 kali percobaan salah. Silakan login kembali.")
-          toast({
-            variant: "destructive",
-            title: "Sesi Login Dibatalkan",
-            description: "Batas 5 kali percobaan salah telah tercapai. Anda harus login kembali dari awal.",
-          })
-          await signOut(auth).catch(() => {})
-          setIs2FAView(false)
-          setTwoFactorSession(null)
-          setOtpDigits(["", "", "", "", "", ""])
-          setPassword("")
-          return
-        }
-
-        const remaining = data.remainingAttempts ?? Math.max(0, 5 - attempts)
-        triggerErrorShake(data.error || `Kode OTP salah. Sisa kesempatan: ${remaining} kali percobaan.`)
-        toast({
-          variant: "destructive",
-          title: "Kode OTP Tidak Sesuai",
-          description: data.error || `Kode salah. Sisa kesempatan: ${remaining} kali percobaan.`,
-        })
-        return
-      }
-
-      // Verifikasi berhasil!
-      await finalizeLoginSession({
-        user: twoFactorSession.user,
-        finalUserRole: twoFactorSession.finalUserRole,
-        targetUserKey: twoFactorSession.targetUserKey,
-        username: twoFactorSession.username,
-        email: twoFactorSession.email,
-      })
-    } catch (err: any) {
-      triggerErrorShake(err.message || "Gagal memverifikasi kode OTP.")
-      toast({
-        variant: "destructive",
-        title: "Kesalahan Verifikasi",
-        description: err.message || "Terjadi kesalahan sistem saat memverifikasi OTP.",
-      })
-    } finally {
-      setIsVerifyingOtp(false)
-    }
-  }
-
-  // Resends 2FA code (Ketentuan 4: Jeda 60s, Maksimal 3x)
-  const handleResendOtp = async () => {
-    if (!twoFactorSession || otpCooldown > 0 || resendCount >= 3 || isResendingOtp) return
-
-    setIsResendingOtp(true)
-    setErrorMessage(null)
-    playSound("click", 0.3)
-
-    try {
-      const res = await fetch("/api/auth/2fa/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userKey: twoFactorSession.userKey,
-          sessionToken: twoFactorSession.sessionToken,
-          isResend: true,
-          skipEmail: false,
-        }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok || !data.success) {
-        triggerErrorShake(data.error || "Gagal mengirim ulang kode OTP.")
-        toast({
-          variant: "destructive",
-          title: "Gagal Kirim Ulang",
-          description: data.error || "Terjadi kendala saat mengirim ulang kode.",
-        })
-        return
-      }
-
-      const newResendCount = data.resendCount ?? resendCount + 1
-      setResendCount(newResendCount)
-      setOtpCooldown(60)
-      setOtpDigits(["", "", "", "", "", ""])
-      playSound("success", 0.4)
-      toast({
-        title: "Kode Baru Terkirim",
-        description: `Kode OTP baru telah dikirim ke ${twoFactorSession.emailMasked}. Sisa kirim ulang: ${Math.max(0, 3 - newResendCount)}x.`,
-      })
-      setTimeout(() => {
-        otpInputRefs.current[0]?.focus()
-      }, 100)
-    } catch (err: any) {
-      triggerErrorShake(err.message || "Gagal menghubungi server untuk kirim ulang kode.")
-    } finally {
-      setIsResendingOtp(false)
-    }
-  }
-
-  // Cancels 2FA and returns to credentials login form
-  const handleCancel2FA = async () => {
-    playSound("click", 0.3)
-    setIs2FAView(false)
-    setTwoFactorSession(null)
-    setOtpDigits(["", "", "", "", "", ""])
-    setErrorMessage(null)
-    setPassword("")
-    await signOut(auth).catch(() => {})
   }
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -1060,243 +696,8 @@ export default function LoginPage() {
                   </button>
                 </div>
               </form>
-            ) : is2FAView && twoFactorSession ? (
-              /* View 3: Two-Factor Authentication (2FA) Verification (Email OTP & Google Authenticator) */
-              <div className="space-y-4 animate-entrance-scale">
-                {/* 2FA Header */}
-                <div className="text-left mb-1">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold mb-2">
-                    {twoFactorSession.twoFactorMethod === 'authenticator' || (twoFactorSession.twoFactorMethod === 'both' && selected2FAMethod === 'authenticator') ? (
-                      <>
-                        <Smartphone className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                        <span>Google Authenticator (TOTP)</span>
-                      </>
-                    ) : (
-                      <>
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                        <span>Verifikasi Dua Langkah (2FA)</span>
-                      </>
-                    )}
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-                    {twoFactorSession.twoFactorMethod === 'authenticator' || (twoFactorSession.twoFactorMethod === 'both' && selected2FAMethod === 'authenticator')
-                      ? "Kode Authenticator"
-                      : "Masukkan Kode OTP"}
-                  </h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
-                    {twoFactorSession.twoFactorMethod === 'authenticator' || (twoFactorSession.twoFactorMethod === 'both' && selected2FAMethod === 'authenticator')
-                      ? "Buka aplikasi Google Authenticator di perangkat Anda dan masukkan 6 angka kode yang tampil."
-                      : "Kode verifikasi 6 angka telah dikirimkan ke email terdaftar Anda:"}
-                  </p>
-                </div>
-
-                {/* If user has 'both' methods enabled: Tab Switcher */}
-                {twoFactorSession.twoFactorMethod === 'both' && (
-                  <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/90 rounded-2xl border border-slate-200 dark:border-slate-700">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelected2FAMethod('authenticator');
-                        setOtpDigits(["", "", "", "", "", ""]);
-                        setErrorMessage(null);
-                        setTimeout(() => otpInputRefs.current[0]?.focus(), 60);
-                      }}
-                      className={`py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                        selected2FAMethod === 'authenticator'
-                          ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      <Smartphone className="w-3.5 h-3.5" />
-                      <span>Authenticator</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelected2FAMethod('email');
-                        setOtpDigits(["", "", "", "", "", ""]);
-                        setErrorMessage(null);
-                        setTimeout(() => otpInputRefs.current[0]?.focus(), 60);
-                      }}
-                      className={`py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                        selected2FAMethod === 'email'
-                          ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      <Mail className="w-3.5 h-3.5" />
-                      <span>OTP Email</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* Method Information Badge */}
-                {twoFactorSession.twoFactorMethod === 'authenticator' || (twoFactorSession.twoFactorMethod === 'both' && selected2FAMethod === 'authenticator') ? (
-                  <div className="flex items-center justify-between gap-2 p-2.5 sm:p-3 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-7 h-7 rounded-xl bg-blue-600/10 dark:bg-blue-400/10 flex items-center justify-center shrink-0">
-                        <Smartphone className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <span className="font-mono font-bold text-xs sm:text-sm text-blue-900 dark:text-blue-200 truncate">
-                        @{twoFactorSession.username}
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300 bg-white/80 dark:bg-slate-900/80 px-2 py-0.5 rounded-md border border-blue-200/60 shrink-0">
-                      TOTP 30s
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between gap-2 p-2.5 sm:p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/80">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-7 h-7 rounded-xl bg-emerald-600/10 dark:bg-emerald-400/10 flex items-center justify-center shrink-0">
-                        <Mail className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                      </div>
-                      <span className="font-mono font-bold text-xs sm:text-sm text-emerald-900 dark:text-emerald-200 truncate">
-                        {twoFactorSession.emailMasked || 'Email Terdaftar'}
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-white/80 dark:bg-slate-900/80 px-2 py-0.5 rounded-md border border-emerald-200/60 shrink-0">
-                      Aktif
-                    </span>
-                  </div>
-                )}
-
-                {/* Expiry & Wrong Attempts Meter (Ketentuan 2, 3) */}
-                <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    {twoFactorSession.twoFactorMethod === 'authenticator' || (twoFactorSession.twoFactorMethod === 'both' && selected2FAMethod === 'authenticator') ? (
-                      <span>Berganti tiap: <strong>30 detik</strong></span>
-                    ) : (
-                      <span>Masa berlaku: <strong>10 menit</strong></span>
-                    )}
-                  </span>
-                  <span className={`${failedAttempts >= 3 ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-500'}`}>
-                    Percobaan salah: <strong>{failedAttempts}/5</strong>
-                  </span>
-                </div>
-
-                {/* Error Banner */}
-                {errorMessage && (
-                  <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-800 dark:text-rose-200 text-xs flex items-start gap-2 animate-in fade-in slide-in-from-top-1">
-                    <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <span className="font-bold block">Verifikasi Gagal</span>
-                      <span className="font-medium">{errorMessage}</span>
-                    </div>
-                    <button 
-                      type="button" 
-                      onClick={() => setErrorMessage(null)}
-                      className="text-rose-500 hover:text-rose-700 p-0.5 cursor-pointer"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
-
-                {/* 6-Digit OTP / TOTP Boxes */}
-                <div className="py-1">
-                  <div className="flex items-center justify-center gap-2 sm:gap-2.5">
-                    {otpDigits.map((digit, idx) => (
-                      <input
-                        key={idx}
-                        ref={(el) => { otpInputRefs.current[idx] = el }}
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => handleDigitChange(idx, e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(idx, e)}
-                        onPaste={handlePaste}
-                        disabled={isVerifyingOtp || loginSuccess}
-                        autoFocus={idx === 0}
-                        aria-label={`Digit ${idx + 1}`}
-                        className={`w-11 h-14 sm:w-12 sm:h-14 text-center text-2xl font-black font-mono rounded-2xl border-2 transition-all duration-200 outline-none select-all ${
-                          digit 
-                            ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 shadow-sm"
-                            : "border-slate-200 dark:border-slate-700 bg-slate-100/90 dark:bg-slate-800/80 text-slate-900 dark:text-white"
-                        } focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/20 focus:bg-white dark:focus:bg-slate-800`}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-[10px] text-center text-slate-400 dark:text-slate-500 mt-2 font-medium">
-                    {twoFactorSession.twoFactorMethod === 'authenticator' || (twoFactorSession.twoFactorMethod === 'both' && selected2FAMethod === 'authenticator')
-                      ? "Ketik 6 angka yang ditampilkan di aplikasi Google Authenticator Anda"
-                      : "Ketik 6 angka atau tempel (paste) kode dari email Anda"}
-                  </p>
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="button"
-                  onClick={() => handleVerify2FA()}
-                  disabled={isVerifyingOtp || loginSuccess || otpDigits.join("").length !== 6}
-                  className="w-full h-12 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm shadow-lg shadow-emerald-900/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {isVerifyingOtp ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Memverifikasi Kode...</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck className="w-4 h-4" />
-                      <span>Verifikasi &amp; Masuk</span>
-                    </>
-                  )}
-                </button>
-
-                {/* Footer: Resend (for Email mode) or Helper Note (for Authenticator mode), plus Cancel */}
-                <div className="space-y-2 text-center pt-2 border-t border-slate-200/80 dark:border-slate-800">
-                  {twoFactorSession.twoFactorMethod === 'email' || (twoFactorSession.twoFactorMethod === 'both' && selected2FAMethod === 'email') ? (
-                    <div className="flex items-center justify-between text-xs pt-1">
-                      <span className="text-slate-500 dark:text-slate-400 font-medium">
-                        Belum menerima kode?
-                      </span>
-                      {otpCooldown > 0 ? (
-                        <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1 font-mono text-[11px] bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-lg border border-amber-200 dark:border-amber-900/50">
-                          <Clock className="w-3 h-3 shrink-0" />
-                          Kirim ulang ({otpCooldown}s)
-                        </span>
-                      ) : resendCount >= 3 ? (
-                        <span className="text-slate-400 text-[11px] font-semibold">
-                          Batas kirim ulang tercapai (3/3)
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={handleResendOtp}
-                          disabled={isResendingOtp}
-                          className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline cursor-pointer flex items-center gap-1 text-xs"
-                        >
-                          {isResendingOtp ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <RefreshCw className="w-3 h-3" />
-                          )}
-                          <span>Kirim Ulang ({3 - resendCount}x tersisa)</span>
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-1">
-                      Waktu/jam pada ponsel Anda harus disetel <strong>Otomatis</strong> agar kode sinkron.
-                    </p>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={handleCancel2FA}
-                    className="w-full py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-1.5 pt-1"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5" />
-                    <span>Batal &amp; Kembali ke Halaman Login</span>
-                  </button>
-                </div>
-              </div>
             ) : (
-              /* View 4: Standard Interactive Login Form */
+              /* View 3: Standard Interactive Login Form */
               <form onSubmit={handleAuth} className="space-y-3.5">
                 
                 {/* Form Header */}
