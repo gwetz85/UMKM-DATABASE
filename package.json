@@ -55,6 +55,7 @@
     "next": "15.5.9",
     "nodemailer": "^8.0.5",
     "patch-package": "^8.0.0",
+    "qrcode": "^1.5.4",
     "react": "^19.2.1",
     "react-day-picker": "^9.11.3",
     "react-dom": "^19.2.1",
@@ -69,6 +70,7 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.1",
     "@types/react-dom": "^19.2.1",
     "cross-env": "^10.1.0",

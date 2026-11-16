@@ -28,7 +28,8 @@ import {
   ExternalLink,
   Info,
   BadgeCheck,
-  Building
+  Building,
+  Mail
 } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
@@ -468,6 +469,29 @@ export default function ProfilePage() {
                           className="pl-10 bg-slate-100/70 dark:bg-slate-800/80 font-black text-xs uppercase text-slate-800 dark:text-slate-100 h-10.5 rounded-xl border-slate-200 dark:border-white/10 cursor-not-allowed disabled:opacity-90" 
                         />
                       </div>
+                    </div>
+
+                    {/* Email Verifikasi 2FA (Read Only - Tidak dapat diubah sendiri oleh petugas) */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">
+                          Email Terdaftar (Verifikasi 2FA)
+                        </Label>
+                        <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                          <Lock className="w-3 h-3" /> Hanya Dapat Diubah oleh Admin
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Input 
+                          value={profile.email || (user?.email?.includes('@umkm.id') ? '' : user?.email) || '- (Belum Didaftarkan oleh Admin)'} 
+                          disabled 
+                          className="pl-10 bg-slate-100/70 dark:bg-slate-800/80 font-mono text-xs font-bold text-slate-800 dark:text-slate-100 h-10.5 rounded-xl border-slate-200 dark:border-white/10 cursor-not-allowed disabled:opacity-90" 
+                        />
+                      </div>
+                      <p className="text-[10px] text-slate-400">
+                        Email ini digunakan untuk pengiriman kode OTP saat login. Sesuai kebijakan keamanan, petugas tidak dapat mengubah email sendiri.
+                      </p>
                     </div>
                   </div>
                 </div>
