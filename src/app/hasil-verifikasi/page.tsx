@@ -152,7 +152,9 @@ function HasilVerifikasiContent() {
       localStorage.removeItem('simpu_actors_search_cache');
       localStorage.removeItem('simpu_actors_search_cache_v2');
       localStorage.removeItem('simpu_actors_search_cache_v3');
-      const cached = localStorage.getItem('simpu_actors_search_cache_v5') || localStorage.getItem('simpu_actors_search_cache_v4');
+      localStorage.removeItem('simpu_actors_search_cache_v4');
+      localStorage.removeItem('simpu_actors_search_cache_v5');
+      const cached = localStorage.getItem('simpu_actors_search_cache_v6');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -172,7 +174,7 @@ function HasilVerifikasiContent() {
             if (list.length > 0) {
               setLocalIndex(list);
               try {
-                localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(list));
+                localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(list));
               } catch {}
 
               const hasSurveyData = list.some(i => i.surveyData?.modalUsaha || i.surveyData?.status || i.surveyData?.rencanaPenggunaan || i.surveyData?.omset);
@@ -182,7 +184,7 @@ function HasilVerifikasiContent() {
                   .then(data => {
                     if (data.success && Array.isArray(data.results) && data.results.length > 0) {
                       setLocalIndex(data.results);
-                      try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(data.results)); } catch {}
+                      try { localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(data.results)); } catch {}
                     }
                   })
                   .catch(() => {});
@@ -198,7 +200,7 @@ function HasilVerifikasiContent() {
             if (data.success && Array.isArray(data.results) && data.results.length > 0) {
               setLocalIndex(data.results);
               try {
-                localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(data.results));
+                localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(data.results));
               } catch {}
             }
           })
@@ -210,7 +212,7 @@ function HasilVerifikasiContent() {
             if (data.success && Array.isArray(data.results) && data.results.length > 0) {
               setLocalIndex(data.results);
               try {
-                localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(data.results));
+                localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(data.results));
               } catch {}
             }
           })
@@ -631,7 +633,7 @@ function HasilVerifikasiContent() {
           if (json.success && Array.isArray(json.results) && json.results.length > 0) {
             setLocalIndex(json.results);
             try {
-              localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(json.results));
+              localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(json.results));
             } catch {}
 
             const freshMap = new Map<string, BusinessActor>(json.results.map((r: any) => [r.id, r]));

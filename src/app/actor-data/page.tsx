@@ -289,7 +289,9 @@ function ActorDataContent() {
       localStorage.removeItem('simpu_actors_search_cache');
       localStorage.removeItem('simpu_actors_search_cache_v2');
       localStorage.removeItem('simpu_actors_search_cache_v3');
-      const cached = localStorage.getItem('simpu_actors_search_cache_v5') || localStorage.getItem('simpu_actors_search_cache_v4');
+      localStorage.removeItem('simpu_actors_search_cache_v4');
+      localStorage.removeItem('simpu_actors_search_cache_v5');
+      const cached = localStorage.getItem('simpu_actors_search_cache_v6');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -306,11 +308,10 @@ function ActorDataContent() {
         const val = snap.val();
         if (val) {
           const list = Object.values(val) as BusinessActor[];
-          const hasSurveyData = list.length > 0 && list.some(i => i.surveyData?.modalUsaha || i.surveyData?.status || i.surveyData?.rencanaPenggunaan || i.surveyData?.omset);
-          if (list.length > 0 && hasSurveyData) {
+          if (list.length > 0) {
             setLocalIndex(list);
             try {
-              localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(list));
+              localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(list));
             } catch {}
             return;
           }
@@ -350,7 +351,7 @@ function ActorDataContent() {
 
           if (list.length > 0) {
             setLocalIndex(list);
-            try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(list)); } catch {}
+            try { localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(list)); } catch {}
             set(ref(database, 'settings/actors_search'), JSON.parse(JSON.stringify(searchMap))).catch(() => {});
             return;
           }
@@ -366,7 +367,7 @@ function ActorDataContent() {
           if (data.success && Array.isArray(data.results) && data.results.length > 0) {
             setLocalIndex(data.results);
             try {
-              localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(data.results));
+              localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(data.results));
             } catch {}
           }
         })
@@ -387,7 +388,7 @@ function ActorDataContent() {
           }
           if (list.length > 0) {
             setLocalIndex(list);
-            try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(list)); } catch {}
+            try { localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(list)); } catch {}
             return;
           }
         }
@@ -399,12 +400,35 @@ function ActorDataContent() {
           if (data.success && Array.isArray(data.results) && data.results.length > 0) {
             setLocalIndex(data.results);
             try {
-              localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(data.results));
+              localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(data.results));
             } catch {}
           }
         })
         .catch(() => {});
     });
+
+    const handleInvalidation = () => {
+      try {
+        localStorage.removeItem('simpu_actors_search_cache_v6');
+      } catch {}
+      get(ref(database, 'settings/actors_search')).then(snap => {
+        if (snap.exists()) {
+          const val = snap.val();
+          if (val) {
+            const list = Object.values(val) as BusinessActor[];
+            if (list.length > 0) {
+              setLocalIndex(list);
+              try {
+                localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(list));
+              } catch {}
+            }
+          }
+        }
+      }).catch(console.error);
+    };
+
+    window.addEventListener('simpu_cache_invalidated', handleInvalidation);
+    return () => window.removeEventListener('simpu_cache_invalidated', handleInvalidation);
   }, [database]);
 
   useEffect(() => {
@@ -1747,7 +1771,7 @@ function ActorDataContent() {
           if (json.success && Array.isArray(json.results) && json.results.length > 0) {
             setLocalIndex(json.results);
             try {
-              localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(json.results));
+              localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(json.results));
             } catch {}
 
             if (filterCoordinator) {
@@ -2151,7 +2175,7 @@ function ActorDataContent() {
 
                                   const allRefreshed = Object.values(refreshedGroups).flat();
                                   setLocalIndex(allRefreshed);
-                                  try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(allRefreshed)); } catch {}
+                                  try { localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(allRefreshed)); } catch {}
 
                                   // Background save clean searchMap to settings/actors_search
                                   if (Object.keys(searchMap).length > 0) {
@@ -2171,7 +2195,7 @@ function ActorDataContent() {
                                 const json = await res.json();
                                 if (json.success && Array.isArray(json.results) && json.results.length > 0) {
                                   setLocalIndex(json.results);
-                                  try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(json.results)); } catch {}
+                                  try { localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(json.results)); } catch {}
                                   const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
                                   const refreshedGroups: Record<string, BusinessActor[]> = {};
                                   for (const [k, v] of Object.entries(groupsToPrint)) {

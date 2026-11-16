@@ -97,7 +97,9 @@ export default function VerifikasiDinasPage() {
       localStorage.removeItem('simpu_actors_search_cache');
       localStorage.removeItem('simpu_actors_search_cache_v2');
       localStorage.removeItem('simpu_actors_search_cache_v3');
-      const cached = localStorage.getItem('simpu_actors_search_cache_v5') || localStorage.getItem('simpu_actors_search_cache_v4');
+      localStorage.removeItem('simpu_actors_search_cache_v4');
+      localStorage.removeItem('simpu_actors_search_cache_v5');
+      const cached = localStorage.getItem('simpu_actors_search_cache_v6');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -117,7 +119,7 @@ export default function VerifikasiDinasPage() {
             if (list.length > 0) {
               setLocalIndex(list);
               try {
-                localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(list));
+                localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(list));
               } catch {}
 
               const hasSurveyData = list.some(i => i.surveyData?.modalUsaha || i.surveyData?.status || i.surveyData?.rencanaPenggunaan || i.surveyData?.omset);
@@ -127,7 +129,7 @@ export default function VerifikasiDinasPage() {
                   .then(data => {
                     if (data.success && Array.isArray(data.results) && data.results.length > 0) {
                       setLocalIndex(data.results);
-                      try { localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(data.results)); } catch {}
+                      try { localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(data.results)); } catch {}
                     }
                   })
                   .catch(() => {});
@@ -142,7 +144,7 @@ export default function VerifikasiDinasPage() {
             if (data.success && Array.isArray(data.results) && data.results.length > 0) {
               setLocalIndex(data.results);
               try {
-                localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(data.results));
+                localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(data.results));
               } catch {}
             }
           })
@@ -154,7 +156,7 @@ export default function VerifikasiDinasPage() {
             if (data.success && Array.isArray(data.results) && data.results.length > 0) {
               setLocalIndex(data.results);
               try {
-                localStorage.setItem('simpu_actors_search_cache_v5', JSON.stringify(data.results));
+                localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(data.results));
               } catch {}
             }
           })

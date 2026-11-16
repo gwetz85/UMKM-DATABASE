@@ -154,34 +154,42 @@ export default function KuotaKorlapDewanAktifPage() {
       const oldName = (editingData.name || "").trim().toUpperCase()
       const nameChanged = name !== oldName
 
+      const updates: Record<string, any> = {}
+
       // 1. Update entry in koordinator_kuotas
-      const dataRef = ref(database, `koordinator_kuotas/${editingData.id}`)
-      await set(dataRef, {
-        name,
-        quota,
-        phone,
-        addedAt: editingData.addedAt || new Date().toISOString()
-      })
+      updates[`koordinator_kuotas/${editingData.id}/name`] = name
+      updates[`koordinator_kuotas/${editingData.id}/quota`] = quota
+      updates[`koordinator_kuotas/${editingData.id}/phone`] = phone
+      updates[`koordinator_kuotas/${editingData.id}/addedAt`] = editingData.addedAt || new Date().toISOString()
 
       let updatedCount = 0
 
-      // 2. Cascade rename to businessActors if name was changed
+      // 2. Cascade rename if name changed
       if (nameChanged && oldName) {
-        const { get, query, orderByChild, equalTo, update } = await import("firebase/database")
-        const updates: Record<string, any> = {}
+        const { get, query, orderByChild, equalTo } = await import("firebase/database")
 
+        // Query matching actors by oldName
         const q = query(
           ref(database, 'businessActors'),
           orderByChild('coordinator'),
           equalTo(oldName)
         )
         const snap = await get(q)
+        let rekeningCount = 0
+
         if (snap.exists()) {
           snap.forEach((child) => {
             updates[`businessActors/${child.key}/coordinator`] = name
+            updates[`settings/actors_search/${child.key}/coordinator`] = name
+            const a = child.val()
+            if (a && a.bankNumber && String(a.bankNumber).trim() !== '') {
+              rekeningCount++
+            }
+            updatedCount++
           })
         }
 
+        // Also check raw un-uppercase oldName if different
         const rawOld = (editingData.name || "").trim()
         if (rawOld && rawOld !== oldName) {
           const q2 = query(
@@ -192,20 +200,56 @@ export default function KuotaKorlapDewanAktifPage() {
           const snap2 = await get(q2)
           if (snap2.exists()) {
             snap2.forEach((child) => {
-              updates[`businessActors/${child.key}/coordinator`] = name
+              if (!updates[`businessActors/${child.key}/coordinator`]) {
+                updates[`businessActors/${child.key}/coordinator`] = name
+                updates[`settings/actors_search/${child.key}/coordinator`] = name
+                const a = child.val()
+                if (a && a.bankNumber && String(a.bankNumber).trim() !== '') {
+                  rekeningCount++
+                }
+                updatedCount++
+              }
             })
           }
         }
 
-        if (Object.keys(updates).length > 0) {
-          await update(ref(database), updates)
-          updatedCount = Object.keys(updates).length
+        // Also ensure settings/actors_search items matching oldName are updated
+        try {
+          const searchSnap = await get(ref(database, 'settings/actors_search'))
+          if (searchSnap.exists()) {
+            const searchVal = searchSnap.val() || {}
+            Object.entries(searchVal).forEach(([id, item]: [string, any]) => {
+              if (item && item.coordinator && item.coordinator.toUpperCase().trim() === oldName) {
+                updates[`settings/actors_search/${id}/coordinator`] = name
+              }
+            })
+          }
+        } catch (e) {
+          console.warn("Could not check settings/actors_search:", e)
         }
 
-        // Recalculate system_stats so coordinator counts update immediately
-        const { recalculateAndSaveSystemStats } = await import("@/lib/stats-service")
-        await recalculateAndSaveSystemStats(database)
+        // 3. Update system_stats directly in the same atomic call
+        updates[`system_stats/coordinator/${name}`] = updatedCount
+        updates[`system_stats/coordinator/${oldName}`] = null
+        updates[`system_stats/coordinatorRekening/${name}`] = rekeningCount
+        updates[`system_stats/coordinatorRekening/${oldName}`] = null
       }
+
+      // Execute ALL updates in ONE fast atomic commit (~100ms)!
+      const { update } = await import("firebase/database")
+      await update(ref(database), updates)
+
+      // Bump client-side cache version in localStorage and trigger instant event
+      try {
+        localStorage.removeItem('simpu_actors_search_cache_v5')
+        localStorage.removeItem('simpu_actors_search_cache_v6')
+        window.dispatchEvent(new Event('simpu_cache_invalidated'))
+      } catch {}
+
+      // Background recalculate system_stats without blocking the UI (fire-and-forget)
+      import("@/lib/stats-service").then(({ recalculateAndSaveSystemStats }) => {
+        recalculateAndSaveSystemStats(database).catch(console.error)
+      })
 
       logActivity({
         query: nameChanged
