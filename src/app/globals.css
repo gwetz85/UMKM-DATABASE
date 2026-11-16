@@ -1360,7 +1360,6 @@ body:not(.dark) h6:not([class*="text-"]) {
 .dark main,
 .dark #root,
 .dark aside,
-.dark [data-sidebar],
 .dark [data-sidebar="sidebar"],
 .dark header,
 .dark nav {
@@ -1793,4 +1792,36 @@ html, body {
 .dark .metric-progress-bar {
   opacity: 1 !important;
   display: block !important;
+}
+
+
+/* ==========================================================================
+   SIDEBAR NAVIGATION ACTIVE ITEM & ICON PROTECTION (DARK MODE)
+   ========================================================================== */
+.dark [data-sidebar="menu-button"][data-active="true"],
+.dark [data-sidebar="menu-sub-button"][data-active="true"],
+.dark .sidebar-item-active,
+.dark .sidebar-subitem-active {
+  background-color: #059669 !important; /* emerald-600 */
+  color: #ffffff !important;
+}
+
+.dark [data-sidebar="menu-button"][data-active="true"]:hover,
+.dark [data-sidebar="menu-sub-button"][data-active="true"]:hover,
+.dark .sidebar-item-active:hover,
+.dark .sidebar-subitem-active:hover {
+  background-color: #047857 !important; /* emerald-700 */
+  color: #ffffff !important;
+}
+
+.dark [data-sidebar="menu-button"][data-active="true"] .sidebar-active-icon,
+.dark .sidebar-item-active .sidebar-active-icon {
+  background-color: #ffffff !important;
+  color: #047857 !important;
+}
+
+.dark [data-sidebar="menu-button"]:not([data-active="true"]):hover,
+.dark [data-sidebar="menu-sub-button"]:not([data-active="true"]):hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
 }
