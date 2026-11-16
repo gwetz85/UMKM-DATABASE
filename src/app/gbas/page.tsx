@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
 import { 
@@ -121,11 +122,46 @@ export default function GBASPage() {
   const systemUsersRef = useMemoFirebase(() => database ? ref(database, 'system_users') : null, [database])
   const { data: systemUsers } = useList<any>(systemUsersRef)
 
-  // Query data businessActors
+  // Pre-load data Berita Acara cepat dari settings/actors_search (< 100ms)
+  const [fastGbasActors, setFastGbasActors] = useState<BusinessActor[]>([])
+  const [isFastGbasLoading, setIsFastGbasLoading] = useState<boolean>(true)
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('simpu_gbas_actors_cache')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setFastGbasActors(parsed)
+          setIsFastGbasLoading(false)
+        }
+      }
+    } catch {}
+
+    if (!database) return
+    import("firebase/database").then(({ ref, get }) => {
+      get(ref(database, 'settings/actors_search')).then(snap => {
+        if (snap.exists()) {
+          const val = snap.val() || {}
+          const list = Object.entries(val).map(([id, item]: [string, any]) => ({
+            ...item,
+            id,
+          }))
+          if (list.length > 0) {
+            setFastGbasActors(list)
+            try { localStorage.setItem('simpu_gbas_actors_cache', JSON.stringify(list)) } catch {}
+          }
+        }
+      }).catch(console.error).finally(() => setIsFastGbasLoading(false))
+    })
+  }, [database])
+
+  // Hanya ambil data master berat jika index pencarian kosong (hemat 157 MB payload)
+  const shouldFetchMaster = Boolean(!fastGbasActors || fastGbasActors.length === 0)
   const actorsRef = useMemoFirebase(() => {
-    if (!database || !isAdmin) return null
+    if (!database || !isAdmin || !shouldFetchMaster) return null
     return ref(database, 'businessActors')
-  }, [database, isAdmin])
+  }, [database, isAdmin, shouldFetchMaster])
 
   const { data: allActorsRaw, isLoading: isDataLoading } = useList<BusinessActor>(actorsRef)
 
@@ -133,11 +169,10 @@ export default function GBASPage() {
   // PENGUMPULAN & DEDUP: PASTIKAN TEPAT 1 DATA PER PELAKU USAHA (BY NIK / ID)
   // ─────────────────────────────────────────────────────────────────────────────
   const uniqueGbasActors = useMemo(() => {
-    if (!allActorsRaw) return []
+    const sourceList = (allActorsRaw && allActorsRaw.length > 0) ? allActorsRaw : fastGbasActors;
+    if (!sourceList || sourceList.length === 0) return []
 
-    // Saring data yang telah masuk ke Verifikasi Dinas atau Hasil Verifikasi
-    // Syarat: Berstatus verified_dinas dengan hasilVerifikasiDinas === 'Lolos', atau status finish dari verifikasi dinas
-    const eligibleActors = allActorsRaw.filter(a => {
+    const eligibleActors = sourceList.filter(a => {
       if (!a) return false
       const s = a.status || ""
       const isLolos = a.hasilVerifikasiDinas === 'Lolos'
@@ -176,7 +211,7 @@ export default function GBASPage() {
     })
 
     return Array.from(map.values())
-  }, [allActorsRaw])
+  }, [allActorsRaw, fastGbasActors])
 
   // Helper untuk menentukan posisi status menu
   const getActorMenuStage = (actor: BusinessActor): { key: 'verifikasi_dinas' | 'hasil_verifikasi' | 'selesai'; label: string; badgeClass: string } => {
@@ -1157,10 +1192,22 @@ export default function GBASPage() {
         {/* ───────────────────────────────────────────────────────────────────────────── */}
         {/* TAMPILAN KARTU PELAKU USAHA */}
         {/* ───────────────────────────────────────────────────────────────────────────── */}
-        {isDataLoading ? (
-          <div className="py-20 flex flex-col items-center justify-center gap-2 text-slate-400">
-            <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
-            <span className="text-xs font-semibold">Memuat data Berita Acara Survey...</span>
+        {((isDataLoading && isFastGbasLoading) && uniqueGbasActors.length === 0) ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 space-y-3 animate-pulse">
+                <div className="flex justify-between items-start">
+                  <Skeleton className="h-4 w-28 rounded" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </div>
+                <Skeleton className="h-5 w-40 rounded" />
+                <Skeleton className="h-3.5 w-32 rounded" />
+                <div className="pt-2 border-t flex justify-between items-center">
+                  <Skeleton className="h-4 w-20 rounded" />
+                  <Skeleton className="h-8 w-24 rounded-lg" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredActors.length === 0 ? (
           <div className="py-16 text-center space-y-2 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 p-8 shadow-sm">

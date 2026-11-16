@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, Suspense } from "react"
+import { useState, useEffect, useMemo, Suspense } from "react"
 import { useMemoFirebase, useList, useDatabase } from "@/firebase"
 import { ref } from "firebase/database"
 import { BusinessActor } from "../lib/types"
@@ -147,12 +147,41 @@ function RekapanDataContent() {
   const { toast } = useToast()
   const [pageLimit, setPageLimit] = useState(50)
 
-  // 1. Data Pengajuan Terbaru (businessActors)
-  const actorsRef = useMemoFirebase(
-    () => (database ? ref(database, "businessActors") : null),
-    [database]
-  )
-  const { data: allActorsRaw, isLoading: isActorsLoading } = useList<BusinessActor>(actorsRef)
+  // 1. Data Pengajuan Terbaru dari settings/actors_search (hemat 157MB payload, memuat dalam < 200ms)
+  const [fastVerifiedActors, setFastVerifiedActors] = useState<any[]>([])
+  const [isActorsLoading, setIsActorsLoading] = useState<boolean>(true)
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('simpu_rekapan_actors_cache')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setFastVerifiedActors(parsed)
+          setIsActorsLoading(false)
+        }
+      }
+    } catch {}
+
+    if (!database) return
+    import("firebase/database").then(({ ref, get }) => {
+      get(ref(database, 'settings/actors_search')).then(snap => {
+        if (snap.exists()) {
+          const val = snap.val() || {}
+          const list = Object.entries(val).map(([id, item]: [string, any]) => ({
+            ...item,
+            id,
+          }))
+          if (list.length > 0) {
+            setFastVerifiedActors(list)
+            try { localStorage.setItem('simpu_rekapan_actors_cache', JSON.stringify(list)) } catch {}
+          }
+        }
+      }).catch(console.error).finally(() => setIsActorsLoading(false))
+    })
+  }, [database])
+
+  const allActorsRaw = fastVerifiedActors
 
   // 2. Sheet 1: Data Pembanding 2024 (Static reference: load once)
   const master2024Ref = useMemoFirebase(
@@ -179,7 +208,16 @@ function RekapanDataContent() {
 
   // ── Combine & Deduplicate Data across Sheet 1, Sheet 2, Sheet 3 & Pengajuan Terbaru ──
   const actors: any[] = useMemo(() => {
-    if (isLoading) return []
+    if (isLoading) {
+      try {
+        const cached = localStorage.getItem('simpu_rekapan_deduped_cache')
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        }
+      } catch {}
+      return []
+    }
 
     // Build dynamic kelurahan -> kecamatan map from all available datasets
     const kelurahanMap = new Map<string, string>()
@@ -303,7 +341,11 @@ function RekapanDataContent() {
     // 4. Sheet 3: 2025
     (data2025 || []).forEach(item => processItem(item, "Sheet 3 (2025)"));
 
-    return Array.from(dedupeMap.values())
+    const result = Array.from(dedupeMap.values())
+    if (result.length > 0) {
+      try { localStorage.setItem('simpu_rekapan_deduped_cache', JSON.stringify(result)) } catch {}
+    }
+    return result
   }, [allActorsRaw, data2024, data2023, data2025, isLoading])
 
   // ── filter state ──────────────────────────────────────────────────────────

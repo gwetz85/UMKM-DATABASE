@@ -352,16 +352,6 @@ function DataRekeningContent() {
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === "agus@umkm.id") || userProfile?.role === "admin"
   const isKoordinator = userProfile?.role === "koordinator"
 
-  // Ambil data yang memiliki status finish (atau yang sudah terinput rekeningnya)
-  const memoQuery = useMemoFirebase(() => {
-    if (!database) return null
-    return query(ref(database, "businessActors"), orderByChild("status"), equalTo("finish"))
-  }, [database])
-
-  const kuotaRef = useMemoFirebase(() => database ? ref(database, "koordinator_kuotas") : null, [database])
-  const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
-  const { data: kuotaData } = useList<any>(kuotaRef)
-
   // Pre-load cepat dari settings/actors_search (< 100ms)
   const [searchIndexData, setSearchIndexData] = useState<BusinessActor[]>([])
   const [isSearchLoading, setIsSearchLoading] = useState<boolean>(true)
@@ -383,7 +373,7 @@ function DataRekeningContent() {
       get(ref(database, 'settings/actors_search')).then(snap => {
         if (snap.exists()) {
           const val = snap.val() || {}
-          const list = Object.entries(val).map(([id, item]) => ({
+          const list = Object.entries(val).map(([id, item]: [string, any]) => ({
             ...item,
             id,
           })).filter(a => a.status === 'finish')
@@ -395,6 +385,17 @@ function DataRekeningContent() {
       }).catch(console.error).finally(() => setIsSearchLoading(false))
     })
   }, [database])
+
+  // Hanya ambil data master berat jika index pencarian kosong (hemat 157 MB payload)
+  const shouldFetchMaster = Boolean(!searchIndexData || searchIndexData.length === 0)
+  const memoQuery = useMemoFirebase(() => {
+    if (!database || !shouldFetchMaster) return null
+    return query(ref(database, "businessActors"), orderByChild("status"), equalTo("finish"))
+  }, [database, shouldFetchMaster])
+
+  const kuotaRef = useMemoFirebase(() => database ? ref(database, "koordinator_kuotas") : null, [database])
+  const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
+  const { data: kuotaData } = useList<any>(kuotaRef)
 
   // Filter khusus: semua data yang memiliki rekening bank terinput (yang sekarang datanya berada di menu Selesai)
   const actors = useMemo(() => {
@@ -435,22 +436,31 @@ function DataRekeningContent() {
         return matchesSearch && matchesCategory && matchesBank
       })
       .sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""))
-  }, [allActorsRaw, searchQuery, category, selectedBank, filterCoordinator, isKoordinator, userProfile])
+  }, [allActorsRaw, searchIndexData, searchQuery, category, selectedBank, filterCoordinator, isKoordinator, userProfile])
 
   // List koordinator untuk dropdown filter
   const coordinatorList = useMemo(() => {
-    if (!allActorsRaw) return []
+    const listToUse = (allActorsRaw && allActorsRaw.length > 0) ? allActorsRaw : searchIndexData;
+    if (!listToUse) return []
     const set = new Set<string>()
-    allActorsRaw.forEach(a => {
+    listToUse.forEach(a => {
       if (a && a.coordinator && a.bankNumber) set.add(a.coordinator)
     })
     return Array.from(set).sort()
-  }, [allActorsRaw])
+  }, [allActorsRaw, searchIndexData])
 
-  // Hitung ringkasan statistik
+  // Hitung ringkasan statistik dari sourceList (langsung tampil < 100ms)
   const statsSummary = useMemo(() => {
-    if (!allActorsRaw) return { total: 0, lpjSelesai: 0, lpjProses: 0, belumLpj: 0 }
-    const withBank = allActorsRaw.filter(a => {
+    const listToUse = (allActorsRaw && allActorsRaw.length > 0) ? allActorsRaw : searchIndexData;
+    if (!listToUse || listToUse.length === 0) {
+      try {
+        const cached = localStorage.getItem('simpu_rekening_stats_summary');
+        if (cached) return JSON.parse(cached);
+      } catch {}
+      return { total: 0, lpjSelesai: 0, lpjProses: 0, belumLpj: 0 };
+    }
+
+    const withBank = listToUse.filter(a => {
       if (!a) return false
       const hasBank = !!(a.bankNumber && String(a.bankNumber).trim() !== "")
       if (!hasBank) return false
@@ -467,18 +477,28 @@ function DataRekeningContent() {
     const lpjProses = withBank.filter(a => a.readyForLPJ && (!a.lpjNominal || Number(a.lpjNominal) <= 0)).length
     const belumLpj = withBank.filter(a => !a.readyForLPJ && (!a.lpjNominal || Number(a.lpjNominal) <= 0)).length
 
-    return {
+    const res = {
       total: withBank.length,
       lpjSelesai,
       lpjProses,
       belumLpj
-    }
-  }, [allActorsRaw, isKoordinator, userProfile, filterCoordinator])
+    };
+    try { localStorage.setItem('simpu_rekening_stats_summary', JSON.stringify(res)); } catch {}
+    return res;
+  }, [allActorsRaw, searchIndexData, isKoordinator, userProfile, filterCoordinator])
 
-  // Hitung total rekening per bank (hanya menampilkan bank yang sudah ada datanya)
+  // Hitung total rekening per bank (hanya menampilkan bank yang sudah ada datanya - langsung < 100ms)
   const bankStats = useMemo(() => {
-    if (!allActorsRaw) return []
-    const withBank = allActorsRaw.filter(a => {
+    const listToUse = (allActorsRaw && allActorsRaw.length > 0) ? allActorsRaw : searchIndexData;
+    if (!listToUse || listToUse.length === 0) {
+      try {
+        const cached = localStorage.getItem('simpu_rekening_bank_stats');
+        if (cached) return JSON.parse(cached);
+      } catch {}
+      return [];
+    }
+
+    const withBank = listToUse.filter(a => {
       if (!a) return false
       const hasBank = !!(a.bankNumber && String(a.bankNumber).trim() !== "")
       if (!hasBank) return false
@@ -498,11 +518,14 @@ function DataRekeningContent() {
       counts[bName] = (counts[bName] || 0) + 1
     })
 
-    return Object.entries(counts)
+    const res = Object.entries(counts)
       .map(([bank, count]) => ({ bank, count }))
       .filter(item => item.count > 0)
-      .sort((a, b) => b.count - a.count || a.bank.localeCompare(b.bank))
-  }, [allActorsRaw, isKoordinator, userProfile, filterCoordinator])
+      .sort((a, b) => b.count - a.count || a.bank.localeCompare(b.bank));
+
+    try { localStorage.setItem('simpu_rekening_bank_stats', JSON.stringify(res)); } catch {}
+    return res;
+  }, [allActorsRaw, searchIndexData, isKoordinator, userProfile, filterCoordinator])
 
   // ── Print Formulir ────────────────────────────────────────────────────────
   const handlePrintActor = (actor: BusinessActor) => {
@@ -750,6 +773,8 @@ function DataRekeningContent() {
     }
 
     updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
+    updateDocumentNonBlocking(ref(database, `settings/actors_search/${viewingActor.id}`), updates)
+    setSearchIndexData(prev => prev.map(item => item.id === viewingActor.id ? { ...item, ...updates } : item))
 
     import("@/lib/stats-service").then(({ updateStatsOnEdit }) => {
       updateStatsOnEdit(database, viewingActor, { ...viewingActor, ...updates }).catch(e => console.error(e))
@@ -770,7 +795,7 @@ function DataRekeningContent() {
   const executeRevert = () => {
     if (!revertPending || !database) return
     const { actorId, fullName } = revertPending
-    const actorObj = allActorsRaw?.find(a => a.id === actorId)
+    const actorObj = (allActorsRaw && allActorsRaw.length > 0 ? allActorsRaw : searchIndexData)?.find(a => a.id === actorId)
 
     const hasDinasData = actorObj?.surveyData || actorObj?.pejabatData || (actorObj as any)?.verifikatorDinas
     const newStatus = hasDinasData ? "verified_dinas" : "pending"
@@ -795,6 +820,8 @@ function DataRekeningContent() {
     }
 
     updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), updates)
+    updateDocumentNonBlocking(ref(database, `settings/actors_search/${actorId}`), updates)
+    setSearchIndexData(prev => prev.filter(item => item.id !== actorId))
     if (actorObj) {
       import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
         const updatedActor = { ...actorObj, ...updates }
@@ -822,8 +849,10 @@ function DataRekeningContent() {
   const executeDelete = () => {
     if (!deletePending || !database) return
     const { actorId, fullName } = deletePending
-    const actorObj = allActorsRaw?.find(a => a.id === actorId)
+    const actorObj = (allActorsRaw && allActorsRaw.length > 0 ? allActorsRaw : searchIndexData)?.find(a => a.id === actorId)
     deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
+    deleteDocumentNonBlocking(ref(database, `settings/actors_search/${actorId}`))
+    setSearchIndexData(prev => prev.filter(item => item.id !== actorId))
     if (actorObj) {
       import("@/lib/stats-service").then(({ updateStatsOnDelete }) => {
         updateStatsOnDelete(database, actorObj).catch(e => console.error(e))

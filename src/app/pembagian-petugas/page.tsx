@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Dialog,
   DialogContent,
@@ -133,12 +134,41 @@ export default function PembagianPetugasSurveyPage() {
   }, [database])
   const { data: systemUsersRaw, isLoading: isUsersLoading } = useList(systemUsersRef)
 
-  // Fetch all business actors
-  const businessActorsRef = useMemoFirebase(() => {
-    if (!database) return null
-    return ref(database, 'businessActors')
+  // Pre-load data pelaku usaha cepat dari settings/actors_search (< 100ms) untuk agregasi petugas
+  const [fastActors, setFastActors] = useState<BusinessActor[]>([])
+  const [isActorsLoading, setIsActorsLoading] = useState<boolean>(true)
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('simpu_surveyor_actors_cache')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setFastActors(parsed)
+          setIsActorsLoading(false)
+        }
+      }
+    } catch {}
+
+    if (!database) return
+    import("firebase/database").then(({ ref, get }) => {
+      get(ref(database, 'settings/actors_search')).then(snap => {
+        if (snap.exists()) {
+          const val = snap.val() || {}
+          const list = Object.entries(val).map(([id, item]: [string, any]) => ({
+            ...item,
+            id,
+          }))
+          if (list.length > 0) {
+            setFastActors(list)
+            try { localStorage.setItem('simpu_surveyor_actors_cache', JSON.stringify(list)) } catch {}
+          }
+        }
+      }).catch(console.error).finally(() => setIsActorsLoading(false))
+    })
   }, [database])
-  const { data: businessActorsRaw, isLoading: isActorsLoading } = useList<BusinessActor>(businessActorsRef)
+
+  const businessActorsRaw = fastActors
 
   // Filter surveyors from system_users (role === 'petugas' or role === 'petugas_survey')
   const surveyors = useMemo(() => {
@@ -221,6 +251,20 @@ export default function PembagianPetugasSurveyPage() {
       (s.username || '').toLowerCase().includes(query)
     )
   }, [surveyors, searchQuery])
+
+  // Pagination untuk daftar Petugas Survey di Step 2 (8 item per halaman)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 8
+  const totalPages = Math.ceil(filteredSurveyors.length / itemsPerPage) || 1
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery])
+
+  const paginatedSurveyors = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    return filteredSurveyors.slice(start, start + itemsPerPage)
+  }, [filteredSurveyors, currentPage, itemsPerPage])
 
   // Toggle password visibility
   const togglePasswordVisibility = (id: string) => {
@@ -931,10 +975,26 @@ export default function PembagianPetugasSurveyPage() {
         {/* Surveyors Table Card */}
         <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white">
           <CardContent className="p-0">
-            {isUsersLoading || isActorsLoading ? (
-              <div className="py-20 flex flex-col items-center justify-center gap-2">
-                <Loader2 className="w-8 h-8 animate-spin text-rose-600" />
-                <p className="text-xs text-slate-500 font-semibold">Memuat data Petugas Survey...</p>
+            {(isUsersLoading || (isActorsLoading && fastActors.length === 0)) ? (
+              <div className="p-6 space-y-4">
+                <div className="flex justify-between items-center pb-2">
+                  <Skeleton className="h-5 w-48 rounded" />
+                  <Skeleton className="h-8 w-28 rounded-lg" />
+                </div>
+                <div className="space-y-3">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-4 py-3.5 border-b border-slate-100">
+                      <Skeleton className="h-6 w-6 rounded-full" />
+                      <div className="space-y-1.5 flex-1">
+                        <Skeleton className="h-4 w-44 rounded" />
+                        <Skeleton className="h-3 w-28 rounded" />
+                      </div>
+                      <Skeleton className="h-4 w-32 rounded hidden md:block" />
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-8 w-28 rounded-xl" />
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : filteredSurveyors.length === 0 ? (
               <div className="py-16 text-center space-y-2">
@@ -948,7 +1008,8 @@ export default function PembagianPetugasSurveyPage() {
               <div>
                 {/* Mobile Card View */}
                 <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
-                  {filteredSurveyors.map((s: any, idx: number) => {
+                  {paginatedSurveyors.map((s: any, idx: number) => {
+                    const globalIdx = (currentPage - 1) * itemsPerPage + idx + 1
                     const connectedList = getConnectedActors(s)
                     const isLocked = !!s.uid
                     const isPasswordShown = visiblePasswords[s.id]
@@ -958,7 +1019,7 @@ export default function PembagianPetugasSurveyPage() {
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2.5">
                             <span className="flex items-center justify-center w-6 h-6 rounded-full bg-rose-100 text-rose-700 font-black text-xs shrink-0">
-                              {idx + 1}
+                              {globalIdx}
                             </span>
                             <div>
                               <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight">
@@ -1070,7 +1131,8 @@ export default function PembagianPetugasSurveyPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredSurveyors.map((s: any, idx: number) => {
+                      {paginatedSurveyors.map((s: any, idx: number) => {
+                        const globalIdx = (currentPage - 1) * itemsPerPage + idx + 1
                         const connectedList = getConnectedActors(s)
                         const isLocked = !!s.uid
                         const isPasswordShown = visiblePasswords[s.id]
@@ -1079,7 +1141,7 @@ export default function PembagianPetugasSurveyPage() {
                           <TableRow key={s.id} className="hover:bg-slate-50/70 transition-colors border-b border-slate-100">
                             {/* No */}
                             <TableCell className="text-center font-bold text-slate-500 text-xs">
-                              {idx + 1}
+                              {globalIdx}
                             </TableCell>
 
                             {/* Nama Petugas */}
@@ -1188,6 +1250,38 @@ export default function PembagianPetugasSurveyPage() {
                     </TableBody>
                   </Table>
                 </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="p-4 bg-slate-50/70 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                    <span className="font-semibold text-slate-500">
+                      Menampilkan <strong className="text-slate-800">{(currentPage - 1) * itemsPerPage + 1}</strong> - <strong className="text-slate-800">{Math.min(currentPage * itemsPerPage, filteredSurveyors.length)}</strong> dari <strong className="text-slate-800">{filteredSurveyors.length}</strong> Petugas
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="h-8 px-3 rounded-lg font-bold text-xs"
+                      >
+                        Sebelumnya
+                      </Button>
+                      <span className="px-3 py-1 font-bold text-slate-700 bg-white border rounded-lg">
+                        {currentPage} / {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="h-8 px-3 rounded-lg font-bold text-xs"
+                      >
+                        Berikutnya
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
