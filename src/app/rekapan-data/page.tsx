@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { MapPin, Users, Building2, RotateCcw, FileSpreadsheet, Search, Map as MapIcon, Home, Hash } from "lucide-react"
-import * as XLSX from "xlsx"
 import { useToast } from "@/hooks/use-toast"
 
 // ── helpers & mappings ────────────────────────────────────────────────────────
@@ -407,11 +406,13 @@ function RekapanDataContent() {
   }
 
   // ── export excel ──────────────────────────────────────────────────────────
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (filtered.length === 0) {
       toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk diekspor." })
       return
     }
+
+    const XLSX = await import("xlsx")
     const rows = filtered.map((a, i) => {
       const parsed = parsePobDob(a.pobDob || "")
       return {

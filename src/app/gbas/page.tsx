@@ -47,7 +47,6 @@ import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-b
 import { resolveSurveyorCanonicalName } from "@/lib/surveyor-utils"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Textarea } from "@/components/ui/textarea"
-import * as XLSX from "xlsx"
 
 export default function GBASPage() {
   const { user, userProfile } = useUser()
@@ -539,12 +538,13 @@ export default function GBASPage() {
   // ─────────────────────────────────────────────────────────────────────────────
   // EXPORT REKAPAN KE EXCEL (.XLSX)
   // ─────────────────────────────────────────────────────────────────────────────
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (filteredActors.length === 0) {
       toast({ variant: "destructive", title: "Data Kosong", description: "Tidak ada data untuk diekspor ke Excel." })
       return
     }
 
+    const XLSX = await import("xlsx")
     const dataRows = filteredActors.map((actor, idx) => {
       const stage = getActorMenuStage(actor)
       const survey = actor.surveyData

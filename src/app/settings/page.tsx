@@ -37,7 +37,6 @@ import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import * as XLSX from 'xlsx'
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -279,6 +278,7 @@ export default function SettingsPage() {
     const reader = new FileReader()
     reader.onload = async (event) => {
       try {
+        const XLSX = await import("xlsx");
         const bstr = event.target?.result
         const wb = XLSX.read(bstr, { type: 'binary', cellFormula: true, cellNF: true, cellText: true })
         
@@ -647,7 +647,7 @@ export default function SettingsPage() {
     return list
   }
 
-  const createBpjsSheetFromList = (list: any[]) => {
+  const createBpjsSheetFromList = (list: any[], XLSX: any) => {
     const rows = list.map((item, idx) => ({
       "NO": item.no || idx + 1,
       "NIK": item.nik ? String(item.nik).trim() : "",
@@ -690,7 +690,7 @@ export default function SettingsPage() {
     return ws
   }
 
-  const createSheetFromList = (list: any[]) => {
+  const createSheetFromList = (list: any[], XLSX: any) => {
     const rows = list.map((item, idx) => mapToExcelRow(item, idx))
     const dataToExport = rows.length > 0 ? rows : [
       {
@@ -751,8 +751,9 @@ export default function SettingsPage() {
   const handleDownloadSheet = async (targetType: 'master_2024' | 'master_2023' | 'master_2025' | 'blacklist' | 'bpjs') => {
     setDownloadingTarget(targetType)
     try {
+      const XLSX = await import("xlsx");
       const list = await getTargetData(targetType)
-      const ws = targetType === 'bpjs' ? createBpjsSheetFromList(list) : createSheetFromList(list)
+      const ws = targetType === 'bpjs' ? createBpjsSheetFromList(list, XLSX) : createSheetFromList(list, XLSX)
       const wb = XLSX.utils.book_new()
       
       const sheetNames = {
@@ -802,6 +803,7 @@ export default function SettingsPage() {
   const handleDownloadAllSheets = async () => {
     setDownloadingTarget('all')
     try {
+      const XLSX = await import("xlsx");
       const [l24, l23, l25, lbl, lbpjs] = await Promise.all([
         getTargetData('master_2024'),
         getTargetData('master_2023'),
@@ -812,12 +814,12 @@ export default function SettingsPage() {
 
       const wb = XLSX.utils.book_new()
       
-      XLSX.utils.book_append_sheet(wb, createSheetFromList(l24), "Pembanding 2024")
-      XLSX.utils.book_append_sheet(wb, createSheetFromList(l23), "Pembanding 2023")
-      XLSX.utils.book_append_sheet(wb, createSheetFromList(l25), "Pembanding 2025")
-      XLSX.utils.book_append_sheet(wb, createSheetFromList(lbl), "Blacklist")
+      XLSX.utils.book_append_sheet(wb, createSheetFromList(l24, XLSX), "Pembanding 2024")
+      XLSX.utils.book_append_sheet(wb, createSheetFromList(l23, XLSX), "Pembanding 2023")
+      XLSX.utils.book_append_sheet(wb, createSheetFromList(l25, XLSX), "Pembanding 2025")
+      XLSX.utils.book_append_sheet(wb, createSheetFromList(lbl, XLSX), "Blacklist")
       if (lbpjs.length > 0) {
-        XLSX.utils.book_append_sheet(wb, createBpjsSheetFromList(lbpjs), "Pembanding BPJS")
+        XLSX.utils.book_append_sheet(wb, createBpjsSheetFromList(lbpjs, XLSX), "Pembanding BPJS")
       }
 
       const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })

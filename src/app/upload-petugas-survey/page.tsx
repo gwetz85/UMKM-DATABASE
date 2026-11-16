@@ -40,9 +40,8 @@ import {
   PowerOff,
   Clock
 } from "lucide-react"
-import * as XLSX from "xlsx"
 import Link from "next/link"
-import { addTunasBangsaHeader } from "@/lib/pdf-generator"
+import { addTunasBangsaHeader } from "@/lib/pdf-header"
 import { formatDateTimeIndo } from "@/lib/utils"
 import { normalizeCoordinator } from "@/lib/coordinator-utils"
 
@@ -331,6 +330,7 @@ export default function UploadPetugasSurveyPage() {
     reader.onload = async (evt) => {
       try {
         const bstr = evt.target?.result
+        const XLSX = await import("xlsx")
         const workbook = XLSX.read(bstr, { type: 'binary' })
         const firstSheetName = workbook.SheetNames[0]
         const worksheet = workbook.Sheets[firstSheetName]
@@ -554,6 +554,7 @@ export default function UploadPetugasSurveyPage() {
     reader.onload = async (evt) => {
       try {
         const bstr = evt.target?.result
+        const XLSX = await import("xlsx")
         const workbook = XLSX.read(bstr, { type: 'binary' })
         const firstSheetName = workbook.SheetNames[0]
         const worksheet = workbook.Sheets[firstSheetName]

@@ -96,8 +96,6 @@ import {
   Camera
 } from "lucide-react"
 
-import ExcelJS from "exceljs"
-import * as XLSX from "xlsx"
 import { KtpKkScannerDialog } from "@/components/ktp-kk-scanner-dialog"
 
 // Tipe Status Kehadiran
@@ -458,6 +456,7 @@ function DaftarHadirContent() {
     setIsProcessingImport(true)
     setImportExcelFile(file)
     try {
+      const XLSX = await import("xlsx")
       const buffer = await file.arrayBuffer()
       const wb = XLSX.read(buffer, { type: "array" })
       if (!wb.SheetNames || wb.SheetNames.length === 0) {
@@ -704,6 +703,7 @@ function DaftarHadirContent() {
   // ─── FUNGSI UNDUH FORMAT TEMPLATE EXCEL ───
   const handleDownloadImportTemplate = async () => {
     try {
+      const ExcelJS = (await import("exceljs")).default
       const workbook = new ExcelJS.Workbook()
       const worksheet = workbook.addWorksheet("Template Jadwal & Meja")
 
@@ -1763,6 +1763,7 @@ function DaftarHadirContent() {
     }
 
     try {
+      const ExcelJS = (await import("exceljs")).default
       const workbook = new ExcelJS.Workbook()
       const worksheet = workbook.addWorksheet("Daftar Hadir Terverifikasi")
 

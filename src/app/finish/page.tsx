@@ -17,8 +17,6 @@ import { useToast } from "@/hooks/use-toast"
 import { useSearchParams } from "next/navigation"
 import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import * as XLSX from 'xlsx'
-import ExcelJS from 'exceljs'
 import { normalizeCoordinator } from "@/lib/coordinator-utils"
 
 export default function FinishPage() {
@@ -317,6 +315,7 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
 
       toast({ title: "⏳ Memproses Excel", description: "Sedang menyusun file Excel beserta foto survey..." })
 
+      const ExcelJS = (await import('exceljs')).default || await import('exceljs')
       const workbook = new ExcelJS.Workbook()
       const worksheet = workbook.addWorksheet("Data Selesai UMKM")
 

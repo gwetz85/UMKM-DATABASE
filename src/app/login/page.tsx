@@ -843,12 +843,16 @@ export default function LoginPage() {
           ========================================================================= */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none">
         {/* Authentic Background Graphic from App Assets */}
-        <img 
-          src="/bg-simpu-clean.png" 
-          alt="Background SIMPU" 
-          className="w-full h-full object-cover object-left md:object-center opacity-30 mix-blend-luminosity filter blur-[0.5px]"
-          loading="eager"
-        />
+        <picture>
+          <source srcSet="/bg-simpu-clean.webp" type="image/webp" />
+          <img 
+            src="/bg-simpu-clean.png" 
+            alt="Background SIMPU" 
+            className="w-full h-full object-cover object-left md:object-center opacity-30 mix-blend-luminosity filter blur-[0.5px]"
+            loading="eager"
+            decoding="async"
+          />
+        </picture>
 
         {/* Ambient Moving Gradient Blobs */}
         <div 

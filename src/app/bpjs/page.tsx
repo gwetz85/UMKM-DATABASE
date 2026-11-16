@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react"
 import { useDatabase, useList, useMemoFirebase, useUser } from "@/firebase"
 import { ref, update } from "firebase/database"
-import { addTunasBangsaHeader } from "@/lib/pdf-generator"
+import { addTunasBangsaHeader } from "@/lib/pdf-header"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -37,9 +37,6 @@ import {
 } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
-import * as XLSX from "xlsx"
-import jsPDF from "jspdf"
-import autoTable from "jspdf-autotable"
 import { cn, parsePobDob, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob } from "@/lib/utils"
 
 // Normalization Helpers
@@ -330,6 +327,7 @@ export default function BpjsPage() {
     setIsProcessingExcel(true)
     try {
       const buffer = await file.arrayBuffer()
+      const XLSX = await import("xlsx")
       const wb = XLSX.read(buffer, { type: "array" })
       const firstSheetName = wb.SheetNames[0]
       const ws = wb.Sheets[firstSheetName]
@@ -628,7 +626,8 @@ export default function BpjsPage() {
   }
 
   // Export to Excel (Respects activeTab)
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
+    const XLSX = await import("xlsx")
     if (activeTab === "unmatched_excel") {
       if (unmatchedRows.length === 0) return
       const exportData = unmatchedRows.map((r, i) => ({
@@ -705,9 +704,14 @@ export default function BpjsPage() {
   }
 
   // Print PDF using reference date (1 Sep 2026)
-  const handlePrintPDF = () => {
+  const handlePrintPDF = async () => {
     const eligibleActors = filteredActors.filter(a => calculateAgeOn(a.pobDob || "", refDate) < 65)
     if (eligibleActors.length === 0) return
+
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      import("jspdf"),
+      import("jspdf-autotable")
+    ])
 
     const doc = new jsPDF('p', 'mm', 'a4')
     const pageWidth = doc.internal.pageSize.getWidth()

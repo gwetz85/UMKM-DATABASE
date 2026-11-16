@@ -34,7 +34,6 @@ import { useSearchParams } from "next/navigation"
 import { cn, parsePobDob } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { logActivity, getDeviceType } from "@/lib/logger"
-import ExcelJS from "exceljs"
 
 export default function BlacklistPage() {
   return (
@@ -285,6 +284,7 @@ function BlacklistContent() {
         return
       }
 
+      const ExcelJS = (await import("exceljs")).default || await import("exceljs")
       const workbook = new ExcelJS.Workbook()
       const worksheet = workbook.addWorksheet("Data Blacklist UMKM")
 

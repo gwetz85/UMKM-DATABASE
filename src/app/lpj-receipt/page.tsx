@@ -11,7 +11,6 @@ import { FileText, Printer, Search, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { BusinessActor } from "../lib/types"
-import { generateLPJReceipt } from "@/lib/pdf-generator"
 import { useToast } from "@/hooks/use-toast"
 
 export default function LPJReceiptPage() {
@@ -47,12 +46,13 @@ export default function LPJReceiptPage() {
       .sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""))
   }, [allActors, selectedCoordinator, searchQuery])
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     try {
       if (filteredActors.length === 0) {
         toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk dicetak." })
         return
       }
+      const { generateLPJReceipt } = await import("@/lib/pdf-generator")
       generateLPJReceipt(selectedCoordinator, filteredActors)
     } catch (error) {
       console.error("Print Error:", error)

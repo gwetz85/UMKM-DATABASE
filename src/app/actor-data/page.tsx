@@ -15,7 +15,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, Users, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, ChevronDown, Download, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck, Send, Folder, MessageCircle, ClipboardList, Camera, Copy, Check, MoreVertical, ExternalLink, Calendar, Phone, PhoneCall, Sparkles, Navigation, UserCheck, Maximize2, ShieldCheck, BadgeCheck, UploadCloud, Ban, XCircle, AlertTriangle, Database, FileText, Briefcase, Heart, Mail, Globe, Banknote, Layers } from "lucide-react"
-import * as XLSX from "xlsx"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
@@ -31,7 +30,6 @@ import { ConfirmDialog } from "@/components/confirm-dialog"
 import { cn, extractDobFromNik, parsePobDob, calculateAge, formatCurrency, formatDateTimeIndo, AGAMA_INDONESIA, STATUS_KELUARGA_LIST, PEKERJAAN_DUKCAPIL, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob } from "@/lib/utils"
 import { normalizeCoordinator } from "@/lib/coordinator-utils"
 import { resolveSurveyorCanonicalName, buildSurveyorMaps } from "@/lib/surveyor-utils"
-import { generateRegistrationForm, generateCoordinatorReport, generateAllCoordinatorsReport } from "@/lib/pdf-generator"
 import { formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 import { getSurveyPhoto, isValidPhotoString } from "@/lib/survey-photo-service"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -410,7 +408,7 @@ function ActorDataContent() {
   }, [database]);
 
   useEffect(() => {
-    const t = setTimeout(() => setSearchQuery(searchInput), 100)
+    const t = setTimeout(() => setSearchQuery(searchInput), 250)
     return () => clearTimeout(t)
   }, [searchInput])
 
@@ -1681,6 +1679,7 @@ function ActorDataContent() {
       toast({ title: "Kode Registrasi Di-generate", description: `Kode baru: ${randomCode} telah disimpan.` })
     }
     const sequenceNumber = globalIndexMap.get(actor.id)
+    const { generateRegistrationForm } = await import("@/lib/pdf-generator")
     await generateRegistrationForm(actorToPrint, sequenceNumber)
   }
 
@@ -1832,6 +1831,9 @@ function ActorDataContent() {
           "REG ID": actor.registrationCode || "-",
         }
       })
+
+      // Dynamic import XLSX on demand (Code Splitting)
+      const XLSX = await import("xlsx")
 
       // Auto-fit column widths
       const worksheet = XLSX.utils.json_to_sheet(exportData)
@@ -2062,6 +2064,7 @@ function ActorDataContent() {
                           }
 
                           await new Promise(r => setTimeout(r, 60));
+                          const { generateCoordinatorReport } = await import("@/lib/pdf-generator");
                           generateCoordinatorReport(coordKey, coordActors, systemUsersRaw || []);
                           toast({ title: "Berhasil", description: `Laporan PDF Koordinator ${coordKey} berhasil diunduh.` });
                         } else {
@@ -2205,6 +2208,7 @@ function ActorDataContent() {
                           }
 
                           await new Promise(r => setTimeout(r, 60));
+                          const { generateAllCoordinatorsReport } = await import("@/lib/pdf-generator");
                           generateAllCoordinatorsReport(groupsToPrint, systemUsersRaw || []);
                           toast({ title: "Berhasil", description: "Laporan PDF Seluruh Koordinator berhasil diunduh." });
                         }

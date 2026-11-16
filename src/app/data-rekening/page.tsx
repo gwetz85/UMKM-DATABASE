@@ -46,7 +46,6 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { normalizeCoordinator } from "@/lib/coordinator-utils"
-import ExcelJS from "exceljs"
 
 const BANK_LIST = [
   "BCA", "BNI", "BRI", "BRK", "MANDIRI", "BSI", "BTN", "OCBC", "PANIN", "MUAMALAT", "MAYBANK", "BUKOPIN", "DANAMON", "PERMATA", "CIMB NIAGA"
@@ -604,6 +603,7 @@ function DataRekeningContent() {
 
       toast({ title: "⏳ Memproses Excel", description: "Sedang menyusun file Excel Data Rekening..." })
 
+      const ExcelJS = (await import("exceljs")).default || await import("exceljs")
       const workbook = new ExcelJS.Workbook()
       const worksheet = workbook.addWorksheet("Data Rekening Bank")
 

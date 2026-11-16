@@ -3,7 +3,6 @@
 import { useState, useMemo, Suspense } from "react"
 import { useUser, useDatabase, useMemoFirebase, useList } from "@/firebase"
 import { ref, query, orderByChild, equalTo } from "firebase/database"
-import { generateSuratPernyataan, generateSuratPernyataanBulk } from "@/lib/pdf-generator"
 import { BusinessActor } from "../lib/types"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -121,10 +120,11 @@ function CetakBerkasContent() {
       .sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""))
   }, [allData, searchQuery, selectedCoordinator])
 
-  const handlePrintSingle = (actor: BusinessActor) => {
+  const handlePrintSingle = async (actor: BusinessActor) => {
     try {
       setPrintingId(actor.id)
-      generateSuratPernyataan(actor)
+      const { generateSuratPernyataan } = await import("@/lib/pdf-generator")
+      await generateSuratPernyataan(actor)
       logActivity({
         query: `CETAK BERKAS PENCAIRAN: ${actor.fullName} (${actor.nik})`,
         results: "Berhasil",
@@ -150,7 +150,7 @@ function CetakBerkasContent() {
   }
 
   // Cetak Berkas Gabungan (Seluruh berkas pencairan langsung digabung dalam 1 PDF siap cetak)
-  const handlePrintCombined = (actorsToPrint: BusinessActor[], coordinatorName?: string) => {
+  const handlePrintCombined = async (actorsToPrint: BusinessActor[], coordinatorName?: string) => {
     if (!actorsToPrint || actorsToPrint.length === 0) {
       toast({ variant: "destructive", title: "Tidak Ada Data", description: "Tidak ada berkas untuk dicetak." })
       return
@@ -160,7 +160,8 @@ function CetakBerkasContent() {
       const cleanName = coordinatorName ? coordinatorName.replace(/[^a-z0-9]/gi, "_").toUpperCase() : "SEMUA"
       const filename = `BERKAS_PENCAIRAN_${cleanName}_(${actorsToPrint.length}_DATA).pdf`
 
-      generateSuratPernyataanBulk(actorsToPrint, filename)
+      const { generateSuratPernyataanBulk } = await import("@/lib/pdf-generator")
+      await generateSuratPernyataanBulk(actorsToPrint, filename)
 
       logActivity({
         query: `CETAK BERKAS PENCAIRAN ${coordinatorName ? `KOORDINATOR ${coordinatorName}` : "SEMUA"} (${actorsToPrint.length} data)`,

@@ -67,10 +67,7 @@ import {
   Lock,
   Smartphone
 } from "lucide-react"
-import * as XLSX from "xlsx"
-import jsPDF from "jspdf"
-import autoTable from "jspdf-autotable"
-import { addTunasBangsaHeader } from "@/lib/pdf-generator"
+import { addTunasBangsaHeader } from "@/lib/pdf-header"
 import { resolveSurveyorCanonicalName } from "@/lib/surveyor-utils"
 
 export default function PembagianPetugasSurveyPage() {
@@ -281,6 +278,7 @@ export default function PembagianPetugasSurveyPage() {
     setIsProcessingExcel(true)
 
     try {
+      const XLSX = await import("xlsx")
       const arrayBuffer = await selectedFile.arrayBuffer()
       const wb = XLSX.read(arrayBuffer, { type: 'array' })
       const wsname = wb.SheetNames[0]
@@ -633,7 +631,7 @@ export default function PembagianPetugasSurveyPage() {
   }
 
   // Generate PDF Report of Surveyors
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (!surveyors || surveyors.length === 0) {
       toast({
         variant: "destructive",
@@ -644,6 +642,10 @@ export default function PembagianPetugasSurveyPage() {
     }
 
     try {
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+        import("jspdf"),
+        import("jspdf-autotable")
+      ])
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',

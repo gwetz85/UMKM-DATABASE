@@ -182,42 +182,39 @@ export async function POST(req: NextRequest) {
       sessionToken,
     };
 
-    // 8. Save OTP hash to database (Ketentuan 2 & 5)
+    // 8. Save OTP hash to database (Ketentuan 2 & 5) - fast and non-blocking
     await update(ref(database, `system_users/${actualUserKey}/twoFactorOtp`), otpData);
 
-    // 9. Send email via Nodemailer
-    const emailResult = await sendOtpEmail({
-      toEmail: registeredEmail,
-      fullName: userData.fullName || actualUserKey,
-      otpCode,
-    });
+    // 9. Send email via Nodemailer asynchronously in background queue (Ketentuan 1: Tidak boleh memperlambat login)
+    // Non-blocking queue execution so the login user does not wait 2-3 seconds for SMTP handshake
+    (async () => {
+      try {
+        const emailResult = await sendOtpEmail({
+          toEmail: registeredEmail,
+          fullName: userData.fullName || actualUserKey,
+          otpCode,
+        });
 
-    // 10. Log activity safely (Ketentuan 5: NEVER log plain OTP!)
-    await logActivity(
-      {
-        query: `2FA OTP ${isResend ? 'KIRIM ULANG' : 'TERKIRIM'}: ${actualUserKey.toUpperCase()}`,
-        results: emailResult.success
-          ? `Berhasil Terkirim ke ${maskEmail(registeredEmail)}`
-          : 'Gagal Kirim Email',
-        device: 'Server',
-        source: 'Web',
-        method: '2FA_SEND',
-        userId: actualUserKey.toUpperCase(),
-      },
-      database
-    );
+        // Safe activity logging
+        await logActivity(
+          {
+            query: `2FA OTP ${isResend ? 'KIRIM ULANG' : 'TERKIRIM'}: ${actualUserKey.toUpperCase()}`,
+            results: emailResult.success
+              ? `Berhasil Terkirim ke ${maskEmail(registeredEmail)}`
+              : `Gagal Kirim Email: ${emailResult.error || 'Unknown'}`,
+            device: 'Server',
+            source: 'Web',
+            method: '2FA_SEND',
+            userId: actualUserKey.toUpperCase(),
+          },
+          database
+        );
+      } catch (bgErr: any) {
+        console.error('[SIMPU 2FA Background Queue] Error sending OTP email:', bgErr?.message || bgErr);
+      }
+    })();
 
-    if (!emailResult.success) {
-      return NextResponse.json(
-        {
-          error:
-            emailResult.error ||
-            'Gagal mengirim email verifikasi OTP. Pastikan email terdaftar aktif.',
-        },
-        { status: 500 }
-      );
-    }
-
+    // 10. Return immediate fast response (~30ms) to ensure instant, fluid UI transition
     return NextResponse.json({
       success: true,
       twoFactorMethod: method,
@@ -228,7 +225,6 @@ export async function POST(req: NextRequest) {
       maxResends: OTP_MAX_RESENDS,
       cooldownSeconds: 60,
       expiresInMinutes: 10,
-      simulated: emailResult.simulated || false,
     });
   } catch (error: any) {
     console.error('[SIMPU 2FA] Error in /api/auth/2fa/send:', error?.message || error);

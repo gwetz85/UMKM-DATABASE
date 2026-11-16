@@ -5,27 +5,8 @@ import { generateBarcodeBase64, generateQRCodeBase64 } from './barcode-utils';
 import { parsePobDob, calculateAge, extractDobFromNik, formatCurrency, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob } from './utils';
 import { getActorCurrentMenu } from './actor-menu-status';
 
-export const addTunasBangsaHeader = (doc: jsPDF, hasLogo = false) => {
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 14;
-  const textOffset = hasLogo ? 28 : 0;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(37, 99, 235); // Primary Blue
-  doc.text('TUNAS BANGSA KEPULAUAN RIAU', margin + textOffset, 17);
-  
-  doc.setFontSize(9);
-  doc.setTextColor(100);
-  doc.text('PENGAJUAN BANTUAN UMKM TAHUN 2026', margin + textOffset, 23);
-  
-  doc.setDrawColor(37, 99, 235);
-  doc.setLineWidth(0.5);
-  doc.line(margin, 34, pageWidth - margin, 34);
-  
-  doc.setTextColor(0); // Reset text color
-  return 38; // Return the next Y position
-};
+import { addTunasBangsaHeader } from './pdf-header';
+export { addTunasBangsaHeader };
 
 export const generateRegistrationForm = async (actor: BusinessActor, sequenceNumber?: number) => {
   const doc = new jsPDF({

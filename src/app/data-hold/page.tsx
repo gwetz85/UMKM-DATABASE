@@ -53,9 +53,6 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ConfirmDialog } from "@/components/confirm-dialog"
-import ExcelJS from "exceljs"
-import jsPDF from "jspdf"
-import autoTable from "jspdf-autotable"
 
 // Helper function to format date into Indonesian string
 function formatDateTimeIndo(dateStr?: string): string {
@@ -360,6 +357,7 @@ export default function DataHoldPage() {
     }
 
     try {
+      const ExcelJS = (await import("exceljs")).default || await import("exceljs")
       const workbook = new ExcelJS.Workbook()
       const worksheet = workbook.addWorksheet("Data Hold UMKM")
 
@@ -515,13 +513,17 @@ export default function DataHoldPage() {
   // =========================================================================
   // PDF EXPORT (JSPDF + JSPDF-AUTOTABLE)
   // =========================================================================
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (filteredList.length === 0) {
       toast({ variant: "destructive", title: "Tidak Ada Data", description: "Tidak ada data hold untuk di-ekspor." })
       return
     }
 
     try {
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+        import("jspdf"),
+        import("jspdf-autotable")
+      ])
       const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" })
       const pageWidth = doc.internal.pageSize.getWidth()
       const margin = 12

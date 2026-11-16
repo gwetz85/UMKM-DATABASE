@@ -56,7 +56,6 @@ import { cn, parsePobDob, calculateAge, extractDobFromNik, formatDateTimeIndo, r
 import { resolveSurveyorCanonicalName } from "@/lib/surveyor-utils"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { useSearchParams, useRouter } from "next/navigation"
-import * as XLSX from "xlsx"
 
 const BANK_LIST = [
   "BCA", "BNI", "BRI", "BRK", "MANDIRI", "BSI", "BTN", "OCBC", "PANIN", "MUAMALAT", "MAYBANK", "BUKOPIN", "DANAMON", "PERMATA", "CIMB NIAGA"
@@ -697,6 +696,7 @@ function HasilVerifikasiContent() {
         })
       }
 
+      const XLSX = await import("xlsx")
       const workbook = XLSX.utils.book_new()
 
       if (sheetsToExport && sheetsToExport.length > 0) {

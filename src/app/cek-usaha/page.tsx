@@ -58,7 +58,6 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { cn, formatCurrency } from "@/lib/utils"
 import { logActivity, getDeviceType } from "@/lib/logger"
-import * as XLSX from "xlsx"
 
 // Preset Quick Chips for popular business categories
 const POPULAR_USAHA_TAGS = [
@@ -255,7 +254,7 @@ export default function CekUsahaPage() {
   }
 
   // Export to Excel
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (filteredAndSorted.length === 0) {
       toast({
         variant: "destructive",
@@ -266,6 +265,7 @@ export default function CekUsahaPage() {
     }
 
     try {
+      const XLSX = await import("xlsx")
       const rows = filteredAndSorted.map((item, index) => ({
         "No": index + 1,
         "Nama Pelaku Usaha": item._displayName || "-",

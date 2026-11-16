@@ -16,7 +16,6 @@ import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ConfirmDialog } from "@/components/confirm-dialog"
-import ExcelJS from "exceljs"
 
 const BANK_LIST = [
   "BCA", "BNI", "BRI", "BRK", "MANDIRI", "BSI", "BTN", "OCBC", "PANIN", "MUAMALAT", "MAYBANK", "BUKOPIN", "DANAMON", "PERMATA", "CIMB NIAGA"
@@ -181,6 +180,7 @@ function RekeningBankContent() {
 
       toast({ title: "⏳ Memproses Excel", description: `Sedang menyiapkan file Excel ${titleBank}...` })
 
+      const ExcelJS = (await import("exceljs")).default || await import("exceljs")
       const workbook = new ExcelJS.Workbook()
       const worksheet = workbook.addWorksheet("Data Rekening Bank")
 

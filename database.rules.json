@@ -2,7 +2,8 @@
   "rules": {
     "daftar_hadir": {
       ".read": "true",
-      ".write": "auth != null"
+      ".write": "auth != null",
+      ".indexOn": ["tanggal", "status", "actorId", "coordinator"]
     },
     "roles_admin": {
       ".read": "auth != null",
@@ -27,7 +28,7 @@
     },
     "system_users": {
       ".read": "true",
-      ".indexOn": ["uid", "role", "fullName"],
+      ".indexOn": ["uid", "role", "fullName", "email"],
       "$username": {
         ".write": "auth != null || newData.child('role').val() == 'pending' || $username == 'monitoring'"
       }
