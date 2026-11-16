@@ -140,6 +140,176 @@ function normalizeStr(s: string) {
   return (s || "").trim().toUpperCase()
 }
 
+// ── IndexedDB Cache Helper for large dataset (>1MB) ──────────────────────────
+function getFromIDB(key: string): Promise<any | null> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined' || !window.indexedDB) return resolve(null);
+    try {
+      const req = window.indexedDB.open('simpu_large_cache', 1);
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains('store')) {
+          req.result.createObjectStore('store');
+        }
+      };
+      req.onsuccess = () => {
+        const db = req.result;
+        try {
+          const tx = db.transaction('store', 'readonly');
+          const getReq = tx.objectStore('store').get(key);
+          getReq.onsuccess = () => resolve(getReq.result || null);
+          getReq.onerror = () => resolve(null);
+        } catch {
+          resolve(null);
+        }
+      };
+      req.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+function setToIDB(key: string, value: any): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined' || !window.indexedDB) return resolve();
+    try {
+      const req = window.indexedDB.open('simpu_large_cache', 1);
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains('store')) {
+          req.result.createObjectStore('store');
+        }
+      };
+      req.onsuccess = () => {
+        const db = req.result;
+        try {
+          const tx = db.transaction('store', 'readwrite');
+          tx.objectStore('store').put(value, key);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => resolve();
+        } catch {
+          resolve();
+        }
+      };
+      req.onerror = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}
+
+function computeMergedRekapan(
+  allActorsRaw: any[],
+  data2024: any[],
+  data2023: any[],
+  data2025: any[]
+): any[] {
+  const kelurahanMap = new Map<string, string>();
+  Object.entries(KELURAHAN_TO_KECAMATAN).forEach(([kel, kec]) => {
+    kelurahanMap.set(normalizeStr(kel), normalizeStr(kec));
+  });
+
+  const learnMap = (list: any[]) => {
+    if (!list) return;
+    list.forEach(item => {
+      if (!item) return;
+      const kel = normalizeStr(item.kelurahan || item.kel);
+      const kec = normalizeStr(item.kecamatan || item.kec);
+      if (kel && isValidKecamatan(kec)) {
+        const inferred = inferKecamatanFromText(kec) || kec;
+        kelurahanMap.set(kel, inferred);
+      }
+    });
+  };
+
+  learnMap(allActorsRaw || []);
+  learnMap(data2024 || []);
+  learnMap(data2023 || []);
+  learnMap(data2025 || []);
+
+  const resolveKecamatan = (rawKec: string, rawKel: string, rawAddress: string = "", rawLocation: string = ""): string => {
+    const cleanKec = normalizeStr(rawKec);
+    if (isValidKecamatan(cleanKec)) {
+      const inferredFromKec = inferKecamatanFromText(cleanKec);
+      return inferredFromKec || cleanKec;
+    }
+
+    const combinedText = `${rawKel} ${rawAddress} ${rawLocation}`;
+    const inferred = inferKecamatanFromText(combinedText);
+    if (inferred) return inferred;
+
+    const cleanKel = normalizeStr(rawKel);
+    if (cleanKel && kelurahanMap.has(cleanKel)) {
+      return kelurahanMap.get(cleanKel)!;
+    }
+
+    return "-";
+  };
+
+  const dedupeMap = new Map<string, any>();
+
+  const processItem = (rawItem: any, sourceLabel: string) => {
+    if (!rawItem) return;
+    const fullName = (rawItem.fullName || rawItem.nama || "").trim();
+    const nik = (rawItem.nik ? String(rawItem.nik).trim() : "");
+
+    if (!fullName && !nik) return;
+
+    const dedupeKey = (nik && nik !== "-")
+      ? `NIK:${nik}`
+      : `NAME:${fullName.toUpperCase()}`;
+
+    const rawKel = rawItem.kelurahan || rawItem.kel || "";
+    const rawKec = rawItem.kecamatan || rawItem.kec || "";
+    const rawAddress = rawItem.address || rawItem.alamat || "";
+    const rawLocation = rawItem.businessLocation || rawItem.lokasi || "";
+
+    const resolvedKec = resolveKecamatan(rawKec, rawKel, rawAddress, rawLocation);
+
+    if (dedupeMap.has(dedupeKey)) {
+      const existing = dedupeMap.get(dedupeKey)!;
+      if (!isValidKecamatan(existing.kecamatan) && isValidKecamatan(resolvedKec)) {
+        existing.kecamatan = resolvedKec;
+      }
+      return;
+    }
+
+    const parsedPobDob = parsePobDob(rawItem.pobDob || "");
+
+    const normalizedItem = {
+      id: rawItem.id || `rec_${dedupeKey}_${Math.random().toString(36).substr(2, 5)}`,
+      fullName: fullName || "TANPA NAMA",
+      nik: nik || "-",
+      noKK: rawItem.noKK || rawItem.kk || "-",
+      gender: rawItem.gender || "-",
+      pob: rawItem.pob || parsedPobDob.pob || "-",
+      dob: rawItem.dob || parsedPobDob.dob || "-",
+      phone: rawItem.phone || rawItem.hp || "-",
+      address: rawAddress || "-",
+      rtRw: rawItem.rtRw || rawItem.rt_rw || (rawItem.rt ? `RT ${rawItem.rt} RW ${rawItem.rw || '-'}` : "-"),
+      kelurahan: rawKel ? formatKelurahan(rawKel) : "-",
+      kecamatan: resolvedKec,
+      businessName: rawItem.businessName || rawItem.usaha || "-",
+      businessCategory: rawItem.businessCategory || rawItem.kategori || rawItem.status || "-",
+      businessLocation: rawLocation || rawAddress || "-",
+      coordinator: rawItem.coordinator || rawItem.koor || "-",
+      source: sourceLabel
+    };
+
+    dedupeMap.set(dedupeKey, normalizedItem);
+  };
+
+  const VERIFIED_STATUSES = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'];
+  (allActorsRaw || [])
+    .filter(item => VERIFIED_STATUSES.includes(item.status || ''))
+    .forEach(item => processItem(item, "Pengajuan Terbaru"));
+
+  (data2024 || []).forEach(item => processItem(item, "Sheet 1 (2024)"));
+  (data2023 || []).forEach(item => processItem(item, "Sheet 2 (2023)"));
+  (data2025 || []).forEach(item => processItem(item, "Sheet 3 (2025)"));
+
+  return Array.from(dedupeMap.values());
+}
+
 // ── main component ────────────────────────────────────────────────────────────
 
 function RekapanDataContent() {
@@ -147,206 +317,71 @@ function RekapanDataContent() {
   const { toast } = useToast()
   const [pageLimit, setPageLimit] = useState(50)
 
-  // 1. Data Pengajuan Terbaru dari settings/actors_search (hemat 157MB payload, memuat dalam < 200ms)
-  const [fastVerifiedActors, setFastVerifiedActors] = useState<any[]>([])
-  const [isActorsLoading, setIsActorsLoading] = useState<boolean>(true)
+  // Data gabungan disimpan di state & IndexedDB untuk memuat instan (< 15ms)
+  const [actors, setActors] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState<boolean>(true)
 
   useEffect(() => {
-    try {
-      const cached = localStorage.getItem('simpu_rekapan_actors_cache')
-      if (cached) {
-        const parsed = JSON.parse(cached)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setFastVerifiedActors(parsed)
-          setIsActorsLoading(false)
-        }
-      }
-    } catch {}
+    let isMounted = true
 
-    if (!database) return
-    import("firebase/database").then(({ ref, get }) => {
-      get(ref(database, 'settings/actors_search')).then(snap => {
-        if (snap.exists()) {
-          const val = snap.val() || {}
-          const list = Object.entries(val).map(([id, item]: [string, any]) => ({
-            ...item,
-            id,
-          }))
-          if (list.length > 0) {
-            setFastVerifiedActors(list)
-            try { localStorage.setItem('simpu_rekapan_actors_cache', JSON.stringify(list)) } catch {}
-          }
-        }
-      }).catch(console.error).finally(() => setIsActorsLoading(false))
+    // 1. Hidrasi instan dari IndexedDB
+    getFromIDB('simpu_rekapan_gabungan_v3').then(cached => {
+      if (isMounted && Array.isArray(cached) && cached.length > 0) {
+        setActors(cached)
+        setIsLoading(false)
+      }
     })
+
+    // 2. Fetch data paralel cepat langsung dari Firebase RTDB via get()
+    if (!database) return
+
+    import("firebase/database").then(async ({ ref, get }) => {
+      try {
+        // Ambil data pengajuan terbaru dulu (< 200ms)
+        const actorsRef = ref(database, 'settings/actors_search')
+        const actorsPromise = get(actorsRef).then(snap => {
+          if (snap.exists() && isMounted) {
+            const list = Object.entries(snap.val() || {}).map(([id, item]: [string, any]) => ({ ...item, id }))
+            // Jika belum ada data dari IndexedDB, langsung tampilkan data terbaru agar tidak blank
+            setActors(prev => (prev.length === 0 ? computeMergedRekapan(list, [], [], []) : prev))
+            setIsLoading(false)
+          }
+          return snap
+        })
+
+        // Paralelkan dengan data pembanding 2024, 2023, 2025
+        const [actorsSnap, d24Snap, d23Snap, d25Snap] = await Promise.all([
+          actorsPromise,
+          get(ref(database, 'master_data_2024')),
+          get(ref(database, 'master_data_2023')),
+          get(ref(database, 'master_data_2025')),
+        ])
+
+        if (!isMounted) return
+
+        const actorsList = actorsSnap.exists()
+          ? Object.entries(actorsSnap.val() || {}).map(([id, item]: [string, any]) => ({ ...item, id }))
+          : []
+        const d24List = d24Snap.exists() ? Object.values(d24Snap.val() || {}) : []
+        const d23List = d23Snap.exists() ? Object.values(d23Snap.val() || {}) : []
+        const d25List = d25Snap.exists() ? Object.values(d25Snap.val() || {}) : []
+
+        const merged = computeMergedRekapan(actorsList, d24List, d23List, d25List)
+        if (isMounted && merged.length > 0) {
+          setActors(merged)
+          setIsLoading(false)
+          setToIDB('simpu_rekapan_gabungan_v3', merged)
+        }
+      } catch (err) {
+        console.error("Gagal memuat data rekapan gabungan:", err)
+        if (isMounted) setIsLoading(false)
+      }
+    })
+
+    return () => { isMounted = false }
   }, [database])
 
-  const allActorsRaw = fastVerifiedActors
-
-  // 2. Sheet 1: Data Pembanding 2024 (Static reference: load once)
-  const master2024Ref = useMemoFirebase(
-    () => (database ? ref(database, "master_data_2024") : null),
-    [database]
-  )
-  const { data: data2024, isLoading: is2024Loading } = useList<any>(master2024Ref, { once: true })
-
-  // 3. Sheet 2: Data Pembanding 2023 (Static reference: load once)
-  const master2023Ref = useMemoFirebase(
-    () => (database ? ref(database, "master_data_2023") : null),
-    [database]
-  )
-  const { data: data2023, isLoading: is2023Loading } = useList<any>(master2023Ref, { once: true })
-
-  // 4. Sheet 3: Data Pembanding 2025 (Static reference: load once)
-  const master2025Ref = useMemoFirebase(
-    () => (database ? ref(database, "master_data_2025") : null),
-    [database]
-  )
-  const { data: data2025, isLoading: is2025Loading } = useList<any>(master2025Ref, { once: true })
-
-  const isLoading = isActorsLoading || is2024Loading || is2023Loading || is2025Loading
-
-  // ── Combine & Deduplicate Data across Sheet 1, Sheet 2, Sheet 3 & Pengajuan Terbaru ──
-  const actors: any[] = useMemo(() => {
-    if (isLoading) {
-      try {
-        const cached = localStorage.getItem('simpu_rekapan_deduped_cache')
-        if (cached) {
-          const parsed = JSON.parse(cached)
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed
-        }
-      } catch {}
-      return []
-    }
-
-    // Build dynamic kelurahan -> kecamatan map from all available datasets
-    const kelurahanMap = new Map<string, string>()
-
-    // Seed static map
-    Object.entries(KELURAHAN_TO_KECAMATAN).forEach(([kel, kec]) => {
-      kelurahanMap.set(normalizeStr(kel), normalizeStr(kec))
-    })
-
-    const learnMap = (list: any[]) => {
-      if (!list) return
-      list.forEach(item => {
-        if (!item) return
-        const kel = normalizeStr(item.kelurahan || item.kel)
-        const kec = normalizeStr(item.kecamatan || item.kec)
-        if (kel && isValidKecamatan(kec)) {
-          const inferred = inferKecamatanFromText(kec) || kec
-          kelurahanMap.set(kel, inferred)
-        }
-      })
-    }
-
-    learnMap(allActorsRaw || [])
-    learnMap(data2024 || [])
-    learnMap(data2023 || [])
-    learnMap(data2025 || [])
-
-    const resolveKecamatan = (rawKec: string, rawKel: string, rawAddress: string = "", rawLocation: string = ""): string => {
-      const cleanKec = normalizeStr(rawKec)
-      if (isValidKecamatan(cleanKec)) {
-        const inferredFromKec = inferKecamatanFromText(cleanKec)
-        return inferredFromKec || cleanKec
-      }
-
-      // Fuzzy/keyword match on combined location text
-      const combinedText = `${rawKel} ${rawAddress} ${rawLocation}`
-      const inferred = inferKecamatanFromText(combinedText)
-      if (inferred) {
-        return inferred
-      }
-
-      // Direct lookup from dynamic dataset map
-      const cleanKel = normalizeStr(rawKel)
-      if (cleanKel && kelurahanMap.has(cleanKel)) {
-        return kelurahanMap.get(cleanKel)!
-      }
-
-      return "-"
-    }
-
-    const dedupeMap = new Map<string, any>()
-
-    const processItem = (rawItem: any, sourceLabel: string) => {
-      if (!rawItem) return
-
-      const fullName = (rawItem.fullName || rawItem.nama || "").trim()
-      const nik = (rawItem.nik ? String(rawItem.nik).trim() : "")
-
-      // Skip if completely empty name AND empty NIK
-      if (!fullName && !nik) return
-
-      // Deduplication Key: Prefer NIK if valid (not empty / not "-"), fallback to uppercase Name
-      const dedupeKey = (nik && nik !== "-")
-        ? `NIK:${nik}`
-        : `NAME:${fullName.toUpperCase()}`
-
-      const rawKel = rawItem.kelurahan || rawItem.kel || ""
-      const rawKec = rawItem.kecamatan || rawItem.kec || ""
-      const rawAddress = rawItem.address || rawItem.alamat || ""
-      const rawLocation = rawItem.businessLocation || rawItem.lokasi || ""
-
-      const resolvedKec = resolveKecamatan(rawKec, rawKel, rawAddress, rawLocation)
-
-      // Ignore duplicate (count only 1 business actor)
-      if (dedupeMap.has(dedupeKey)) {
-        const existing = dedupeMap.get(dedupeKey)!
-        // Enrich kecamatan if existing is invalid but current has valid kecamatan
-        if (!isValidKecamatan(existing.kecamatan) && isValidKecamatan(resolvedKec)) {
-          existing.kecamatan = resolvedKec
-        }
-        return
-      }
-
-      const parsedPobDob = parsePobDob(rawItem.pobDob || "")
-
-      const normalizedItem = {
-        id: rawItem.id || `rec_${dedupeKey}_${Math.random().toString(36).substr(2, 5)}`,
-        fullName: fullName || "TANPA NAMA",
-        nik: nik || "-",
-        noKK: rawItem.noKK || rawItem.kk || "-",
-        gender: rawItem.gender || "-",
-        pob: rawItem.pob || parsedPobDob.pob || "-",
-        dob: rawItem.dob || parsedPobDob.dob || "-",
-        phone: rawItem.phone || rawItem.hp || "-",
-        address: rawAddress || "-",
-        rtRw: rawItem.rtRw || rawItem.rt_rw || (rawItem.rt ? `RT ${rawItem.rt} RW ${rawItem.rw || '-'}` : "-"),
-        kelurahan: rawKel ? formatKelurahan(rawKel) : "-",
-        kecamatan: resolvedKec,
-        businessName: rawItem.businessName || rawItem.usaha || "-",
-        businessCategory: rawItem.businessCategory || rawItem.kategori || rawItem.status || "-",
-        businessLocation: rawLocation || rawAddress || "-",
-        coordinator: rawItem.coordinator || rawItem.koor || "-",
-        source: sourceLabel
-      }
-
-      dedupeMap.set(dedupeKey, normalizedItem)
-    }
-
-    // 1. Pengajuan Terbaru (Highest Priority - Hanya data terverifikasi)
-    const VERIFIED_STATUSES = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish']
-    ;(allActorsRaw || [])
-      .filter(item => VERIFIED_STATUSES.includes(item.status || ''))
-      .forEach(item => processItem(item, "Pengajuan Terbaru"));
-
-    // 2. Sheet 1: 2024
-    (data2024 || []).forEach(item => processItem(item, "Sheet 1 (2024)"));
-
-    // 3. Sheet 2: 2023
-    (data2023 || []).forEach(item => processItem(item, "Sheet 2 (2023)"));
-
-    // 4. Sheet 3: 2025
-    (data2025 || []).forEach(item => processItem(item, "Sheet 3 (2025)"));
-
-    const result = Array.from(dedupeMap.values())
-    if (result.length > 0) {
-      try { localStorage.setItem('simpu_rekapan_deduped_cache', JSON.stringify(result)) } catch {}
-    }
-    return result
-  }, [allActorsRaw, data2024, data2023, data2025, isLoading])
+  const isActuallyLoading = isLoading && actors.length === 0
 
   // ── filter state ──────────────────────────────────────────────────────────
   const [filterKecamatan, setFilterKecamatan] = useState("ALL")
@@ -525,7 +560,7 @@ function RekapanDataContent() {
       </div>
 
       {/* Summary Cards */}
-      {isLoading ? (
+      {isActuallyLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
         </div>
@@ -567,7 +602,7 @@ function RekapanDataContent() {
       )}
 
       {/* Kecamatan Distribution */}
-      {!isLoading && kecamatanStats.length > 0 && (
+      {!isActuallyLoading && kecamatanStats.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
             <MapIcon className="w-4 h-4" /> Distribusi Per Kecamatan
@@ -749,7 +784,7 @@ function RekapanDataContent() {
           </h2>
         </div>
 
-        {isLoading ? (
+        {isActuallyLoading ? (
           <div className="p-6 space-y-3">
             {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
           </div>
