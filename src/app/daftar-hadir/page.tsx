@@ -116,6 +116,51 @@ const isActorVerified = (actorData: any): boolean => {
   return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(status);
 };
 
+// Indonesian Days and Months Helpers for Tanggal Pertemuan
+const DAYS_INDO_NAMES = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"]
+const MONTHS_INDO_NAMES = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+]
+const MONTHS_INDO_SHORT_NAMES = [
+  "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+  "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+]
+
+const formatDateIndoDisplay = (rawDate?: string): string => {
+  if (!rawDate || !rawDate.trim()) return ""
+  const trimmed = rawDate.trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    try {
+      const [y, m, d] = trimmed.split("-").map(Number)
+      const dateObj = new Date(y, m - 1, d)
+      if (!isNaN(dateObj.getTime())) {
+        const day = DAYS_INDO_NAMES[dateObj.getDay()]
+        const month = MONTHS_INDO_NAMES[dateObj.getMonth()]
+        return `${day}, ${d} ${month} ${y}`
+      }
+    } catch {}
+  }
+  return trimmed
+}
+
+const formatDateIndoShort = (rawDate?: string): string => {
+  if (!rawDate || !rawDate.trim()) return ""
+  const trimmed = rawDate.trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    try {
+      const [y, m, d] = trimmed.split("-").map(Number)
+      const dateObj = new Date(y, m - 1, d)
+      if (!isNaN(dateObj.getTime())) {
+        const day = DAYS_INDO_NAMES[dateObj.getDay()].slice(0, 3)
+        const month = MONTHS_INDO_SHORT_NAMES[dateObj.getMonth()]
+        return `${day}, ${d} ${month} ${y}`
+      }
+    } catch {}
+  }
+  return trimmed
+}
+
 export default function DaftarHadirPage() {
   return (
     <Suspense fallback={
@@ -188,6 +233,30 @@ function DaftarHadirContent() {
   const [sessionModalActor, setSessionModalActor] = useState<BusinessActor | null>(null)
   const [selectedSingleSession, setSelectedSingleSession] = useState("")
 
+  // ─── TANGGAL PERTEMUAN MANAGEMENT (FIREBASE & DYNAMIC DATES) ───
+  const datesRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'settings/attendance_dates')
+  }, [database])
+  const { data: rawSavedDates } = useObject(datesRef)
+
+  const savedDatesList: string[] = useMemo(() => {
+    if (!rawSavedDates) return []
+    if (Array.isArray(rawSavedDates)) {
+      return rawSavedDates.filter(d => typeof d === 'string' && d.trim().length > 0)
+    }
+    if (typeof rawSavedDates === 'object') {
+      return Object.values(rawSavedDates).filter((d): d is string => typeof d === 'string' && d.trim().length > 0)
+    }
+    return []
+  }, [rawSavedDates])
+
+  const [showAddDateModal, setShowAddDateModal] = useState(false)
+  const [newDateInput, setNewDateInput] = useState("")
+  const [applyDateTarget, setApplyDateTarget] = useState<'list_only' | 'filtered_actors'>('list_only')
+  const [showClearDateDialog, setShowClearDateDialog] = useState(false)
+  const [selectedDateFilter, setSelectedDateFilter] = useState("semua")
+
   const [showImportExcelModal, setShowImportExcelModal] = useState(false)
   const [importExcelFile, setImportExcelFile] = useState<File | null>(null)
   const [isProcessingImport, setIsProcessingImport] = useState(false)
@@ -200,6 +269,7 @@ function DaftarHadirContent() {
       rawNik: string
       schedule: string
       desk: string
+      date?: string
       actor: BusinessActor | null
       status: 'matched' | 'unmatched'
     }>
@@ -267,6 +337,7 @@ function DaftarHadirContent() {
   const [selectedBatchCoord, setSelectedBatchCoord] = useState("")
   const [batchCoordDesk, setBatchCoordDesk] = useState("Meja 1")
   const [batchCoordSchedule, setBatchCoordSchedule] = useState("")
+  const [batchCoordDate, setBatchCoordDate] = useState("")
 
   // NIK Sensitive Data Protection State
   const [showAllNik, setShowAllNik] = useState(false)
@@ -278,6 +349,7 @@ function DaftarHadirContent() {
   const [customNotes, setCustomNotes] = useState("")
   const [customDesk, setCustomDesk] = useState("")
   const [customSchedule, setCustomSchedule] = useState("")
+  const [customDate, setCustomDate] = useState("")
   const [customCoordinator, setCustomCoordinator] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -285,9 +357,12 @@ function DaftarHadirContent() {
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [batchTab, setBatchTab] = useState("auto_kecamatan")
   const [batchSessionName, setBatchSessionName] = useState("")
+  const [batchDate, setBatchDate] = useState("")
   const [evenSplitCount, setEvenSplitCount] = useState<number>(3)
+  const [evenSplitDate, setEvenSplitDate] = useState("")
   const [customBatchDesk, setCustomBatchDesk] = useState("Meja 1 (Kec. Tanjungpinang Barat)")
   const [customBatchSchedule, setCustomBatchSchedule] = useState("")
+  const [customBatchDate, setCustomBatchDate] = useState("")
 
   // Batch action confirm dialogs
   const [showMarkAllDialog, setShowMarkAllDialog] = useState(false)
@@ -363,7 +438,8 @@ function DaftarHadirContent() {
     notes: string = "",
     desk?: string,
     schedule?: string,
-    coordinator?: string
+    coordinator?: string,
+    date?: string
   ) => {
     if (!database || !user) return
     setIsSubmitting(true)
@@ -389,6 +465,9 @@ function DaftarHadirContent() {
     if (schedule !== undefined) {
       updatePayload.attendanceSchedule = schedule.trim() || null
     }
+    if (date !== undefined) {
+      updatePayload.attendanceDate = date.trim() || null
+    }
     if (coordinator !== undefined && coordinator.trim() && isAdmin) {
       updatePayload.coordinator = coordinator.trim()
     }
@@ -407,9 +486,17 @@ function DaftarHadirContent() {
         notes: notes.trim() || null,
         desk: desk?.trim() || null,
         schedule: schedule?.trim() || null,
+        attendanceDate: date !== undefined ? (date.trim() || null) : ((actor as any).attendanceDate || null),
         updatedAt: nowIso,
         updatedBy: officerName,
       })
+
+      // Jika ada tanggal baru yang diatur, simpan juga ke settings/attendance_dates
+      if (date && date.trim() && !savedDatesList.includes(date.trim())) {
+        await update(ref(database, 'settings'), {
+          attendance_dates: [...savedDatesList, date.trim()]
+        })
+      }
 
       logActivity({
         query: `ABSENSI: ${actor.fullName} -> ${newStatus.toUpperCase()}${desk ? ` (Meja: ${desk})` : ''}`,
@@ -474,6 +561,7 @@ function DaftarHadirContent() {
       let colNik = 2 // Default Kolom C (0-indexed: 2)
       let colSchedule = 4 // Default Kolom E (0-indexed: 4)
       let colDesk: number | null = null
+      let colDate: number | null = null
 
       // Scan 6 baris pertama untuk mencari baris header
       for (let r = 0; r < Math.min(rows2d.length, 6); r++) {
@@ -489,6 +577,9 @@ function DaftarHadirContent() {
           // Cari kolom Meja / Loket
           const deskIdx = rowText.findIndex((c: string) => c.includes('meja') || c.includes('loket') || c.includes('posisi'))
           if (deskIdx !== -1) colDesk = deskIdx
+          // Cari kolom Tanggal Pertemuan
+          const dateIdx = rowText.findIndex((c: string) => c.includes('tanggal') || c.includes('tgl') || c.includes('date') || c.includes('pertemuan'))
+          if (dateIdx !== -1) colDate = dateIdx
           break
         }
       }
@@ -509,6 +600,7 @@ function DaftarHadirContent() {
         rawNik: string
         schedule: string
         desk: string
+        date?: string
         actor: BusinessActor | null
         status: 'matched' | 'unmatched'
       }> = []
@@ -533,6 +625,7 @@ function DaftarHadirContent() {
 
         const rawSchedule = String(row[colSchedule] || "").trim()
         const rawDeskVal = colDesk !== null ? String(row[colDesk] || "").trim() : ""
+        const rawDateVal = colDate !== null ? String(row[colDate] || "").trim() : ""
 
         // Matching dengan database
         const matchedActor = actorMap.get(cleanNik) || verifiedActorsList.find(a => {
@@ -564,6 +657,7 @@ function DaftarHadirContent() {
             rawNik,
             schedule: rawSchedule,
             desk: finalDesk,
+            date: rawDateVal,
             actor: matchedActor,
             status: 'matched'
           })
@@ -574,6 +668,7 @@ function DaftarHadirContent() {
             rawNik,
             schedule: rawSchedule,
             desk: finalDesk,
+            date: rawDateVal,
             actor: null,
             status: 'unmatched'
           })
@@ -658,6 +753,9 @@ function DaftarHadirContent() {
         if (item.desk && item.desk.trim()) {
           updates[`businessActors/${actor.id}/attendanceDesk`] = item.desk.trim()
         }
+        if (item.date && item.date.trim()) {
+          updates[`businessActors/${actor.id}/attendanceDate`] = item.date.trim()
+        }
       })
 
       if (Object.keys(updates).length > 0) {
@@ -712,7 +810,8 @@ function DaftarHadirContent() {
         { header: "NAMA LENGKAP", key: "fullName", width: 30 },
         { header: "NIK", key: "nik", width: 24 }, // Kolom C
         { header: "KECAMATAN", key: "kecamatan", width: 25 },
-        { header: "JADWAL SESI", key: "schedule", width: 32 }, // Kolom E
+        { header: "TANGGAL PERTEMUAN", key: "date", width: 25 },
+        { header: "JADWAL SESI", key: "schedule", width: 32 },
         { header: "KOORDINATOR", key: "coordinator", width: 25 },
         { header: "POSISI MEJA", key: "desk", width: 32 }
       ]
@@ -731,6 +830,7 @@ function DaftarHadirContent() {
           fullName: actor.fullName,
           nik: actor.nik,
           kecamatan: actor.kecamatan || "-",
+          date: (actor as any).attendanceDate || "",
           schedule: (actor as any).attendanceSchedule || "",
           coordinator: normalizeCoordinator(actor.coordinator) || "-",
           desk: (actor as any).attendanceDesk || ""
@@ -1065,6 +1165,128 @@ function DaftarHadirContent() {
     }
   }
 
+  // ─── FUNGSI TAMBAH DAN KELOLA TANGGAL PERTEMUAN ───
+  const handleAddDate = async () => {
+    const dateVal = newDateInput.trim()
+    if (!dateVal) {
+      toast({ variant: "destructive", title: "Tanggal Kosong", description: "Silakan pilih atau masukkan tanggal pertemuan." })
+      return
+    }
+    if (!database || !user) return
+
+    setIsSubmitting(true)
+    try {
+      // 1. Simpan ke settings/attendance_dates
+      const currentList = Array.from(new Set([...savedDatesList, dateVal]))
+      await update(ref(database, 'settings'), {
+        attendance_dates: currentList
+      })
+
+      // 2. Jika dipilih untuk diterapkan ke data yang tampil
+      if (applyDateTarget === 'filtered_actors' && filteredActors.length > 0) {
+        const updates: Record<string, any> = {}
+        filteredActors.forEach(actor => {
+          updates[`businessActors/${actor.id}/attendanceDate`] = dateVal
+        })
+
+        const entries = Object.entries(updates)
+        const chunkSize = 400
+        for (let i = 0; i < entries.length; i += chunkSize) {
+          const chunk = Object.fromEntries(entries.slice(i, i + chunkSize))
+          await update(ref(database), chunk)
+        }
+
+        toast({
+          title: "Tanggal Berhasil Diterapkan!",
+          description: `Tanggal "${formatDateIndoDisplay(dateVal)}" diterapkan ke ${filteredActors.length} pelaku usaha.`
+        })
+      } else {
+        toast({
+          title: "Tanggal Ditambahkan",
+          description: `Tanggal "${formatDateIndoDisplay(dateVal)}" berhasil ditambahkan ke daftar pilihan.`
+        })
+      }
+
+      playSound('success', 0.4)
+      setNewDateInput("")
+      setShowAddDateModal(false)
+    } catch (err: any) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal Menambahkan Tanggal", description: err.message || "Terjadi kesalahan." })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDeleteSavedDate = async (dateToDelete: string) => {
+    if (!database || !user) return
+    setIsSubmitting(true)
+    try {
+      const updated = savedDatesList.filter(d => d !== dateToDelete)
+      await update(ref(database, 'settings'), {
+        attendance_dates: updated
+      })
+      toast({ title: "Tanggal Dihapus", description: `Tanggal "${formatDateIndoDisplay(dateToDelete)}" dihapus dari daftar.` })
+    } catch (err: any) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal", description: err.message })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // ─── FUNGSI KOSONGKAN SELURUH TANGGAL PERTEMUAN ───
+  const executeClearAllDates = async () => {
+    if (!database || !user) return
+    setIsSubmitting(true)
+    setShowClearDateDialog(false)
+
+    try {
+      const updates: Record<string, any> = {}
+      verifiedActorsList.forEach(actor => {
+        if ((actor as any).attendanceDate) {
+          updates[`businessActors/${actor.id}/attendanceDate`] = null
+        }
+      })
+
+      // Kosongkan juga daftar tanggal tersimpan di settings
+      await update(ref(database, 'settings'), {
+        attendance_dates: null
+      })
+
+      if (Object.keys(updates).length > 0) {
+        const entries = Object.entries(updates)
+        const chunkSize = 400
+        for (let i = 0; i < entries.length; i += chunkSize) {
+          const chunk = Object.fromEntries(entries.slice(i, i + chunkSize))
+          await update(ref(database), chunk)
+        }
+      }
+
+      logActivity({
+        query: `KOSONGKAN TANGGAL: Seluruh tanggal pertemuan dibersihkan untuk ${verifiedActorsList.length} peserta`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'MODUL DAFTAR HADIR',
+        userId: userProfile?.fullName || user?.email || "Admin"
+      })
+
+      playSound('success', 0.5)
+
+      toast({
+        title: "Seluruh Tanggal Dikosongkan!",
+        description: "Seluruh tanggal pertemuan peserta dan daftar pilihan tanggal telah dikosongkan."
+      })
+      setSelectedDateFilter('semua')
+    } catch (err: any) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal", description: err.message || "Gagal mengosongkan tanggal." })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   // Quick Toggle Hadir / Belum Hadir
   const handleQuickToggleHadir = (actor: BusinessActor) => {
     const current = (actor as any).attendanceStatus as AttendanceStatus
@@ -1321,6 +1543,25 @@ function DaftarHadirContent() {
     return Array.from(set)
   }, [savedSessionsList, verifiedActorsList])
 
+  // Distinct Dates (Daftar Tanggal Pertemuan Dinamis)
+  const distinctDates = useMemo(() => {
+    const set = new Set<string>()
+
+    // 1. Ambil dari tanggal yang pernah disimpan di settings/attendance_dates
+    savedDatesList.forEach(d => {
+      if (d && d.trim()) set.add(d.trim())
+    })
+
+    // 2. Ambil dari peserta yang memiliki attendanceDate aktif
+    verifiedActorsList.forEach(a => {
+      const d = (a as any).attendanceDate
+      if (d && typeof d === 'string' && d.trim()) {
+        set.add(d.trim())
+      }
+    })
+    return Array.from(set).sort()
+  }, [savedDatesList, verifiedActorsList])
+
   // Hitung jumlah per-kategori tab kehadiran
   const counts = useMemo(() => {
     let hadir = 0
@@ -1375,7 +1616,17 @@ function DaftarHadirContent() {
         }
       }
 
-      // 4. Filter Kecamatan
+      // 4. Filter Tanggal Pertemuan
+      if (selectedDateFilter !== 'semua') {
+        const d = ((actor as any).attendanceDate || "").trim()
+        if (selectedDateFilter === 'belum_diatur') {
+          if (d) return false
+        } else {
+          if (d !== selectedDateFilter) return false
+        }
+      }
+
+      // 5. Filter Kecamatan
       if (selectedKecamatanFilter !== 'semua') {
         const kec = (actor.kecamatan || "").toLowerCase().trim()
         const target = selectedKecamatanFilter.toLowerCase().trim()
@@ -1384,7 +1635,7 @@ function DaftarHadirContent() {
         }
       }
 
-      // 5. Filter Koordinator
+      // 6. Filter Koordinator
       if (selectedCoordinatorFilter !== 'semua') {
         const koor = normalizeCoordinator(actor.coordinator) || "TANPA KOORDINATOR"
         if (koor.toLowerCase() !== selectedCoordinatorFilter.toLowerCase()) {
@@ -1392,7 +1643,7 @@ function DaftarHadirContent() {
         }
       }
 
-      // 5. Search Query
+      // 7. Search Query
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim()
         const matchName = (actor.fullName || "").toLowerCase().includes(query)
@@ -1402,8 +1653,9 @@ function DaftarHadirContent() {
         const matchCoordinator = (actor.coordinator || "").toLowerCase().includes(query)
         const matchDesk = ((actor as any).attendanceDesk || "").toLowerCase().includes(query)
         const matchSchedule = ((actor as any).attendanceSchedule || "").toLowerCase().includes(query)
+        const matchDate = ((actor as any).attendanceDate || "").toLowerCase().includes(query) || formatDateIndoDisplay((actor as any).attendanceDate).toLowerCase().includes(query)
 
-        if (!matchName && !matchNik && !matchBusiness && !matchKelurahan && !matchCoordinator && !matchDesk && !matchSchedule) {
+        if (!matchName && !matchNik && !matchBusiness && !matchKelurahan && !matchCoordinator && !matchDesk && !matchSchedule && !matchDate) {
           return false
         }
       }
@@ -1417,12 +1669,12 @@ function DaftarHadirContent() {
       if (coordCompare !== 0) return coordCompare
       return String(a.fullName || "").trim().localeCompare(String(b.fullName || "").trim())
     })
-  }, [verifiedActorsList, activeTab, selectedDeskFilter, selectedScheduleFilter, selectedKecamatanFilter, selectedCoordinatorFilter, searchQuery])
+  }, [verifiedActorsList, activeTab, selectedDeskFilter, selectedScheduleFilter, selectedDateFilter, selectedKecamatanFilter, selectedCoordinatorFilter, searchQuery])
 
   // ─── FUNGSI BATCH PEMBAGIAN JADWAL & MEJA SECARA CEPAT (ATOMIC MULTI-PATH RTDB) ───
   
   // 1. Pembagian Otomatis Berdasarkan 4 Kecamatan
-  const executeAutoDistrictAssignment = async (assignSchedule: string = "") => {
+  const executeAutoDistrictAssignment = async (assignSchedule: string = "", assignDate: string = "") => {
     if (!database || !user) return
     setIsSubmitting(true)
 
@@ -1455,7 +1707,16 @@ function DaftarHadirContent() {
         if (assignSchedule) {
           updates[`businessActors/${actor.id}/attendanceSchedule`] = assignSchedule
         }
+        if (assignDate) {
+          updates[`businessActors/${actor.id}/attendanceDate`] = assignDate
+        }
       })
+
+      if (assignDate && !savedDatesList.includes(assignDate)) {
+        await update(ref(database, 'settings'), {
+          attendance_dates: [...savedDatesList, assignDate]
+        })
+      }
 
       if (Object.keys(updates).length > 0) {
         await update(ref(database), updates)
@@ -1484,7 +1745,7 @@ function DaftarHadirContent() {
   }
 
   // 1b. Pembagian Berdasarkan Koordinator
-  const executeCoordinatorAssignment = async (coordName: string, desk: string, schedule: string) => {
+  const executeCoordinatorAssignment = async (coordName: string, desk: string, schedule: string, date: string = "") => {
     if (!database || !user || !coordName) {
       toast({ variant: "destructive", title: "Pilih Koordinator", description: "Silakan pilih salah satu koordinator terlebih dahulu." })
       return
@@ -1504,16 +1765,25 @@ function DaftarHadirContent() {
           if (schedule.trim()) {
             updates[`businessActors/${actor.id}/attendanceSchedule`] = schedule.trim()
           }
+          if (date.trim()) {
+            updates[`businessActors/${actor.id}/attendanceDate`] = date.trim()
+          }
           count++
         }
       })
+
+      if (date && date.trim() && !savedDatesList.includes(date.trim())) {
+        await update(ref(database, 'settings'), {
+          attendance_dates: [...savedDatesList, date.trim()]
+        })
+      }
 
       if (Object.keys(updates).length > 0) {
         await update(ref(database), updates)
       }
 
       logActivity({
-        query: `PEMBAGIAN KOORDINATOR: ${coordName} (${count} peserta) -> Meja: ${desk || '-'}, Sesi: ${schedule || '-'}`,
+        query: `PEMBAGIAN KOORDINATOR: ${coordName} (${count} peserta) -> Meja: ${desk || '-'}, Sesi: ${schedule || '-'}, Tanggal: ${date || '-'}`,
         results: "Berhasil",
         device: getDeviceType(navigator.userAgent),
         source: 'Web',
@@ -1523,7 +1793,7 @@ function DaftarHadirContent() {
 
       toast({
         title: "Penetapan Koordinator Berhasil!",
-        description: `Berhasil menetapkan ${desk ? `Meja: ${desk}` : ''}${desk && schedule ? ' • ' : ''}${schedule ? `Sesi: ${schedule}` : ''} untuk ${count} peserta di bawah Koordinator ${coordName}.`
+        description: `Berhasil menetapkan ${desk ? `Meja: ${desk}` : ''}${desk && schedule ? ' • ' : ''}${schedule ? `Sesi: ${schedule}` : ''}${date ? ` • Tanggal: ${formatDateIndoDisplay(date)}` : ''} untuk ${count} peserta di bawah Koordinator ${coordName}.`
       })
     } catch (err) {
       console.error("Gagal assign koordinator:", err)
@@ -1574,7 +1844,7 @@ function DaftarHadirContent() {
   }
 
   // 2. Pembagian Rata Berdasarkan Sesi Waktu
-  const executeEvenSessionSplit = async (sessionCount: number) => {
+  const executeEvenSessionSplit = async (sessionCount: number, assignDate: string = "") => {
     if (!database || !user || verifiedActorsList.length === 0) return
     setIsSubmitting(true)
 
@@ -1594,14 +1864,23 @@ function DaftarHadirContent() {
         const sessionIndex = Math.min(Math.floor(index / chunkSize), sessionCount - 1)
         const chosenSession = sessionLabels[sessionIndex] || `Sesi ${sessionIndex + 1}`
         updates[`businessActors/${actor.id}/attendanceSchedule`] = chosenSession
+        if (assignDate) {
+          updates[`businessActors/${actor.id}/attendanceDate`] = assignDate
+        }
       })
+
+      if (assignDate && !savedDatesList.includes(assignDate)) {
+        await update(ref(database, 'settings'), {
+          attendance_dates: [...savedDatesList, assignDate]
+        })
+      }
 
       if (Object.keys(updates).length > 0) {
         await update(ref(database), updates)
       }
 
       logActivity({
-        query: `PEMBAGIAN SESI: Bagi rata ${sessionCount} sesi (${total} peserta)`,
+        query: `PEMBAGIAN SESI: Bagi rata ${sessionCount} sesi (${total} peserta)${assignDate ? `, Tanggal: ${assignDate}` : ''}`,
         results: "Berhasil",
         device: getDeviceType(navigator.userAgent),
         source: 'Web',
@@ -1611,7 +1890,7 @@ function DaftarHadirContent() {
 
       toast({
         title: "Sesi Waktu Berhasil Dibagi!",
-        description: `Berhasil membagi rata ${total} pelaku usaha ke dalam ${sessionCount} sesi waktu.`
+        description: `Berhasil membagi rata ${total} pelaku usaha ke dalam ${sessionCount} sesi waktu${assignDate ? ` pada tanggal ${formatDateIndoDisplay(assignDate)}` : ''}.`
       })
       setShowScheduleModal(false)
     } catch (err) {
@@ -1623,7 +1902,7 @@ function DaftarHadirContent() {
   }
 
   // 3. Atur Massal untuk Data yang Sedang Terfilter
-  const executeCustomBatchAssignment = async (desk: string, schedule: string) => {
+  const executeCustomBatchAssignment = async (desk: string, schedule: string, date: string = "") => {
     if (!database || !user || filteredActors.length === 0) return
     setIsSubmitting(true)
 
@@ -1636,7 +1915,16 @@ function DaftarHadirContent() {
         if (schedule.trim()) {
           updates[`businessActors/${actor.id}/attendanceSchedule`] = schedule.trim()
         }
+        if (date.trim()) {
+          updates[`businessActors/${actor.id}/attendanceDate`] = date.trim()
+        }
       })
+
+      if (date && date.trim() && !savedDatesList.includes(date.trim())) {
+        await update(ref(database, 'settings'), {
+          attendance_dates: [...savedDatesList, date.trim()]
+        })
+      }
 
       if (Object.keys(updates).length > 0) {
         await update(ref(database), updates)
@@ -1644,7 +1932,7 @@ function DaftarHadirContent() {
 
       toast({
         title: "Berhasil Diperbarui!",
-        description: `Berhasil menerapkan Meja & Jadwal ke ${filteredActors.length} peserta terpilih.`
+        description: `Berhasil menerapkan penetapan ke ${filteredActors.length} peserta terpilih.`
       })
       setShowScheduleModal(false)
     } catch (err) {
@@ -1666,6 +1954,7 @@ function DaftarHadirContent() {
       verifiedActorsList.forEach(actor => {
         updates[`businessActors/${actor.id}/attendanceDesk`] = null
         updates[`businessActors/${actor.id}/attendanceSchedule`] = null
+        updates[`businessActors/${actor.id}/attendanceDate`] = null
       })
 
       if (Object.keys(updates).length > 0) {
@@ -1673,8 +1962,8 @@ function DaftarHadirContent() {
       }
 
       toast({
-        title: "Jadwal & Meja Dikosongkan",
-        description: "Seluruh penetapan meja dan sesi kehadiran berhasil dikosongkan."
+        title: "Jadwal, Tanggal & Meja Dikosongkan",
+        description: "Seluruh penetapan meja, tanggal dan sesi kehadiran berhasil dikosongkan."
       })
       setShowScheduleModal(false)
     } catch (err) {
@@ -1777,13 +2066,13 @@ function DaftarHadirContent() {
       }
 
       // Title rows
-      worksheet.mergeCells("A1:J1")
+      worksheet.mergeCells("A1:K1")
       const titleCell = worksheet.getCell("A1")
       titleCell.value = "DAFTAR HADIR PELAKU USAHA TERVERIFIKASI DINAS KOPERASI DAN UKM"
       titleCell.font = { name: "Arial", size: 14, bold: true, color: { argb: "FF0F172A" } }
       titleCell.alignment = { horizontal: "center", vertical: "middle" }
 
-      worksheet.mergeCells("A2:J2")
+      worksheet.mergeCells("A2:K2")
       const subTitleCell = worksheet.getCell("A2")
       subTitleCell.value = `Tanggal Ekspor: ${new Date().toLocaleDateString('id-ID', { dateStyle: 'full' })} | Total: ${filteredActors.length} Pelaku Usaha Terverifikasi`
       subTitleCell.font = { name: "Arial", size: 10, italic: true, color: { argb: "FF475569" } }
@@ -1800,6 +2089,7 @@ function DaftarHadirContent() {
         "USAHA",
         "KOORDINATOR",
         "POSISI MEJA",
+        "TANGGAL PERTEMUAN",
         "JADWAL SESI",
         "STATUS VERIFIKASI",
         "STATUS KEHADIRAN"
@@ -1830,13 +2120,15 @@ function DaftarHadirContent() {
       worksheet.getColumn(5).width = 24
       worksheet.getColumn(6).width = 18
       worksheet.getColumn(7).width = 22
-      worksheet.getColumn(8).width = 20
-      worksheet.getColumn(9).width = 18
-      worksheet.getColumn(10).width = 16
+      worksheet.getColumn(8).width = 22
+      worksheet.getColumn(9).width = 20
+      worksheet.getColumn(10).width = 18
+      worksheet.getColumn(11).width = 16
 
       // Rows Data
       filteredActors.forEach((actor, index) => {
         const attStatus = ((actor as any).attendanceStatus || 'belum_hadir').toUpperCase()
+        const attDate = (actor as any).attendanceDate ? formatDateIndoDisplay((actor as any).attendanceDate) : "-"
 
         const row = worksheet.addRow([
           index + 1,
@@ -1846,6 +2138,7 @@ function DaftarHadirContent() {
           actor.businessName || "-",
           normalizeCoordinator(actor.coordinator),
           (actor as any).attendanceDesk || "-",
+          attDate,
           (actor as any).attendanceSchedule || "-",
           formatVerificationLabel(actor.status),
           attStatus === 'HADIR' ? 'HADIR' : attStatus === 'IZIN' ? 'IZIN' : attStatus === 'SAKIT' ? 'SAKIT' : 'BELUM HADIR'
@@ -1856,7 +2149,7 @@ function DaftarHadirContent() {
           cell.font = { name: "Arial", size: 9 }
           cell.alignment = { 
             vertical: "middle", 
-            horizontal: colIndex === 1 || colIndex === 3 || colIndex === 7 || colIndex === 8 || colIndex === 9 || colIndex === 10 ? "center" : "left" 
+            horizontal: colIndex === 1 || colIndex === 3 || colIndex === 7 || colIndex === 8 || colIndex === 9 || colIndex === 10 || colIndex === 11 ? "center" : "left" 
           }
           cell.border = {
             top: { style: "thin", color: { argb: "FFE2E8F0" } },
@@ -2190,8 +2483,28 @@ function DaftarHadirContent() {
             )}
 
             <CardContent className="p-2.5 sm:p-3 space-y-2.5">
-              {/* Highlight Dua Kotak: POSISI MEJA & JADWAL SESI */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Highlight Tiga Kotak: TANGGAL, POSISI MEJA & JADWAL SESI */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {/* Tanggal Pertemuan */}
+                <div className="p-2 sm:p-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[9.5px] font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300 block">
+                      TANGGAL PERTEMUAN
+                    </span>
+                    <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 truncate">
+                      {(scannerResult as any).attendanceDate ? (
+                        formatDateIndoDisplay((scannerResult as any).attendanceDate)
+                      ) : (
+                        <span className="text-amber-600 dark:text-amber-400 italic font-semibold">
+                          Belum Ditentukan
+                        </span>
+                      )}
+                    </h3>
+                  </div>
+                </div>
                 {/* Posisi Absensi (Meja) */}
                 <div className="p-2 sm:p-2.5 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
@@ -2709,8 +3022,28 @@ function DaftarHadirContent() {
               ))}
               <option value="belum_diatur">-- Belum Terjadwal Sesi --</option>
             </select>
+          </div>
 
-
+          {/* Filter Tanggal Pertemuan */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-1">
+              <Calendar className="w-3 h-3 text-indigo-600" />
+              <span>Tanggal:</span>
+            </span>
+            <select
+              value={selectedDateFilter}
+              onChange={(e) => {
+                setSelectedDateFilter(e.target.value)
+                setPageLimit(50)
+              }}
+              className="h-8 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer shadow-2xs"
+            >
+              <option value="semua">Semua Tanggal {distinctDates.length === 0 ? "(Kosong)" : `(${distinctDates.length})`}</option>
+              {distinctDates.map(date => (
+                <option key={date} value={date}>{formatDateIndoDisplay(date)}</option>
+              ))}
+              <option value="belum_diatur">-- Belum Ditentukan Tanggal --</option>
+            </select>
           </div>
 
           {/* Filter Kecamatan */}
@@ -2757,11 +3090,12 @@ function DaftarHadirContent() {
           </div>
 
           {/* Reset Active Filter */}
-          {(selectedDeskFilter !== 'semua' || selectedScheduleFilter !== 'semua' || selectedKecamatanFilter !== 'semua' || selectedCoordinatorFilter !== 'semua') && (
+          {(selectedDeskFilter !== 'semua' || selectedScheduleFilter !== 'semua' || selectedDateFilter !== 'semua' || selectedKecamatanFilter !== 'semua' || selectedCoordinatorFilter !== 'semua') && (
             <button
               onClick={() => {
                 setSelectedDeskFilter('semua')
                 setSelectedScheduleFilter('semua')
+                setSelectedDateFilter('semua')
                 setSelectedKecamatanFilter('semua')
                 setSelectedCoordinatorFilter('semua')
               }}
@@ -2774,6 +3108,21 @@ function DaftarHadirContent() {
 
         {/* Tombol Aksi Sesi & Meja */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Tombol Aksi: Tambah Tanggal */}
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              setNewDateInput(new Date().toISOString().split("T")[0])
+              setShowAddDateModal(true)
+            }}
+            className="h-8 px-2.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white gap-1 rounded-lg cursor-pointer shadow-2xs"
+            title="Tambah / Atur Tanggal Pertemuan"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>+ Tambah Tanggal</span>
+          </Button>
+
           {/* Tombol Aksi: Tambah Sesi */}
           <Button
             type="button"
@@ -2804,6 +3153,19 @@ function DaftarHadirContent() {
             <span>+ Tambah Meja</span>
           </Button>
 
+          {/* Tombol Aksi: Kosongkan Tanggal */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowClearDateDialog(true)}
+            className="h-8 px-2 text-xs font-bold border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:hover:bg-rose-950/40 gap-1 rounded-lg cursor-pointer shadow-2xs"
+            title="Kosongkan seluruh tanggal pertemuan peserta"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Kosongkan Tanggal</span>
+          </Button>
+
           {/* Tombol Aksi: Kosongkan Sesi */}
           <Button
             type="button"
@@ -2829,8 +3191,6 @@ function DaftarHadirContent() {
             <Trash2 className="w-3.5 h-3.5" />
             <span>Kosongkan Meja</span>
           </Button>
-
-
 
           <Button
             type="button"
@@ -2880,7 +3240,7 @@ function DaftarHadirContent() {
                 <th className="w-[8%] text-center font-bold text-[11px] uppercase py-2.5 px-1">KATEGORI</th>
                 <th className="w-[13.5%] text-center font-bold text-[11px] uppercase py-2.5 px-2">USAHA</th>
                 <th className="w-[8%] text-center font-bold text-[11px] uppercase py-2.5 px-1">KOORDINATOR</th>
-                <th className="w-[14%] text-center font-bold text-[11px] uppercase py-2.5 px-1 leading-tight">JADWAL & POSISI<br/>ABSENSI (MEJA)</th>
+                <th className="w-[15%] text-center font-bold text-[11px] uppercase py-2.5 px-1 leading-tight">TANGGAL, SESI & MEJA<br/>ABSENSI</th>
                 <th className="w-[10%] text-center font-bold text-[11px] uppercase py-2.5 px-1 leading-tight">STATUS<br/>VERIFIKASI</th>
                 <th className="w-[9%] text-center font-bold text-[11px] uppercase py-2.5 px-1">KEHADIRAN</th>
                 <th className="w-[8%] text-center font-bold text-[11px] uppercase py-2.5 px-1">AKSI</th>
@@ -2897,6 +3257,7 @@ function DaftarHadirContent() {
                 const notes = (actor as any).attendanceNotes
                 const desk = (actor as any).attendanceDesk
                 const schedule = (actor as any).attendanceSchedule
+                const attDate = (actor as any).attendanceDate
                 const rawCoord = (actor.coordinator || "").toUpperCase()
                 const isHoldOrPending = rawCoord.includes("HOLD") || rawCoord.includes("PENDING")
 
@@ -2992,9 +3353,46 @@ function DaftarHadirContent() {
                       )}
                     </td>
 
-                    {/* 7. JADWAL & POSISI ABSENSI (MEJA) */}
+                    {/* 7. JADWAL, TANGGAL & POSISI ABSENSI (MEJA) */}
                     <td className="py-2 px-1 text-center">
                       <div className="inline-flex flex-col items-center gap-1 max-w-full">
+                        {/* Tanggal Pertemuan Badge */}
+                        {attDate ? (
+                          <span 
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9.5px] font-bold bg-indigo-50 text-indigo-900 border border-indigo-200 dark:bg-indigo-950/70 dark:text-indigo-300 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-100 transition-colors"
+                            onClick={() => {
+                              setNotesModalActor(actor)
+                              setCustomStatus(attStatus)
+                              setCustomNotes(notes || "")
+                              setCustomDesk(desk || "")
+                              setCustomSchedule(schedule || "")
+                              setCustomDate(attDate || "")
+                              setCustomCoordinator(actor.coordinator || "")
+                            }}
+                            title="Klik untuk ubah Tanggal / Jadwal"
+                          >
+                            <Calendar className="w-2.5 h-2.5 text-indigo-600 shrink-0" />
+                            <span className="truncate max-w-[130px]">{formatDateIndoShort(attDate)}</span>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNotesModalActor(actor)
+                              setCustomStatus(attStatus)
+                              setCustomNotes(notes || "")
+                              setCustomDesk(desk || "")
+                              setCustomSchedule(schedule || "")
+                              setCustomDate("")
+                              setCustomCoordinator(actor.coordinator || "")
+                            }}
+                            className="inline-flex items-center gap-0.5 text-[10px] text-slate-400 hover:text-indigo-600 font-medium transition-colors cursor-pointer"
+                            title="Klik untuk tentukan tanggal pertemuan"
+                          >
+                            <span>+ Atur Tanggal</span>
+                          </button>
+                        )}
+
                         {/* Meja / Posisi Loket Badge */}
                         {desk ? (
                           <span 
@@ -3005,6 +3403,7 @@ function DaftarHadirContent() {
                               setCustomNotes(notes || "")
                               setCustomDesk(desk || "")
                               setCustomSchedule(schedule || "")
+                              setCustomDate(attDate || "")
                               setCustomCoordinator(actor.coordinator || "")
                             }}
                             title="Klik untuk ubah Meja / Jadwal"
@@ -3021,6 +3420,7 @@ function DaftarHadirContent() {
                               setCustomNotes(notes || "")
                               setCustomDesk("")
                               setCustomSchedule(schedule || "")
+                              setCustomDate(attDate || "")
                               setCustomCoordinator(actor.coordinator || "")
                             }}
                             className="inline-flex items-center gap-0.5 text-[10px] text-slate-400 hover:text-primary font-medium transition-colors cursor-pointer"
@@ -3040,6 +3440,7 @@ function DaftarHadirContent() {
                               setCustomNotes(notes || "")
                               setCustomDesk(desk || "")
                               setCustomSchedule(schedule || "")
+                              setCustomDate(attDate || "")
                               setCustomCoordinator(actor.coordinator || "")
                             }}
                             title="Klik untuk ubah Meja / Jadwal"
@@ -3056,6 +3457,7 @@ function DaftarHadirContent() {
                               setCustomNotes(notes || "")
                               setCustomDesk(desk || "")
                               setCustomSchedule("")
+                              setCustomDate(attDate || "")
                               setCustomCoordinator(actor.coordinator || "")
                             }}
                             className="inline-flex items-center gap-0.5 text-[10px] text-slate-400 hover:text-primary font-medium transition-colors cursor-pointer"
@@ -3230,10 +3632,31 @@ function DaftarHadirContent() {
                 </select>
               </div>
 
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Tetapkan Tanggal Pertemuan Default (Opsional)
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    type="date"
+                    value={/^\d{4}-\d{2}-\d{2}$/.test(batchDate) ? batchDate : ""}
+                    onChange={(e) => setBatchDate(e.target.value)}
+                    className="text-xs h-9 font-medium w-auto cursor-pointer"
+                  />
+                  <Input
+                    type="text"
+                    value={batchDate}
+                    onChange={(e) => setBatchDate(e.target.value)}
+                    placeholder="Pilih atau ketik tanggal pertemuan..."
+                    className="text-xs h-9 font-medium flex-1"
+                  />
+                </div>
+              </div>
+
               <Button
                 type="button"
                 disabled={isSubmitting}
-                onClick={() => executeAutoDistrictAssignment(batchSessionName)}
+                onClick={() => executeAutoDistrictAssignment(batchSessionName, batchDate)}
                 className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs h-10 gap-2 cursor-pointer shadow-sm"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Layers className="w-4 h-4" />}
@@ -3325,10 +3748,28 @@ function DaftarHadirContent() {
                   </div>
                 </div>
 
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Tanggal Pertemuan (Opsional)</label>
+                  <div className="flex items-center gap-1.5">
+                    <Input
+                      type="date"
+                      value={/^\d{4}-\d{2}-\d{2}$/.test(batchCoordDate) ? batchCoordDate : ""}
+                      onChange={(e) => setBatchCoordDate(e.target.value)}
+                      className="text-xs h-9 font-medium w-auto cursor-pointer"
+                    />
+                    <Input
+                      value={batchCoordDate}
+                      onChange={(e) => setBatchCoordDate(e.target.value)}
+                      placeholder="Pilih atau ketik tanggal pertemuan..."
+                      className="text-xs h-9 font-medium flex-1"
+                    />
+                  </div>
+                </div>
+
                 <Button
                   type="button"
                   disabled={isSubmitting || !selectedBatchCoord}
-                  onClick={() => executeCoordinatorAssignment(selectedBatchCoord, batchCoordDesk, batchCoordSchedule)}
+                  onClick={() => executeCoordinatorAssignment(selectedBatchCoord, batchCoordDesk, batchCoordSchedule, batchCoordDate)}
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-9 gap-2 cursor-pointer shadow-sm"
                 >
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
@@ -3445,10 +3886,30 @@ function DaftarHadirContent() {
                 </div>
               </div>
 
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Tetapkan Tanggal Pertemuan (Opsional)
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    type="date"
+                    value={/^\d{4}-\d{2}-\d{2}$/.test(evenSplitDate) ? evenSplitDate : ""}
+                    onChange={(e) => setEvenSplitDate(e.target.value)}
+                    className="text-xs h-9 font-medium w-auto cursor-pointer"
+                  />
+                  <Input
+                    value={evenSplitDate}
+                    onChange={(e) => setEvenSplitDate(e.target.value)}
+                    placeholder="Pilih atau ketik tanggal pertemuan..."
+                    className="text-xs h-9 font-medium flex-1"
+                  />
+                </div>
+              </div>
+
               <Button
                 type="button"
                 disabled={isSubmitting}
-                onClick={() => executeEvenSessionSplit(evenSplitCount)}
+                onClick={() => executeEvenSessionSplit(evenSplitCount, evenSplitDate)}
                 className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs h-10 gap-2 cursor-pointer shadow-sm"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
@@ -3487,12 +3948,30 @@ function DaftarHadirContent() {
                     className="text-xs h-9"
                   />
                 </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Pilih / Ketik Tanggal Pertemuan</label>
+                  <div className="flex items-center gap-1.5">
+                    <Input
+                      type="date"
+                      value={/^\d{4}-\d{2}-\d{2}$/.test(customBatchDate) ? customBatchDate : ""}
+                      onChange={(e) => setCustomBatchDate(e.target.value)}
+                      className="text-xs h-9 font-medium w-auto cursor-pointer"
+                    />
+                    <Input
+                      value={customBatchDate}
+                      onChange={(e) => setCustomBatchDate(e.target.value)}
+                      placeholder="Pilih atau ketik tanggal pertemuan..."
+                      className="text-xs h-9 font-medium flex-1"
+                    />
+                  </div>
+                </div>
               </div>
 
               <Button
                 type="button"
                 disabled={isSubmitting || filteredActors.length === 0}
-                onClick={() => executeCustomBatchAssignment(customBatchDesk, customBatchSchedule)}
+                onClick={() => executeCustomBatchAssignment(customBatchDesk, customBatchSchedule, customBatchDate)}
                 className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-xs h-10 gap-2 cursor-pointer shadow-sm"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
@@ -3623,6 +4102,78 @@ function DaftarHadirContent() {
               </div>
             </div>
 
+            {/* Tanggal Pertemuan */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Tanggal Pertemuan / Pelaksanaan</span>
+                </span>
+                {customDate && (
+                  <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                    {formatDateIndoDisplay(customDate)}
+                  </span>
+                )}
+              </label>
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    type="date"
+                    value={/^\d{4}-\d{2}-\d{2}$/.test(customDate) ? customDate : ""}
+                    onChange={(e) => setCustomDate(e.target.value)}
+                    className="text-xs h-9 font-medium w-auto cursor-pointer"
+                  />
+                  <Input
+                    type="text"
+                    value={customDate}
+                    onChange={(e) => setCustomDate(e.target.value)}
+                    placeholder="Atau ketik tanggal bebas..."
+                    className="text-xs h-9 font-medium flex-1"
+                  />
+                </div>
+                {/* Quick Presets for Date */}
+                <div className="flex flex-wrap gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setCustomDate(new Date().toISOString().split("T")[0])}
+                    className="text-[9px] font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-indigo-100 hover:text-indigo-900 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+                  >
+                    Hari Ini
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const d = new Date()
+                      d.setDate(d.getDate() + 1)
+                      setCustomDate(d.toISOString().split("T")[0])
+                    }}
+                    className="text-[9px] font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-indigo-100 hover:text-indigo-900 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+                  >
+                    Besok
+                  </button>
+                  {savedDatesList.map(dt => (
+                    <button
+                      key={dt}
+                      type="button"
+                      onClick={() => setCustomDate(dt)}
+                      className="text-[9px] font-bold bg-indigo-50 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 hover:bg-indigo-100 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+                    >
+                      {formatDateIndoShort(dt)}
+                    </button>
+                  ))}
+                  {customDate && (
+                    <button
+                      type="button"
+                      onClick={() => setCustomDate("")}
+                      className="text-[9px] font-bold text-rose-500 hover:text-rose-700 px-1 py-0.5 cursor-pointer"
+                    >
+                      Hapus Tanggal
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Sesuaikan Nama Koordinator (Khusus Admin bila ada ketidaksinkronan data seperti Sulastri) */}
             {isAdmin && (
               <div className="space-y-1.5 pt-1 border-t border-slate-100 dark:border-zinc-800">
@@ -3671,7 +4222,8 @@ function DaftarHadirContent() {
                     customNotes, 
                     customDesk, 
                     customSchedule,
-                    customCoordinator
+                    customCoordinator,
+                    customDate
                   )
                 }
               }}
@@ -3858,7 +4410,8 @@ function DaftarHadirContent() {
                         <th className="p-2 text-center w-10">No</th>
                         <th className="p-2">NIK (Kolom C)</th>
                         <th className="p-2">Nama Peserta</th>
-                        <th className="p-2">Jadwal Sesi (Kolom E)</th>
+                        <th className="p-2">Tgl Pertemuan</th>
+                        <th className="p-2">Jadwal Sesi</th>
                         <th className="p-2">Posisi Meja</th>
                         <th className="p-2 text-center">Status</th>
                       </tr>
@@ -3869,6 +4422,7 @@ function DaftarHadirContent() {
                           <td className="p-2 text-center font-bold text-muted-foreground">{idx + 1}</td>
                           <td className="p-2 font-mono font-bold text-primary">{row.rawNik}</td>
                           <td className="p-2 font-bold truncate max-w-[150px]">{row.actor ? row.actor.fullName : <span className="text-muted-foreground italic">-</span>}</td>
+                          <td className="p-2 font-semibold text-indigo-700 dark:text-indigo-300 truncate max-w-[130px]">{row.date ? formatDateIndoShort(row.date) : "-"}</td>
                           <td className="p-2 font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[140px]">{row.schedule || "-"}</td>
                           <td className="p-2 font-semibold text-sky-700 dark:text-sky-300 truncate max-w-[140px]">{row.desk || "-"}</td>
                           <td className="p-2 text-center">
@@ -4161,6 +4715,178 @@ function DaftarHadirContent() {
         description="Apakah Anda yakin ingin mengosongkan seluruh penetapan posisi meja absensi untuk semua peserta? Seluruh data meja dan daftar pilihan meja akan dibersihkan kembali ke kondisi kosong."
         onConfirm={executeClearAllDesks}
         confirmText="Ya, Kosongkan Semua Meja"
+        variant="destructive"
+        icon={<Trash2 className="w-8 h-8 text-destructive" />}
+      />
+
+      {/* ─── MODAL DIALOG: TAMBAH & KELOLA TANGGAL PERTEMUAN ─── */}
+      <Dialog open={showAddDateModal} onOpenChange={setShowAddDateModal}>
+        <DialogContent className="max-w-md rounded-2xl p-5 sm:p-6">
+          <DialogHeader className="pr-8">
+            <DialogTitle className="text-indigo-600 dark:text-indigo-400 font-black uppercase text-sm sm:text-base flex items-center gap-2">
+              <Calendar className="w-5 h-5 shrink-0" />
+              <span>Tambah Tanggal Pertemuan</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 mt-1">
+              Tambahkan tanggal pertemuan baru ke dalam sistem atau terapkan langsung ke peserta yang sedang tampil.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-2">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                Pilih atau Ketik Tanggal Pertemuan
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  value={/^\d{4}-\d{2}-\d{2}$/.test(newDateInput) ? newDateInput : ""}
+                  onChange={(e) => setNewDateInput(e.target.value)}
+                  className="text-xs font-semibold h-10 w-auto cursor-pointer"
+                />
+                <Input
+                  value={newDateInput}
+                  onChange={(e) => setNewDateInput(e.target.value)}
+                  placeholder="Contoh: 2024-11-20 atau ketik tanggal..."
+                  className="text-xs font-semibold h-10 flex-1"
+                />
+              </div>
+
+              {newDateInput && (
+                <div className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 p-2 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                  Format: {formatDateIndoDisplay(newDateInput)}
+                </div>
+              )}
+
+              {/* Tombol Pintas Preset Tanggal */}
+              <div className="pt-1.5">
+                <span className="text-[10px] text-muted-foreground font-bold uppercase block mb-1">
+                  Pilihan Pintas (Klik untuk mengisi):
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setNewDateInput(new Date().toISOString().split("T")[0])}
+                    className="text-[10px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 px-2 py-1 rounded-md transition-colors cursor-pointer"
+                  >
+                    Hari Ini ({new Date().toISOString().split("T")[0]})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const d = new Date()
+                      d.setDate(d.getDate() + 1)
+                      setNewDateInput(d.toISOString().split("T")[0])
+                    }}
+                    className="text-[10px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 px-2 py-1 rounded-md transition-colors cursor-pointer"
+                  >
+                    Besok
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const d = new Date()
+                      d.setDate(d.getDate() + 2)
+                      setNewDateInput(d.toISOString().split("T")[0])
+                    }}
+                    className="text-[10px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 px-2 py-1 rounded-md transition-colors cursor-pointer"
+                  >
+                    Lusa
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Pilihan Penerapan */}
+            <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-200 block">
+                Target Penerapan:
+              </label>
+              <div className="space-y-2 text-xs">
+                <label className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="applyDateTarget"
+                    value="list_only"
+                    checked={applyDateTarget === 'list_only'}
+                    onChange={() => setApplyDateTarget('list_only')}
+                    className="accent-indigo-600"
+                  />
+                  <span>Hanya simpan ke daftar pilihan tanggal (peserta tetap tidak berubah)</span>
+                </label>
+
+                <label className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="applyDateTarget"
+                    value="filtered_actors"
+                    checked={applyDateTarget === 'filtered_actors'}
+                    onChange={() => setApplyDateTarget('filtered_actors')}
+                    className="accent-indigo-600"
+                  />
+                  <span>Terapkan langsung ke <strong>{filteredActors.length} pelaku usaha</strong> yang sedang tampil</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Daftar Tanggal yang Saat Ini Tersimpan */}
+            {savedDatesList.length > 0 && (
+              <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-1.5">
+                <span className="text-[10px] text-muted-foreground font-bold uppercase block">
+                  Daftar Tanggal Tersimpan ({savedDatesList.length}):
+                </span>
+                <div className="max-h-28 overflow-y-auto space-y-1 divide-y divide-slate-100 dark:divide-zinc-800 border rounded-lg p-1.5">
+                  {savedDatesList.map(d => (
+                    <div key={d} className="flex items-center justify-between text-xs py-1 px-1">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        {formatDateIndoDisplay(d)} <span className="text-[10px] text-muted-foreground">({d})</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSavedDate(d)}
+                        className="text-rose-500 hover:text-rose-700 text-[10px] font-bold px-1.5 py-0.5 rounded hover:bg-rose-50 cursor-pointer"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="mt-4 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddDateModal(false)}
+              className="text-xs font-bold"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleAddDate}
+              disabled={!newDateInput.trim() || isSubmitting}
+              className="text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 shadow-xs cursor-pointer"
+            >
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              <span>Simpan Tanggal</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── CONFIRM DIALOG: KOSONGKAN SELURUH TANGGAL ─── */}
+      <ConfirmDialog
+        open={showClearDateDialog}
+        onOpenChange={setShowClearDateDialog}
+        title="Kosongkan Seluruh Tanggal Pertemuan"
+        description="Apakah Anda yakin ingin mengosongkan seluruh penetapan tanggal pertemuan untuk semua peserta? Seluruh data tanggal dan daftar pilihan tanggal akan dibersihkan kembali ke kondisi kosong."
+        onConfirm={executeClearAllDates}
+        confirmText="Ya, Kosongkan Semua Tanggal"
         variant="destructive"
         icon={<Trash2 className="w-8 h-8 text-destructive" />}
       />

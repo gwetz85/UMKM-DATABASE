@@ -437,8 +437,23 @@ function CekDaftarHadirContent() {
   // Schedule display value
   const scheduleDisplay = useMemo(() => {
     if (!selectedActor) return "--"
-    const sch = (selectedActor as any).attendanceSchedule
-    if (sch && sch.trim()) return sch.trim()
+    const sch = ((selectedActor as any).attendanceSchedule || "").trim()
+    const dt = ((selectedActor as any).attendanceDate || "").trim()
+
+    let formattedDt = dt
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dt)) {
+      try {
+        const [y, m, d] = dt.split("-").map(Number)
+        const dateObj = new Date(y, m - 1, d)
+        if (!isNaN(dateObj.getTime())) {
+          formattedDt = `${DAYS_INDO[dateObj.getDay()]}, ${d} ${MONTHS_INDO[dateObj.getMonth()]} ${y}`
+        }
+      } catch {}
+    }
+
+    if (formattedDt && sch) return `${formattedDt} • ${sch}`
+    if (formattedDt) return formattedDt
+    if (sch) return sch
     return fullDateString || "-"
   }, [selectedActor, fullDateString])
 
