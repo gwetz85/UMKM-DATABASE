@@ -5,6 +5,12 @@ import { DatabaseReference, onValue } from 'firebase/database';
 
 const objectMemoryCache = new Map<string, any>();
 
+if (typeof window !== 'undefined') {
+  window.addEventListener('simpu_cache_invalidated', () => {
+    objectMemoryCache.clear();
+  });
+}
+
 function getRefKey(refOrQuery: any): string {
   if (!refOrQuery) return '';
   const url = typeof refOrQuery.toString === 'function' ? refOrQuery.toString() : '';

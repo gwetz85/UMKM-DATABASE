@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useMemo, Suspense } from "react"
+import { useState, useMemo, useEffect, useCallback, Suspense } from "react"
 import { useUser, useDatabase, useMemoFirebase, useList } from "@/firebase"
-import { ref, query, orderByChild, equalTo } from "firebase/database"
+import { ref, query, orderByChild, equalTo, get } from "firebase/database"
 import { BusinessActor } from "../lib/types"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -67,11 +67,56 @@ function CetakBerkasContent() {
 
   const { data: allData, isLoading } = useList<BusinessActor>(memoQuery)
 
+  // Data pencarian terindeks cepat dari settings/actors_search
+  const [searchIndexData, setSearchIndexData] = useState<BusinessActor[]>([])
+  const [isLoadingSearch, setIsLoadingSearch] = useState<boolean>(true)
+
+  const loadSearchData = useCallback(async () => {
+    if (!database) return
+    try {
+      const snap = await get(ref(database, "settings/actors_search"))
+      if (snap.exists()) {
+        const val = snap.val() || {}
+        const list: BusinessActor[] = Object.entries(val).map(([id, item]: [string, any]) => ({
+          ...item,
+          id,
+        }))
+        const finishList = list.filter((a) => a.status === "finish")
+        if (finishList.length > 0) {
+          setSearchIndexData(finishList)
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load settings/actors_search in cetak-berkas:", e)
+    } finally {
+      setIsLoadingSearch(false)
+    }
+  }, [database])
+
+  useEffect(() => {
+    loadSearchData()
+    const handleInvalidate = () => {
+      loadSearchData()
+    }
+    window.addEventListener("simpu_cache_invalidated", handleInvalidate)
+    return () => window.removeEventListener("simpu_cache_invalidated", handleInvalidate)
+  }, [loadSearchData])
+
+  // Gabungkan / prioritaskan searchIndexData (cepat & selalu ter-update) atau allData dari query
+  const effectiveData = useMemo(() => {
+    if (searchIndexData && searchIndexData.length > 0) {
+      return searchIndexData
+    }
+    return allData || []
+  }, [searchIndexData, allData])
+
+  const effectiveLoading = isLoading && (!effectiveData || effectiveData.length === 0)
+
   // Daftar Koordinator unik yang memiliki data selesai dan ada rekening
   const coordinatorsList = useMemo(() => {
-    if (!allData) return []
+    if (!effectiveData) return []
     const map = new Map<string, BusinessActor[]>()
-    allData
+    effectiveData
       .filter((a) => a.status === "finish" && a.bankNumber && a.bankNumber.trim() !== "")
       .forEach((a) => {
         const coordName = (a.coordinator || "TANPA KOORDINATOR").toUpperCase().trim()
@@ -87,7 +132,7 @@ function CetakBerkasContent() {
         actors,
       }))
       .sort((a, b) => a.name.localeCompare(b.name))
-  }, [allData])
+  }, [effectiveData])
 
   // Filter Koordinator pada modal dialog
   const filteredCoordinatorsModal = useMemo(() => {
@@ -98,8 +143,8 @@ function CetakBerkasContent() {
 
   // Filter data pelaku usaha: status finish + bankNumber terisi + koordinator + pencarian
   const filteredActors = useMemo(() => {
-    if (!allData) return []
-    return allData
+    if (!effectiveData) return []
+    return effectiveData
       .filter((a) => a.status === "finish" && a.bankNumber && a.bankNumber.trim() !== "")
       .filter((a) => {
         if (selectedCoordinator && selectedCoordinator !== "all") {
@@ -118,13 +163,22 @@ function CetakBerkasContent() {
         )
       })
       .sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""))
-  }, [allData, searchQuery, selectedCoordinator])
+  }, [effectiveData, searchQuery, selectedCoordinator])
 
   const handlePrintSingle = async (actor: BusinessActor) => {
     try {
       setPrintingId(actor.id)
+      let fullActor = actor
+      if (database && (!actor.address || !actor.businessName)) {
+        try {
+          const snap = await get(ref(database, `businessActors/${actor.id}`))
+          if (snap.exists()) {
+            fullActor = { ...snap.val(), id: actor.id }
+          }
+        } catch {}
+      }
       const { generateSuratPernyataan } = await import("@/lib/pdf-generator")
-      await generateSuratPernyataan(actor)
+      await generateSuratPernyataan(fullActor)
       logActivity({
         query: `CETAK BERKAS PENCAIRAN: ${actor.fullName} (${actor.nik})`,
         results: "Berhasil",
@@ -219,7 +273,7 @@ function CetakBerkasContent() {
               </SelectTrigger>
               <SelectContent className="max-h-72">
                 <SelectItem value="all" className="font-bold text-xs">
-                  Semua Koordinator ({allData?.filter((a) => a.status === "finish" && a.bankNumber)?.length ?? 0})
+                  Semua Koordinator ({effectiveData?.filter((a) => a.status === "finish" && a.bankNumber)?.length ?? 0})
                 </SelectItem>
                 {coordinatorsList.map((c) => (
                   <SelectItem key={c.name} value={c.name} className="text-xs font-semibold">
@@ -276,21 +330,21 @@ function CetakBerkasContent() {
         {[
           {
             label: "Total Selesai",
-            value: allData?.filter((a) => a.status === "finish").length ?? 0,
+            value: effectiveData?.filter((a) => a.status === "finish").length ?? 0,
             icon: CheckCircle2,
             color: "text-emerald-600",
             bg: "bg-emerald-50",
           },
           {
             label: "Ada Rekening",
-            value: allData?.filter((a) => a.status === "finish" && a.bankNumber).length ?? 0,
+            value: effectiveData?.filter((a) => a.status === "finish" && a.bankNumber).length ?? 0,
             icon: CreditCard,
             color: "text-primary",
             bg: "bg-primary/10",
           },
           {
             label: "Belum Ada Rekening",
-            value: allData?.filter((a) => a.status === "finish" && !a.bankNumber).length ?? 0,
+            value: effectiveData?.filter((a) => a.status === "finish" && !a.bankNumber).length ?? 0,
             icon: AlertCircle,
             color: "text-amber-600",
             bg: "bg-amber-50",
@@ -349,7 +403,7 @@ function CetakBerkasContent() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {isLoading ? (
+          {effectiveLoading ? (
             <div className="py-24 flex flex-col items-center justify-center gap-4 text-muted-foreground">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
               <p className="font-bold animate-pulse uppercase tracking-widest text-xs">Memuat Data...</p>
@@ -650,7 +704,7 @@ function CetakBerkasContent() {
 
           <DialogFooter className="p-4 bg-slate-50 border-t flex justify-between items-center sm:justify-between">
             <span className="text-xs font-bold text-slate-500">
-              Total: {coordinatorsList.length} Koordinator ({allData?.filter((a) => a.status === "finish" && a.bankNumber)?.length ?? 0} Berkas)
+              Total: {coordinatorsList.length} Koordinator ({effectiveData?.filter((a) => a.status === "finish" && a.bankNumber)?.length ?? 0} Berkas)
             </span>
             <Button variant="outline" size="sm" onClick={() => setShowCoordinatorModal(false)} className="font-bold text-xs rounded-xl">
               Tutup

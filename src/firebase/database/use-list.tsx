@@ -29,8 +29,65 @@ function getRefKey(refOrQuery: any): string {
   return `${url}::${params}`;
 }
 
-const DB_NAME = 'simpu_rtdb_cache';
+const DB_NAME = 'simpu_rtdb_cache_v3';
 const STORE_NAME = 'query_lists';
+const CACHE_VERSION_KEY = 'simpu_cache_global_version';
+const CURRENT_CACHE_VERSION = 'v3.1';
+
+// Auto-purge stale cache if version mismatch or old schema
+if (typeof window !== 'undefined') {
+  try {
+    const storedVer = localStorage.getItem(CACHE_VERSION_KEY);
+    if (storedVer !== CURRENT_CACHE_VERSION) {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith('rtdb_list_') || k.startsWith('rtdb_obj_') || k.startsWith('simpu_actors_search_cache'))) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+      localStorage.setItem(CACHE_VERSION_KEY, CURRENT_CACHE_VERSION);
+
+      if (window.indexedDB) {
+        try { window.indexedDB.deleteDatabase('simpu_rtdb_cache'); } catch {}
+        try { window.indexedDB.deleteDatabase('simpu_rtdb_cache_v2'); } catch {}
+      }
+    }
+  } catch {}
+}
+
+export function clearRtdbCache(): void {
+  memoryCache.clear();
+  if (typeof window !== 'undefined') {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith('rtdb_list_') || k.startsWith('rtdb_obj_'))) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+      if (window.indexedDB) {
+        getCacheDB().then(db => {
+          if (db) {
+            try {
+              const tx = db.transaction(STORE_NAME, 'readwrite');
+              tx.objectStore(STORE_NAME).clear();
+            } catch {}
+          }
+        });
+      }
+    } catch {}
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('simpu_cache_invalidated', () => {
+    clearRtdbCache();
+  });
+}
 
 let dbPromise: Promise<IDBDatabase | null> | null = null;
 function getCacheDB(): Promise<IDBDatabase | null> {
