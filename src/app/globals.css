@@ -1814,10 +1814,18 @@ html, body {
   color: #ffffff !important;
 }
 
+.dark .sidebar-active-icon,
 .dark [data-sidebar="menu-button"][data-active="true"] .sidebar-active-icon,
 .dark .sidebar-item-active .sidebar-active-icon {
   background-color: #ffffff !important;
   color: #047857 !important;
+}
+
+.dark .sidebar-active-icon svg,
+.dark [data-sidebar="menu-button"][data-active="true"] .sidebar-active-icon svg,
+.dark .sidebar-item-active .sidebar-active-icon svg {
+  color: #047857 !important;
+  stroke: #047857 !important;
 }
 
 .dark [data-sidebar="menu-button"]:not([data-active="true"]):hover,

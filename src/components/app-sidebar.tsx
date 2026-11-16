@@ -418,9 +418,15 @@ export function AppSidebar() {
                                     color: itemColor 
                                   }}
                                 >
-                                  <item.icon className="w-4 h-4" />
-                                </div>
-                                <span className="font-bold text-xs text-slate-900 dark:text-slate-200 uppercase tracking-tight truncate group-data-[collapsible=icon]:hidden">
+                                  <item.icon 
+                                  className="w-4 h-4 transition-colors" 
+                                  style={{
+                                    color: itemColor,
+                                    stroke: itemColor
+                                  }}
+                                />
+                              </div>
+                              <span className="font-bold text-xs text-slate-900 dark:text-slate-200 uppercase tracking-tight truncate group-data-[collapsible=icon]:hidden">
                                   {item.name}
                                 </span>
                                 <ChevronRight className="ml-auto w-3.5 h-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden text-slate-500 dark:text-slate-400" />
@@ -495,7 +501,16 @@ export function AppSidebar() {
                                 color: isActive ? "#047857" : itemColor 
                               }}
                             >
-                              <item.icon className="w-4 h-4" />
+                              <item.icon 
+                                className={cn(
+                                  "w-4 h-4 transition-colors",
+                                  isActive ? "text-emerald-700 dark:text-emerald-700" : ""
+                                )} 
+                                style={{
+                                  color: isActive ? "#047857" : itemColor,
+                                  stroke: isActive ? "#047857" : itemColor
+                                }}
+                              />
                             </div>
                             <span className={cn(
                               "truncate group-data-[collapsible=icon]:hidden font-bold text-xs tracking-tight uppercase",
