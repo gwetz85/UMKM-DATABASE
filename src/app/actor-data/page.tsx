@@ -1272,23 +1272,6 @@ function ActorDataContent() {
     }
   }
 
-  // Otomatis ubah koordinator DKUKM menjadi AGUS jika ditemukan
-  useEffect(() => {
-    if (!database || !isAdmin || !allActorsRaw) return
-    const dkukmActors = allActorsRaw.filter(a => a.coordinator && a.coordinator.toUpperCase().includes('DKUKM'))
-    if (dkukmActors.length > 0) {
-      const updates: Record<string, any> = {}
-      dkukmActors.forEach(a => {
-        updates[`businessActors/${a.id}/coordinator`] = 'AGUS'
-      })
-      import("firebase/database").then(({ update }) => {
-        update(ref(database), updates).then(() => {
-          handleSyncStats(true)
-        }).catch(err => console.error("Error auto-updating DKUKM to AGUS:", err))
-      })
-    }
-  }, [database, isAdmin, allActorsRaw])
-
   const handleSaveFullEdit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!isAdmin || !database || !viewingActor) return

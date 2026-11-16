@@ -27,14 +27,7 @@ export default function KuotaKorlapDewanAktifPage() {
   const [editingData, setEditingData] = useState<any>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deletePending, setDeletePending] = useState<{ id: string; name: string } | null>(null)
-  const [renamePending, setRenamePending] = useState<{
-    oldName: string
-    newName: string
-    quota: number
-    affectedCount: number
-  } | null>(null)
-  const [showRenameConfirm, setShowRenameConfirm] = useState(false)
-  const [isRenaming, setIsRenaming] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
   
   const [isSyncing, setIsSyncing] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -98,7 +91,7 @@ export default function KuotaKorlapDewanAktifPage() {
 
     const formData = new FormData(e.currentTarget)
     const rawName = formData.get("name") as string
-    const name = normalizeCoordinator(rawName).toUpperCase().trim()
+    const name = (rawName || "").trim().toUpperCase()
     const quotaStr = formData.get("quota") as string
     const phone = formData.get("phone") as string
     const quota = parseInt(quotaStr, 10)
@@ -136,109 +129,88 @@ export default function KuotaKorlapDewanAktifPage() {
     })
   }
 
-  const performUpdate = (name: string, quota: number, phone: string) => {
-    if (!editingData || !database) return
-    const dataRef = ref(database, `koordinator_kuotas/${editingData.id}`)
-    set(dataRef, {
-      name,
-      quota,
-      phone: phone || '',
-      addedAt: editingData.addedAt || new Date().toISOString()
-    }).then(() => {
-      logActivity({
-        query: `UBAH KUOTA KORLAP: ${name} (${quota})`,
-        results: "Berhasil",
-        device: getDeviceType(navigator.userAgent),
-        source: 'Web',
-        method: 'KUOTA KOORDINATOR',
-        userId: user?.email || user?.uid || 'Admin'
-      })
-      toast({ title: "Berhasil Diperbarui", description: `Ubah target kuota untuk ${name}.` })
-      setEditingData(null)
-    }).catch((error) => {
-      console.error("Firebase Error (Update):", error)
-      toast({
-        variant: "destructive",
-        title: "Gagal Update Data",
-        description: error.message || "Terjadi kesalahan sistem."
-      })
-    })
-  }
-
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!editingData || !database) return
+    if (!editingData || !database || isUpdating) return
 
     const formData = new FormData(e.currentTarget)
     const rawName = formData.get("name") as string
-    const name = normalizeCoordinator(rawName).toUpperCase().trim()
+    const name = (rawName || "").trim().toUpperCase()
     const quotaStr = formData.get("quota") as string
-    const phone = formData.get("phone") as string
+    const phone = (formData.get("phone") as string || "").trim()
     const quota = parseInt(quotaStr, 10)
 
-    if (!name || isNaN(quota)) return
-
-    const oldName = editingData.name || ''
-    const nameChanged = name.toUpperCase().trim() !== oldName.toUpperCase().trim()
-
-    if (nameChanged) {
-      // Count how many businessActors use the old name via targeted query
-      let affectedCount = 0
-      try {
-        const q = query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(oldName.toUpperCase().trim()))
-        const snap = await get(q)
-        if (snap.exists()) {
-          affectedCount = Object.keys(snap.val()).length
-        }
-      } catch (err) {
-        console.error(err)
-      }
-      setRenamePending({ oldName, newName: name, quota, affectedCount })
-      setShowRenameConfirm(true)
+    if (!name || isNaN(quota)) {
+      toast({
+        variant: "destructive",
+        title: "Data Tidak Lengkap",
+        description: "Nama koordinator dan kuota wajib diisi."
+      })
       return
     }
 
-    // Only quota changed – no batch update needed
-    performUpdate(name, quota, phone || '')
-  }
-
-  const confirmRenameUpdate = async () => {
-    if (!renamePending || !editingData || !database) return
-    setIsRenaming(true)
+    setIsUpdating(true)
     try {
-      const { oldName, newName, quota } = renamePending
+      const oldName = (editingData.name || "").trim().toUpperCase()
+      const nameChanged = name !== oldName
 
-      // 1. Update the kuota entry
+      // 1. Update entry in koordinator_kuotas
       const dataRef = ref(database, `koordinator_kuotas/${editingData.id}`)
       await set(dataRef, {
-        name: newName,
+        name,
         quota,
-        phone: editingData.phone || '',
+        phone,
         addedAt: editingData.addedAt || new Date().toISOString()
       })
 
-      // 2. Batch-update all matching businessActors via targeted query
-      const updates: Record<string, any> = {}
-      const q = query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(oldName.toUpperCase().trim()))
-      const snap = await get(q)
-      if (snap.exists()) {
-        Object.keys(snap.val()).forEach((actorId) => {
-          updates[`businessActors/${actorId}/coordinator`] = newName
-        })
+      let updatedCount = 0
+
+      // 2. Cascade rename to businessActors if name was changed
+      if (nameChanged && oldName) {
+        const { get, query, orderByChild, equalTo, update } = await import("firebase/database")
+        const updates: Record<string, any> = {}
+
+        const q = query(
+          ref(database, 'businessActors'),
+          orderByChild('coordinator'),
+          equalTo(oldName)
+        )
+        const snap = await get(q)
+        if (snap.exists()) {
+          snap.forEach((child) => {
+            updates[`businessActors/${child.key}/coordinator`] = name
+          })
+        }
+
+        const rawOld = (editingData.name || "").trim()
+        if (rawOld && rawOld !== oldName) {
+          const q2 = query(
+            ref(database, 'businessActors'),
+            orderByChild('coordinator'),
+            equalTo(rawOld)
+          )
+          const snap2 = await get(q2)
+          if (snap2.exists()) {
+            snap2.forEach((child) => {
+              updates[`businessActors/${child.key}/coordinator`] = name
+            })
+          }
+        }
+
+        if (Object.keys(updates).length > 0) {
+          await update(ref(database), updates)
+          updatedCount = Object.keys(updates).length
+        }
+
+        // Recalculate system_stats so coordinator counts update immediately
+        const { recalculateAndSaveSystemStats } = await import("@/lib/stats-service")
+        await recalculateAndSaveSystemStats(database)
       }
 
-      if (Object.keys(updates).length > 0) {
-        await update(ref(database), updates)
-      }
-
-      // Sync system_stats so coordinator counts update immediately
-      import("@/lib/stats-service").then(({ recalculateAndSaveSystemStats }) => {
-        recalculateAndSaveSystemStats(database).catch(console.error)
-      })
-
-      const updatedCount = Object.keys(updates).length
       logActivity({
-        query: `UBAH NAMA KORLAP: "${oldName}" → "${newName}" (${updatedCount} data diperbarui)`,
+        query: nameChanged
+          ? `UBAH NAMA KORLAP: "${oldName}" → "${name}" (${updatedCount} data diperbarui)`
+          : `UPDATE KUOTA KORLAP: ${name} (${quota})`,
         results: "Berhasil",
         device: getDeviceType(navigator.userAgent),
         source: 'Web',
@@ -248,21 +220,21 @@ export default function KuotaKorlapDewanAktifPage() {
 
       toast({
         title: "Berhasil Diperbarui",
-        description: `Nama koordinator diubah ke "${newName}". ${updatedCount} data pelaku usaha ikut diperbarui.`
+        description: nameChanged && updatedCount > 0
+          ? `Nama koordinator diubah ke "${name}". ${updatedCount} data pelaku usaha ikut diperbarui.`
+          : `Target kuota untuk ${name} berhasil disimpan.`
       })
 
-      setShowRenameConfirm(false)
-      setRenamePending(null)
       setEditingData(null)
     } catch (error: any) {
-      console.error("Firebase Error (Rename):", error)
+      console.error("Firebase Error (Update):", error)
       toast({
         variant: "destructive",
         title: "Gagal Update Data",
         description: error.message || "Terjadi kesalahan sistem."
       })
     } finally {
-      setIsRenaming(false)
+      setIsUpdating(false)
     }
   }
 
@@ -730,7 +702,7 @@ export default function KuotaKorlapDewanAktifPage() {
       </Card>
 
       {/* Shared Edit Dialog */}
-      <Dialog open={!!editingData} onOpenChange={(open) => { if (!open) setEditingData(null) }}>
+      <Dialog open={!!editingData} onOpenChange={(open) => { if (!open && !isUpdating) setEditingData(null) }}>
         <DialogContent>
           {editingData && (
             <form onSubmit={handleUpdate}>
@@ -742,20 +714,29 @@ export default function KuotaKorlapDewanAktifPage() {
                 <div className="grid gap-4 py-4">
                   <div className="space-y-2">
                     <Label className="font-bold">Nama Koordinator</Label>
-                    <Input name="name" defaultValue={editingData.name} key={`name-${editingData.id}`} required />
+                    <Input name="name" defaultValue={editingData.name} key={`name-${editingData.id}`} required disabled={isUpdating} />
+                    <p className="text-[11px] text-muted-foreground">
+                      Jika nama diubah, seluruh data pelaku usaha terkait akan otomatis diperbarui.
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label className="font-bold">Nomor Ponsel</Label>
-                    <Input name="phone" type="tel" defaultValue={editingData.phone || ''} key={`phone-${editingData.id}`} placeholder="08xxxxxxxxxx" />
+                    <Input name="phone" type="tel" defaultValue={editingData.phone || ''} key={`phone-${editingData.id}`} placeholder="08xxxxxxxxxx" disabled={isUpdating} />
                   </div>
                   <div className="space-y-2">
                     <Label className="font-bold">Jumlah Kuota</Label>
-                    <Input name="quota" type="number" min="0" defaultValue={editingData.quota} key={`quota-${editingData.id}`} required />
+                    <Input name="quota" type="number" min="0" defaultValue={editingData.quota} key={`quota-${editingData.id}`} required disabled={isUpdating} />
                   </div>
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" className="w-full font-bold">Simpan Perubahan</Button>
+                <Button type="submit" className="w-full font-bold" disabled={isUpdating}>
+                  {isUpdating ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Menyimpan Perubahan...</>
+                  ) : (
+                    "Simpan Perubahan"
+                  )}
+                </Button>
               </DialogFooter>
             </form>
           )}
@@ -773,61 +754,6 @@ export default function KuotaKorlapDewanAktifPage() {
         variant="destructive"
         onConfirm={confirmDelete}
       />
-
-      {/* Rename Confirmation Dialog */}
-      <Dialog open={showRenameConfirm} onOpenChange={(open) => { if (!isRenaming) setShowRenameConfirm(open) }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-amber-600 font-black uppercase">
-              <RefreshCw className="w-5 h-5" />
-              Konfirmasi Perubahan Nama
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500 font-semibold w-20 shrink-0">Nama Lama</span>
-                <span className="font-black text-red-600 line-through">{renamePending?.oldName}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500 font-semibold w-20 shrink-0">Nama Baru</span>
-                <span className="font-black text-emerald-600">{renamePending?.newName}</span>
-              </div>
-            </div>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Perubahan nama ini akan memperbarui nama koordinator di{" "}
-              <span className="font-black text-primary">{renamePending?.affectedCount ?? 0} data pelaku usaha</span>{" "}
-              yang terdaftar atas nama koordinator ini secara otomatis.
-            </p>
-            {renamePending?.affectedCount === 0 && (
-              <p className="text-xs text-muted-foreground italic">
-                Tidak ada data pelaku usaha yang terdaftar atas nama koordinator ini.
-              </p>
-            )}
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowRenameConfirm(false)}
-              disabled={isRenaming}
-              className="font-bold"
-            >
-              Batal
-            </Button>
-            <Button
-              onClick={confirmRenameUpdate}
-              disabled={isRenaming}
-              className="font-bold bg-amber-500 hover:bg-amber-600 text-white"
-            >
-              {isRenaming ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memperbarui...</>
-              ) : (
-                <><RefreshCw className="w-4 h-4 mr-2" /> Ya, Perbarui Semua</>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
