@@ -454,10 +454,11 @@ export default function DashboardStatsPage() {
         sublabel: "Data Terkini",
         percentage: "100%",
         icon: Building2,
-        iconBg: "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/50",
-        badgeColor: "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/40",
-        accentBorder: "hover:border-indigo-400/80 group-hover:shadow-indigo-500/10",
+        iconBg: "bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-500/30",
+        badgeColor: "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-500/30",
+        accentBorder: "hover:border-indigo-400/80 dark:hover:border-indigo-500/80 group-hover:shadow-indigo-500/10",
         barColor: "bg-indigo-500",
+        barHex: "#6366f1",
         barPercent: 100,
         filterType: "total",
         filterName: "Total Seluruh Berkas UMKM"
@@ -469,10 +470,11 @@ export default function DashboardStatsPage() {
         sublabel: "Lolos Verifikasi",
         percentage: `${getPercentage(statsValues.verified, total)}%`,
         icon: UserCheck,
-        iconBg: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50",
-        badgeColor: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40",
-        accentBorder: "hover:border-emerald-400/80 group-hover:shadow-emerald-500/10",
+        iconBg: "bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/30",
+        badgeColor: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30",
+        accentBorder: "hover:border-emerald-400/80 dark:hover:border-emerald-500/80 group-hover:shadow-emerald-500/10",
         barColor: "bg-emerald-500",
+        barHex: "#10b981",
         barPercent: Number(getPercentage(statsValues.verified, total)),
         filterType: "verified",
         filterName: "Data Terverifikasi"
@@ -484,10 +486,11 @@ export default function DashboardStatsPage() {
         sublabel: "Tahap 1 Lapangan",
         percentage: `${getPercentage(statsValues.surveyDinas, verified)}%`,
         icon: ClipboardCheck,
-        iconBg: "bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/50",
-        badgeColor: "bg-purple-50 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/40",
-        accentBorder: "hover:border-purple-400/80 group-hover:shadow-purple-500/10",
+        iconBg: "bg-purple-50 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-500/30",
+        badgeColor: "bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 border border-purple-200/60 dark:border-purple-500/30",
+        accentBorder: "hover:border-purple-400/80 dark:hover:border-purple-500/80 group-hover:shadow-purple-500/10",
         barColor: "bg-purple-500",
+        barHex: "#a855f7",
         barPercent: Number(getPercentage(statsValues.surveyDinas, verified)),
         filterType: "survey_dinas",
         filterName: "Tahap 1: Survey Dinas Lapangan"
@@ -499,10 +502,11 @@ export default function DashboardStatsPage() {
         sublabel: "Tahap 2 Cek Berkas",
         percentage: `${getPercentage(statsValues.verifikasiDinas, verified)}%`,
         icon: FileText,
-        iconBg: "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/50",
-        badgeColor: "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40",
-        accentBorder: "hover:border-blue-400/80 group-hover:shadow-blue-500/10",
+        iconBg: "bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-500/30",
+        badgeColor: "bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 border border-blue-200/60 dark:border-blue-500/30",
+        accentBorder: "hover:border-blue-400/80 dark:hover:border-blue-500/80 group-hover:shadow-blue-500/10",
         barColor: "bg-blue-500",
+        barHex: "#3b82f6",
         barPercent: Number(getPercentage(statsValues.verifikasiDinas, verified)),
         filterType: "verifikasi_dinas",
         filterName: "Tahap 2: Verifikasi Berkas Dinas"
@@ -514,10 +518,11 @@ export default function DashboardStatsPage() {
         sublabel: "Tahap 4 Final Bank",
         percentage: `${getPercentage(statsValues.selesai, verified)}%`,
         icon: CreditCard,
-        iconBg: "bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-200/60 dark:border-sky-800/50",
-        badgeColor: "bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border border-sky-200/60 dark:border-sky-800/40",
-        accentBorder: "hover:border-sky-400/80 group-hover:shadow-sky-500/10",
+        iconBg: "bg-sky-50 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 border border-sky-200/60 dark:border-sky-500/30",
+        badgeColor: "bg-sky-50 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300 border border-sky-200/60 dark:border-sky-500/30",
+        accentBorder: "hover:border-sky-400/80 dark:hover:border-sky-500/80 group-hover:shadow-sky-500/10",
         barColor: "bg-sky-500",
+        barHex: "#0ea5e9",
         barPercent: Number(getPercentage(statsValues.selesai, verified)),
         filterType: "selesai",
         filterName: "Tahap 4: Input Rekening Bank Selesai"
@@ -529,10 +534,11 @@ export default function DashboardStatsPage() {
         sublabel: "Admin & Dinas",
         percentage: `${getPercentage(statsValues.rejected, total)}%`,
         icon: UserX,
-        iconBg: "bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/50",
-        badgeColor: "bg-rose-50 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/40",
-        accentBorder: "hover:border-rose-400/80 group-hover:shadow-rose-500/10",
+        iconBg: "bg-rose-50 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-500/30",
+        badgeColor: "bg-rose-50 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300 border border-rose-200/60 dark:border-rose-500/30",
+        accentBorder: "hover:border-rose-400/80 dark:hover:border-rose-500/80 group-hover:shadow-rose-500/10",
         barColor: "bg-rose-500",
+        barHex: "#f43f5e",
         barPercent: Number(getPercentage(statsValues.rejected, total)),
         filterType: "rejected",
         filterName: "Data Dibatalkan & Ditolak"
@@ -544,10 +550,11 @@ export default function DashboardStatsPage() {
         sublabel: "Proporsi Gender",
         percentage: `${getPercentage(statsValues.laki, total)}%`,
         icon: Users,
-        iconBg: "bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 border border-cyan-200/60 dark:border-cyan-800/50",
-        badgeColor: "bg-cyan-50 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300 border border-cyan-200/60 dark:border-cyan-800/40",
-        accentBorder: "hover:border-cyan-400/80 group-hover:shadow-cyan-500/10",
+        iconBg: "bg-cyan-50 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-200/60 dark:border-cyan-500/30",
+        badgeColor: "bg-cyan-50 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300 border border-cyan-200/60 dark:border-cyan-500/30",
+        accentBorder: "hover:border-cyan-400/80 dark:hover:border-cyan-500/80 group-hover:shadow-cyan-500/10",
         barColor: "bg-cyan-500",
+        barHex: "#06b6d4",
         barPercent: Number(getPercentage(statsValues.laki, total)),
         filterType: "laki",
         filterName: "Pelaku Usaha Laki-Laki"
@@ -559,10 +566,11 @@ export default function DashboardStatsPage() {
         sublabel: "Proporsi Gender",
         percentage: `${getPercentage(statsValues.perempuan, total)}%`,
         icon: Users,
-        iconBg: "bg-pink-50 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 border border-pink-200/60 dark:border-pink-800/50",
-        badgeColor: "bg-pink-50 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300 border border-pink-200/60 dark:border-pink-800/40",
-        accentBorder: "hover:border-pink-400/80 group-hover:shadow-pink-500/10",
+        iconBg: "bg-pink-50 dark:bg-pink-500/20 text-pink-600 dark:text-pink-400 border border-pink-200/60 dark:border-pink-500/30",
+        badgeColor: "bg-pink-50 text-pink-700 dark:bg-pink-500/20 dark:text-pink-300 border border-pink-200/60 dark:border-pink-500/30",
+        accentBorder: "hover:border-pink-400/80 dark:hover:border-pink-500/80 group-hover:shadow-pink-500/10",
         barColor: "bg-pink-500",
+        barHex: "#ec4899",
         barPercent: Number(getPercentage(statsValues.perempuan, total)),
         filterType: "perempuan",
         filterName: "Pelaku Usaha Perempuan"
@@ -706,8 +714,8 @@ export default function DashboardStatsPage() {
                     <h3 className="text-base font-black text-slate-900 dark:text-white">
                       Statistik Data UMKM
                     </h3>
-                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-500/30 shadow-2xs">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0 inline-block shadow-xs shadow-emerald-500/50" />
                       Realtime
                     </span>
                   </div>
@@ -721,12 +729,16 @@ export default function DashboardStatsPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-3">
                 {metricCards.map((card) => {
                   const Icon = card.icon
+                  const isSelected = selectedFilter?.filterType === card.filterType
                   return (
                     <div
                       key={card.id}
                       onClick={() => setSelectedFilter({ name: card.filterName, filterType: card.filterType })}
                       className={cn(
-                        "p-3 rounded-2xl bg-slate-50/70 hover:bg-slate-100/90 dark:bg-slate-900/60 dark:hover:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 transition-all duration-200 cursor-pointer active:scale-95 group flex flex-col justify-between shadow-2xs hover:shadow-md",
+                        "p-3 rounded-2xl bg-white hover:bg-slate-50/90 dark:bg-slate-900 dark:hover:bg-slate-800/80 border transition-all duration-200 cursor-pointer active:scale-95 group flex flex-col justify-between shadow-2xs hover:shadow-md",
+                        isSelected
+                          ? "border-primary ring-2 ring-primary/20 dark:ring-primary/30"
+                          : "border-slate-200/70 dark:border-slate-800",
                         card.accentBorder
                       )}
                     >
@@ -735,7 +747,7 @@ export default function DashboardStatsPage() {
                           <Icon className="w-3.5 h-3.5" />
                         </div>
                         {card.percentage && (
-                          <span className={cn("text-[9px] font-black px-1.5 py-0.5 rounded-full truncate font-mono", card.badgeColor)}>
+                          <span className={cn("text-[9px] font-black px-1.5 py-0.5 rounded-full truncate font-mono shadow-2xs", card.badgeColor)}>
                             {card.percentage}
                           </span>
                         )}
@@ -754,10 +766,13 @@ export default function DashboardStatsPage() {
                       </div>
 
                       {/* Mini Progress Bar Indicator */}
-                      <div className="w-full bg-slate-200/60 dark:bg-slate-800 rounded-full h-1 mt-2.5 overflow-hidden">
+                      <div className="w-full bg-slate-100 dark:bg-slate-800/90 rounded-full h-1 mt-2.5 overflow-hidden border border-slate-200/50 dark:border-white/10 metric-progress-track">
                         <div
-                          className={cn("h-full rounded-full transition-all duration-500", card.barColor)}
-                          style={{ width: `${Math.min(100, Math.max(5, card.barPercent))}%` }}
+                          className={cn("h-full rounded-full transition-all duration-500 metric-progress-bar", card.barColor)}
+                          style={{
+                            width: `${Math.min(100, Math.max(5, card.barPercent))}%`,
+                            backgroundColor: card.barHex
+                          }}
                         />
                       </div>
                     </div>
