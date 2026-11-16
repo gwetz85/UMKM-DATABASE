@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
@@ -59,17 +60,22 @@ function CetakBerkasContent() {
   const [printingCoordinator, setPrintingCoordinator] = useState<string | null>(null)
   const [isPrintingAll, setIsPrintingAll] = useState(false)
 
-  // Ambil data pelaku usaha dengan status finish
-  const memoQuery = useMemoFirebase(() => {
-    if (!database || !user) return null
-    return query(ref(database, "businessActors"), orderByChild("status"), equalTo("finish"))
-  }, [database, user])
-
-  const { data: allData, isLoading } = useList<BusinessActor>(memoQuery)
-
-  // Data pencarian terindeks cepat dari settings/actors_search
+  // Data pencarian terindeks cepat dari settings/actors_search (< 100ms)
   const [searchIndexData, setSearchIndexData] = useState<BusinessActor[]>([])
   const [isLoadingSearch, setIsLoadingSearch] = useState<boolean>(true)
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem("simpu_cetak_berkas_cache")
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSearchIndexData(parsed)
+          setIsLoadingSearch(false)
+        }
+      }
+    } catch {}
+  }, [])
 
   const loadSearchData = useCallback(async () => {
     if (!database) return
@@ -84,6 +90,7 @@ function CetakBerkasContent() {
         const finishList = list.filter((a) => a.status === "finish")
         if (finishList.length > 0) {
           setSearchIndexData(finishList)
+          try { localStorage.setItem("simpu_cetak_berkas_cache", JSON.stringify(finishList)) } catch {}
         }
       }
     } catch (e) {
@@ -92,6 +99,15 @@ function CetakBerkasContent() {
       setIsLoadingSearch(false)
     }
   }, [database])
+
+  // Hanya ambil data master berat jika index pencarian kosong (hemat 157 MB payload)
+  const shouldFetchMaster = Boolean(!searchIndexData || searchIndexData.length === 0)
+  const memoQuery = useMemoFirebase(() => {
+    if (!database || !user || !shouldFetchMaster) return null
+    return query(ref(database, "businessActors"), orderByChild("status"), equalTo("finish"))
+  }, [database, user, shouldFetchMaster])
+
+  const { data: allData, isLoading } = useList<BusinessActor>(memoQuery)
 
   useEffect(() => {
     loadSearchData()
@@ -404,9 +420,25 @@ function CetakBerkasContent() {
         </CardHeader>
         <CardContent className="p-0">
           {effectiveLoading ? (
-            <div className="py-24 flex flex-col items-center justify-center gap-4 text-muted-foreground">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <p className="font-bold animate-pulse uppercase tracking-widest text-xs">Memuat Data...</p>
+            <div className="p-6 space-y-4">
+              <div className="flex justify-between items-center pb-2">
+                <Skeleton className="h-5 w-48 rounded" />
+                <Skeleton className="h-9 w-36 rounded-xl" />
+              </div>
+              <div className="space-y-3">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-4 py-3.5 border-b border-slate-100 dark:border-slate-800">
+                    <Skeleton className="h-4 w-6 rounded" />
+                    <div className="space-y-1.5 flex-1">
+                      <Skeleton className="h-4 w-44 rounded" />
+                      <Skeleton className="h-3 w-24 rounded" />
+                    </div>
+                    <Skeleton className="h-4 w-28 rounded hidden md:block" />
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                    <Skeleton className="h-8 w-24 rounded-xl" />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : filteredActors.length === 0 ? (
             <div className="py-24 flex flex-col items-center justify-center text-center space-y-4">

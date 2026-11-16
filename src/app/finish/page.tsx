@@ -94,8 +94,43 @@ function FinishContent() {
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   const { data: kuotaData } = useList<any>(kuotaRef)
 
-  const actors = allActorsRaw
-    ? allActorsRaw
+  // Pre-load cepat dari settings/actors_search (< 100ms)
+  const [searchIndexData, setSearchIndexData] = useState<BusinessActor[]>([])
+  const [isSearchLoading, setIsSearchLoading] = useState<boolean>(true)
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('simpu_finish_cache')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSearchIndexData(parsed)
+          setIsSearchLoading(false)
+        }
+      }
+    } catch {}
+
+    if (!database) return
+    import("firebase/database").then(({ ref, get }) => {
+      get(ref(database, 'settings/actors_search')).then(snap => {
+        if (snap.exists()) {
+          const val = snap.val() || {}
+          const list = Object.entries(val).map(([id, item]) => ({
+            ...item,
+            id,
+          })).filter(a => a.status === 'finish')
+          if (list.length > 0) {
+            setSearchIndexData(list)
+            try { localStorage.setItem('simpu_finish_cache', JSON.stringify(list)) } catch {}
+          }
+        }
+      }).catch(console.error).finally(() => setIsSearchLoading(false))
+    })
+  }, [database])
+
+  const sourceList = (allActorsRaw && allActorsRaw.length > 0) ? allActorsRaw : searchIndexData;
+  const actors = (sourceList && sourceList.length > 0)
+    ? sourceList
         .filter(a => {
           // Aturan Baru: Menu Selesai hanya menampilkan data lengkap yang sudah menyelesaikan dan nominal LPJ terinput
           const hasCompletedLpj = !!a.lpjNominal && Number(a.lpjNominal) > 0

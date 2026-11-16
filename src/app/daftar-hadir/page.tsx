@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, Suspense } from "react"
+import React, { useState, useMemo, useEffect, Suspense } from "react"
 import { 
   useUser, 
   useDatabase, 
@@ -27,6 +27,7 @@ import {
   TableRow 
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { 
@@ -321,6 +322,42 @@ function DaftarHadirContent() {
   }, [database, user])
 
   const { data: rawActors, isLoading: isActorsLoading } = useList<BusinessActor>(actorsQuery)
+
+  // Pre-load data terverifikasi cepat dari settings/actors_search (< 100ms)
+  const [fastIndexActors, setFastIndexActors] = useState<BusinessActor[]>([])
+  const [isFastLoading, setIsFastLoading] = useState<boolean>(true)
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('simpu_daftar_hadir_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setFastIndexActors(parsed);
+          setIsFastLoading(false);
+        }
+      }
+    } catch {}
+
+    if (!database) return;
+    import("firebase/database").then(({ ref, get }) => {
+      get(ref(database, 'settings/actors_search')).then(snap => {
+        if (snap.exists()) {
+          const val = snap.val() || {};
+          const list: BusinessActor[] = Object.entries(val).map(([id, item]: [string, any]) => ({
+            ...item,
+            id,
+          })).filter(a => isActorVerified(a));
+          if (list.length > 0) {
+            setFastIndexActors(list);
+            try {
+              localStorage.setItem('simpu_daftar_hadir_cache', JSON.stringify(list));
+            } catch {}
+          }
+        }
+      }).catch(console.error).finally(() => setIsFastLoading(false));
+    });
+  }, [database]);
 
   // 3. States Filter, Search, Tab, Pagination, Sensitive Data
   const [activeTab, setActiveTab] = useState<'semua' | 'hadir' | 'belum_hadir' | 'izin' | 'sakit'>('semua')
@@ -1296,8 +1333,9 @@ function DaftarHadirContent() {
 
   // 5. Data Terverifikasi yang tampil di Daftar Hadir (Urutan identik dengan Data Pelaku Usaha: Koordinator A-Z, lalu Nama A-Z)
   const verifiedActorsList = useMemo(() => {
-    if (!rawActors) return []
-    return rawActors
+    const sourceList = (rawActors && rawActors.length > 0) ? rawActors : fastIndexActors;
+    if (!sourceList || sourceList.length === 0) return []
+    return sourceList
       .filter(a => a && isActorVerified(a))
       .sort((a, b) => {
         const coordA = String(a.coordinator || "Tanpa Koordinator").trim().toUpperCase()
@@ -1306,7 +1344,7 @@ function DaftarHadirContent() {
         if (coordCompare !== 0) return coordCompare
         return String(a.fullName || "").trim().localeCompare(String(b.fullName || "").trim())
       })
-  }, [rawActors])
+  }, [rawActors, fastIndexActors])
 
 // ─── FUNGSI SCANNER NIK (KHUSUS ROLE PETUGAS ABSENSI) ───
   const handleSearchScanner = (overrideNik?: string) => {
@@ -3218,12 +3256,24 @@ function DaftarHadirContent() {
 
       {/* ─── TABEL UTAMA: PERSIS SEPERTI GAMBAR 1 (MENYELURUH FULL-WIDTH DENGAN KOLOM JADWAL & MEJA) ─── */}
       <div className="w-full p-0 m-0 overflow-x-auto bg-white dark:bg-zinc-900 border-y border-slate-200/90 dark:border-zinc-800 shadow-2xs">
-        {isActorsLoading ? (
-          <div className="py-24 flex flex-col items-center justify-center gap-3">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
-              Memuat data presensi pelaku usaha terverifikasi...
-            </p>
+        {((isActorsLoading && isFastLoading) && verifiedActorsList.length === 0) ? (
+          <div className="p-4 space-y-3 bg-white dark:bg-zinc-900">
+            <div className="flex justify-between items-center py-2 px-1">
+              <Skeleton className="h-5 w-44 rounded-md" />
+              <Skeleton className="h-8 w-28 rounded-lg" />
+            </div>
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 py-3 border-b border-slate-100 dark:border-zinc-800">
+                <Skeleton className="h-4 w-7 rounded" />
+                <div className="space-y-1.5 flex-1">
+                  <Skeleton className="h-4 w-48 rounded" />
+                  <Skeleton className="h-3 w-32 rounded" />
+                </div>
+                <Skeleton className="h-4 w-28 rounded hidden sm:block" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-8 w-24 rounded-xl" />
+              </div>
+            ))}
           </div>
         ) : filteredActors.length === 0 ? (
           <div className="py-20 text-center text-muted-foreground text-xs font-bold uppercase tracking-wider">

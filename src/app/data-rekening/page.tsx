@@ -362,11 +362,46 @@ function DataRekeningContent() {
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   const { data: kuotaData } = useList<any>(kuotaRef)
 
+  // Pre-load cepat dari settings/actors_search (< 100ms)
+  const [searchIndexData, setSearchIndexData] = useState<BusinessActor[]>([])
+  const [isSearchLoading, setIsSearchLoading] = useState<boolean>(true)
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('simpu_data_rekening_cache')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSearchIndexData(parsed)
+          setIsSearchLoading(false)
+        }
+      }
+    } catch {}
+
+    if (!database) return
+    import("firebase/database").then(({ ref, get }) => {
+      get(ref(database, 'settings/actors_search')).then(snap => {
+        if (snap.exists()) {
+          const val = snap.val() || {}
+          const list = Object.entries(val).map(([id, item]) => ({
+            ...item,
+            id,
+          })).filter(a => a.status === 'finish')
+          if (list.length > 0) {
+            setSearchIndexData(list)
+            try { localStorage.setItem('simpu_data_rekening_cache', JSON.stringify(list)) } catch {}
+          }
+        }
+      }).catch(console.error).finally(() => setIsSearchLoading(false))
+    })
+  }, [database])
+
   // Filter khusus: semua data yang memiliki rekening bank terinput (yang sekarang datanya berada di menu Selesai)
   const actors = useMemo(() => {
-    if (!allActorsRaw) return undefined
+    const sourceList = (allActorsRaw && allActorsRaw.length > 0) ? allActorsRaw : searchIndexData;
+    if (!sourceList || sourceList.length === 0) return undefined
 
-    return allActorsRaw
+    return sourceList
       .filter(a => {
         if (!a) return false
         // Harus memiliki nomor rekening yang telah terinput

@@ -122,23 +122,11 @@ export default function VerifikasiDinasPage() {
                 localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(list));
               } catch {}
 
-              const hasSurveyData = list.some(i => i.surveyData?.modalUsaha || i.surveyData?.status || i.surveyData?.rencanaPenggunaan || i.surveyData?.omset);
-              if (!hasSurveyData) {
-                fetch('/api/actors/search?all=true&refresh=true')
-                  .then(res => res.json())
-                  .then(data => {
-                    if (data.success && Array.isArray(data.results) && data.results.length > 0) {
-                      setLocalIndex(data.results);
-                      try { localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(data.results)); } catch {}
-                    }
-                  })
-                  .catch(() => {});
-              }
               return;
             }
           }
         }
-        fetch('/api/actors/search?all=true&refresh=true')
+        fetch('/api/actors/search?all=true')
           .then(res => res.json())
           .then(data => {
             if (data.success && Array.isArray(data.results) && data.results.length > 0) {
@@ -150,7 +138,7 @@ export default function VerifikasiDinasPage() {
           })
           .catch(() => {});
       }).catch(() => {
-        fetch('/api/actors/search?all=true&refresh=true')
+        fetch('/api/actors/search?all=true')
           .then(res => res.json())
           .then(data => {
             if (data.success && Array.isArray(data.results) && data.results.length > 0) {

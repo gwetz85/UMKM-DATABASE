@@ -54,11 +54,45 @@ function RekeningBankContent() {
 
   const { data: allData, isLoading } = useList<BusinessActor>(memoQuery)
 
+  // Pre-load cepat dari settings/actors_search (< 100ms)
+  const [searchIndexData, setSearchIndexData] = useState<BusinessActor[]>([])
+  const [isSearchLoading, setIsSearchLoading] = useState<boolean>(true)
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('simpu_rekening_bank_cache')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSearchIndexData(parsed)
+          setIsSearchLoading(false)
+        }
+      }
+    } catch {}
+
+    if (!database) return
+    import("firebase/database").then(({ ref, get }) => {
+      get(ref(database, 'settings/actors_search')).then(snap => {
+        if (snap.exists()) {
+          const val = snap.val() || {}
+          const list = Object.entries(val).map(([id, item]) => ({
+            ...item,
+            id,
+          })).filter(a => a.status === 'finish')
+          if (list.length > 0) {
+            setSearchIndexData(list)
+            try { localStorage.setItem('simpu_rekening_bank_cache', JSON.stringify(list)) } catch {}
+          }
+        }
+      }).catch(console.error).finally(() => setIsSearchLoading(false))
+    })
+  }, [database])
+
   const filteredAndGroupedData = useMemo(() => {
     if (!allData) return {}
 
     // Filter actors who are verified (lpj_pending or finish)
-    const verifiedActors = allData.filter(a => {
+    const verifiedActors = sourceList.filter(a => {
       if (!a) return false;
       const basicFilter = (a.status === 'finish') &&
         (
