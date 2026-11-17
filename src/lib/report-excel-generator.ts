@@ -13,17 +13,152 @@ import {
 import { getActorCurrentMenu } from '@/lib/actor-menu-status';
 import { resolveSurveyorCanonicalName } from '@/lib/surveyor-utils';
 
+export interface ResolvedBpjsInfo {
+  hasMatch: boolean;
+  statusLabel: string;
+  statusCode: string;
+  note: string;
+  kpj: string;
+  checkedAt: string;
+  sourceFile: string;
+}
+
 export interface ReportActor extends BusinessActor {
-  bpjsResolved?: {
-    hasMatch: boolean;
-    statusLabel: string;
-    statusCode: string;
-    note: string;
-    kpj: string;
-    checkedAt: string;
-    sourceFile: string;
-  };
+  bpjsResolved?: ResolvedBpjsInfo;
   verificationLocation?: { lat: number; lon: number } | null;
+}
+
+export function buildBpjsLookupMap(rawSettingsBpjs: any, rawRootBpjs?: any): Map<string, any> {
+  const map = new Map<string, any>();
+  const addItems = (raw: any) => {
+    if (!raw) return;
+    const list = Array.isArray(raw) ? raw : Object.values(raw);
+    list.forEach((item: any) => {
+      if (!item || typeof item !== 'object') return;
+      if (item.nik) {
+        const clean = String(item.nik).replace(/\D/g, '');
+        if (clean) map.set(clean, item);
+      }
+      if (item.nama) {
+        const upperName = String(item.nama).trim().toUpperCase();
+        if (upperName && !map.has(upperName)) {
+          map.set(upperName, item);
+        }
+      }
+    });
+  };
+  addItems(rawRootBpjs);
+  addItems(rawSettingsBpjs);
+  return map;
+}
+
+export function resolveBpjsForActor(actor: any, bpjsMap: Map<string, any>): ResolvedBpjsInfo {
+  const cleanNik = actor?.nik ? String(actor.nik).replace(/\D/g, '') : '';
+  const upperName = actor?.fullName ? String(actor.fullName).trim().toUpperCase() : '';
+  const bpjsItem =
+    (cleanNik ? bpjsMap.get(cleanNik) : null) ||
+    (upperName ? bpjsMap.get(upperName) : null) ||
+    null;
+
+  const rawKet = String(
+    bpjsItem?.keterangan ||
+      actor?.bpjsCheckNote ||
+      actor?.bpjsKeterangan ||
+      ''
+  )
+    .toUpperCase()
+    .trim();
+
+  const rawStatus = String(bpjsItem?.status || actor?.bpjsStatus || '')
+    .toUpperCase()
+    .trim();
+
+  const kpj = String(bpjsItem?.kpj || bpjsItem?.noKpj || actor?.bpjsKpj || '').trim();
+  const checkedAt = String(bpjsItem?.updatedAt || actor?.bpjsCheckedAt || '').trim();
+  const sourceFile = String(bpjsItem?.sourceFile || actor?.bpjsSourceFile || '').trim();
+
+  const hasMatch = Boolean(
+    bpjsItem ||
+      actor?.bpjsCheckStatus ||
+      actor?.bpjsStatus ||
+      actor?.bpjsKeterangan ||
+      actor?.bpjsCheckNote
+  );
+
+  if (!hasMatch) {
+    return {
+      hasMatch: false,
+      statusLabel: 'BELUM DIVERIFIKASI',
+      statusCode: '-',
+      note: '-',
+      kpj: kpj || '-',
+      checkedAt: checkedAt || '',
+      sourceFile: sourceFile || '',
+    };
+  }
+
+  if (
+    rawKet.includes('DUPLIKASI') ||
+    rawKet.includes('DUPLIKAT') ||
+    rawKet.includes('GANDA') ||
+    rawKet.includes('SUDAH MENJADI PESERTA')
+  ) {
+    return {
+      hasMatch: true,
+      statusLabel: 'TIDAK BISA DIDAFTARKAN (DUPLIKASI)',
+      statusCode: rawStatus || 'T',
+      note: bpjsItem?.keterangan || actor?.bpjsCheckNote || actor?.bpjsKeterangan || 'DUPLIKASI KEPESERTAAN BPJS',
+      kpj: kpj || '-',
+      checkedAt: checkedAt || '',
+      sourceFile: sourceFile || '',
+    };
+  }
+
+  if (
+    rawKet.includes('65') ||
+    (rawKet.includes('USIA') && (rawKet.includes('LEBIH') || rawKet.includes('DIATAS')))
+  ) {
+    return {
+      hasMatch: true,
+      statusLabel: 'USIA DIATAS 65 TAHUN',
+      statusCode: rawStatus || 'T',
+      note: bpjsItem?.keterangan || actor?.bpjsCheckNote || actor?.bpjsKeterangan || 'Usia Lebih 65 Tahun',
+      kpj: kpj || '-',
+      checkedAt: checkedAt || '',
+      sourceFile: sourceFile || '',
+    };
+  }
+
+  const isBisaDaftar =
+    rawStatus === 'Y' ||
+    rawKet.includes('BISA DAFTAR') ||
+    rawKet.includes('TERVERIFIKASI') ||
+    rawKet.includes('SESUAI') ||
+    rawKet.includes('LOLOS') ||
+    actor?.bpjsCheckStatus === 'sesuai' ||
+    (bpjsItem && !rawKet && !rawStatus);
+
+  if (isBisaDaftar && rawStatus !== 'T' && rawStatus !== 'N') {
+    return {
+      hasMatch: true,
+      statusLabel: 'TERVERIFIKASI / BISA DAFTAR',
+      statusCode: rawStatus || 'Y',
+      note: bpjsItem?.keterangan || actor?.bpjsCheckNote || actor?.bpjsKeterangan || 'Bisa Daftar / Terverifikasi',
+      kpj: kpj || '-',
+      checkedAt: checkedAt || '',
+      sourceFile: sourceFile || '',
+    };
+  }
+
+  return {
+    hasMatch: true,
+    statusLabel: (bpjsItem?.keterangan || actor?.bpjsKeterangan || 'TIDAK LOLOS BPJS').toUpperCase(),
+    statusCode: rawStatus || 'T',
+    note: bpjsItem?.keterangan || actor?.bpjsCheckNote || actor?.bpjsKeterangan || 'Tidak Lolos Verifikasi BPJS',
+    kpj: kpj || '-',
+    checkedAt: checkedAt || '',
+    sourceFile: sourceFile || '',
+  };
 }
 
 interface ResolvedOfficerInfo {
@@ -1059,7 +1194,7 @@ export async function exportReportPelakuUsahaExcel(
     sheetName: 'Report Pelaku Usaha',
     fileName: `Report_Pelaku_Usaha_Lengkap_${dateStamp}.xlsx`,
     title: 'REPORT PELAKU USAHA LENGKAP — DATA UTAMA, SURVEY DINAS, BPJS KETENAGAKERJAAN & REKENING (SIMPU)',
-    subtitle: `Dicetak pada: ${printedAt}  |  Total Data: ${rows.length.toLocaleString('id-ID')} Pelaku Usaha (All Data)  |  Filter: ${filterSummary}`,
+    subtitle: `Dicetak pada: ${printedAt}  |  Total Data: ${rows.length.toLocaleString('id-ID')} Pelaku Usaha  |  Filter: ${filterSummary}`,
     bannerColor: 'FF0F172A',
     defaultHeaderColor: 'FF1E3A8A',
     columns,

@@ -1,8 +1,8 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react"
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from "react"
 import { useUser, useDatabase, useMemoFirebase, useObject } from "@/firebase"
-import { ref } from "firebase/database"
+import { ref, get, set } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -15,7 +15,11 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useToast } from "@/hooks/use-toast"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { cn, formatDateTimeIndo } from "@/lib/utils"
-import type { ReportActor } from "@/lib/report-excel-generator"
+import {
+  buildBpjsLookupMap,
+  resolveBpjsForActor,
+  type ReportActor,
+} from "@/lib/report-excel-generator"
 import type { BerkasRangkapLayout } from "@/lib/pdf-generator"
 import {
   FileSpreadsheet,
@@ -38,7 +42,66 @@ import {
   Sparkles,
   AlertCircle,
   Download,
+  Database,
 } from "lucide-react"
+
+// ── IndexedDB Cache Helper for instant 0ms hydration ──────────────────────────
+const IDB_CACHE_KEY = "simpu_report_dataset_v2"
+const REPORT_INDEX_STALE_MS = 30 * 60 * 1000 // 30 minutes
+
+function getFromIDB(key: string): Promise<any | null> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined" || !window.indexedDB) return resolve(null)
+    try {
+      const req = window.indexedDB.open("simpu_large_cache", 1)
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains("store")) {
+          req.result.createObjectStore("store")
+        }
+      }
+      req.onsuccess = () => {
+        try {
+          const tx = req.result.transaction("store", "readonly")
+          const getReq = tx.objectStore("store").get(key)
+          getReq.onsuccess = () => resolve(getReq.result || null)
+          getReq.onerror = () => resolve(null)
+        } catch {
+          resolve(null)
+        }
+      }
+      req.onerror = () => resolve(null)
+    } catch {
+      resolve(null)
+    }
+  })
+}
+
+function setToIDB(key: string, value: any): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined" || !window.indexedDB) return resolve()
+    try {
+      const req = window.indexedDB.open("simpu_large_cache", 1)
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains("store")) {
+          req.result.createObjectStore("store")
+        }
+      }
+      req.onsuccess = () => {
+        try {
+          const tx = req.result.transaction("store", "readwrite")
+          tx.objectStore("store").put(value, key)
+          tx.oncomplete = () => resolve()
+          tx.onerror = () => resolve()
+        } catch {
+          resolve()
+        }
+      }
+      req.onerror = () => resolve()
+    } catch {
+      resolve()
+    }
+  })
+}
 
 export default function ReportPage() {
   return (
@@ -72,27 +135,43 @@ function normalizeBankForFilter(bankName?: string): string {
   return known.find((b) => upper.includes(b)) || upper
 }
 
-function isDinasPipelineActor(actor: ReportActor): boolean {
-  const s = String(actor.status || "").toLowerCase().trim()
-  const dinasStatuses = [
-    "verified_actor",
-    "lpj_pending",
-    "verified_dinas",
-    "bank_pending",
-    "finish",
-    "blacklist",
-    "dihapus_dinas",
-  ]
-  if (dinasStatuses.includes(s)) return true
-  if (actor.alasanCancelDinas || actor.hasilVerifikasiDinas || actor.verifiedDinasAt || actor.berkasDinasVerified) {
-    return true
-  }
-  return false
-}
-
 function hasValidBank(actor: ReportActor): boolean {
   const num = String(actor.bankNumber || "").trim()
   return num !== "" && num !== "-"
+}
+
+function isVerifiedWithBank(actor: ReportActor): boolean {
+  if (!actor) return false
+  const s = String(actor.status || "").toLowerCase().trim()
+  const isCancelDinas =
+    (s === "verified_dinas" && actor.hasilVerifikasiDinas === "Tidak Lolos") ||
+    Boolean(actor.alasanCancelDinas)
+  if (
+    isCancelDinas ||
+    s === "rejected" ||
+    s === "pending" ||
+    s === "hold" ||
+    s === "lengkapi_data" ||
+    s === "verifikasi_manual" ||
+    s === "dihapus_dinas"
+  ) {
+    return false
+  }
+  return hasValidBank(actor)
+}
+
+function parseSystemUsersMap(rawUsers: any): any[] {
+  if (!rawUsers || typeof rawUsers !== "object") return []
+  return Object.entries(rawUsers)
+    .filter(([, u]) => u && typeof u === "object")
+    .map(([id, u]: [string, any]) => ({
+      id,
+      username: u.username || id,
+      fullName: u.fullName || u.name || "",
+      role: u.role || "",
+      nipppk: u.nipppk || "",
+      pejabatData: u.pejabatData || null,
+    }))
 }
 
 function ReportContent() {
@@ -113,9 +192,10 @@ function ReportContent() {
     roleStr === "admin" ||
     roleStr === "administrator" ||
     roleStr === "superadmin"
+  const isStaff = roleStr === "staff"
   const isAllowed =
     isAdmin ||
-    roleStr === "staff" ||
+    isStaff ||
     roleStr === "monitoring" ||
     roleStr === "dinas" ||
     roleStr === "verifikator_dinas" ||
@@ -125,17 +205,19 @@ function ReportContent() {
   const [actors, setActors] = useState<ReportActor[]>([])
   const [systemUsers, setSystemUsers] = useState<any[]>([])
   const [generatedAt, setGeneratedAt] = useState<string>("")
+  const [isFullIndex, setIsFullIndex] = useState<boolean>(false)
   const [isLoadingData, setIsLoadingData] = useState<boolean>(true)
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
+  const [isSyncingFull, setIsSyncingFull] = useState<boolean>(false)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const hasTriggeredBgSyncRef = useRef(false)
+  const syncingFullRef = useRef(false)
 
   // Global Excel filters
   const [selectedCoordinator, setSelectedCoordinator] = useState<string>("ALL")
   const [selectedKecamatan, setSelectedKecamatan] = useState<string>("ALL")
 
   // Per-report options
-  const [dinasScope, setDinasScope] = useState<"dinas" | "all">("dinas")
-  const [rekeningScope, setRekeningScope] = useState<"has_bank" | "all">("has_bank")
   const [selectedBank, setSelectedBank] = useState<string>("ALL")
 
   // Berkas Pencairan options
@@ -146,85 +228,264 @@ function ReportContent() {
   // Export loading states
   const [exportingKey, setExportingKey] = useState<string | null>(null)
 
-  const fetchReportData = useCallback(async (forceRefresh = false) => {
-    try {
-      if (forceRefresh) {
-        setIsRefreshing(true)
-      } else {
-        setIsLoadingData(true)
-      }
-      setLoadError(null)
+  // ── Background / On-Demand Full Sync (builds lightweight settings/report_index) ──
+  const syncFullMasterIndex = useCallback(
+    async (showToast = false) => {
+      if (syncingFullRef.current) return
+      syncingFullRef.current = true
+      try {
+        setIsSyncingFull(true)
+        const res = await fetch("/api/reports/data?mode=full", { cache: "no-store" })
+        const json = await res.json()
+        if (!res.ok || !json.success || !Array.isArray(json.actors)) {
+          throw new Error(json.error || "Gagal menyinkronkan data penuh.")
+        }
 
-      const res = await fetch(`/api/reports/data${forceRefresh ? "?refresh=true" : ""}`, {
-        cache: "no-store",
-      })
-      const json = await res.json()
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || "Gagal memuat data laporan dari server.")
-      }
+        const freshActors: ReportActor[] = json.actors
+        const freshUsers: any[] = Array.isArray(json.systemUsers) ? json.systemUsers : []
+        const freshTime: string = json.generatedAt || new Date().toISOString()
 
-      setActors(Array.isArray(json.actors) ? json.actors : [])
-      setSystemUsers(Array.isArray(json.systemUsers) ? json.systemUsers : [])
-      setGeneratedAt(json.generatedAt || new Date().toISOString())
+        setActors(freshActors)
+        if (freshUsers.length > 0) setSystemUsers(freshUsers)
+        setGeneratedAt(freshTime)
+        setIsFullIndex(true)
+        setIsLoadingData(false)
 
-      if (forceRefresh) {
-        toast({
-          title: "Data Diperbarui",
-          description: `${(json.actors?.length || 0).toLocaleString("id-ID")} data pelaku usaha berhasil disinkronkan.`,
+        // Persist to IndexedDB for instant 0ms next load
+        setToIDB(IDB_CACHE_KEY, {
+          actors: freshActors,
+          systemUsers: freshUsers,
+          generatedAt: freshTime,
+          isFullIndex: true,
         })
+
+        // Persist lightweight index to RTDB from authenticated client so all users get < 250ms loads
+        if (database && (isAdmin || isStaff) && freshActors.length > 0) {
+          const compactMap: Record<string, any> = {}
+          freshActors.forEach((a) => {
+            if (!a || !a.id) return
+            const { bpjsResolved: _omit, ...rest } = a
+            compactMap[a.id] = rest
+          })
+          set(
+            ref(database, "settings/report_index"),
+            JSON.parse(JSON.stringify({ updatedAt: freshTime, count: freshActors.length, actors: compactMap }))
+          ).catch(() => {})
+        }
+
+        if (showToast) {
+          const verifiedCount = freshActors.filter(isVerifiedWithBank).length
+          toast({
+            title: "Sinkronisasi Penuh Selesai",
+            description: `${verifiedCount.toLocaleString("id-ID")} data pelaku usaha terverifikasi (rekening terinput) & waktu verifikasi dinas telah diperbarui.`,
+          })
+        }
+      } catch (err: any) {
+        console.warn("Background full sync error:", err)
+        if (showToast) {
+          toast({
+            variant: "destructive",
+            title: "Gagal Sinkronisasi Penuh",
+            description: err?.message || "Silakan coba lagi beberapa saat.",
+          })
+        }
+      } finally {
+        syncingFullRef.current = false
+        setIsSyncingFull(false)
       }
-    } catch (err: any) {
-      console.error("Failed loading report data:", err)
-      setLoadError(err?.message || "Gagal memuat data laporan.")
-      toast({
-        variant: "destructive",
-        title: "Gagal Memuat Data",
-        description: err?.message || "Silakan coba muat ulang halaman.",
-      })
-    } finally {
-      setIsLoadingData(false)
-      setIsRefreshing(false)
-    }
-  }, [toast])
+    },
+    [database, isAdmin, isStaff, toast]
+  )
+
+  // ── Ultra-Fast Direct RTDB Loader (< 200ms) + 0ms IndexedDB Hydration ────────
+  const loadFastData = useCallback(
+    async (isManualRefresh = false) => {
+      if (!database) return
+      try {
+        if (isManualRefresh) setIsRefreshing(true)
+        setLoadError(null)
+
+        // Start BPJS fetch in parallel, but DO NOT block initial UI render on it!
+        const bpjsPromise = Promise.all([
+          get(ref(database, "settings/bpjs_comparison_data")).catch(() => null),
+          get(ref(database, "bpjs_comparison_data")).catch(() => null),
+        ])
+
+        // Step A (< 150ms): Fetch lightweight index + users immediately
+        const [reportIdxSnap, searchIdxSnap, usersSnap] = await Promise.all([
+          get(ref(database, "settings/report_index")).catch(() => null),
+          get(ref(database, "settings/actors_search")).catch(() => null),
+          get(ref(database, "system_users")).catch(() => null),
+        ])
+
+        const parsedUsers = parseSystemUsersMap(usersSnap?.exists() ? usersSnap.val() : null)
+        if (parsedUsers.length > 0) setSystemUsers(parsedUsers)
+
+        const emptyBpjsMap = new Map<string, any>()
+        let loadedActors: ReportActor[] = []
+        let loadedFromFullIndex = false
+        let loadedTime = new Date().toISOString()
+        let isIndexStale = true
+
+        // Priority 1: Lightweight pre-built full index (`settings/report_index`)
+        if (reportIdxSnap && reportIdxSnap.exists()) {
+          const val = reportIdxSnap.val() || {}
+          const rawMap = val.actors || val
+          if (rawMap && typeof rawMap === "object") {
+            const list: ReportActor[] = []
+            for (const [id, item] of Object.entries(rawMap as Record<string, any>)) {
+              if (!item || typeof item !== "object" || (!item.fullName && !item.nik)) continue
+              list.push({
+                ...item,
+                id,
+                bpjsResolved: resolveBpjsForActor(item, emptyBpjsMap),
+              })
+            }
+            if (list.length > 0) {
+              loadedActors = list
+              loadedFromFullIndex = true
+              loadedTime = val.updatedAt || loadedTime
+              const updatedMs = val.updatedAt ? new Date(val.updatedAt).getTime() : 0
+              isIndexStale = !updatedMs || Date.now() - updatedMs > REPORT_INDEX_STALE_MS
+            }
+          }
+        }
+
+        // Priority 2: Fallback to lightweight `settings/actors_search` (< 150ms)
+        if (loadedActors.length === 0 && searchIdxSnap && searchIdxSnap.exists()) {
+          const val = searchIdxSnap.val() || {}
+          const list: ReportActor[] = []
+          for (const [id, item] of Object.entries(val as Record<string, any>)) {
+            if (!item || typeof item !== "object" || (!item.fullName && !item.nik)) continue
+            list.push({
+              ...item,
+              id,
+              bpjsResolved: resolveBpjsForActor(item, emptyBpjsMap),
+            })
+          }
+          loadedActors = list
+          loadedFromFullIndex = false
+          isIndexStale = true
+        }
+
+        // Render immediately without waiting for BPJS node!
+        if (loadedActors.length > 0) {
+          setActors(loadedActors)
+          setGeneratedAt(loadedTime)
+          setIsFullIndex(loadedFromFullIndex)
+          setIsLoadingData(false)
+        }
+
+        // Step B: Merge BPJS comparison data as soon as it resolves
+        const [settingsBpjsSnap, rootBpjsSnap] = await bpjsPromise
+        const bpjsMap = buildBpjsLookupMap(
+          settingsBpjsSnap?.exists() ? settingsBpjsSnap.val() : null,
+          rootBpjsSnap?.exists() ? rootBpjsSnap.val() : null
+        )
+
+        if (loadedActors.length > 0) {
+          const enrichedActors = loadedActors.map((item) => ({
+            ...item,
+            bpjsResolved: resolveBpjsForActor(item, bpjsMap),
+          }))
+          setActors(enrichedActors)
+          setToIDB(IDB_CACHE_KEY, {
+            actors: enrichedActors,
+            systemUsers: parsedUsers,
+            generatedAt: loadedTime,
+            isFullIndex: loadedFromFullIndex,
+          })
+        } else {
+          // Neither lightweight index exists yet -> fall back to full API build
+          await syncFullMasterIndex(false)
+        }
+
+        if (isManualRefresh) {
+          const verifiedCount = loadedActors.filter(isVerifiedWithBank).length
+          toast({
+            title: "Data Diperbarui",
+            description: `${verifiedCount.toLocaleString("id-ID")} data pelaku usaha terverifikasi siap diunduh.`,
+          })
+        }
+
+        // Non-blocking background sync to build/refresh full index (pending/rejected/timestamps)
+        if ((!loadedFromFullIndex || isIndexStale) && !hasTriggeredBgSyncRef.current) {
+          hasTriggeredBgSyncRef.current = true
+          syncFullMasterIndex(false)
+        }
+      } catch (err: any) {
+        console.error("Fast report load failed:", err)
+        setLoadError(err?.message || "Gagal memuat data laporan.")
+      } finally {
+        setIsLoadingData(false)
+        setIsRefreshing(false)
+      }
+    },
+    [database, syncFullMasterIndex, toast]
+  )
 
   useEffect(() => {
-    if (user && isAllowed) {
-      fetchReportData(false)
+    if (!user || !isAllowed) return
+    let mounted = true
+
+    // 1. 0ms Instant Hydration from IndexedDB
+    getFromIDB(IDB_CACHE_KEY).then((cached) => {
+      if (!mounted || !cached) return
+      if (Array.isArray(cached.actors) && cached.actors.length > 0) {
+        setActors(cached.actors)
+        if (Array.isArray(cached.systemUsers)) setSystemUsers(cached.systemUsers)
+        if (cached.generatedAt) setGeneratedAt(cached.generatedAt)
+        setIsFullIndex(Boolean(cached.isFullIndex))
+        setIsLoadingData(false)
+      }
+    })
+
+    // 2. < 250ms Direct Firebase RTDB Lightweight Fetch
+    if (database) {
+      loadFastData(false)
     }
-  }, [user, isAllowed, fetchReportData])
+
+    return () => {
+      mounted = false
+    }
+  }, [user, isAllowed, database, loadFastData])
+
+  // Hanya menampilkan dan mencetak pelaku usaha terverifikasi yang rekeningnya sudah terinput
+  const verifiedActors = useMemo(() => {
+    return actors.filter(isVerifiedWithBank)
+  }, [actors])
 
   // Unique coordinators & kecamatan for global filters
   const coordinatorOptions = useMemo(() => {
-    const set = new Set<string>()
-    actors.forEach((a) => {
+    const setVals = new Set<string>()
+    verifiedActors.forEach((a) => {
       const c = String(a.coordinator || "TANPA KOORDINATOR").toUpperCase().trim()
-      if (c) set.add(c)
+      if (c) setVals.add(c)
     })
-    return Array.from(set).sort((a, b) => a.localeCompare(b))
-  }, [actors])
+    return Array.from(setVals).sort((a, b) => a.localeCompare(b))
+  }, [verifiedActors])
 
   const kecamatanOptions = useMemo(() => {
-    const set = new Set<string>()
-    actors.forEach((a) => {
+    const setVals = new Set<string>()
+    verifiedActors.forEach((a) => {
       const k = String(a.kecamatan || "").toUpperCase().trim()
-      if (k && k !== "-") set.add(k)
+      if (k && k !== "-") setVals.add(k)
     })
-    return Array.from(set).sort((a, b) => a.localeCompare(b))
-  }, [actors])
+    return Array.from(setVals).sort((a, b) => a.localeCompare(b))
+  }, [verifiedActors])
 
   const bankOptions = useMemo(() => {
     const map = new Map<string, number>()
-    actors.forEach((a) => {
-      if (!hasValidBank(a)) return
+    verifiedActors.forEach((a) => {
       const b = normalizeBankForFilter(a.bankName) || "LAINNYA"
       map.set(b, (map.get(b) || 0) + 1)
     })
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1])
-  }, [actors])
+  }, [verifiedActors])
 
   // Apply global filters (Coordinator & Kecamatan) for Excel reports
   const globalFilteredActors = useMemo(() => {
-    return actors.filter((a) => {
+    return verifiedActors.filter((a) => {
       if (selectedCoordinator !== "ALL") {
         const c = String(a.coordinator || "TANPA KOORDINATOR").toUpperCase().trim()
         if (c !== selectedCoordinator) return false
@@ -235,39 +496,31 @@ function ReportContent() {
       }
       return true
     })
-  }, [actors, selectedCoordinator, selectedKecamatan])
+  }, [verifiedActors, selectedCoordinator, selectedKecamatan])
 
-  // Datasets per report
-  const dinasDataset = useMemo(() => {
-    if (dinasScope === "all") return globalFilteredActors
-    return globalFilteredActors.filter(isDinasPipelineActor)
-  }, [globalFilteredActors, dinasScope])
+  // Datasets per report (semua khusus pelaku usaha terverifikasi yang rekeningnya terinput)
+  const dinasDataset = globalFilteredActors
 
   const rekeningDataset = useMemo(() => {
     return globalFilteredActors.filter((a) => {
-      if (rekeningScope === "has_bank" && !hasValidBank(a)) return false
       if (selectedBank !== "ALL") {
         const b = normalizeBankForFilter(a.bankName) || "LAINNYA"
         if (b !== selectedBank) return false
       }
       return true
     })
-  }, [globalFilteredActors, rekeningScope, selectedBank])
+  }, [globalFilteredActors, selectedBank])
 
-  const pelakuUsahaDataset = useMemo(() => {
-    return globalFilteredActors
-  }, [globalFilteredActors])
+  const pelakuUsahaDataset = globalFilteredActors
 
-  // Berkas Pencairan per Koordinator (status finish & rekening lengkap)
+  // Berkas Pencairan per Koordinator (terverifikasi & rekening terinput)
   const berkasCoordinators = useMemo(() => {
     const map = new Map<string, ReportActor[]>()
-    actors
-      .filter((a) => a.status === "finish" && hasValidBank(a))
-      .forEach((a) => {
-        const cName = String(a.coordinator || "TANPA KOORDINATOR").toUpperCase().trim()
-        if (!map.has(cName)) map.set(cName, [])
-        map.get(cName)!.push(a)
-      })
+    verifiedActors.forEach((a) => {
+      const cName = String(a.coordinator || "TANPA KOORDINATOR").toUpperCase().trim()
+      if (!map.has(cName)) map.set(cName, [])
+      map.get(cName)!.push(a)
+    })
 
     return Array.from(map.entries())
       .map(([name, list]) => ({
@@ -279,7 +532,7 @@ function ReportContent() {
         ),
       }))
       .sort((a, b) => a.name.localeCompare(b.name))
-  }, [actors])
+  }, [verifiedActors])
 
   const filteredBerkasCoordinators = useMemo(() => {
     const q = coordSearch.toLowerCase().trim()
@@ -293,8 +546,8 @@ function ReportContent() {
   )
 
   const bpjsVerifiedCount = useMemo(
-    () => actors.filter((a) => a.bpjsResolved?.hasMatch).length,
-    [actors]
+    () => verifiedActors.filter((a) => a.bpjsResolved?.hasMatch).length,
+    [verifiedActors]
   )
 
   const buildFilterLabel = (extra?: string) => {
@@ -318,7 +571,7 @@ function ReportContent() {
       await exportReportDinasExcel(
         dinasDataset,
         systemUsers,
-        buildFilterLabel(dinasScope === "dinas" ? "Alur Dinas" : "Semua Status")
+        buildFilterLabel("Terverifikasi & Rekening Terinput")
       )
       logActivity({
         query: `DOWNLOAD REPORT DINAS (${dinasDataset.length} data)`,
@@ -350,10 +603,9 @@ function ReportContent() {
       toast({ title: "Menyusun Report Rekening...", description: `Memproses ${rekeningDataset.length.toLocaleString("id-ID")} data rekening ke dalam 1 lembar Excel rapi.` })
       const { exportReportRekeningExcel } = await import("@/lib/report-excel-generator")
       const bankLabel = selectedBank !== "ALL" ? `Bank: ${selectedBank}` : undefined
-      const scopeLabel = rekeningScope === "has_bank" ? "Sudah Ada Rekening" : "Semua Pelaku Usaha"
       await exportReportRekeningExcel(
         rekeningDataset,
-        buildFilterLabel([scopeLabel, bankLabel].filter(Boolean).join(" • "))
+        buildFilterLabel(["Terverifikasi & Rekening Terinput", bankLabel].filter(Boolean).join(" • "))
       )
       logActivity({
         query: `DOWNLOAD REPORT REKENING (${rekeningDataset.length} data)`,
@@ -390,7 +642,7 @@ function ReportContent() {
       await exportReportPelakuUsahaExcel(
         pelakuUsahaDataset,
         systemUsers,
-        buildFilterLabel("All Data Lengkap + BPJS")
+        buildFilterLabel("Terverifikasi & Rekening Terinput + BPJS")
       )
       logActivity({
         query: `DOWNLOAD REPORT PELAKU USAHA LENGKAP (${pelakuUsahaDataset.length} data)`,
@@ -491,31 +743,52 @@ function ReportContent() {
                 Report
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-semibold mt-1">
-                Pusat Download Report & Laporan Lengkap Aplikasi SIMPU (Excel 1 Lembar Rapi & PDF Berkas Pencairan Rangkap 2)
+                Pusat Download Report Pelaku Usaha Terverifikasi & Rekening Terinput (Excel 1 Lembar Rapi & PDF Berkas Pencairan Rangkap 2)
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto justify-start lg:justify-end">
-          {generatedAt && !isLoadingData && (
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
+          {isSyncingFull ? (
+            <Badge
+              variant="outline"
+              className="h-9 px-3 rounded-xl bg-sky-50 dark:bg-sky-950/50 border-sky-200 dark:border-sky-800 text-[11px] font-bold text-sky-700 dark:text-sky-300 gap-1.5"
+            >
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Melengkapi Indeks Penuh...
+            </Badge>
+          ) : generatedAt && !isLoadingData ? (
             <Badge
               variant="outline"
               className="h-9 px-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-600 dark:text-slate-300 gap-1.5"
             >
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-              Sinkron: {formatDateTimeIndo(generatedAt)}
+              {isFullIndex ? "Data Penuh" : "Indeks Cepat"} • {formatDateTimeIndo(generatedAt)}
             </Badge>
-          )}
+          ) : null}
+
           <Button
             type="button"
             variant="outline"
-            onClick={() => fetchReportData(true)}
+            onClick={() => loadFastData(true)}
             disabled={isLoadingData || isRefreshing}
-            className="h-9 px-3.5 rounded-xl font-bold text-xs gap-2 border-slate-200 dark:border-slate-700"
+            className="h-9 px-3.5 rounded-xl font-bold text-xs gap-1.5 border-slate-200 dark:border-slate-700"
           >
             <RefreshCw className={cn("w-3.5 h-3.5", (isLoadingData || isRefreshing) && "animate-spin")} />
-            Segarkan Data
+            Segarkan
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => syncFullMasterIndex(true)}
+            disabled={isSyncingFull}
+            className="h-9 px-3.5 rounded-xl font-bold text-xs gap-1.5 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+            title="Sinkronkan ulang seluruh data master termasuk status Pending/Ditolak & waktu verifikasi dinas terbaru"
+          >
+            <Database className={cn("w-3.5 h-3.5", isSyncingFull && "animate-pulse")} />
+            Sinkron Penuh
           </Button>
         </div>
       </div>
@@ -528,7 +801,7 @@ function ReportContent() {
               <AlertCircle className="w-5 h-5 shrink-0" />
               <p className="text-xs sm:text-sm font-bold">{loadError}</p>
             </div>
-            <Button size="sm" variant="destructive" onClick={() => fetchReportData(true)} className="rounded-xl text-xs font-bold">
+            <Button size="sm" variant="destructive" onClick={() => loadFastData(true)} className="rounded-xl text-xs font-bold">
               Coba Lagi
             </Button>
           </CardContent>
@@ -539,26 +812,26 @@ function ReportContent() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[
           {
-            label: "Total Pelaku Usaha",
-            value: actors.length,
-            sub: `${bpjsVerifiedCount.toLocaleString("id-ID")} terdata BPJS`,
+            label: "Pelaku Usaha Terverifikasi",
+            value: verifiedActors.length,
+            sub: "Rekening Terinput & Siap Report",
             icon: Users,
             color: "text-sky-600 dark:text-sky-400",
             bg: "bg-sky-50 dark:bg-sky-950/40",
             border: "border-sky-100 dark:border-sky-900/50",
           },
           {
-            label: "Data Alur Dinas",
-            value: actors.filter(isDinasPipelineActor).length,
-            sub: "Survey & Verifikasi Dinas",
-            icon: ClipboardCheck,
+            label: "Terdata BPJS",
+            value: bpjsVerifiedCount,
+            sub: "Hasil Verifikasi BPJS Ketenagakerjaan",
+            icon: ShieldCheck,
             color: "text-purple-600 dark:text-purple-400",
             bg: "bg-purple-50 dark:bg-purple-950/40",
             border: "border-purple-100 dark:border-purple-900/50",
           },
           {
             label: "Rekening Terinput",
-            value: actors.filter(hasValidBank).length,
+            value: verifiedActors.length,
             sub: `${bankOptions.length} Bank Terdaftar`,
             icon: CreditCard,
             color: "text-emerald-600 dark:text-emerald-400",
@@ -722,23 +995,11 @@ function ReportContent() {
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                    Cakupan Data
-                  </label>
-                  <Select value={dinasScope} onValueChange={(v) => setDinasScope(v as "dinas" | "all")}>
-                    <SelectTrigger className="h-9 rounded-xl text-xs font-bold">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="dinas" className="text-xs font-semibold">
-                        Semua Data Alur Dinas ({globalFilteredActors.filter(isDinasPipelineActor).length.toLocaleString("id-ID")})
-                      </SelectItem>
-                      <SelectItem value="all" className="text-xs font-semibold">
-                        Semua Data Termasuk Pending/Tolak Admin ({globalFilteredActors.length.toLocaleString("id-ID")})
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
+                  <span className="font-bold text-slate-500 dark:text-slate-400">Cakupan Data</span>
+                  <span className="font-black text-purple-600 dark:text-purple-400">
+                    Terverifikasi & Ada Rekening
+                  </span>
                 </div>
               </div>
 
@@ -805,45 +1066,25 @@ function ReportContent() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                      Cakupan
-                    </label>
-                    <Select value={rekeningScope} onValueChange={(v) => setRekeningScope(v as "has_bank" | "all")}>
-                      <SelectTrigger className="h-9 rounded-xl text-xs font-bold">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="has_bank" className="text-xs font-semibold">
-                          Ada Rekening
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                    Filter Bank (Opsional)
+                  </label>
+                  <Select value={selectedBank} onValueChange={setSelectedBank}>
+                    <SelectTrigger className="h-9 rounded-xl text-xs font-bold">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="ALL" className="text-xs font-bold">
+                        Semua Bank ({globalFilteredActors.length.toLocaleString("id-ID")})
+                      </SelectItem>
+                      {bankOptions.map(([bankName, count]) => (
+                        <SelectItem key={bankName} value={bankName} className="text-xs font-semibold">
+                          {bankName} ({count})
                         </SelectItem>
-                        <SelectItem value="all" className="text-xs font-semibold">
-                          Semua Data
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                      Filter Bank
-                    </label>
-                    <Select value={selectedBank} onValueChange={setSelectedBank}>
-                      <SelectTrigger className="h-9 rounded-xl text-xs font-bold">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60">
-                        <SelectItem value="ALL" className="text-xs font-bold">
-                          Semua Bank
-                        </SelectItem>
-                        {bankOptions.map(([bankName, count]) => (
-                          <SelectItem key={bankName} value={bankName} className="text-xs font-semibold">
-                            {bankName} ({count})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -879,14 +1120,14 @@ function ReportContent() {
                   <Sparkles className="w-6 h-6" />
                 </div>
                 <Badge className="bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200 border border-sky-200 dark:border-sky-800 font-black text-[10px]">
-                  ALL DATA • 1 LEMBAR
+                  TERVERIFIKASI • 1 LEMBAR
                 </Badge>
               </div>
               <CardTitle className="text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white pt-2">
                 Report Pelaku Usaha
               </CardTitle>
               <CardDescription className="text-xs font-medium text-slate-600 dark:text-slate-400 leading-relaxed">
-                Seluruh data pelaku usaha tanpa terkecuali: Gabungan Report Dinas + Report Rekening + Hasil Verifikasi BPJS Ketenagakerjaan dalam 1 lembar rapi.
+                Seluruh data pelaku usaha terverifikasi (rekening terinput): Gabungan Report Dinas + Report Rekening + Hasil Verifikasi BPJS Ketenagakerjaan dalam 1 lembar rapi.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col justify-between gap-4 pt-0">
@@ -894,7 +1135,7 @@ function ReportContent() {
                 <div className="p-3 rounded-2xl bg-sky-50/70 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/40 space-y-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                    <span>All Data Pelaku Usaha (Semua Status Tanpa Terkecuali)</span>
+                    <span>Khusus Pelaku Usaha Terverifikasi & Rekening Terinput</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
