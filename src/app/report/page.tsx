@@ -975,7 +975,7 @@ function ReportContent() {
             Export Laporan Excel (1 Lembar Rapi)
           </h2>
           <span className="text-[11px] font-bold text-slate-400 hidden sm:inline">
-            Format .xlsx • Freeze Header • AutoFilter • Teks NIK/Rekening Utuh
+            Format .xlsx • AutoFilter • Teks NIK/Rekening Utuh
           </span>
         </div>
 

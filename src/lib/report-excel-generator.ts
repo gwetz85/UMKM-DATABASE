@@ -789,7 +789,6 @@ async function buildAndDownloadSingleSheetExcel(params: {
   defaultHeaderColor: string;
   columns: ExcelColumnDef[];
   rows: Record<string, any>[];
-  freezeCols?: number;
   imageColKey?: string;
   rowImages?: (string | null)[];
 }) {
@@ -799,13 +798,6 @@ async function buildAndDownloadSingleSheetExcel(params: {
   workbook.created = new Date();
 
   const worksheet = workbook.addWorksheet(params.sheetName.substring(0, 31), {
-    views: [
-      {
-        state: 'frozen',
-        ySplit: 4,
-        xSplit: params.freezeCols ?? 0,
-      },
-    ],
     pageSetup: {
       paperSize: 9, // A4
       orientation: 'landscape',
