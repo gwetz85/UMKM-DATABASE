@@ -227,6 +227,7 @@ function ReportContent() {
 
   // Export loading states
   const [exportingKey, setExportingKey] = useState<string | null>(null)
+  const [exportProgress, setExportProgress] = useState<string>("")
 
   // ── Background / On-Demand Full Sync (builds lightweight settings/report_index) ──
   const syncFullMasterIndex = useCallback(
@@ -566,12 +567,23 @@ function ReportContent() {
     }
     try {
       setExportingKey("dinas")
-      toast({ title: "Menyusun Report Dinas...", description: `Memproses ${dinasDataset.length.toLocaleString("id-ID")} data ke dalam 1 lembar Excel rapi.` })
+      setExportProgress("Memuat Foto Survey...")
+      toast({ title: "Menyusun Report Dinas...", description: `Memuat foto survey & menyusun ${dinasDataset.length.toLocaleString("id-ID")} data ke dalam 1 lembar Excel rapi.` })
       const { exportReportDinasExcel } = await import("@/lib/report-excel-generator")
       await exportReportDinasExcel(
         dinasDataset,
         systemUsers,
-        buildFilterLabel("Terverifikasi & Rekening Terinput")
+        buildFilterLabel("Terverifikasi & Rekening Terinput"),
+        {
+          database,
+          onProgress: (stage, done, total) => {
+            if (stage === "photos" && total) {
+              setExportProgress(`Memuat Foto ${done}/${total}...`)
+            } else {
+              setExportProgress("Menyusun File Excel...")
+            }
+          },
+        }
       )
       logActivity({
         query: `DOWNLOAD REPORT DINAS (${dinasDataset.length} data)`,
@@ -583,13 +595,14 @@ function ReportContent() {
       })
       toast({
         title: "Report Dinas Berhasil Diunduh",
-        description: `${dinasDataset.length.toLocaleString("id-ID")} data telah dicetak dalam 1 lembar Excel yang rapi.`,
+        description: `${dinasDataset.length.toLocaleString("id-ID")} data beserta foto survey telah dicetak dalam 1 lembar Excel yang rapi.`,
       })
     } catch (err: any) {
       console.error("Export Report Dinas error:", err)
       toast({ variant: "destructive", title: "Gagal Export Report Dinas", description: err?.message || "Terjadi kesalahan saat membuat Excel." })
     } finally {
       setExportingKey(null)
+      setExportProgress("")
     }
   }
 
@@ -634,15 +647,26 @@ function ReportContent() {
     }
     try {
       setExportingKey("pelaku_usaha")
+      setExportProgress("Memuat Foto Survey...")
       toast({
         title: "Menyusun Report Pelaku Usaha Lengkap...",
-        description: `Menggabungkan ${pelakuUsahaDataset.length.toLocaleString("id-ID")} data (Biodata, Survey Dinas, BPJS & Rekening) dalam 1 lembar Excel.`,
+        description: `Memuat foto survey & menggabungkan ${pelakuUsahaDataset.length.toLocaleString("id-ID")} data (Biodata, Survey Dinas, BPJS & Rekening) dalam 1 lembar Excel.`,
       })
       const { exportReportPelakuUsahaExcel } = await import("@/lib/report-excel-generator")
       await exportReportPelakuUsahaExcel(
         pelakuUsahaDataset,
         systemUsers,
-        buildFilterLabel("Terverifikasi & Rekening Terinput + BPJS")
+        buildFilterLabel("Terverifikasi & Rekening Terinput + BPJS"),
+        {
+          database,
+          onProgress: (stage, done, total) => {
+            if (stage === "photos" && total) {
+              setExportProgress(`Memuat Foto ${done}/${total}...`)
+            } else {
+              setExportProgress("Menyusun File Excel...")
+            }
+          },
+        }
       )
       logActivity({
         query: `DOWNLOAD REPORT PELAKU USAHA LENGKAP (${pelakuUsahaDataset.length} data)`,
@@ -654,13 +678,14 @@ function ReportContent() {
       })
       toast({
         title: "Report Pelaku Usaha Berhasil Diunduh",
-        description: `${pelakuUsahaDataset.length.toLocaleString("id-ID")} data lengkap (termasuk Survey, Rekening & BPJS) tercetak dalam 1 lembar Excel.`,
+        description: `${pelakuUsahaDataset.length.toLocaleString("id-ID")} data lengkap (termasuk Foto Survey, Rekening & BPJS) tercetak dalam 1 lembar Excel.`,
       })
     } catch (err: any) {
       console.error("Export Report Pelaku Usaha error:", err)
       toast({ variant: "destructive", title: "Gagal Export Report Pelaku Usaha", description: err?.message || "Terjadi kesalahan saat membuat Excel." })
     } finally {
       setExportingKey(null)
+      setExportProgress("")
     }
   }
 
@@ -983,7 +1008,7 @@ function ReportContent() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-                    <span>Proses, Tanggal & Rincian Hasil Survey</span>
+                    <span>Proses, Hasil & Fhoto Survey Tercetak di Kolom</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-purple-600 shrink-0" />
@@ -1020,7 +1045,7 @@ function ReportContent() {
                   ) : (
                     <Download className="w-4 h-4" />
                   )}
-                  Download Report Dinas
+                  {exportingKey === "dinas" && exportProgress ? exportProgress : "Download Report Dinas"}
                 </Button>
               </div>
             </CardContent>
@@ -1139,7 +1164,7 @@ function ReportContent() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                    <span>Lengkap: Biodata, KK, Usaha & Survey Dinas</span>
+                    <span>Lengkap: Biodata, KK, Usaha, Survey & Fhoto Survey</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-teal-600 shrink-0" />
@@ -1178,7 +1203,7 @@ function ReportContent() {
                   ) : (
                     <Download className="w-4 h-4" />
                   )}
-                  Download Report Pelaku Usaha
+                  {exportingKey === "pelaku_usaha" && exportProgress ? exportProgress : "Download Report Pelaku Usaha"}
                 </Button>
               </div>
             </CardContent>

@@ -1,3 +1,4 @@
+import { Database, ref, get } from 'firebase/database';
 import { BusinessActor } from '@/app/lib/types';
 import {
   parsePobDob,
@@ -11,6 +12,144 @@ import {
 } from '@/lib/utils';
 import { getActorCurrentMenu } from '@/lib/actor-menu-status';
 import { resolveSurveyorCanonicalName } from '@/lib/surveyor-utils';
+import { getSurveyPhoto, isValidPhotoString } from '@/lib/survey-photo-service';
+
+export interface ExcelExportOptions {
+  database?: Database | null;
+  onProgress?: (stage: string, done?: number, total?: number) => void;
+}
+
+// Session cache of resized JPEG base64 thumbnails (keyed by actorId) so subsequent exports are instant
+const excelPhotoCache = new Map<string, string | null>();
+
+async function normalizePhotoToExcelJpeg(
+  rawPhoto: string,
+  targetW = 240,
+  targetH = 176
+): Promise<string | null> {
+  if (!rawPhoto || typeof rawPhoto !== 'string') return null;
+  const trimmed = rawPhoto.trim();
+  if (!trimmed || trimmed === '-') return null;
+
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new window.Image();
+        el.crossOrigin = 'anonymous';
+        el.onload = () => resolve(el);
+        el.onerror = () => reject(new Error('Image load failed'));
+        el.src = trimmed;
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      // Crisp white background with 6px frame padding so photo fits neatly inside Excel cell borders
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, targetW, targetH);
+
+      const pad = 6;
+      const availW = targetW - pad * 2;
+      const availH = targetH - pad * 2;
+      const imgW = img.naturalWidth || img.width || availW;
+      const imgH = img.naturalHeight || img.height || availH;
+      const scale = Math.min(availW / imgW, availH / imgH);
+      const drawW = Math.round(imgW * scale);
+      const drawH = Math.round(imgH * scale);
+      const drawX = Math.round((targetW - drawW) / 2);
+      const drawY = Math.round((targetH - drawH) / 2);
+
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      return dataUrl.split(',')[1] || null;
+    } catch {
+      const match = trimmed.match(/^data:image\/(jpeg|jpg|png);base64,(.+)$/i);
+      if (match) return match[2];
+      return null;
+    }
+  }
+
+  const match = trimmed.match(/^data:image\/(jpeg|jpg|png);base64,(.+)$/i);
+  return match ? match[2] : null;
+}
+
+async function fetchSingleActorPhotoFast(
+  database: Database | null | undefined,
+  actor: ReportActor
+): Promise<string | null> {
+  if (!actor || !actor.id) return null;
+  if (excelPhotoCache.has(actor.id)) {
+    return excelPhotoCache.get(actor.id) ?? null;
+  }
+
+  let rawPhoto: string | null = null;
+
+  // 1. Check inline photo properties first
+  const inline = actor.surveyData?.fotoSurveyUrl || actor.photoSurveyUrl;
+  if (inline && isValidPhotoString(inline)) {
+    rawPhoto = inline;
+  }
+
+  // 2. Fast 1-read leaf lookup on primary RTDB path
+  if (!rawPhoto && database) {
+    try {
+      const snap = await get(ref(database, `businessActors/${actor.id}/surveyData/fotoSurveyUrl`));
+      if (snap.exists() && isValidPhotoString(snap.val())) {
+        rawPhoto = String(snap.val());
+      }
+    } catch {
+      // ignore and fall back
+    }
+  }
+
+  // 3. Fallback to multi-path getSurveyPhoto only if primary leaf was empty
+  if (!rawPhoto && database) {
+    rawPhoto = await getSurveyPhoto(database, actor.id, actor);
+  }
+
+  const normalized = rawPhoto ? await normalizePhotoToExcelJpeg(rawPhoto) : null;
+  excelPhotoCache.set(actor.id, normalized);
+  return normalized;
+}
+
+async function fetchSurveyPhotosMap(
+  database: Database | null | undefined,
+  actors: ReportActor[],
+  onProgress?: (stage: string, done?: number, total?: number) => void
+): Promise<Map<string, string>> {
+  const resultMap = new Map<string, string>();
+  const total = actors.length;
+  if (total === 0) return resultMap;
+
+  const BATCH_SIZE = 25;
+  let completed = 0;
+
+  onProgress?.('photos', 0, total);
+
+  for (let i = 0; i < total; i += BATCH_SIZE) {
+    const batch = actors.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map(async (actor) => {
+        const jpeg = await fetchSingleActorPhotoFast(database, actor);
+        return { id: actor.id, jpeg };
+      })
+    );
+
+    batchResults.forEach(({ id, jpeg }) => {
+      if (id && jpeg) {
+        resultMap.set(id, jpeg);
+      }
+    });
+
+    completed = Math.min(total, i + batch.length);
+    onProgress?.('photos', completed, total);
+  }
+
+  return resultMap;
+}
 
 export interface ResolvedBpjsInfo {
   hasMatch: boolean;
@@ -576,6 +715,7 @@ interface ExcelColumnDef {
   isCurrency?: boolean;
   isWrap?: boolean;
   isStatus?: boolean;
+  isImage?: boolean;
 }
 
 function getColumnLetter(colIndex: number): string {
@@ -650,6 +790,8 @@ async function buildAndDownloadSingleSheetExcel(params: {
   columns: ExcelColumnDef[];
   rows: Record<string, any>[];
   freezeCols?: number;
+  imageColKey?: string;
+  rowImages?: (string | null)[];
 }) {
   const ExcelJS = (await import('exceljs')).default || (await import('exceljs'));
   const workbook = new ExcelJS.Workbook();
@@ -686,6 +828,7 @@ async function buildAndDownloadSingleSheetExcel(params: {
 
   // Auto-calculate comfortable column widths so no headers (with AutoFilter arrow) or text get clipped horizontally
   const computedWidths = params.columns.map((col) => {
+    if (col.isImage) return col.width;
     const headerMinWidth = col.key === 'no' ? 9 : Math.min(34, col.header.length + 5);
     let bestWidth = Math.max(col.width, headerMinWidth);
 
@@ -770,11 +913,16 @@ async function buildAndDownloadSingleSheetExcel(params: {
     right: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
   };
 
+  const imageColIdx = params.imageColKey
+    ? params.columns.findIndex((c) => c.key === params.imageColKey)
+    : -1;
+
   // ── DATA ROWS (START AT ROW 5) ──
   params.rows.forEach((rowData, rIdx) => {
     const row = worksheet.addRow(rowData);
     const isEven = rIdx % 2 === 1;
-    let maxLines = 1;
+    const rowZeroIdx = 4 + rIdx; // Row 5 in Excel = index 4 (0-based)
+    const jpegBase64 = imageColIdx >= 0 && params.rowImages ? params.rowImages[rIdx] : null;
 
     params.columns.forEach((col, cIdx) => {
       const cell = row.getCell(cIdx + 1);
@@ -782,9 +930,10 @@ async function buildAndDownloadSingleSheetExcel(params: {
       const strVal = val !== undefined && val !== null ? String(val).trim() : '';
       const hasNewline = strVal.includes('\n');
       const shouldWrap = Boolean(col.isWrap || hasNewline);
-      const effectiveWidth = computedWidths[cIdx] || col.width;
 
-      if (col.isText) {
+      if (col.isImage) {
+        cell.value = jpegBase64 ? '' : '-';
+      } else if (col.isText) {
         cell.value = strVal !== '' ? strVal : '-';
         cell.numFmt = '@';
       } else if (col.isCurrency) {
@@ -793,7 +942,11 @@ async function buildAndDownloadSingleSheetExcel(params: {
         cell.numFmt = '#,##0';
       }
 
-      cell.font = { name: 'Calibri', size: 10, color: { argb: 'FF0F172A' } };
+      cell.font = {
+        name: 'Calibri',
+        size: 10,
+        color: { argb: col.isImage && !jpegBase64 ? 'FF94A3B8' : 'FF0F172A' },
+      };
       cell.border = thinBorder;
       cell.alignment = {
         vertical: 'middle',
@@ -801,28 +954,43 @@ async function buildAndDownloadSingleSheetExcel(params: {
         wrapText: shouldWrap,
       };
 
-      if (isEven) {
+      if (isEven && !col.isImage) {
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
       }
 
       if (col.isStatus) {
         applyStatusCellStyle(cell, val);
       }
-
-      if (shouldWrap && strVal && strVal !== '-') {
-        const charsPerLine = Math.max(10, Math.floor(effectiveWidth * 0.86));
-        const rawLines = strVal.split(/\r?\n/);
-        let totalCellLines = 0;
-        rawLines.forEach((line) => {
-          const cleanLen = line.trim().length;
-          totalCellLines += Math.max(1, Math.ceil(cleanLen / charsPerLine));
-        });
-        const clampedLines = Math.min(25, Math.max(1, totalCellLines));
-        if (clampedLines > maxLines) maxLines = clampedLines;
-      }
     });
 
-    row.height = Math.max(22, maxLines * 16 + 8);
+    row.height = 87.8;
+
+    // Embed survey photo anchored exactly to the cell boundaries (fits exact column width & row height on all DPIs)
+    if (jpegBase64 && imageColIdx >= 0) {
+      try {
+        const imageId = workbook.addImage({
+          base64: jpegBase64,
+          extension: 'jpeg',
+        });
+        worksheet.addImage(imageId, {
+          tl: {
+            nativeCol: imageColIdx,
+            nativeColOff: 0,
+            nativeRow: rowZeroIdx,
+            nativeRowOff: 0,
+          } as any,
+          br: {
+            nativeCol: imageColIdx + 1,
+            nativeColOff: 0,
+            nativeRow: rowZeroIdx + 1,
+            nativeRowOff: 0,
+          } as any,
+          editAs: 'twoCell',
+        });
+      } catch (imgErr) {
+        console.warn('Gagal menyematkan foto survey ke Excel:', imgErr);
+      }
+    }
   });
 
   // Trigger download
@@ -848,10 +1016,13 @@ async function buildAndDownloadSingleSheetExcel(params: {
 export async function exportReportDinasExcel(
   actors: ReportActor[],
   systemUsers?: any[],
-  filterSummary: string = 'Semua Data'
+  filterSummary: string = 'Semua Data',
+  options?: ExcelExportOptions
 ) {
   const sorted = sortActorsForReport(actors);
   const resolver = buildOfficerResolver(sorted, systemUsers);
+  const photosMap = await fetchSurveyPhotosMap(options?.database, sorted, options?.onProgress);
+  options?.onProgress?.('building', sorted.length, sorted.length);
   const nowDate = new Date();
   const dateStamp = nowDate.toISOString().split('T')[0];
   const printedAt = formatDateTimeIndo(nowDate.toISOString());
@@ -896,6 +1067,7 @@ export async function exportReportDinasExcel(
     { header: 'PROSES SURVEY', key: 'prosesSurvey', width: 24, align: 'center', isStatus: true, headerFill: 'FF6B21A8' },
     { header: 'TANGGAL SURVEY', key: 'tanggalSurvey', width: 16, align: 'center', isText: true, headerFill: 'FF6B21A8' },
     { header: 'HASIL SURVEY', key: 'hasilSurvey', width: 18, align: 'center', isStatus: true, headerFill: 'FF6B21A8' },
+    { header: 'FHOTO SURVEY', key: 'fotoSurvey', width: 24, align: 'center', isImage: true, headerFill: 'FF6B21A8' },
     { header: 'PETUGAS SURVEY', key: 'petugasSurvey', width: 26, headerFill: 'FF6B21A8' },
     { header: 'NIP / NIPPPK PETUGAS SURVEY', key: 'petugasNip', width: 22, align: 'center', isText: true, headerFill: 'FF6B21A8' },
     { header: 'WAKTU SUBMIT SURVEY DINAS', key: 'waktuSubmitSurvey', width: 24, align: 'center', isText: true, headerFill: 'FF6B21A8' },
@@ -905,7 +1077,6 @@ export async function exportReportDinasExcel(
     { header: 'PETUGAS VERIFIKATOR DINAS', key: 'verifikatorDinas', width: 26, headerFill: 'FF6B21A8' },
     { header: 'NIP / NIPPPK VERIFIKATOR', key: 'verifikatorNip', width: 22, align: 'center', isText: true, headerFill: 'FF6B21A8' },
     { header: 'WAKTU DIVERIFIKASI DINAS', key: 'waktuVerifDinas', width: 24, align: 'center', isText: true, headerFill: 'FF6B21A8' },
-    { header: 'KETERANGAN / CATATAN DINAS', key: 'catatanDinas', width: 32, isWrap: true, headerFill: 'FF6B21A8' },
     { header: 'KOORDINAT GPS SURVEY', key: 'gps', width: 22, align: 'center', isText: true, headerFill: 'FF6B21A8' },
     { header: 'LINK GOOGLE DRIVE BERKAS', key: 'googleDriveLink', width: 28, headerFill: 'FF6B21A8' },
   ];
@@ -952,6 +1123,7 @@ export async function exportReportDinasExcel(
       prosesSurvey: survey.prosesSurvey,
       tanggalSurvey: survey.sd.tanggalSurvey || '-',
       hasilSurvey: survey.hasilSurvey,
+      fotoSurvey: '',
       petugasSurvey: petugas.nama,
       petugasNip: petugas.nipppk,
       waktuSubmitSurvey: survey.waktuSubmitSurvey,
@@ -961,11 +1133,12 @@ export async function exportReportDinasExcel(
       verifikatorDinas: verifikator.nama,
       verifikatorNip: verifikator.nipppk,
       waktuVerifDinas: survey.waktuVerifDinas,
-      catatanDinas: survey.catatanDinas,
       gps: survey.gpsStr,
       googleDriveLink: actor.googleDriveLink || '-',
     };
   });
+
+  const rowImages = sorted.map((actor) => photosMap.get(actor.id) ?? null);
 
   await buildAndDownloadSingleSheetExcel({
     sheetName: 'Report Dinas',
@@ -976,6 +1149,8 @@ export async function exportReportDinasExcel(
     defaultHeaderColor: 'FF5B21B6',
     columns,
     rows,
+    imageColKey: 'fotoSurvey',
+    rowImages,
   });
 }
 
@@ -1080,10 +1255,13 @@ export async function exportReportRekeningExcel(
 export async function exportReportPelakuUsahaExcel(
   actors: ReportActor[],
   systemUsers?: any[],
-  filterSummary: string = 'Semua Data Tanpa Terkecuali'
+  filterSummary: string = 'Semua Data Tanpa Terkecuali',
+  options?: ExcelExportOptions
 ) {
   const sorted = sortActorsForReport(actors);
   const resolver = buildOfficerResolver(sorted, systemUsers);
+  const photosMap = await fetchSurveyPhotosMap(options?.database, sorted, options?.onProgress);
+  options?.onProgress?.('building', sorted.length, sorted.length);
   const nowDate = new Date();
   const dateStamp = nowDate.toISOString().split('T')[0];
   const printedAt = formatDateTimeIndo(nowDate.toISOString());
@@ -1136,6 +1314,7 @@ export async function exportReportPelakuUsahaExcel(
     { header: 'PROSES SURVEY', key: 'prosesSurvey', width: 24, align: 'center', isStatus: true, headerFill: 'FF6B21A8' },
     { header: 'TANGGAL SURVEY', key: 'tanggalSurvey', width: 16, align: 'center', isText: true, headerFill: 'FF6B21A8' },
     { header: 'HASIL SURVEY', key: 'hasilSurvey', width: 18, align: 'center', isStatus: true, headerFill: 'FF6B21A8' },
+    { header: 'FHOTO SURVEY', key: 'fotoSurvey', width: 24, align: 'center', isImage: true, headerFill: 'FF6B21A8' },
     { header: 'PETUGAS SURVEY', key: 'petugasSurvey', width: 26, headerFill: 'FF6B21A8' },
     { header: 'NIP / NIPPPK PETUGAS SURVEY', key: 'petugasNip', width: 22, align: 'center', isText: true, headerFill: 'FF6B21A8' },
     { header: 'WAKTU SUBMIT SURVEY DINAS', key: 'waktuSubmitSurvey', width: 24, align: 'center', isText: true, headerFill: 'FF6B21A8' },
@@ -1145,7 +1324,6 @@ export async function exportReportPelakuUsahaExcel(
     { header: 'PETUGAS VERIFIKATOR DINAS', key: 'verifikatorDinas', width: 26, headerFill: 'FF6B21A8' },
     { header: 'NIP / NIPPPK VERIFIKATOR', key: 'verifikatorNip', width: 22, align: 'center', isText: true, headerFill: 'FF6B21A8' },
     { header: 'WAKTU DIVERIFIKASI DINAS', key: 'waktuVerifDinas', width: 24, align: 'center', isText: true, headerFill: 'FF6B21A8' },
-    { header: 'KETERANGAN / CATATAN DINAS', key: 'catatanDinas', width: 32, isWrap: true, headerFill: 'FF6B21A8' },
     { header: 'KOORDINAT GPS SURVEY', key: 'gps', width: 22, align: 'center', isText: true, headerFill: 'FF6B21A8' },
     { header: 'LINK GOOGLE DRIVE BERKAS', key: 'googleDriveLink', width: 28, headerFill: 'FF6B21A8' },
 
@@ -1229,6 +1407,7 @@ export async function exportReportPelakuUsahaExcel(
       prosesSurvey: survey.prosesSurvey,
       tanggalSurvey: survey.sd.tanggalSurvey || '-',
       hasilSurvey: survey.hasilSurvey,
+      fotoSurvey: '',
       petugasSurvey: petugas.nama,
       petugasNip: petugas.nipppk,
       waktuSubmitSurvey: survey.waktuSubmitSurvey,
@@ -1238,7 +1417,6 @@ export async function exportReportPelakuUsahaExcel(
       verifikatorDinas: verifikator.nama,
       verifikatorNip: verifikator.nipppk,
       waktuVerifDinas: survey.waktuVerifDinas,
-      catatanDinas: survey.catatanDinas,
       gps: survey.gpsStr,
       googleDriveLink: actor.googleDriveLink || '-',
 
@@ -1257,6 +1435,8 @@ export async function exportReportPelakuUsahaExcel(
     };
   });
 
+  const rowImages = sorted.map((actor) => photosMap.get(actor.id) ?? null);
+
   await buildAndDownloadSingleSheetExcel({
     sheetName: 'Report Pelaku Usaha',
     fileName: `Report_Pelaku_Usaha_Lengkap_${dateStamp}.xlsx`,
@@ -1266,5 +1446,7 @@ export async function exportReportPelakuUsahaExcel(
     defaultHeaderColor: 'FF1E3A8A',
     columns,
     rows,
+    imageColKey: 'fotoSurvey',
+    rowImages,
   });
 }
