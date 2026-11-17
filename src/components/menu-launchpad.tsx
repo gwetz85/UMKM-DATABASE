@@ -77,8 +77,10 @@ const getModuleCategory = (item: any): string => {
     href.includes('gbas') || 
     href.includes('layar') || 
     href.includes('cetak') || 
+    href.includes('report') || 
     name.includes('dashboard') || 
-    name.includes('rekapan')
+    name.includes('rekapan') || 
+    name.includes('report')
   ) {
     return 'Laporan & Statistik'
   }

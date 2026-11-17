@@ -233,6 +233,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       case '/dashboard': return 'Dashboard Statistik';
       case '/actor-data': return 'Data Pelaku Usaha';
       case '/finish': return 'Data Selesai';
+      case '/report': return 'Report';
       case '/rejected': return 'Data Ditolak';
       case '/verify-actor': return 'Verifikasi Admin';
       case '/daftar-hadir': return 'Daftar Hadir';

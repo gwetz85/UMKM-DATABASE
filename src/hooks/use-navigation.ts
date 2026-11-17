@@ -325,6 +325,14 @@ export function useNavigation() {
       color: "#1d4ed8",
       description: "Data yang Telah Selesai Diproses"
     },
+    {
+      name: "Report",
+      href: "/report",
+      icon: FileSpreadsheet,
+      show: !!user && (isAdmin || isStaff || isMonitoring || isDinas || isVerifikatorDinas || isInspektorat),
+      color: "#10b981",
+      description: "Download Report Dinas, Rekening, Pelaku Usaha & Berkas Pencairan"
+    },
 
     // ─── 4. PENGATURAN SYSTEM ───
     {

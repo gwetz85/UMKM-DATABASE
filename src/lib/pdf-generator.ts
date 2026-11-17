@@ -928,15 +928,7 @@ export const generateLPJReceipt = (coordinator: string, actors: BusinessActor[])
   doc.save(`TANDA_TERIMA_LPJ_${cleanName}.pdf`);
 };
 
-export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isFirstActor: boolean = true) => {
-  if (!isFirstActor) {
-    doc.addPage();
-  }
-
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 16;
-  const contentWidth = pageWidth - margin * 2;
-
+const getBerkasPencairanDateStr = () => {
   const now = new Date();
   const bulanNames = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -944,14 +936,16 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
   ];
   const bulan = bulanNames[now.getMonth()];
   const tahun = now.getFullYear();
-  const dateStr = `Tanjungpinang , ...... ${bulan} ${tahun}`;
+  return `Tanjungpinang , ...... ${bulan} ${tahun}`;
+};
 
+// ═══════════════════════════════════════════════════════════════════════════
+// HALAMAN 1 : KUITANSI (UKURAN & PROPORSI 100% PERSIS DOKUMEN CETAKAN ASLI)
+// ═══════════════════════════════════════════════════════════════════════════
+const renderKuitansiPage = (doc: jsPDF, actor: BusinessActor, dateStr: string) => {
+  const pageWidth = doc.internal.pageSize.getWidth();
   const materaiWidth = 20;
   const materaiHeight = 27;
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // HALAMAN 1 : KUITANSI (UKURAN & PROPORSI 100% PERSIS DOKUMEN CETAKAN ASLI)
-  // ═══════════════════════════════════════════════════════════════════════════
 
   const kBoxLeft = 16;
   const kBoxTop = 28;
@@ -962,6 +956,7 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
 
   // 1. Kotak Bingkai Luar Utama
   doc.setDrawColor(0);
+  doc.setTextColor(0);
   doc.setLineWidth(0.6);
   doc.rect(kBoxLeft, kBoxTop, kBoxWidth, kBoxHeight);
 
@@ -1097,13 +1092,19 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
   doc.setFont('times', 'bold');
   doc.setFontSize(10);
   doc.text((actor.fullName || '-').toUpperCase(), kRightColCenter, kMiddleSplitY + 80, { align: 'center' });
+};
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // HALAMAN 2 : SURAT PERNYATAAN (DENGAN FONT TIMES NEW ROMAN)
-  // ═══════════════════════════════════════════════════════════════════════════
-  doc.addPage();
+// ═══════════════════════════════════════════════════════════════════════════
+// HALAMAN 2 : SURAT PERNYATAAN (DENGAN FONT TIMES NEW ROMAN)
+// ═══════════════════════════════════════════════════════════════════════════
+const renderSuratPernyataanPage = (doc: jsPDF, actor: BusinessActor, dateStr: string) => {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 16;
+  const materaiWidth = 20;
+  const materaiHeight = 27;
 
   // ── JUDUL ──────────────────────────────────────────────────────────────────
+  doc.setDrawColor(0);
   doc.setFont('times', 'bold');
   doc.setFontSize(14);
   doc.setTextColor(0, 0, 0);
@@ -1248,14 +1249,17 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
   doc.setFont('times', 'bold');
   doc.setFontSize(10);
   doc.text((actor.fullName || '-').toUpperCase(), spDateCenterX, y, { align: 'center' });
+};
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // HALAMAN 3 : LAPORAN PENGGUNAAN BANTUAN DANA PERMODALAN PENGEMBANGAN USAHA
-  // ═══════════════════════════════════════════════════════════════════════════
-  doc.addPage();
-
+// ═══════════════════════════════════════════════════════════════════════════
+// HALAMAN 3 : LAPORAN PENGGUNAAN BANTUAN DANA PERMODALAN PENGEMBANGAN USAHA
+// ═══════════════════════════════════════════════════════════════════════════
+const renderLpjPage = (doc: jsPDF, actor: BusinessActor, dateStr: string) => {
+  const pageWidth = doc.internal.pageSize.getWidth();
   const lpjMarginX = 22;
   const lpjContentWidth = pageWidth - lpjMarginX * 2; // 166 mm
+  doc.setDrawColor(0);
+  doc.setTextColor(0);
 
   // Helper untuk menggambar baris teks rata kanan-kiri (justified) dengan dukungan multi font-style (bold/italic)
   const drawLpjJustifiedLine = (
@@ -1464,7 +1468,63 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
   const nameW = Math.max(doc.getTextWidth(actorName), 50);
   doc.setLineWidth(0.4);
   doc.line(lpjSigCenterX - nameW / 2, lpjY + 1.5, lpjSigCenterX + nameW / 2, lpjY + 1.5);
+};
 
+export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isFirstActor: boolean = true) => {
+  const dateStr = getBerkasPencairanDateStr();
+  if (!isFirstActor) {
+    doc.addPage();
+  }
+  renderKuitansiPage(doc, actor, dateStr);
+  doc.addPage();
+  renderSuratPernyataanPage(doc, actor, dateStr);
+  doc.addPage();
+  renderLpjPage(doc, actor, dateStr);
+};
+
+export type BerkasRangkapLayout = 'paired' | 'grouped';
+
+/**
+ * Render Berkas Pencairan dengan penambahan rangkap:
+ * - Halaman 1 (Kuitansi) : Rangkap 2 (2 lembar)
+ * - Halaman 2 (Surat Pernyataan) : Rangkap 2 (2 lembar)
+ * - Halaman 3 (LPJ / Laporan Penggunaan Dana) : 1 lembar
+ * Total: 5 halaman per pelaku usaha.
+ */
+export const renderBerkasPencairanRangkapPages = (
+  doc: jsPDF,
+  actor: BusinessActor,
+  isFirstActor: boolean = true,
+  layout: BerkasRangkapLayout = 'paired'
+) => {
+  const dateStr = getBerkasPencairanDateStr();
+  if (!isFirstActor) {
+    doc.addPage();
+  }
+
+  if (layout === 'grouped') {
+    // 2x Kuitansi -> 2x Surat Pernyataan -> 1x LPJ
+    renderKuitansiPage(doc, actor, dateStr);
+    doc.addPage();
+    renderKuitansiPage(doc, actor, dateStr);
+    doc.addPage();
+    renderSuratPernyataanPage(doc, actor, dateStr);
+    doc.addPage();
+    renderSuratPernyataanPage(doc, actor, dateStr);
+    doc.addPage();
+    renderLpjPage(doc, actor, dateStr);
+  } else {
+    // Set 1 (Kuitansi + Surat Pernyataan) -> Set 2 (Kuitansi + Surat Pernyataan) -> 1x LPJ
+    renderKuitansiPage(doc, actor, dateStr);
+    doc.addPage();
+    renderSuratPernyataanPage(doc, actor, dateStr);
+    doc.addPage();
+    renderKuitansiPage(doc, actor, dateStr);
+    doc.addPage();
+    renderSuratPernyataanPage(doc, actor, dateStr);
+    doc.addPage();
+    renderLpjPage(doc, actor, dateStr);
+  }
 };
 
 export const generateSuratPernyataan = (actor: BusinessActor) => {
@@ -1490,5 +1550,23 @@ export const generateSuratPernyataanBulk = (actors: BusinessActor[], customFilen
     renderSuratPernyataanPages(doc, actor, index === 0);
   });
   const filename = customFilename || `BERKAS_PENCAIRAN_GABUNGAN_${actors.length}_DATA.pdf`;
+  doc.save(filename.endsWith('.pdf') ? filename : `${filename}.pdf`);
+};
+
+export const generateBerkasPencairanRangkapBulk = (
+  actors: BusinessActor[],
+  customFilename?: string,
+  layout: BerkasRangkapLayout = 'paired'
+) => {
+  if (!actors || actors.length === 0) return;
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+  actors.forEach((actor, index) => {
+    renderBerkasPencairanRangkapPages(doc, actor, index === 0, layout);
+  });
+  const filename = customFilename || `REPORT_BERKAS_PENCAIRAN_RANGKAP2_${actors.length}_DATA.pdf`;
   doc.save(filename.endsWith('.pdf') ? filename : `${filename}.pdf`);
 };

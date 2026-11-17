@@ -223,7 +223,8 @@ export function AppSidebar() {
           "/lpj-receipt",
           "/lpj",
           "/blacklist",
-          "/finish"
+          "/finish",
+          "/report"
         ]
       },
       {

@@ -1,0 +1,1068 @@
+import { BusinessActor } from '@/app/lib/types';
+import {
+  parsePobDob,
+  calculateAge,
+  extractDobFromNik,
+  formatCurrency,
+  formatDateTimeIndo,
+  resolveRtRw,
+  resolveKelurahan,
+  resolveKecamatan,
+  resolvePob,
+} from '@/lib/utils';
+import { getActorCurrentMenu } from '@/lib/actor-menu-status';
+import { resolveSurveyorCanonicalName } from '@/lib/surveyor-utils';
+
+export interface ReportActor extends BusinessActor {
+  bpjsResolved?: {
+    hasMatch: boolean;
+    statusLabel: string;
+    statusCode: string;
+    note: string;
+    kpj: string;
+    checkedAt: string;
+    sourceFile: string;
+  };
+  verificationLocation?: { lat: number; lon: number } | null;
+}
+
+interface ResolvedOfficerInfo {
+  nama: string;
+  nipppk: string;
+}
+
+const BANK_LIST = [
+  'BCA',
+  'BNI',
+  'BRI',
+  'BRK',
+  'MANDIRI',
+  'BSI',
+  'BTN',
+  'OCBC',
+  'PANIN',
+  'MUAMALAT',
+  'MAYBANK',
+  'BUKOPIN',
+  'DANAMON',
+  'PERMATA',
+  'CIMB NIAGA',
+];
+
+export function normalizeBankNameReport(bankName?: string): string {
+  if (!bankName || !bankName.trim()) return '-';
+  const upper = bankName.trim().toUpperCase();
+  if (upper === '-') return '-';
+  if (upper.includes('RIAU KEPRI') || upper.includes('BRK')) return 'BRK';
+  if (upper.includes('SYARIAH INDONESIA') || upper.includes('BSI')) return 'BSI';
+  if (upper.includes('RAKYAT INDONESIA') || upper.includes('BRI')) return 'BRI';
+  if (upper.includes('NEGARA INDONESIA') || upper.includes('BNI')) return 'BNI';
+  if (upper.includes('CENTRAL ASIA') || upper.includes('BCA')) return 'BCA';
+  if (upper.includes('TABUNGAN NEGARA') || upper.includes('BTN')) return 'BTN';
+  if (upper.includes('CIMB') || upper.includes('NIAGA')) return 'CIMB NIAGA';
+  const matched = BANK_LIST.find((b) => upper.includes(b));
+  return matched || upper;
+}
+
+function buildOfficerResolver(allActors: ReportActor[], systemUsers?: any[]) {
+  const userByName = new Map<string, any>();
+  const userByUsername = new Map<string, any>();
+  const surveyorToVerif = new Map<string, ResolvedOfficerInfo>();
+
+  if (Array.isArray(systemUsers)) {
+    systemUsers.forEach((u: any) => {
+      if (!u) return;
+      const fullUpper = u.fullName ? String(u.fullName).toUpperCase().trim() : '';
+      const idUpper = u.id ? String(u.id).toUpperCase().trim() : '';
+      const unameLower = u.username ? String(u.username).toLowerCase().trim() : '';
+      if (fullUpper) userByName.set(fullUpper, u);
+      if (idUpper) userByName.set(idUpper, u);
+      if (unameLower) userByUsername.set(unameLower, u);
+
+      const pdVerif = u.pejabatData?.verifikator;
+      if (
+        pdVerif?.nama &&
+        pdVerif.nama.trim() !== '' &&
+        pdVerif.nama.trim() !== '-' &&
+        pdVerif.nama.trim() !== 'Belum Ditentukan'
+      ) {
+        const vInfo: ResolvedOfficerInfo = {
+          nama: String(pdVerif.nama).trim().toUpperCase(),
+          nipppk: pdVerif.nipppk ? String(pdVerif.nipppk).trim() : '',
+        };
+        if (fullUpper) surveyorToVerif.set(fullUpper, vInfo);
+        if (idUpper) surveyorToVerif.set(idUpper, vInfo);
+        if (unameLower) surveyorToVerif.set(unameLower.toUpperCase(), vInfo);
+      }
+    });
+  }
+
+  allActors.forEach((a) => {
+    if (!a) return;
+    const sd = (a as any).surveyData || {};
+    const pRaw = (
+      a.petugasSurvey ||
+      a.pejabatData?.petugas?.nama ||
+      sd.pejabatData?.petugas?.nama ||
+      ''
+    )
+      .toUpperCase()
+      .trim();
+
+    const vRaw = (
+      a.berkasDinasVerifiedBy ||
+      a.pejabatData?.verifikator?.nama ||
+      sd.pejabatData?.verifikator?.nama ||
+      a.verifikatorDinas ||
+      ''
+    ).trim();
+
+    if (
+      pRaw &&
+      pRaw !== '-' &&
+      pRaw !== 'BELUM ADA' &&
+      vRaw &&
+      vRaw !== '-' &&
+      vRaw !== 'Belum Ditentukan' &&
+      vRaw !== 'Verifikator Dinas'
+    ) {
+      const vNip = a.pejabatData?.verifikator?.nipppk || sd.pejabatData?.verifikator?.nipppk || '';
+      if (!surveyorToVerif.has(pRaw)) {
+        surveyorToVerif.set(pRaw, {
+          nama: vRaw.toUpperCase(),
+          nipppk: vNip ? String(vNip).trim() : '',
+        });
+      }
+    }
+  });
+
+  const isValidName = (val?: string | null, invalidPlaceholders: string[] = []) => {
+    if (!val) return false;
+    const clean = String(val).trim();
+    if (!clean || clean === '-') return false;
+    const upper = clean.toUpperCase();
+    return !invalidPlaceholders.some((p) => p.toUpperCase() === upper);
+  };
+
+  const resolvePetugas = (actor: ReportActor): ResolvedOfficerInfo => {
+    const sd = (actor as any).surveyData || {};
+    const pdPetugas = actor.pejabatData?.petugas || sd.pejabatData?.petugas;
+
+    let rawName = '';
+    if (isValidName(actor.petugasSurvey, ['BELUM ADA'])) {
+      rawName = String(actor.petugasSurvey).trim();
+    } else if (isValidName(pdPetugas?.nama, ['BELUM ADA', 'Belum Ditentukan'])) {
+      rawName = String(pdPetugas.nama).trim();
+    } else if (isValidName(actor.verifiedDinasBy, ['Petugas Survey', 'Verifikator Dinas', 'BELUM ADA'])) {
+      rawName = String(actor.verifiedDinasBy).trim();
+    }
+
+    let nipppk = pdPetugas?.nipppk ? String(pdPetugas.nipppk).trim() : '';
+
+    if (rawName) {
+      const canonical = resolveSurveyorCanonicalName(rawName, systemUsers);
+      const upper = rawName.toUpperCase().trim();
+      const lower = rawName.toLowerCase().trim();
+      const found =
+        userByName.get(upper) ||
+        userByName.get(canonical) ||
+        userByUsername.get(lower);
+      if (found) {
+        if (found.fullName) rawName = String(found.fullName).trim();
+        if (!nipppk && (found.nipppk || found.pejabatData?.petugas?.nipppk)) {
+          nipppk = String(found.nipppk || found.pejabatData?.petugas?.nipppk).trim();
+        }
+      } else if (canonical && canonical !== 'BELUM ADA') {
+        rawName = canonical;
+      }
+    }
+
+    return {
+      nama: rawName ? rawName.toUpperCase() : '-',
+      nipppk: nipppk || '-',
+    };
+  };
+
+  const resolveVerifikator = (
+    actor: ReportActor,
+    petugasInfo: ResolvedOfficerInfo
+  ): ResolvedOfficerInfo => {
+    const sd = (actor as any).surveyData || {};
+    const pdVerif = actor.pejabatData?.verifikator || sd.pejabatData?.verifikator;
+
+    let rawName = '';
+    if (isValidName(actor.berkasDinasVerifiedBy, ['Verifikator Dinas', 'Belum Ditentukan', 'BELUM ADA'])) {
+      rawName = String(actor.berkasDinasVerifiedBy).trim();
+    } else if (isValidName(pdVerif?.nama, ['Belum Ditentukan', 'BELUM ADA'])) {
+      rawName = String(pdVerif.nama).trim();
+    } else if (isValidName(actor.verifikatorDinas, ['Belum Ditentukan', 'BELUM ADA'])) {
+      rawName = String(actor.verifikatorDinas).trim();
+    }
+
+    let nipppk = pdVerif?.nipppk ? String(pdVerif.nipppk).trim() : '';
+
+    if (!rawName && petugasInfo.nama && petugasInfo.nama !== '-') {
+      const mapped = surveyorToVerif.get(petugasInfo.nama.toUpperCase().trim());
+      if (mapped) {
+        rawName = mapped.nama;
+        if (!nipppk && mapped.nipppk) nipppk = mapped.nipppk;
+      }
+    }
+
+    if (rawName) {
+      const upper = rawName.toUpperCase().trim();
+      const lower = rawName.toLowerCase().trim();
+      const found = userByName.get(upper) || userByUsername.get(lower);
+      if (found) {
+        if (found.fullName) rawName = String(found.fullName).trim();
+        if (!nipppk && (found.nipppk || found.pejabatData?.verifikator?.nipppk)) {
+          nipppk = String(found.nipppk || found.pejabatData?.verifikator?.nipppk).trim();
+        }
+      }
+    }
+
+    return {
+      nama: rawName ? rawName.toUpperCase() : '-',
+      nipppk: nipppk || '-',
+    };
+  };
+
+  return { resolvePetugas, resolveVerifikator };
+}
+
+function getSurveyHelpers(actor: ReportActor) {
+  const sd: any = actor.surveyData || {};
+  const hasSurveyData = Boolean(
+    sd.hasilSurvey || sd.tanggalSurvey || sd.bidangUsaha || sd.modalUsaha || sd.omset || sd.rencanaPenggunaan
+  );
+
+  let prosesSurvey = 'BELUM SURVEY';
+  if (actor.dikembalikanKePetugasAt && !actor.berkasDinasVerified) {
+    prosesSurvey = 'DIKEMBALIKAN KE PETUGAS SURVEY';
+  } else if (
+    actor.status === 'verified_dinas' ||
+    actor.status === 'bank_pending' ||
+    actor.status === 'finish' ||
+    actor.status === 'blacklist' ||
+    actor.verifiedDinasAt ||
+    (hasSurveyData && sd.hasilSurvey)
+  ) {
+    prosesSurvey = 'SUDAH SURVEY';
+  } else if (typeof actor.surveyProgress === 'number' && actor.surveyProgress > 0) {
+    prosesSurvey = `DRAFT SURVEY (${actor.surveyProgress}%)`;
+  } else if (hasSurveyData) {
+    prosesSurvey = 'DALAM PROSES SURVEY';
+  }
+
+  let hasilSurvey = '-';
+  if (sd.hasilSurvey && String(sd.hasilSurvey).trim() !== '') {
+    hasilSurvey = String(sd.hasilSurvey).trim().toUpperCase();
+  } else if (actor.hasilVerifikasiDinas === 'Lolos') {
+    hasilSurvey = 'LAYAK';
+  } else if (actor.hasilVerifikasiDinas === 'Tidak Lolos' || actor.alasanCancelDinas) {
+    hasilSurvey = 'TIDAK LAYAK';
+  } else {
+    hasilSurvey = 'BELUM SURVEY';
+  }
+
+  const isCancelDinas =
+    (actor.status === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Tidak Lolos') ||
+    actor.hasilVerifikasiDinas === 'Tidak Lolos' ||
+    Boolean(actor.alasanCancelDinas);
+
+  let statusVerifBerkasDinas = 'BELUM VERIFIKASI DINAS';
+  if (isCancelDinas) {
+    statusVerifBerkasDinas = 'TIDAK LOLOS (CANCEL DINAS)';
+  } else if (actor.berkasDinasVerified || actor.status === 'finish' || actor.status === 'blacklist') {
+    statusVerifBerkasDinas = 'LOLOS VERIFIKASI DINAS';
+  } else if (actor.dikembalikanKeVerifikatorAt) {
+    statusVerifBerkasDinas = 'DIKEMBALIKAN KE VERIFIKATOR';
+  } else if (actor.status === 'verified_dinas' || actor.status === 'bank_pending') {
+    statusVerifBerkasDinas = 'MENUNGGU VERIFIKASI BERKAS';
+  } else if (actor.status === 'lpj_pending') {
+    statusVerifBerkasDinas = 'TAHAP SURVEY LAPANGAN';
+  }
+
+  let hasilVerifDinas = '-';
+  if (isCancelDinas) {
+    hasilVerifDinas = 'TIDAK LOLOS';
+  } else if (actor.hasilVerifikasiDinas) {
+    hasilVerifDinas = String(actor.hasilVerifikasiDinas).trim().toUpperCase();
+  } else if (actor.berkasDinasVerified || actor.status === 'finish') {
+    hasilVerifDinas = 'LOLOS';
+  }
+
+  let dtksStr = 'Tidak';
+  if (sd.dtks && typeof sd.dtks === 'object') {
+    dtksStr = sd.dtks.masuk ? `Ya (${sd.dtks.jenis || 'DTKS'})` : 'Tidak';
+  } else if (typeof sd.dtks === 'string' && sd.dtks.trim()) {
+    dtksStr = sd.dtks.trim();
+  } else if (!hasSurveyData) {
+    dtksStr = '-';
+  }
+
+  let hibahStr = 'Belum Pernah';
+  if (sd.hibah && typeof sd.hibah === 'object') {
+    hibahStr = sd.hibah.pernah
+      ? `Pernah${sd.hibah.dariMana ? ` (${sd.hibah.dariMana}${sd.hibah.tahun ? ', ' + sd.hibah.tahun : ''})` : ''}`
+      : 'Belum Pernah';
+  } else if (typeof sd.hibah === 'string' && sd.hibah.trim()) {
+    hibahStr = sd.hibah.trim();
+  } else if (!hasSurveyData) {
+    hibahStr = '-';
+  }
+
+  const izinStr = Array.isArray(sd.izin) && sd.izin.length > 0
+    ? sd.izin.join(', ')
+    : typeof sd.izin === 'string' && sd.izin.trim()
+      ? sd.izin.trim()
+      : '-';
+
+  const loc = actor.verificationLocationDinas || actor.verificationLocation;
+  const gpsStr = loc && loc.lat && loc.lon ? `${loc.lat}, ${loc.lon}` : '-';
+
+  const catatanParts = [
+    actor.keteranganDinas,
+    actor.alasanCancelDinas ? `Cancel Dinas: ${actor.alasanCancelDinas}` : '',
+    actor.rejectionReason ? `Alasan Tolak: ${actor.rejectionReason}` : '',
+    actor.dikembalikanKePetugasReason ? `Kembali ke Petugas: ${actor.dikembalikanKePetugasReason}` : '',
+    actor.dikembalikanKeVerifikatorReason ? `Kembali ke Verifikator: ${actor.dikembalikanKeVerifikatorReason}` : '',
+    actor.catatanPengembalian ? `Catatan: ${actor.catatanPengembalian}` : '',
+  ].filter((v) => v && String(v).trim() !== '' && String(v).trim() !== '-');
+
+  const waktuVerifDinasRaw =
+    actor.berkasDinasVerifiedAt ||
+    actor.cancelDinasAt ||
+    (actor.berkasDinasVerified ? actor.verifiedDinasAt : '');
+
+  return {
+    sd,
+    prosesSurvey,
+    hasilSurvey,
+    statusVerifBerkasDinas,
+    hasilVerifDinas,
+    dtksStr,
+    hibahStr,
+    izinStr,
+    gpsStr,
+    catatanDinas: catatanParts.length > 0 ? catatanParts.join(' | ') : '-',
+    waktuSubmitSurvey: actor.verifiedDinasAt ? formatDateTimeIndo(actor.verifiedDinasAt) : '-',
+    waktuVerifDinas: waktuVerifDinasRaw ? formatDateTimeIndo(waktuVerifDinasRaw) : '-',
+  };
+}
+
+function getLpjStatusLabel(actor: ReportActor): string {
+  if (actor.status === 'blacklist') return 'BLACKLIST (LEWAT BATAS LPJ)';
+  if (actor.lpjNominal && Number(actor.lpjNominal) > 0) return 'SELESAI LPJ';
+  if (actor.readyForLPJ || actor.lpjEntryDate) return 'MENUNGGU LPJ';
+  if (actor.bankNumber && String(actor.bankNumber).trim() !== '') return 'BELUM KIRIM KE LPJ';
+  return '-';
+}
+
+function getBiodataFields(actor: ReportActor) {
+  const parsed = parsePobDob(actor.pobDob || '');
+  const pob = resolvePob(actor);
+  const dob = actor.dob || parsed.dob || extractDobFromNik(actor.nik || '') || '-';
+  const age = calculateAge(dob);
+  const rtRw = resolveRtRw(actor);
+  const kelurahan = resolveKelurahan(actor);
+  const kecamatan = resolveKecamatan(actor, kelurahan);
+
+  return {
+    registrationCode: actor.registrationCode || '-',
+    fullName: (actor.fullName || '-').toUpperCase(),
+    nik: actor.nik ? String(actor.nik).trim() : '-',
+    noKK: actor.noKK ? String(actor.noKK).trim() : '-',
+    gender: actor.gender || actor.surveyData?.jenisKelamin || '-',
+    pob,
+    dob,
+    age,
+    phone: actor.phone || actor.surveyData?.noHp || '-',
+    address: (actor.address || actor.surveyData?.alamatRumah || '-').toUpperCase(),
+    rtRw,
+    kelurahan,
+    kecamatan,
+    businessCategory: (actor.businessCategory || '-').toUpperCase(),
+    businessName: (actor.businessName || actor.surveyData?.namaUsaha || '-').toUpperCase(),
+    businessLocation: (actor.businessLocation || actor.surveyData?.alamatUsaha || actor.address || '-').toUpperCase(),
+    coordinator: (actor.coordinator || 'TANPA KOORDINATOR').toUpperCase().trim(),
+  };
+}
+
+function sortActorsForReport(actors: ReportActor[]): ReportActor[] {
+  return [...actors].sort((a, b) => {
+    const cA = String(a.coordinator || 'ZZZ').toUpperCase().trim();
+    const cB = String(b.coordinator || 'ZZZ').toUpperCase().trim();
+    const cCmp = cA.localeCompare(cB);
+    if (cCmp !== 0) return cCmp;
+    return String(a.fullName || '').toUpperCase().localeCompare(String(b.fullName || '').toUpperCase());
+  });
+}
+
+interface ExcelColumnDef {
+  header: string;
+  key: string;
+  width: number;
+  headerFill?: string;
+  align?: 'left' | 'center' | 'right';
+  isText?: boolean;
+  isCurrency?: boolean;
+  isWrap?: boolean;
+  isStatus?: boolean;
+}
+
+function getColumnLetter(colIndex: number): string {
+  let letter = '';
+  let num = colIndex;
+  while (num > 0) {
+    const mod = (num - 1) % 26;
+    letter = String.fromCharCode(65 + mod) + letter;
+    num = Math.floor((num - 1) / 26);
+  }
+  return letter;
+}
+
+function applyStatusCellStyle(cell: any, rawValue: unknown) {
+  const val = String(rawValue || '').toUpperCase().trim();
+  if (!val || val === '-') {
+    cell.font = { name: 'Calibri', size: 10, color: { argb: 'FF94A3B8' } };
+    return;
+  }
+
+  const isPositive =
+    val.includes('LOLOS VERIFIKASI') ||
+    val === 'LOLOS' ||
+    val === 'LAYAK' ||
+    val.includes('TERVERIFIKASI') ||
+    val.includes('BISA DAFTAR') ||
+    val === 'SELESAI LPJ' ||
+    val === 'SUDAH SURVEY' ||
+    val === 'Y';
+
+  const isNegative =
+    val.includes('TIDAK LOLOS') ||
+    val.includes('TIDAK LAYAK') ||
+    val.includes('CANCEL') ||
+    val.includes('DITOLAK') ||
+    val.includes('BLACKLIST') ||
+    val.includes('USIA DIATAS 65') ||
+    val === 'T' ||
+    val === 'N';
+
+  const isWarning =
+    val.includes('DUPLIKASI') ||
+    val.includes('DIKEMBALIKAN') ||
+    val.includes('MENUNGGU') ||
+    val.includes('DRAFT') ||
+    val.includes('PROSES') ||
+    val.includes('HOLD') ||
+    val.includes('LENGKAPI');
+
+  if (isNegative) {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+    cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF991B1B' } };
+  } else if (isPositive) {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCFCE7' } };
+    cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF166534' } };
+  } else if (isWarning) {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
+    cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF92400E' } };
+  } else if (val.includes('BELUM')) {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+    cell.font = { name: 'Calibri', size: 10, color: { argb: 'FF64748B' } };
+  }
+}
+
+async function buildAndDownloadSingleSheetExcel(params: {
+  sheetName: string;
+  fileName: string;
+  title: string;
+  subtitle: string;
+  bannerColor: string;
+  defaultHeaderColor: string;
+  columns: ExcelColumnDef[];
+  rows: Record<string, any>[];
+  freezeCols?: number;
+}) {
+  const ExcelJS = (await import('exceljs')).default || (await import('exceljs'));
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'SIMPU - Yayasan Tunas Bangsa Kepri';
+  workbook.created = new Date();
+
+  const worksheet = workbook.addWorksheet(params.sheetName.substring(0, 31), {
+    views: [
+      {
+        state: 'frozen',
+        ySplit: 4,
+        xSplit: params.freezeCols ?? 3,
+      },
+    ],
+    pageSetup: {
+      paperSize: 9, // A4
+      orientation: 'landscape',
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0,
+      margins: {
+        left: 0.3,
+        right: 0.3,
+        top: 0.4,
+        bottom: 0.4,
+        header: 0.2,
+        footer: 0.2,
+      },
+    },
+  });
+
+  const totalCols = params.columns.length;
+  const lastColLetter = getColumnLetter(totalCols);
+
+  // Set column keys & widths (do NOT pass header here so row 1 stays free for Title Banner)
+  worksheet.columns = params.columns.map((c) => ({
+    key: c.key,
+    width: c.width,
+  }));
+
+  // ── ROW 1: TITLE BANNER ──
+  worksheet.mergeCells(`A1:${lastColLetter}1`);
+  const titleCell = worksheet.getCell('A1');
+  titleCell.value = params.title;
+  titleCell.font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: params.bannerColor } };
+  titleCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+  worksheet.getRow(1).height = 30;
+
+  // ── ROW 2: SUBTITLE / METADATA ──
+  worksheet.mergeCells(`A2:${lastColLetter}2`);
+  const subCell = worksheet.getCell('A2');
+  subCell.value = params.subtitle;
+  subCell.font = { name: 'Calibri', size: 10, italic: true, color: { argb: 'FF1E293B' } };
+  subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+  subCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+  worksheet.getRow(2).height = 20;
+
+  // ── ROW 3: SPACER ──
+  worksheet.getRow(3).height = 8;
+
+  // ── ROW 4: TABLE HEADERS ──
+  const headerRow = worksheet.getRow(4);
+  headerRow.height = 32;
+  params.columns.forEach((col, idx) => {
+    const cell = headerRow.getCell(idx + 1);
+    cell.value = col.header;
+    cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: col.headerFill || params.defaultHeaderColor },
+    };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FF0F172A' } },
+      bottom: { style: 'medium', color: { argb: 'FF0F172A' } },
+      left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+      right: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+    };
+  });
+
+  // Enable AutoFilter on Row 4
+  worksheet.autoFilter = {
+    from: { row: 4, column: 1 },
+    to: { row: 4, column: totalCols },
+  };
+  worksheet.pageSetup.printTitlesRow = '1:4';
+
+  const thinBorder = {
+    top: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
+    bottom: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
+    left: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
+    right: { style: 'thin' as const, color: { argb: 'FFCBD5E1' } },
+  };
+
+  // ── DATA ROWS (START AT ROW 5) ──
+  params.rows.forEach((rowData, rIdx) => {
+    const row = worksheet.addRow(rowData);
+    const isEven = rIdx % 2 === 1;
+    let maxLines = 1;
+
+    params.columns.forEach((col, cIdx) => {
+      const cell = row.getCell(cIdx + 1);
+      const val = rowData[col.key];
+
+      if (col.isText) {
+        cell.value = val !== undefined && val !== null && String(val).trim() !== '' ? String(val) : '-';
+        cell.numFmt = '@';
+      } else if (col.isCurrency) {
+        const numVal = Number(val) || 0;
+        cell.value = numVal;
+        cell.numFmt = '#,##0';
+      }
+
+      cell.font = { name: 'Calibri', size: 10, color: { argb: 'FF0F172A' } };
+      cell.border = thinBorder;
+      cell.alignment = {
+        vertical: 'middle',
+        horizontal: col.align || 'left',
+        wrapText: Boolean(col.isWrap),
+      };
+
+      if (isEven) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+      }
+
+      if (col.isStatus) {
+        applyStatusCellStyle(cell, val);
+      }
+
+      if (col.isWrap && typeof val === 'string' && val.length > col.width) {
+        const estimatedLines = Math.min(4, Math.ceil(val.length / Math.max(12, col.width - 2)));
+        if (estimatedLines > maxLines) maxLines = estimatedLines;
+      }
+    });
+
+    row.height = Math.max(21, maxLines * 14 + 6);
+  });
+
+  // Trigger download
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = params.fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+/**
+ * 1. REPORT DINAS
+ * Data pelaku usaha lengkap, proses & hasil survey, petugas survey,
+ * petugas verifikator sampai dengan waktu diverifikasi oleh dinas — 1 lembar Excel rapi.
+ */
+export async function exportReportDinasExcel(
+  actors: ReportActor[],
+  systemUsers?: any[],
+  filterSummary: string = 'Semua Data'
+) {
+  const sorted = sortActorsForReport(actors);
+  const resolver = buildOfficerResolver(sorted, systemUsers);
+  const nowDate = new Date();
+  const dateStamp = nowDate.toISOString().split('T')[0];
+  const printedAt = formatDateTimeIndo(nowDate.toISOString());
+
+  const columns: ExcelColumnDef[] = [
+    // Identitas Pelaku Usaha
+    { header: 'NO', key: 'no', width: 6, align: 'center', headerFill: 'FF1E3A8A' },
+    { header: 'KODE REGISTRASI', key: 'registrationCode', width: 18, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'NAMA LENGKAP', key: 'fullName', width: 28, headerFill: 'FF1E3A8A' },
+    { header: 'NIK', key: 'nik', width: 20, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'NOMOR KK', key: 'noKK', width: 20, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'JENIS KELAMIN', key: 'gender', width: 15, align: 'center', headerFill: 'FF1E3A8A' },
+    { header: 'TEMPAT LAHIR', key: 'pob', width: 18, headerFill: 'FF1E3A8A' },
+    { header: 'TANGGAL LAHIR', key: 'dob', width: 15, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'UMUR', key: 'age', width: 12, align: 'center', headerFill: 'FF1E3A8A' },
+    { header: 'NO. HP / WA', key: 'phone', width: 17, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'EMAIL', key: 'email', width: 22, headerFill: 'FF1E3A8A' },
+    { header: 'SOSIAL MEDIA', key: 'sosmed', width: 20, headerFill: 'FF1E3A8A' },
+    { header: 'ALAMAT DOMISILI', key: 'address', width: 36, isWrap: true, headerFill: 'FF1E3A8A' },
+    { header: 'RT / RW', key: 'rtRw', width: 11, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'KELURAHAN', key: 'kelurahan', width: 20, headerFill: 'FF1E3A8A' },
+    { header: 'KECAMATAN', key: 'kecamatan', width: 22, headerFill: 'FF1E3A8A' },
+    { header: 'STATUS KELUARGA', key: 'statusKeluarga', width: 18, align: 'center', headerFill: 'FF1E3A8A' },
+    { header: 'KOORDINATOR', key: 'coordinator', width: 24, headerFill: 'FF1E3A8A' },
+
+    // Data Usaha & Detail Survey
+    { header: 'KATEGORI USAHA', key: 'businessCategory', width: 16, align: 'center', headerFill: 'FF3730A3' },
+    { header: 'NAMA USAHA', key: 'businessName', width: 28, isWrap: true, headerFill: 'FF3730A3' },
+    { header: 'BIDANG USAHA (SURVEY)', key: 'bidangUsaha', width: 22, headerFill: 'FF3730A3' },
+    { header: 'LOKASI / ALAMAT USAHA', key: 'businessLocation', width: 34, isWrap: true, headerFill: 'FF3730A3' },
+    { header: 'TAHUN BERDIRI', key: 'tahunBerdiri', width: 14, align: 'center', isText: true, headerFill: 'FF3730A3' },
+    { header: 'PERALATAN USAHA', key: 'peralatan', width: 26, isWrap: true, headerFill: 'FF3730A3' },
+    { header: 'IZIN USAHA', key: 'izin', width: 22, isWrap: true, headerFill: 'FF3730A3' },
+    { header: 'MODAL USAHA', key: 'modalUsaha', width: 18, align: 'right', headerFill: 'FF3730A3' },
+    { header: 'OMSET / BULAN', key: 'omset', width: 18, align: 'right', headerFill: 'FF3730A3' },
+    { header: 'STATUS DTKS', key: 'dtks', width: 18, align: 'center', headerFill: 'FF3730A3' },
+    { header: 'RIWAYAT HIBAH', key: 'hibah', width: 24, isWrap: true, headerFill: 'FF3730A3' },
+    { header: 'RENCANA PENGGUNAAN DANA', key: 'rencanaPenggunaan', width: 30, isWrap: true, headerFill: 'FF3730A3' },
+
+    // Proses & Hasil Survey + Petugas + Verifikator + Waktu Verifikasi Dinas
+    { header: 'POSISI MENU SAAT INI', key: 'posisiMenu', width: 20, align: 'center', headerFill: 'FF6B21A8' },
+    { header: 'PROSES SURVEY', key: 'prosesSurvey', width: 24, align: 'center', isStatus: true, headerFill: 'FF6B21A8' },
+    { header: 'TANGGAL SURVEY', key: 'tanggalSurvey', width: 16, align: 'center', isText: true, headerFill: 'FF6B21A8' },
+    { header: 'HASIL SURVEY', key: 'hasilSurvey', width: 18, align: 'center', isStatus: true, headerFill: 'FF6B21A8' },
+    { header: 'PETUGAS SURVEY', key: 'petugasSurvey', width: 26, headerFill: 'FF6B21A8' },
+    { header: 'NIP / NIPPPK PETUGAS SURVEY', key: 'petugasNip', width: 22, align: 'center', isText: true, headerFill: 'FF6B21A8' },
+    { header: 'WAKTU SUBMIT SURVEY DINAS', key: 'waktuSubmitSurvey', width: 24, align: 'center', isText: true, headerFill: 'FF6B21A8' },
+    { header: 'DIINPUT SURVEY OLEH', key: 'verifiedDinasBy', width: 24, headerFill: 'FF6B21A8' },
+    { header: 'STATUS VERIFIKASI DINAS', key: 'statusVerifBerkasDinas', width: 26, align: 'center', isStatus: true, headerFill: 'FF6B21A8' },
+    { header: 'HASIL VERIFIKASI DINAS', key: 'hasilVerifDinas', width: 18, align: 'center', isStatus: true, headerFill: 'FF6B21A8' },
+    { header: 'PETUGAS VERIFIKATOR DINAS', key: 'verifikatorDinas', width: 26, headerFill: 'FF6B21A8' },
+    { header: 'NIP / NIPPPK VERIFIKATOR', key: 'verifikatorNip', width: 22, align: 'center', isText: true, headerFill: 'FF6B21A8' },
+    { header: 'WAKTU DIVERIFIKASI DINAS', key: 'waktuVerifDinas', width: 24, align: 'center', isText: true, headerFill: 'FF6B21A8' },
+    { header: 'KETERANGAN / CATATAN DINAS', key: 'catatanDinas', width: 32, isWrap: true, headerFill: 'FF6B21A8' },
+    { header: 'KOORDINAT GPS SURVEY', key: 'gps', width: 22, align: 'center', isText: true, headerFill: 'FF6B21A8' },
+    { header: 'LINK GOOGLE DRIVE BERKAS', key: 'googleDriveLink', width: 28, headerFill: 'FF6B21A8' },
+  ];
+
+  const rows = sorted.map((actor, index) => {
+    const bio = getBiodataFields(actor);
+    const survey = getSurveyHelpers(actor);
+    const petugas = resolver.resolvePetugas(actor);
+    const verifikator = resolver.resolveVerifikator(actor, petugas);
+    const menuInfo = getActorCurrentMenu(actor);
+
+    return {
+      no: index + 1,
+      registrationCode: bio.registrationCode,
+      fullName: bio.fullName,
+      nik: bio.nik,
+      noKK: bio.noKK,
+      gender: bio.gender,
+      pob: bio.pob,
+      dob: bio.dob,
+      age: bio.age,
+      phone: bio.phone,
+      email: survey.sd.email || '-',
+      sosmed: survey.sd.sosmed || '-',
+      address: bio.address,
+      rtRw: bio.rtRw,
+      kelurahan: bio.kelurahan,
+      kecamatan: bio.kecamatan,
+      statusKeluarga: actor.statusKeluarga || survey.sd.status || '-',
+      coordinator: bio.coordinator,
+      businessCategory: bio.businessCategory,
+      businessName: bio.businessName,
+      bidangUsaha: survey.sd.bidangUsaha || '-',
+      businessLocation: bio.businessLocation,
+      tahunBerdiri: survey.sd.tahunBerdiri || '-',
+      peralatan: survey.sd.peralatan || '-',
+      izin: survey.izinStr,
+      modalUsaha: survey.sd.modalUsaha ? formatCurrency(survey.sd.modalUsaha) : '-',
+      omset: survey.sd.omset ? formatCurrency(survey.sd.omset) : '-',
+      dtks: survey.dtksStr,
+      hibah: survey.hibahStr,
+      rencanaPenggunaan: survey.sd.rencanaPenggunaan || '-',
+      posisiMenu: menuInfo.menuName.toUpperCase(),
+      prosesSurvey: survey.prosesSurvey,
+      tanggalSurvey: survey.sd.tanggalSurvey || '-',
+      hasilSurvey: survey.hasilSurvey,
+      petugasSurvey: petugas.nama,
+      petugasNip: petugas.nipppk,
+      waktuSubmitSurvey: survey.waktuSubmitSurvey,
+      verifiedDinasBy: actor.verifiedDinasBy ? String(actor.verifiedDinasBy).toUpperCase() : '-',
+      statusVerifBerkasDinas: survey.statusVerifBerkasDinas,
+      hasilVerifDinas: survey.hasilVerifDinas,
+      verifikatorDinas: verifikator.nama,
+      verifikatorNip: verifikator.nipppk,
+      waktuVerifDinas: survey.waktuVerifDinas,
+      catatanDinas: survey.catatanDinas,
+      gps: survey.gpsStr,
+      googleDriveLink: actor.googleDriveLink || '-',
+    };
+  });
+
+  await buildAndDownloadSingleSheetExcel({
+    sheetName: 'Report Dinas',
+    fileName: `Report_Dinas_${dateStamp}.xlsx`,
+    title: 'REPORT DINAS — DATA PELAKU USAHA, SURVEY & VERIFIKASI DINAS (SIMPU)',
+    subtitle: `Dicetak pada: ${printedAt}  |  Total Data: ${rows.length.toLocaleString('id-ID')} Pelaku Usaha  |  Filter: ${filterSummary}`,
+    bannerColor: 'FF4C1D95',
+    defaultHeaderColor: 'FF5B21B6',
+    columns,
+    rows,
+  });
+}
+
+/**
+ * 2. REPORT REKENING
+ * Semua data pelaku usaha lengkap sampai dengan data rekeningnya
+ * (Nama Pemilik Rekening, Nomor Rekening, Nama Bank) — 1 lembar Excel rapi.
+ */
+export async function exportReportRekeningExcel(
+  actors: ReportActor[],
+  filterSummary: string = 'Semua Data Rekening'
+) {
+  const sorted = sortActorsForReport(actors);
+  const nowDate = new Date();
+  const dateStamp = nowDate.toISOString().split('T')[0];
+  const printedAt = formatDateTimeIndo(nowDate.toISOString());
+
+  const columns: ExcelColumnDef[] = [
+    { header: 'NO', key: 'no', width: 6, align: 'center', headerFill: 'FF1E3A8A' },
+    { header: 'KODE REGISTRASI', key: 'registrationCode', width: 18, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'NAMA LENGKAP', key: 'fullName', width: 28, headerFill: 'FF1E3A8A' },
+    { header: 'NIK', key: 'nik', width: 20, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'NOMOR KK', key: 'noKK', width: 20, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'JENIS KELAMIN', key: 'gender', width: 15, align: 'center', headerFill: 'FF1E3A8A' },
+    { header: 'TEMPAT LAHIR', key: 'pob', width: 18, headerFill: 'FF1E3A8A' },
+    { header: 'TANGGAL LAHIR', key: 'dob', width: 15, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'UMUR', key: 'age', width: 12, align: 'center', headerFill: 'FF1E3A8A' },
+    { header: 'NO. HP / WA', key: 'phone', width: 17, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'ALAMAT DOMISILI', key: 'address', width: 36, isWrap: true, headerFill: 'FF1E3A8A' },
+    { header: 'RT / RW', key: 'rtRw', width: 11, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'KELURAHAN', key: 'kelurahan', width: 20, headerFill: 'FF1E3A8A' },
+    { header: 'KECAMATAN', key: 'kecamatan', width: 22, headerFill: 'FF1E3A8A' },
+    { header: 'KATEGORI USAHA', key: 'businessCategory', width: 16, align: 'center', headerFill: 'FF1E3A8A' },
+    { header: 'NAMA USAHA', key: 'businessName', width: 28, isWrap: true, headerFill: 'FF1E3A8A' },
+    { header: 'LOKASI USAHA', key: 'businessLocation', width: 34, isWrap: true, headerFill: 'FF1E3A8A' },
+    { header: 'KOORDINATOR', key: 'coordinator', width: 24, headerFill: 'FF1E3A8A' },
+
+    // Data Rekening Bank
+    { header: 'NAMA BANK', key: 'bankName', width: 18, align: 'center', headerFill: 'FF047857' },
+    { header: 'NOMOR REKENING', key: 'bankNumber', width: 24, align: 'center', isText: true, headerFill: 'FF047857' },
+    { header: 'NAMA PEMILIK REKENING', key: 'bankOwner', width: 28, headerFill: 'FF047857' },
+    { header: 'STATUS REKENING', key: 'statusRekening', width: 18, align: 'center', isStatus: true, headerFill: 'FF047857' },
+    { header: 'POSISI MENU SAAT INI', key: 'posisiMenu', width: 20, align: 'center', headerFill: 'FF047857' },
+    { header: 'STATUS LPJ', key: 'statusLpj', width: 22, align: 'center', isStatus: true, headerFill: 'FF047857' },
+    { header: 'NOMINAL LPJ (RP)', key: 'lpjNominal', width: 18, align: 'right', isCurrency: true, headerFill: 'FF047857' },
+    { header: 'TANGGAL ENTRY LPJ', key: 'lpjEntryDate', width: 22, align: 'center', isText: true, headerFill: 'FF047857' },
+  ];
+
+  const rows = sorted.map((actor, index) => {
+    const bio = getBiodataFields(actor);
+    const hasBank = Boolean(
+      actor.bankNumber && String(actor.bankNumber).trim() !== '' && String(actor.bankNumber).trim() !== '-'
+    );
+    const menuInfo = getActorCurrentMenu(actor);
+
+    return {
+      no: index + 1,
+      registrationCode: bio.registrationCode,
+      fullName: bio.fullName,
+      nik: bio.nik,
+      noKK: bio.noKK,
+      gender: bio.gender,
+      pob: bio.pob,
+      dob: bio.dob,
+      age: bio.age,
+      phone: bio.phone,
+      address: bio.address,
+      rtRw: bio.rtRw,
+      kelurahan: bio.kelurahan,
+      kecamatan: bio.kecamatan,
+      businessCategory: bio.businessCategory,
+      businessName: bio.businessName,
+      businessLocation: bio.businessLocation,
+      coordinator: bio.coordinator,
+      bankName: hasBank ? normalizeBankNameReport(actor.bankName) : '-',
+      bankNumber: hasBank ? String(actor.bankNumber).trim() : '-',
+      bankOwner: hasBank ? (actor.bankOwner || actor.fullName || '-').toUpperCase() : '-',
+      statusRekening: hasBank ? 'TERVERIFIKASI' : 'BELUM ADA REKENING',
+      posisiMenu: menuInfo.menuName.toUpperCase(),
+      statusLpj: getLpjStatusLabel(actor),
+      lpjNominal: Number(actor.lpjNominal) || 0,
+      lpjEntryDate: actor.lpjEntryDate ? formatDateTimeIndo(actor.lpjEntryDate) : '-',
+    };
+  });
+
+  await buildAndDownloadSingleSheetExcel({
+    sheetName: 'Report Rekening',
+    fileName: `Report_Rekening_${dateStamp}.xlsx`,
+    title: 'REPORT REKENING — DATA PELAKU USAHA & REKENING BANK PENERIMA (SIMPU)',
+    subtitle: `Dicetak pada: ${printedAt}  |  Total Data: ${rows.length.toLocaleString('id-ID')} Pelaku Usaha  |  Filter: ${filterSummary}`,
+    bannerColor: 'FF065F46',
+    defaultHeaderColor: 'FF047857',
+    columns,
+    rows,
+  });
+}
+
+/**
+ * 3. REPORT PELAKU USAHA (MASTER ALL DATA TANPA TERKECUALI)
+ * Gabungan lengkap Report Dinas + Report Rekening + Hasil Verifikasi BPJS Ketenagakerjaan — 1 lembar Excel rapi.
+ */
+export async function exportReportPelakuUsahaExcel(
+  actors: ReportActor[],
+  systemUsers?: any[],
+  filterSummary: string = 'Semua Data Tanpa Terkecuali'
+) {
+  const sorted = sortActorsForReport(actors);
+  const resolver = buildOfficerResolver(sorted, systemUsers);
+  const nowDate = new Date();
+  const dateStamp = nowDate.toISOString().split('T')[0];
+  const printedAt = formatDateTimeIndo(nowDate.toISOString());
+
+  const columns: ExcelColumnDef[] = [
+    // A. Identitas & Biodata Pelaku Usaha (Navy)
+    { header: 'NO', key: 'no', width: 6, align: 'center', headerFill: 'FF1E3A8A' },
+    { header: 'KODE REGISTRASI', key: 'registrationCode', width: 18, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'NAMA LENGKAP', key: 'fullName', width: 28, headerFill: 'FF1E3A8A' },
+    { header: 'TANGGAL INPUT', key: 'createdAt', width: 22, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'DIINPUT OLEH', key: 'createdBy', width: 20, headerFill: 'FF1E3A8A' },
+    { header: 'KOORDINATOR', key: 'coordinator', width: 24, headerFill: 'FF1E3A8A' },
+    { header: 'NIK', key: 'nik', width: 20, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'NOMOR KK', key: 'noKK', width: 20, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'JENIS KELAMIN', key: 'gender', width: 15, align: 'center', headerFill: 'FF1E3A8A' },
+    { header: 'TEMPAT LAHIR', key: 'pob', width: 18, headerFill: 'FF1E3A8A' },
+    { header: 'TANGGAL LAHIR', key: 'dob', width: 15, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'UMUR', key: 'age', width: 12, align: 'center', headerFill: 'FF1E3A8A' },
+    { header: 'AGAMA', key: 'agama', width: 15, align: 'center', headerFill: 'FF1E3A8A' },
+    { header: 'PEKERJAAN', key: 'pekerjaan', width: 22, headerFill: 'FF1E3A8A' },
+    { header: 'STATUS KELUARGA', key: 'statusKeluarga', width: 18, align: 'center', headerFill: 'FF1E3A8A' },
+    { header: 'NAMA KEPALA KELUARGA', key: 'namaKepalaKeluarga', width: 24, headerFill: 'FF1E3A8A' },
+    { header: 'NIK KEPALA KELUARGA', key: 'nikKepalaKeluarga', width: 20, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'NO. HP / WA', key: 'phone', width: 17, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'EMAIL', key: 'email', width: 22, headerFill: 'FF1E3A8A' },
+    { header: 'SOSIAL MEDIA', key: 'sosmed', width: 20, headerFill: 'FF1E3A8A' },
+    { header: 'ALAMAT DOMISILI', key: 'address', width: 36, isWrap: true, headerFill: 'FF1E3A8A' },
+    { header: 'RT / RW', key: 'rtRw', width: 11, align: 'center', isText: true, headerFill: 'FF1E3A8A' },
+    { header: 'KELURAHAN', key: 'kelurahan', width: 20, headerFill: 'FF1E3A8A' },
+    { header: 'KECAMATAN', key: 'kecamatan', width: 22, headerFill: 'FF1E3A8A' },
+
+    // B. Data Usaha (Indigo)
+    { header: 'KATEGORI USAHA', key: 'businessCategory', width: 16, align: 'center', headerFill: 'FF3730A3' },
+    { header: 'NAMA USAHA', key: 'businessName', width: 28, isWrap: true, headerFill: 'FF3730A3' },
+    { header: 'BIDANG USAHA (SURVEY)', key: 'bidangUsaha', width: 22, headerFill: 'FF3730A3' },
+    { header: 'LOKASI / ALAMAT USAHA', key: 'businessLocation', width: 34, isWrap: true, headerFill: 'FF3730A3' },
+    { header: 'TAHUN BERDIRI', key: 'tahunBerdiri', width: 14, align: 'center', isText: true, headerFill: 'FF3730A3' },
+    { header: 'PERALATAN USAHA', key: 'peralatan', width: 26, isWrap: true, headerFill: 'FF3730A3' },
+    { header: 'IZIN USAHA', key: 'izin', width: 22, isWrap: true, headerFill: 'FF3730A3' },
+    { header: 'MODAL USAHA', key: 'modalUsaha', width: 18, align: 'right', headerFill: 'FF3730A3' },
+    { header: 'OMSET / BULAN', key: 'omset', width: 18, align: 'right', headerFill: 'FF3730A3' },
+    { header: 'STATUS DTKS', key: 'dtks', width: 18, align: 'center', headerFill: 'FF3730A3' },
+    { header: 'RIWAYAT HIBAH', key: 'hibah', width: 24, isWrap: true, headerFill: 'FF3730A3' },
+    { header: 'RENCANA PENGGUNAAN DANA', key: 'rencanaPenggunaan', width: 30, isWrap: true, headerFill: 'FF3730A3' },
+
+    // C. Proses & Hasil Survey + Verifikasi Dinas (Purple)
+    { header: 'STATUS SISTEM', key: 'statusSistem', width: 18, align: 'center', headerFill: 'FF6B21A8' },
+    { header: 'POSISI MENU SAAT INI', key: 'posisiMenu', width: 20, align: 'center', headerFill: 'FF6B21A8' },
+    { header: 'TAHAP PROSES', key: 'tahapProses', width: 24, align: 'center', headerFill: 'FF6B21A8' },
+    { header: 'PROSES SURVEY', key: 'prosesSurvey', width: 24, align: 'center', isStatus: true, headerFill: 'FF6B21A8' },
+    { header: 'TANGGAL SURVEY', key: 'tanggalSurvey', width: 16, align: 'center', isText: true, headerFill: 'FF6B21A8' },
+    { header: 'HASIL SURVEY', key: 'hasilSurvey', width: 18, align: 'center', isStatus: true, headerFill: 'FF6B21A8' },
+    { header: 'PETUGAS SURVEY', key: 'petugasSurvey', width: 26, headerFill: 'FF6B21A8' },
+    { header: 'NIP / NIPPPK PETUGAS SURVEY', key: 'petugasNip', width: 22, align: 'center', isText: true, headerFill: 'FF6B21A8' },
+    { header: 'WAKTU SUBMIT SURVEY DINAS', key: 'waktuSubmitSurvey', width: 24, align: 'center', isText: true, headerFill: 'FF6B21A8' },
+    { header: 'DIINPUT SURVEY OLEH', key: 'verifiedDinasBy', width: 24, headerFill: 'FF6B21A8' },
+    { header: 'STATUS VERIFIKASI DINAS', key: 'statusVerifBerkasDinas', width: 26, align: 'center', isStatus: true, headerFill: 'FF6B21A8' },
+    { header: 'HASIL VERIFIKASI DINAS', key: 'hasilVerifDinas', width: 18, align: 'center', isStatus: true, headerFill: 'FF6B21A8' },
+    { header: 'PETUGAS VERIFIKATOR DINAS', key: 'verifikatorDinas', width: 26, headerFill: 'FF6B21A8' },
+    { header: 'NIP / NIPPPK VERIFIKATOR', key: 'verifikatorNip', width: 22, align: 'center', isText: true, headerFill: 'FF6B21A8' },
+    { header: 'WAKTU DIVERIFIKASI DINAS', key: 'waktuVerifDinas', width: 24, align: 'center', isText: true, headerFill: 'FF6B21A8' },
+    { header: 'KETERANGAN / CATATAN DINAS', key: 'catatanDinas', width: 32, isWrap: true, headerFill: 'FF6B21A8' },
+    { header: 'KOORDINAT GPS SURVEY', key: 'gps', width: 22, align: 'center', isText: true, headerFill: 'FF6B21A8' },
+    { header: 'LINK GOOGLE DRIVE BERKAS', key: 'googleDriveLink', width: 28, headerFill: 'FF6B21A8' },
+
+    // D. Hasil Verifikasi BPJS Ketenagakerjaan (Teal)
+    { header: 'STATUS VERIFIKASI BPJS KETENAGAKERJAAN', key: 'bpjsStatusLabel', width: 32, align: 'center', isStatus: true, headerFill: 'FF0F766E' },
+    { header: 'KODE STATUS BPJS', key: 'bpjsStatusCode', width: 16, align: 'center', isStatus: true, headerFill: 'FF0F766E' },
+    { header: 'KETERANGAN / CATATAN BPJS', key: 'bpjsNote', width: 30, isWrap: true, headerFill: 'FF0F766E' },
+    { header: 'NO. KPJ BPJS', key: 'bpjsKpj', width: 20, align: 'center', isText: true, headerFill: 'FF0F766E' },
+    { header: 'WAKTU VERIFIKASI BPJS', key: 'bpjsCheckedAt', width: 22, align: 'center', isText: true, headerFill: 'FF0F766E' },
+
+    // E. Data Rekening Bank & LPJ (Emerald)
+    { header: 'NAMA BANK', key: 'bankName', width: 18, align: 'center', headerFill: 'FF047857' },
+    { header: 'NOMOR REKENING', key: 'bankNumber', width: 24, align: 'center', isText: true, headerFill: 'FF047857' },
+    { header: 'NAMA PEMILIK REKENING', key: 'bankOwner', width: 28, headerFill: 'FF047857' },
+    { header: 'STATUS LPJ', key: 'statusLpj', width: 22, align: 'center', isStatus: true, headerFill: 'FF047857' },
+    { header: 'NOMINAL LPJ (RP)', key: 'lpjNominal', width: 18, align: 'right', isCurrency: true, headerFill: 'FF047857' },
+    { header: 'TANGGAL ENTRY LPJ', key: 'lpjEntryDate', width: 22, align: 'center', isText: true, headerFill: 'FF047857' },
+  ];
+
+  const rows = sorted.map((actor, index) => {
+    const bio = getBiodataFields(actor);
+    const survey = getSurveyHelpers(actor);
+    const petugas = resolver.resolvePetugas(actor);
+    const verifikator = resolver.resolveVerifikator(actor, petugas);
+    const menuInfo = getActorCurrentMenu(actor);
+    const hasBank = Boolean(
+      actor.bankNumber && String(actor.bankNumber).trim() !== '' && String(actor.bankNumber).trim() !== '-'
+    );
+    const bpjs = actor.bpjsResolved || {
+      hasMatch: false,
+      statusLabel: 'BELUM DIVERIFIKASI',
+      statusCode: '-',
+      note: '-',
+      kpj: actor.bpjsKpj || '-',
+      checkedAt: actor.bpjsCheckedAt || '',
+      sourceFile: '',
+    };
+
+    return {
+      no: index + 1,
+      registrationCode: bio.registrationCode,
+      fullName: bio.fullName,
+      createdAt: actor.createdAt ? formatDateTimeIndo(actor.createdAt) : '-',
+      createdBy: actor.createdBy ? String(actor.createdBy).toUpperCase() : '-',
+      coordinator: bio.coordinator,
+      nik: bio.nik,
+      noKK: bio.noKK,
+      gender: bio.gender,
+      pob: bio.pob,
+      dob: bio.dob,
+      age: bio.age,
+      agama: actor.agama || '-',
+      pekerjaan: actor.pekerjaan || '-',
+      statusKeluarga: actor.statusKeluarga || survey.sd.status || '-',
+      namaKepalaKeluarga: actor.namaKepalaKeluarga ? String(actor.namaKepalaKeluarga).toUpperCase() : '-',
+      nikKepalaKeluarga: actor.nikKepalaKeluarga || '-',
+      phone: bio.phone,
+      email: survey.sd.email || '-',
+      sosmed: survey.sd.sosmed || '-',
+      address: bio.address,
+      rtRw: bio.rtRw,
+      kelurahan: bio.kelurahan,
+      kecamatan: bio.kecamatan,
+
+      businessCategory: bio.businessCategory,
+      businessName: bio.businessName,
+      bidangUsaha: survey.sd.bidangUsaha || '-',
+      businessLocation: bio.businessLocation,
+      tahunBerdiri: survey.sd.tahunBerdiri || '-',
+      peralatan: survey.sd.peralatan || '-',
+      izin: survey.izinStr,
+      modalUsaha: survey.sd.modalUsaha ? formatCurrency(survey.sd.modalUsaha) : '-',
+      omset: survey.sd.omset ? formatCurrency(survey.sd.omset) : '-',
+      dtks: survey.dtksStr,
+      hibah: survey.hibahStr,
+      rencanaPenggunaan: survey.sd.rencanaPenggunaan || '-',
+
+      statusSistem: String(actor.status || 'pending').toUpperCase(),
+      posisiMenu: menuInfo.menuName.toUpperCase(),
+      tahapProses: menuInfo.stageLabel.toUpperCase(),
+      prosesSurvey: survey.prosesSurvey,
+      tanggalSurvey: survey.sd.tanggalSurvey || '-',
+      hasilSurvey: survey.hasilSurvey,
+      petugasSurvey: petugas.nama,
+      petugasNip: petugas.nipppk,
+      waktuSubmitSurvey: survey.waktuSubmitSurvey,
+      verifiedDinasBy: actor.verifiedDinasBy ? String(actor.verifiedDinasBy).toUpperCase() : '-',
+      statusVerifBerkasDinas: survey.statusVerifBerkasDinas,
+      hasilVerifDinas: survey.hasilVerifDinas,
+      verifikatorDinas: verifikator.nama,
+      verifikatorNip: verifikator.nipppk,
+      waktuVerifDinas: survey.waktuVerifDinas,
+      catatanDinas: survey.catatanDinas,
+      gps: survey.gpsStr,
+      googleDriveLink: actor.googleDriveLink || '-',
+
+      bpjsStatusLabel: bpjs.statusLabel,
+      bpjsStatusCode: bpjs.statusCode || '-',
+      bpjsNote: bpjs.note || '-',
+      bpjsKpj: bpjs.kpj || '-',
+      bpjsCheckedAt: bpjs.checkedAt ? formatDateTimeIndo(bpjs.checkedAt) : '-',
+
+      bankName: hasBank ? normalizeBankNameReport(actor.bankName) : '-',
+      bankNumber: hasBank ? String(actor.bankNumber).trim() : '-',
+      bankOwner: hasBank ? (actor.bankOwner || actor.fullName || '-').toUpperCase() : '-',
+      statusLpj: getLpjStatusLabel(actor),
+      lpjNominal: Number(actor.lpjNominal) || 0,
+      lpjEntryDate: actor.lpjEntryDate ? formatDateTimeIndo(actor.lpjEntryDate) : '-',
+    };
+  });
+
+  await buildAndDownloadSingleSheetExcel({
+    sheetName: 'Report Pelaku Usaha',
+    fileName: `Report_Pelaku_Usaha_Lengkap_${dateStamp}.xlsx`,
+    title: 'REPORT PELAKU USAHA LENGKAP — DATA UTAMA, SURVEY DINAS, BPJS KETENAGAKERJAAN & REKENING (SIMPU)',
+    subtitle: `Dicetak pada: ${printedAt}  |  Total Data: ${rows.length.toLocaleString('id-ID')} Pelaku Usaha (All Data)  |  Filter: ${filterSummary}`,
+    bannerColor: 'FF0F172A',
+    defaultHeaderColor: 'FF1E3A8A',
+    columns,
+    rows,
+  });
+}
