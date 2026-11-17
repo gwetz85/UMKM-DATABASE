@@ -65,7 +65,8 @@ export const SimpuLogo = ({ className }: { className?: string }) => (
 export function AppSidebar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { isMobile, setOpenMobile, toggleSidebar } = useSidebar()
+  const { state, isMobile, setOpenMobile, toggleSidebar } = useSidebar()
+  const isCollapsedDesktop = state === "collapsed" && !isMobile
   const { user } = useUser()
   const auth = useAuth()
   const database = useDatabase()
@@ -268,8 +269,8 @@ export function AppSidebar() {
   if (!mounted) {
     return (
       <Sidebar collapsible="icon" className="border-r border-slate-800/80 bg-[#0B132B] text-slate-100">
-        <SidebarHeader className="py-4 px-4 flex items-center justify-between border-b border-white/5">
-          <div className="bg-sky-500/20 rounded-2xl p-2 w-10 h-10 animate-pulse" />
+        <SidebarHeader className="py-4 px-4 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-3 flex items-center justify-between group-data-[collapsible=icon]:justify-center border-b border-white/5">
+          <div className="bg-sky-500/20 rounded-2xl p-2 w-10 h-10 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8 animate-pulse" />
           {isMobile && (
           <button
             type="button"
@@ -294,10 +295,10 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-slate-800/80 bg-[#0B132B] text-slate-100 shadow-2xl">
       {/* ─── BRAND HEADER ─── */}
-      <SidebarHeader className="py-4 px-4 flex flex-row items-center justify-between border-b border-white/10 bg-[#0B132B] relative">
+      <SidebarHeader className={cn("flex flex-row items-center border-b border-white/10 bg-[#0B132B] relative overflow-hidden", isCollapsedDesktop ? "py-3 px-0 justify-center" : "py-4 px-4 justify-between")}>
         <InfoDialog>
-          <button className="flex items-start gap-3 transition-transform hover:scale-[1.01] active:scale-95 outline-none group text-left w-full">
-            <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-sky-400 via-cyan-400 to-teal-300 p-[2.5px] shadow-lg shadow-sky-500/25 shrink-0 transition-transform duration-200 group-hover:scale-105 mt-0.5">
+          <button className={cn("flex transition-transform hover:scale-[1.01] active:scale-95 outline-none group/brand text-left w-full", isCollapsedDesktop ? "items-center justify-center gap-0" : "items-start gap-3")}>
+            <div className={cn("relative rounded-full bg-gradient-to-tr from-sky-400 via-cyan-400 to-teal-300 shadow-lg shadow-sky-500/25 shrink-0 transition-all duration-200 group-hover/brand:scale-105", isCollapsedDesktop ? "w-9 h-9 p-[2px] mt-0 mx-auto" : "w-11 h-11 sm:w-12 sm:h-12 p-[2.5px] mt-0.5")}>
               <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden p-0.5">
                 <img
                   src="/logo.png"
@@ -537,7 +538,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       {/* ─── BOTTOM PROFILE & LOGOUT FOOTER ─── */}
-      <SidebarFooter className="p-3 border-t border-white/10 mt-auto bg-[#070D1D]/90">
+      <SidebarFooter className={cn("border-t border-white/10 mt-auto bg-[#070D1D]/90", isCollapsedDesktop ? "px-1.5 py-2.5" : "p-3")}>
         {user ? (
           <SidebarMenu>
             <SidebarMenuItem>
@@ -545,7 +546,7 @@ export function AppSidebar() {
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton
                     size="lg"
-                    className="h-auto p-2 rounded-2xl bg-[#162238]/80 hover:bg-[#162238] border border-white/10 transition-all cursor-pointer w-full text-left data-[state=open]:bg-[#162238] group/profile"
+                    className={cn("h-auto bg-[#162238]/80 hover:bg-[#162238] border border-white/10 transition-all cursor-pointer w-full text-left data-[state=open]:bg-[#162238] group/profile", isCollapsedDesktop ? "p-0 justify-center mx-auto rounded-full w-9 h-9" : "p-2 rounded-2xl")}
                   >
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-tr from-sky-500 to-teal-400 p-[1.5px] shrink-0">
                       <div className="w-full h-full rounded-full bg-[#0B132B] flex items-center justify-center overflow-hidden">
