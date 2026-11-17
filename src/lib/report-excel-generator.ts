@@ -3,7 +3,6 @@ import {
   parsePobDob,
   calculateAge,
   extractDobFromNik,
-  formatCurrency,
   formatDateTimeIndo,
   resolveRtRw,
   resolveKelurahan,
@@ -183,6 +182,39 @@ const BANK_LIST = [
   'PERMATA',
   'CIMB NIAGA',
 ];
+
+export function formatCurrencyIndoSafe(value: unknown): string {
+  if (value === null || value === undefined) return '-';
+  if (typeof value === 'object') return '-';
+
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value) || value === 0) return '-';
+    return `Rp ${Math.round(value).toLocaleString('id-ID')}`;
+  }
+
+  const raw = String(value).trim();
+  if (!raw || raw === '-' || raw === '0') return '-';
+
+  // Strip optional "Rp" / "Rp." prefix and trailing ",-" / ",00" / ".00"
+  const withoutRp = raw.replace(/^rp\.?\s*/i, '').trim();
+  const withoutTrailing = withoutRp.replace(/(?:,\s*-|[.,]00)$/, '').trim();
+
+  // If text still contains letters (e.g. "2 juta", "500 rb/hari") or a range ("1.000.000 - 2.000.000"), keep original text cleanly
+  if (/[a-zA-Z]/.test(withoutTrailing) || /\d\s*[-–/]\s*\d/.test(withoutTrailing)) {
+    return raw;
+  }
+
+  // Pure Indonesian / international numeric string with thousand separators (e.g. "2.000.000" or "2,000,000")
+  if (/^[\d.,\s]+$/.test(withoutTrailing)) {
+    const digitsOnly = withoutTrailing.replace(/[.,\s]/g, '');
+    const parsed = Number(digitsOnly);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return `Rp ${Math.round(parsed).toLocaleString('id-ID')}`;
+    }
+  }
+
+  return raw;
+}
 
 export function normalizeBankNameReport(bankName?: string): string {
   if (!bankName || !bankName.trim()) return '-';
@@ -629,7 +661,7 @@ async function buildAndDownloadSingleSheetExcel(params: {
       {
         state: 'frozen',
         ySplit: 4,
-        xSplit: params.freezeCols ?? 3,
+        xSplit: params.freezeCols ?? 0,
       },
     ],
     pageSetup: {
@@ -652,10 +684,34 @@ async function buildAndDownloadSingleSheetExcel(params: {
   const totalCols = params.columns.length;
   const lastColLetter = getColumnLetter(totalCols);
 
+  // Auto-calculate comfortable column widths so no headers (with AutoFilter arrow) or text get clipped horizontally
+  const computedWidths = params.columns.map((col) => {
+    const headerMinWidth = col.key === 'no' ? 9 : Math.min(34, col.header.length + 5);
+    let bestWidth = Math.max(col.width, headerMinWidth);
+
+    params.rows.forEach((rowData) => {
+      const val = rowData[col.key];
+      if (val === null || val === undefined) return;
+      const str = String(val).trim();
+      if (!str || str === '-') return;
+
+      const lines = str.split(/\r?\n/);
+      const longestLine = lines.reduce((m, line) => Math.max(m, line.trim().length), 0);
+
+      if (col.isWrap) {
+        bestWidth = Math.max(bestWidth, Math.min(46, longestLine + 4));
+      } else {
+        bestWidth = Math.max(bestWidth, Math.min(48, longestLine + 4));
+      }
+    });
+
+    return bestWidth;
+  });
+
   // Set column keys & widths (do NOT pass header here so row 1 stays free for Title Banner)
-  worksheet.columns = params.columns.map((c) => ({
+  worksheet.columns = params.columns.map((c, idx) => ({
     key: c.key,
-    width: c.width,
+    width: computedWidths[idx],
   }));
 
   // ── ROW 1: TITLE BANNER ──
@@ -723,9 +779,13 @@ async function buildAndDownloadSingleSheetExcel(params: {
     params.columns.forEach((col, cIdx) => {
       const cell = row.getCell(cIdx + 1);
       const val = rowData[col.key];
+      const strVal = val !== undefined && val !== null ? String(val).trim() : '';
+      const hasNewline = strVal.includes('\n');
+      const shouldWrap = Boolean(col.isWrap || hasNewline);
+      const effectiveWidth = computedWidths[cIdx] || col.width;
 
       if (col.isText) {
-        cell.value = val !== undefined && val !== null && String(val).trim() !== '' ? String(val) : '-';
+        cell.value = strVal !== '' ? strVal : '-';
         cell.numFmt = '@';
       } else if (col.isCurrency) {
         const numVal = Number(val) || 0;
@@ -738,7 +798,7 @@ async function buildAndDownloadSingleSheetExcel(params: {
       cell.alignment = {
         vertical: 'middle',
         horizontal: col.align || 'left',
-        wrapText: Boolean(col.isWrap),
+        wrapText: shouldWrap,
       };
 
       if (isEven) {
@@ -749,13 +809,20 @@ async function buildAndDownloadSingleSheetExcel(params: {
         applyStatusCellStyle(cell, val);
       }
 
-      if (col.isWrap && typeof val === 'string' && val.length > col.width) {
-        const estimatedLines = Math.min(4, Math.ceil(val.length / Math.max(12, col.width - 2)));
-        if (estimatedLines > maxLines) maxLines = estimatedLines;
+      if (shouldWrap && strVal && strVal !== '-') {
+        const charsPerLine = Math.max(10, Math.floor(effectiveWidth * 0.86));
+        const rawLines = strVal.split(/\r?\n/);
+        let totalCellLines = 0;
+        rawLines.forEach((line) => {
+          const cleanLen = line.trim().length;
+          totalCellLines += Math.max(1, Math.ceil(cleanLen / charsPerLine));
+        });
+        const clampedLines = Math.min(25, Math.max(1, totalCellLines));
+        if (clampedLines > maxLines) maxLines = clampedLines;
       }
     });
 
-    row.height = Math.max(21, maxLines * 14 + 6);
+    row.height = Math.max(22, maxLines * 16 + 8);
   });
 
   // Trigger download
@@ -876,8 +943,8 @@ export async function exportReportDinasExcel(
       tahunBerdiri: survey.sd.tahunBerdiri || '-',
       peralatan: survey.sd.peralatan || '-',
       izin: survey.izinStr,
-      modalUsaha: survey.sd.modalUsaha ? formatCurrency(survey.sd.modalUsaha) : '-',
-      omset: survey.sd.omset ? formatCurrency(survey.sd.omset) : '-',
+      modalUsaha: formatCurrencyIndoSafe(survey.sd.modalUsaha),
+      omset: formatCurrencyIndoSafe(survey.sd.omset),
       dtks: survey.dtksStr,
       hibah: survey.hibahStr,
       rencanaPenggunaan: survey.sd.rencanaPenggunaan || '-',
@@ -1150,8 +1217,8 @@ export async function exportReportPelakuUsahaExcel(
       tahunBerdiri: survey.sd.tahunBerdiri || '-',
       peralatan: survey.sd.peralatan || '-',
       izin: survey.izinStr,
-      modalUsaha: survey.sd.modalUsaha ? formatCurrency(survey.sd.modalUsaha) : '-',
-      omset: survey.sd.omset ? formatCurrency(survey.sd.omset) : '-',
+      modalUsaha: formatCurrencyIndoSafe(survey.sd.modalUsaha),
+      omset: formatCurrencyIndoSafe(survey.sd.omset),
       dtks: survey.dtksStr,
       hibah: survey.hibahStr,
       rencanaPenggunaan: survey.sd.rencanaPenggunaan || '-',
