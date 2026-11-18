@@ -470,9 +470,10 @@ function ReportContent() {
         )
 
         if (loadedActors.length > 0) {
+          const bpjsSheetIsEmpty = bpjsMap.size === 0
           const enrichedActors = loadedActors.map((item) => ({
             ...item,
-            bpjsResolved: resolveBpjsForActor(item, bpjsMap),
+            bpjsResolved: resolveBpjsForActor(item, bpjsMap, true),
           }))
           setActors(enrichedActors)
           setToIDB(IDB_CACHE_KEY, {
@@ -481,6 +482,18 @@ function ReportContent() {
             generatedAt: loadedTime,
             isFullIndex: loadedFromFullIndex,
           })
+
+          // Jika Sheet 5 BPJS kosong (di-reset) namun masih ada sisa field bpjs lama, bersihkan otomatis oleh Admin
+          if (isAdmin && bpjsSheetIsEmpty) {
+            const hasStaleBpjs = loadedActors.some(
+              (a: any) => a && (a.bpjsSubmissionStatus || a.bpjsCheckStatus || a.bpjsStatus || a.bpjsKeterangan || a.bpjsCheckNote || a.bpjsKpj)
+            )
+            if (hasStaleBpjs) {
+              import("@/lib/stats-service").then(({ purgeAllBpjsDataFromActors }) => {
+                purgeAllBpjsDataFromActors(database).catch(() => {})
+              })
+            }
+          }
         } else {
           // Neither lightweight index exists yet -> fall back to full API build
           await syncFullMasterIndex(false)

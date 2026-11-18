@@ -367,7 +367,7 @@ function RekapanDataContent() {
         const d25List = d25Snap.exists() ? Object.values(d25Snap.val() || {}) : []
 
         const merged = computeMergedRekapan(actorsList, d24List, d23List, d25List)
-        if (isMounted && merged.length > 0) {
+        if (isMounted) {
           setActors(merged)
           setIsLoading(false)
           setToIDB('simpu_rekapan_gabungan_v3', merged)

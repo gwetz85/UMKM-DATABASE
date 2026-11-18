@@ -210,7 +210,28 @@ function HasilVerifikasiContent() {
     });
   }, [database]);
 
+  useEffect(() => {
+    if (!database) return
+    const handleInvalidation = () => {
+      try { localStorage.removeItem('simpu_actors_search_cache_v6') } catch {}
+      import("firebase/database").then(({ ref, get }) => {
+        get(ref(database, 'settings/actors_search')).then(snap => {
+          if (snap.exists() && snap.val()) {
+            const list = Object.values(snap.val()) as BusinessActor[]
+            setLocalIndex(list)
+            try { localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(list)) } catch {}
+          }
+        }).catch(() => {})
+      })
+    }
+    window.addEventListener('simpu_cache_invalidated', handleInvalidation)
+    return () => window.removeEventListener('simpu_cache_invalidated', handleInvalidation)
+  }, [database])
+
   const [inputtingBankActor, setInputtingBankActor] = useState<BusinessActor | null>(null)
+  const bpjsComparisonRef = useMemoFirebase(() => (database && viewingActor) ? ref(database, 'settings/bpjs_comparison_data') : null, [database, viewingActor])
+  const { data: rawBpjsComparisonData, isLoading: isBpjsComparisonLoading } = useList(bpjsComparisonRef)
+  const isBpjsSheetEmpty = Boolean(viewingActor) && !isBpjsComparisonLoading && Array.isArray(rawBpjsComparisonData) && rawBpjsComparisonData.length === 0
   const [isSubmittingBank, setIsSubmittingBank] = useState(false)
 
   // Kembalikan ke Petugas Survey states
@@ -1764,8 +1785,9 @@ function HasilVerifikasiContent() {
                           Status BPJS Ketenagakerjaan
                         </span>
                         {(() => {
-                          const bpjsStatus = (viewingActor as any).bpjsCheckStatus || (viewingActor as any).bpjsStatus || ""
-                          const bpjsNote = (viewingActor as any).bpjsCheckNote || (viewingActor as any).bpjsKeterangan || ""
+                          const bpjsStatus = isBpjsSheetEmpty ? "" : ((viewingActor as any).bpjsCheckStatus || (viewingActor as any).bpjsStatus || "")
+                          const bpjsNote = isBpjsSheetEmpty ? "" : ((viewingActor as any).bpjsCheckNote || (viewingActor as any).bpjsKeterangan || "")
+
                           const isSesuai = bpjsStatus.toLowerCase().includes("sesuai") || bpjsStatus.toLowerCase().includes("lolos") || bpjsStatus.toLowerCase().includes("terdaftar")
                           const isDitolak = bpjsStatus.toLowerCase().includes("tolak") || bpjsStatus.toLowerCase().includes("tidak") || bpjsStatus.toLowerCase().includes("gagal")
 

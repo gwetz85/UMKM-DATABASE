@@ -220,6 +220,25 @@ export default function BpjsPage() {
   const actorsRef = useMemoFirebase(() => database ? ref(database, 'businessActors') : null, [database])
   const { data: allActors, isLoading } = useList<BusinessActor>(actorsRef)
 
+  const bpjsComparisonRef = useMemoFirebase(() => database ? ref(database, 'settings/bpjs_comparison_data') : null, [database])
+  const { data: bpjsComparisonList, isLoading: isBpjsComparisonLoading } = useList<any>(bpjsComparisonRef)
+  const bpjsAutoPurgedRef = useRef(false)
+  // Jika Sheet 5 (settings/bpjs_comparison_data) sudah dimuat dan kosong (0 data / sudah di-reset),
+  // jangan tampilkan status BPJS lama yang tersisa di record pelaku usaha
+  const isBpjsSheetEmpty = !isBpjsComparisonLoading && Array.isArray(bpjsComparisonList) && bpjsComparisonList.length === 0
+
+  // Jika Sheet 5 (Data Pembanding BPJS) di Pengaturan sudah di-reset (0 data), bersihkan otomatis sisa status BPJS di database
+  useEffect(() => {
+    if (bpjsAutoPurgedRef.current || !database || !user || !isBpjsSheetEmpty || !allActors) return
+    const hasStaleBpjs = allActors.some((a: any) => a && (a.bpjsSubmissionStatus || a.bpjsCheckStatus || a.bpjsStatus || a.bpjsKeterangan || a.bpjsCheckNote || a.bpjsKpj))
+    if (hasStaleBpjs) {
+      bpjsAutoPurgedRef.current = true
+      import("@/lib/stats-service").then(({ purgeAllBpjsDataFromActors }) => {
+        purgeAllBpjsDataFromActors(database).catch(() => {})
+      })
+    }
+  }, [database, user, isBpjsSheetEmpty, allActors])
+
   // Calculate age as of a reference date (e.g., 1 Sep 2026)
   const calculateAgeOn = (dobString: string, refDate: Date): number => {
     if (!dobString || dobString === "-") return 0;
@@ -278,7 +297,7 @@ export default function BpjsPage() {
       // In matched tab, show all actors matched with Excel BPJS
       list = (allActors || []).filter(a => matchedActorsMap.has(a.id))
     } else if (activeTab === "db_verified") {
-      list = (allActors || []).filter(a => {
+      list = isBpjsSheetEmpty ? [] : (allActors || []).filter(a => {
         const actorAny = a as any
         return (
           actorAny.bpjsSubmissionStatus === 'accepted' || 
@@ -299,16 +318,16 @@ export default function BpjsPage() {
     }
 
     return [...list].sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""))
-  }, [allActors, baseEligibleActors, activeTab, matchedActorsMap, searchQuery])
+  }, [allActors, baseEligibleActors, activeTab, matchedActorsMap, searchQuery, isBpjsSheetEmpty])
 
   // Count verified in database
   const dbVerifiedCount = useMemo(() => {
-    if (!baseEligibleActors) return 0
+    if (!baseEligibleActors || isBpjsSheetEmpty) return 0
     return baseEligibleActors.filter(a => {
       const actorAny = a as any
       return actorAny.bpjsSubmissionStatus === 'accepted' || actorAny.bpjsCheckStatus === 'sesuai'
     }).length
-  }, [baseEligibleActors])
+  }, [baseEligibleActors, isBpjsSheetEmpty])
 
   // Filtered unmatched rows for the unmatched tab
   const filteredUnmatchedRows = useMemo(() => {
@@ -554,11 +573,34 @@ export default function BpjsPage() {
   // Action handlers for accept / reject
   const handleAccept = async (actorId: string) => {
     if (!database) return;
-    const actorRef = ref(database, `businessActors/${actorId}`);
-    await update(actorRef, { 
-      bpjsSubmissionStatus: 'accepted',
-      bpjsCheckStatus: 'sesuai'
-    });
+    const actor = (allActors || []).find(a => a.id === actorId);
+    const now = new Date().toISOString();
+    const updates: Record<string, any> = {
+      [`businessActors/${actorId}/bpjsSubmissionStatus`]: 'accepted',
+      [`businessActors/${actorId}/bpjsCheckStatus`]: 'sesuai',
+      [`businessActors/${actorId}/bpjsStatus`]: 'Y',
+      [`businessActors/${actorId}/bpjsKeterangan`]: 'BISA DAFTAR',
+      [`businessActors/${actorId}/bpjsCheckNote`]: 'Bisa Daftar',
+      [`businessActors/${actorId}/bpjsCheckedAt`]: now,
+      [`settings/actors_search/${actorId}/bpjsCheckStatus`]: 'sesuai',
+      [`settings/actors_search/${actorId}/bpjsStatus`]: 'Y',
+      [`settings/actors_search/${actorId}/bpjsKeterangan`]: 'BISA DAFTAR',
+      [`settings/actors_search/${actorId}/bpjsCheckNote`]: 'Bisa Daftar',
+      [`settings/report_index/actors/${actorId}/bpjsSubmissionStatus`]: 'accepted',
+      [`settings/report_index/actors/${actorId}/bpjsCheckStatus`]: 'sesuai',
+      [`settings/report_index/actors/${actorId}/bpjsStatus`]: 'Y',
+      [`settings/report_index/actors/${actorId}/bpjsKeterangan`]: 'BISA DAFTAR',
+      [`settings/report_index/actors/${actorId}/bpjsCheckNote`]: 'Bisa Daftar',
+      [`settings/bpjs_comparison_data/${actorId}`]: {
+        nik: actor?.nik || '',
+        nama: actor?.fullName || '',
+        status: 'Y',
+        keterangan: 'BISA DAFTAR',
+        uploadedAt: now,
+      },
+    };
+    await update(ref(database), updates);
+    import("@/lib/stats-service").then(({ invalidateAllActorCaches }) => invalidateAllActorCaches());
     toast({
       title: "Data Disetujui",
       description: "Status pelaku usaha diubah menjadi Diterima BPJS."
@@ -567,11 +609,34 @@ export default function BpjsPage() {
 
   const handleReject = async (actorId: string) => {
     if (!database) return;
-    const actorRef = ref(database, `businessActors/${actorId}`);
-    await update(actorRef, { 
-      bpjsSubmissionStatus: 'rejected',
-      bpjsCheckStatus: 'ditolak'
-    });
+    const actor = (allActors || []).find(a => a.id === actorId);
+    const now = new Date().toISOString();
+    const updates: Record<string, any> = {
+      [`businessActors/${actorId}/bpjsSubmissionStatus`]: 'rejected',
+      [`businessActors/${actorId}/bpjsCheckStatus`]: 'ditolak',
+      [`businessActors/${actorId}/bpjsStatus`]: 'N',
+      [`businessActors/${actorId}/bpjsKeterangan`]: 'TIDAK BISA DAFTAR',
+      [`businessActors/${actorId}/bpjsCheckNote`]: 'Tidak Bisa Daftar',
+      [`businessActors/${actorId}/bpjsCheckedAt`]: now,
+      [`settings/actors_search/${actorId}/bpjsCheckStatus`]: 'ditolak',
+      [`settings/actors_search/${actorId}/bpjsStatus`]: 'N',
+      [`settings/actors_search/${actorId}/bpjsKeterangan`]: 'TIDAK BISA DAFTAR',
+      [`settings/actors_search/${actorId}/bpjsCheckNote`]: 'Tidak Bisa Daftar',
+      [`settings/report_index/actors/${actorId}/bpjsSubmissionStatus`]: 'rejected',
+      [`settings/report_index/actors/${actorId}/bpjsCheckStatus`]: 'ditolak',
+      [`settings/report_index/actors/${actorId}/bpjsStatus`]: 'N',
+      [`settings/report_index/actors/${actorId}/bpjsKeterangan`]: 'TIDAK BISA DAFTAR',
+      [`settings/report_index/actors/${actorId}/bpjsCheckNote`]: 'Tidak Bisa Daftar',
+      [`settings/bpjs_comparison_data/${actorId}`]: {
+        nik: actor?.nik || '',
+        nama: actor?.fullName || '',
+        status: 'N',
+        keterangan: 'TIDAK BISA DAFTAR',
+        uploadedAt: now,
+      },
+    };
+    await update(ref(database), updates);
+    import("@/lib/stats-service").then(({ invalidateAllActorCaches }) => invalidateAllActorCaches());
     toast({
       variant: "destructive",
       title: "Data Ditolak",
@@ -602,12 +667,35 @@ export default function BpjsPage() {
         updates[`businessActors/${actorId}/bpjsCheckNote`] = info.excelStatus || (isEligible ? 'Bisa Daftar' : 'Tidak Bisa Daftar')
         updates[`businessActors/${actorId}/bpjsCheckedAt`] = now
         updates[`businessActors/${actorId}/bpjsSourceFile`] = uploadedFileName
+        updates[`settings/actors_search/${actorId}/bpjsCheckStatus`] = isEligible ? 'sesuai' : 'ditolak'
+        updates[`settings/actors_search/${actorId}/bpjsStatus`] = info.rawStatus || (isEligible ? 'Y' : 'N')
+        updates[`settings/actors_search/${actorId}/bpjsKeterangan`] = info.excelStatus || (isEligible ? 'BISA DAFTAR' : 'TIDAK BISA DAFTAR')
+        updates[`settings/actors_search/${actorId}/bpjsCheckNote`] = info.excelStatus || (isEligible ? 'Bisa Daftar' : 'Tidak Bisa Daftar')
+        updates[`settings/actors_search/${actorId}/bpjsCheckedAt`] = now
+        updates[`settings/report_index/actors/${actorId}/bpjsSubmissionStatus`] = isEligible ? 'accepted' : 'rejected'
+        updates[`settings/report_index/actors/${actorId}/bpjsCheckStatus`] = isEligible ? 'sesuai' : 'ditolak'
+        updates[`settings/report_index/actors/${actorId}/bpjsStatus`] = info.rawStatus || (isEligible ? 'Y' : 'N')
+        updates[`settings/report_index/actors/${actorId}/bpjsKeterangan`] = info.excelStatus || (isEligible ? 'BISA DAFTAR' : 'TIDAK BISA DAFTAR')
+        updates[`settings/report_index/actors/${actorId}/bpjsCheckNote`] = info.excelStatus || (isEligible ? 'Bisa Daftar' : 'Tidak Bisa Daftar')
+        updates[`settings/report_index/actors/${actorId}/bpjsCheckedAt`] = now
+        updates[`settings/bpjs_comparison_data/${actorId}`] = {
+          nik: info.excelNik || '',
+          nama: info.excelName || '',
+          status: info.rawStatus || (isEligible ? 'Y' : 'N'),
+          keterangan: info.excelStatus || (isEligible ? 'BISA DAFTAR' : 'TIDAK BISA DAFTAR'),
+          kpj: info.excelKpj || '',
+          fileName: uploadedFileName,
+          uploadedAt: now,
+        }
         if (info.excelKpj) {
           updates[`businessActors/${actorId}/bpjsKpj`] = info.excelKpj
+          updates[`settings/actors_search/${actorId}/bpjsKpj`] = info.excelKpj
+          updates[`settings/report_index/actors/${actorId}/bpjsKpj`] = info.excelKpj
         }
       })
 
       await update(ref(database), updates)
+      import("@/lib/stats-service").then(({ invalidateAllActorCaches }) => invalidateAllActorCaches())
       toast({
         title: "Pembaruan Berhasil!",
         description: `${matchedActorsMap.size} data hasil verifikasi BPJS berhasil disimpan ke database dan ditampilkan pada Data Pelaku Usaha.`
@@ -679,9 +767,9 @@ export default function BpjsPage() {
         "KELURAHAN": kel,
         "KECAMATAN": kec,
         "KOORDINATOR": (actor.coordinator || "").toUpperCase(),
-        "STATUS CEK BPJS": matchInfo ? "SESUAI BPJS (EXCEL)" : (actorAny.bpjsCheckStatus === 'sesuai' ? "TERVERIFIKASI DATABASE" : (age < 65 ? "Bisa Didaftarkan" : "Tidak Bisa Didaftarkan")),
-        "CATATAN / KET BPJS": matchInfo?.excelStatus || actorAny.bpjsCheckNote || "-",
-        "NO KPJ": matchInfo?.excelKpj || actorAny.bpjsKpj || "-"
+        "STATUS CEK BPJS": matchInfo ? "SESUAI BPJS (EXCEL)" : (!isBpjsSheetEmpty && actorAny.bpjsCheckStatus === 'sesuai' ? "TERVERIFIKASI DATABASE" : (age < 65 ? "Bisa Didaftarkan" : "Tidak Bisa Didaftarkan")),
+        "CATATAN / KET BPJS": matchInfo?.excelStatus || (!isBpjsSheetEmpty ? actorAny.bpjsCheckNote : "") || "-",
+        "NO KPJ": matchInfo?.excelKpj || (!isBpjsSheetEmpty ? actorAny.bpjsKpj : "") || "-"
       }
     })
 
@@ -1138,8 +1226,8 @@ export default function BpjsPage() {
                     const age = calculateAge(actor.pobDob || "")
                     const matchInfo = matchedActorsMap.get(actor.id)
                     const actorAny = actor as any
-                    const isAccepted = actorAny.bpjsSubmissionStatus === 'accepted'
-                    const isRejected = actorAny.bpjsSubmissionStatus === 'rejected'
+                    const isAccepted = !isBpjsSheetEmpty && actorAny.bpjsSubmissionStatus === 'accepted'
+                    const isRejected = !isBpjsSheetEmpty && actorAny.bpjsSubmissionStatus === 'rejected'
 
                     return (
                       <div key={actor.id} className="p-4 space-y-3">
@@ -1209,7 +1297,7 @@ export default function BpjsPage() {
                                   </span>
                                 )}
                               </>
-                            ) : actorAny.bpjsCheckStatus === 'sesuai' ? (
+                            ) : (!isBpjsSheetEmpty && actorAny.bpjsCheckStatus === 'sesuai') ? (
                               <>
                                 <Badge className="font-black uppercase tracking-wider text-[9px] px-3 py-1 bg-blue-50 text-blue-700 border-blue-200 shadow-sm">
                                   Terverifikasi BPJS
@@ -1313,8 +1401,8 @@ export default function BpjsPage() {
                         const age = calculateAge(actor.pobDob || "")
                         const matchInfo = matchedActorsMap.get(actor.id)
                         const actorAny = actor as any
-                        const isAccepted = actorAny.bpjsSubmissionStatus === 'accepted'
-                        const isRejected = actorAny.bpjsSubmissionStatus === 'rejected'
+                        const isAccepted = !isBpjsSheetEmpty && actorAny.bpjsSubmissionStatus === 'accepted'
+                        const isRejected = !isBpjsSheetEmpty && actorAny.bpjsSubmissionStatus === 'rejected'
 
                         return (
                           <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group">
@@ -1387,7 +1475,7 @@ export default function BpjsPage() {
                                       </span>
                                     )}
                                   </>
-                                ) : actorAny.bpjsCheckStatus === 'sesuai' ? (
+                                ) : (!isBpjsSheetEmpty && actorAny.bpjsCheckStatus === 'sesuai') ? (
                                   <>
                                     <Badge className="font-black uppercase tracking-wider text-[9px] px-3 py-1 bg-blue-50 text-blue-700 border-blue-200 shadow-sm">
                                       Terverifikasi BPJS

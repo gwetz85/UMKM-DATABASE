@@ -190,7 +190,22 @@ export function buildBpjsLookupMap(rawSettingsBpjs: any, rawRootBpjs?: any): Map
   return map;
 }
 
-export function resolveBpjsForActor(actor: any, bpjsMap: Map<string, any>): ResolvedBpjsInfo {
+export function resolveBpjsForActor(
+  actor: any,
+  bpjsMap: Map<string, any>,
+  strictRequireComparisonSheet: boolean = false
+): ResolvedBpjsInfo {
+  if (strictRequireComparisonSheet && bpjsMap.size === 0) {
+    return {
+      hasMatch: false,
+      statusLabel: 'BELUM DIVERIFIKASI',
+      statusCode: '-',
+      note: '-',
+      kpj: '-',
+      checkedAt: '',
+      sourceFile: '',
+    };
+  }
   const cleanNik = actor?.nik ? String(actor.nik).replace(/\D/g, '') : '';
   const upperName = actor?.fullName ? String(actor.fullName).trim().toUpperCase() : '';
   const bpjsItem =

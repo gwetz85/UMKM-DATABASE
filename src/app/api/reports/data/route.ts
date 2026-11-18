@@ -104,7 +104,7 @@ function normalizeActorForReport(id: string, a: any, bpjsMap: Map<string, any>) 
   const resolvedPob = resolvePob(a);
   const parsedPobDob = parsePobDob(a.pobDob || '');
   const resolvedDob = a.dob || a.tanggalLahir || parsedPobDob.dob || extractDobFromNik(a.nik || '') || '';
-  const bpjsResolved = resolveBpjsForActor(a, bpjsMap);
+  const bpjsResolved = resolveBpjsForActor(a, bpjsMap, true);
 
   const cleanFullName = String(a.fullName || '').trim();
   const cleanBankNumber = String(a.bankNumber || '').trim();
@@ -278,7 +278,7 @@ async function loadFastReportDataset(forceRefresh = false): Promise<ReportCacheP
         actors.push({
           ...merged,
           id,
-          bpjsResolved: resolveBpjsForActor(merged, bpjsMap),
+          bpjsResolved: resolveBpjsForActor(merged, bpjsMap, true),
         });
       }
       if (actors.length > 0) {

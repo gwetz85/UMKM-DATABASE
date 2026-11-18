@@ -653,6 +653,78 @@ export function invalidateAllActorCaches() {
   } catch {}
 }
 
+export const BPJS_ACTOR_FIELDS = [
+  'bpjsSubmissionStatus',
+  'bpjsCheckStatus',
+  'bpjsStatus',
+  'bpjsKeterangan',
+  'bpjsCheckNote',
+  'bpjsCheckedAt',
+  'bpjsSourceFile',
+  'bpjsKpj',
+] as const;
+
+export async function purgeAllBpjsDataFromActors(database: Database): Promise<number> {
+  const { ref, get, update, remove } = await import('firebase/database');
+  const { firebaseConfig } = await import('@/firebase/config');
+
+  // 1. Hapus kedua node pembanding BPJS (utama & legacy)
+  await Promise.all([
+    remove(ref(database, 'settings/bpjs_comparison_data')).catch(() => {}),
+    remove(ref(database, 'bpjs_comparison_data')).catch(() => {}),
+  ]);
+
+  // 2. Ambil seluruh ID pelaku usaha secara cepat (< 200ms) tanpa mengunduh 157MB businessActors
+  const [shallowRes, searchSnap, reportSnap] = await Promise.all([
+    fetch(`${firebaseConfig.databaseURL}/businessActors.json?shallow=true`)
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null),
+    get(ref(database, 'settings/actors_search')).catch(() => null),
+    get(ref(database, 'settings/report_index/actors')).catch(() => null),
+  ]);
+
+  const masterIds = shallowRes && typeof shallowRes === 'object' ? Object.keys(shallowRes) : [];
+  const masterIdSet = new Set<string>(masterIds);
+  const searchIds = new Set<string>(
+    searchSnap && searchSnap.exists() ? Object.keys(searchSnap.val() || {}) : []
+  );
+  const reportIds = new Set<string>(
+    reportSnap && reportSnap.exists() ? Object.keys(reportSnap.val() || {}) : []
+  );
+
+  const allIds = Array.from(new Set([...masterIds, ...searchIds, ...reportIds]));
+  if (allIds.length === 0) {
+    invalidateAllActorCaches();
+    return 0;
+  }
+
+  // 3. Bersihkan semua 8 field BPJS dari businessActors, settings/actors_search, dan settings/report_index/actors
+  const BATCH_SIZE = 150;
+  for (let i = 0; i < allIds.length; i += BATCH_SIZE) {
+    const chunk = allIds.slice(i, i + BATCH_SIZE);
+    const updates: Record<string, null> = {};
+    chunk.forEach((id) => {
+      BPJS_ACTOR_FIELDS.forEach((field) => {
+        if (masterIdSet.has(id)) {
+          updates[`businessActors/${id}/${field}`] = null;
+        }
+        if (searchIds.has(id)) {
+          updates[`settings/actors_search/${id}/${field}`] = null;
+        }
+        if (reportIds.has(id)) {
+          updates[`settings/report_index/actors/${id}/${field}`] = null;
+        }
+      });
+    });
+    if (Object.keys(updates).length > 0) {
+      await update(ref(database), updates);
+    }
+  }
+
+  invalidateAllActorCaches();
+  return allIds.length;
+}
+
 export async function syncActorToSearchIndex(database: Database, actorData: any) {
   try {
     if (!actorData || !actorData.id) return;

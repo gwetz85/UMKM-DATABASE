@@ -556,9 +556,23 @@ function ActorDataContent() {
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
 
   // Lazy-load BPJS comparison data only when viewing actor list, searching, or modal is open (saves ~5MB on overview)
-  const shouldLoadBpjs = Boolean(filterCoordinator || isSearching || isKoordinator || isPetugas || viewingActor || editingActor)
+  const shouldLoadBpjs = Boolean(filterCoordinator || isSearching || isKoordinator || isPetugas || isInspektorat || viewingActor || editingActor)
   const bpjsComparisonRef = useMemoFirebase(() => (database && shouldLoadBpjs) ? ref(database, 'settings/bpjs_comparison_data') : null, [database, shouldLoadBpjs])
-  const { data: rawBpjsData } = useList(bpjsComparisonRef)
+  const { data: rawBpjsData, isLoading: isBpjsComparisonLoading } = useList(bpjsComparisonRef)
+  const bpjsAutoPurgedRef = useRef(false)
+
+  // Jika Sheet 5 (BPJS) sudah di-reset (0 data), bersihkan otomatis sisa field BPJS di database
+  useEffect(() => {
+    if (bpjsAutoPurgedRef.current || !database || !isAdmin || !shouldLoadBpjs || isBpjsComparisonLoading || !Array.isArray(rawBpjsData) || rawBpjsData.length > 0) return
+    const sample = (allActorsRaw && allActorsRaw.length > 0) ? allActorsRaw : (localIndex || [])
+    const hasStaleBpjs = sample.some((a: any) => a && (a.bpjsSubmissionStatus || a.bpjsCheckStatus || a.bpjsStatus || a.bpjsKeterangan || a.bpjsCheckNote || a.bpjsKpj))
+    if (hasStaleBpjs) {
+      bpjsAutoPurgedRef.current = true
+      import("@/lib/stats-service").then(({ purgeAllBpjsDataFromActors }) => {
+        purgeAllBpjsDataFromActors(database).catch(() => {})
+      })
+    }
+  }, [database, isAdmin, shouldLoadBpjs, isBpjsComparisonLoading, rawBpjsData, allActorsRaw, localIndex])
 
   const bpjsLookupMap = useMemo(() => {
     const map = new Map<string, any>()
@@ -576,6 +590,20 @@ function ActorDataContent() {
   }, [rawBpjsData])
 
   const getActorBpjsStatus = (actor: BusinessActor) => {
+    // Jika Sheet 5 (settings/bpjs_comparison_data) sudah dimuat dan kosong (di-reset), jangan tampilkan status BPJS lama
+    if (shouldLoadBpjs && !isBpjsComparisonLoading && Array.isArray(rawBpjsData) && bpjsLookupMap.size === 0) {
+      return {
+        hasMatch: false,
+        isVerified: false,
+        type: 'none' as const,
+        badgeLabel: '',
+        cardLabel: '',
+        color: '',
+        note: '',
+        statusCode: '',
+        bpjsItem: null
+      }
+    }
     const cleanNik = actor.nik ? String(actor.nik).replace(/\D/g, '') : ""
     const upperName = actor.fullName ? String(actor.fullName).trim().toUpperCase() : ""
     const bpjsItem = (cleanNik ? bpjsLookupMap.get(cleanNik) : null) || (upperName ? bpjsLookupMap.get(upperName) : null)

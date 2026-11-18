@@ -181,6 +181,14 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const query = (searchParams.get('q') || '').trim();
     const type = (searchParams.get('type') || 'nik').trim();
+    const isRefresh = searchParams.get('refresh') === 'true';
+
+    if (isRefresh) {
+      cachedData = null;
+      if (!query) {
+        return NextResponse.json({ success: true, cleared: true, count: 0, results: [] });
+      }
+    }
 
     if (!query) {
       return NextResponse.json({ success: true, count: 0, results: [] });

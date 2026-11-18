@@ -120,6 +120,28 @@ export default function SettingsPage() {
   const { data: blacklistData, isLoading: isBlacklistLoading } = useList(blacklistDataRef)
   const { data: bpjsData, isLoading: isBpjsLoading } = useList(bpjsDataRef)
 
+  // Auto-bersihkan sisa field BPJS pada pelaku usaha jika Sheet 5 sudah di-reset (0 data)
+  useEffect(() => {
+    if (!database || !isAdmin || isBpjsLoading || !Array.isArray(bpjsData) || bpjsData.length > 0) return
+    let cancelled = false
+    get(ref(database, 'settings/report_index/actors')).then(async (snap) => {
+      if (cancelled || !snap.exists()) return
+      const val = snap.val() || {}
+      const hasStaleBpjs = Object.values(val).some(
+        (a: any) => a && (a.bpjsStatus || a.bpjsKeterangan || a.bpjsCheckNote || a.bpjsCheckStatus || a.bpjsSubmissionStatus || a.bpjsKpj)
+      )
+      if (hasStaleBpjs) {
+        const { purgeAllBpjsDataFromActors } = await import("@/lib/stats-service")
+        await purgeAllBpjsDataFromActors(database)
+        await Promise.allSettled([
+          fetch('/api/reports/data?refresh=true'),
+          fetch('/api/actors/search?refresh=true&q=_'),
+        ])
+      }
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [database, isAdmin, isBpjsLoading, bpjsData])
+
   useEffect(() => {
     if (themeError) {
       console.error('Theme Settings Error:', themeError)
@@ -259,6 +281,12 @@ export default function SettingsPage() {
         
         // Reset stats node so dashboard will re-sync
         await remove(ref(database, "system_stats"))
+        await Promise.all([
+          remove(ref(database, "settings/actors_search")).catch(() => {}),
+          remove(ref(database, "settings/report_index")).catch(() => {}),
+        ])
+        const { invalidateAllActorCaches } = await import("@/lib/stats-service")
+        invalidateAllActorCaches()
         
         toast({ title: "Restore Berhasil", description: `${data.length} data telah dipulihkan. Dashboard akan mensinkronisasi ulang statistik secara otomatis.` })
       } catch (error) {
@@ -437,11 +465,25 @@ export default function SettingsPage() {
                   actorUpdates[`businessActors/${matched.id}/bpjsCheckNote`] = item.keterangan || labelKeterangan
                   actorUpdates[`businessActors/${matched.id}/bpjsCheckedAt`] = now
                   actorUpdates[`businessActors/${matched.id}/bpjsSourceFile`] = file.name
+                  actorUpdates[`settings/actors_search/${matched.id}/bpjsCheckStatus`] = isEligible ? 'sesuai' : 'ditolak'
+                  actorUpdates[`settings/actors_search/${matched.id}/bpjsStatus`] = item.status || (isEligible ? 'Y' : 'T')
+                  actorUpdates[`settings/actors_search/${matched.id}/bpjsKeterangan`] = labelKeterangan
+                  actorUpdates[`settings/actors_search/${matched.id}/bpjsCheckNote`] = item.keterangan || labelKeterangan
+                  actorUpdates[`settings/actors_search/${matched.id}/bpjsCheckedAt`] = now
+                  actorUpdates[`settings/report_index/actors/${matched.id}/bpjsSubmissionStatus`] = isEligible ? 'accepted' : 'rejected'
+                  actorUpdates[`settings/report_index/actors/${matched.id}/bpjsCheckStatus`] = isEligible ? 'sesuai' : 'ditolak'
+                  actorUpdates[`settings/report_index/actors/${matched.id}/bpjsStatus`] = item.status || (isEligible ? 'Y' : 'T')
+                  actorUpdates[`settings/report_index/actors/${matched.id}/bpjsKeterangan`] = labelKeterangan
+                  actorUpdates[`settings/report_index/actors/${matched.id}/bpjsCheckNote`] = item.keterangan || labelKeterangan
+                  actorUpdates[`settings/report_index/actors/${matched.id}/bpjsCheckedAt`] = now
+                  actorUpdates[`settings/report_index/actors/${matched.id}/bpjsSourceFile`] = file.name
                 }
               })
 
               if (Object.keys(actorUpdates).length > 0) {
                 await update(ref(database), actorUpdates)
+                const { invalidateAllActorCaches } = await import("@/lib/stats-service")
+                invalidateAllActorCaches()
               }
             }
           } catch (matchErr) {
@@ -554,6 +596,13 @@ export default function SettingsPage() {
     try {
       await remove(ref(database, "businessActors"))
       await remove(ref(database, "system_stats"))
+      await Promise.all([
+        remove(ref(database, "settings/actors_search")).catch(() => {}),
+        remove(ref(database, "settings/report_index")).catch(() => {}),
+        remove(ref(database, "daftar_hadir")).catch(() => {}),
+      ])
+      const { invalidateAllActorCaches } = await import("@/lib/stats-service")
+      invalidateAllActorCaches()
       
       toast({ title: "Reset Berhasil", description: "Seluruh data pelaku usaha dan statistik telah dihapus." })
     } catch (error) {
@@ -582,8 +631,20 @@ export default function SettingsPage() {
 
     setLoading(true)
     try {
-      await remove(ref(database, paths[target]))
-      toast({ title: "Hapus Berhasil", description: `Data ${labels[target]} telah dihapus.` })
+      const { purgeAllBpjsDataFromActors, invalidateAllActorCaches } = await import("@/lib/stats-service")
+      if (target === 'bpjs') {
+        await purgeAllBpjsDataFromActors(database)
+      } else {
+        await remove(ref(database, paths[target]))
+        invalidateAllActorCaches()
+      }
+      await Promise.allSettled([
+        fetch('/api/cek-data?refresh=true'),
+        fetch('/api/cek-usaha?refresh=true'),
+        fetch('/api/reports/data?refresh=true'),
+        fetch('/api/actors/search?refresh=true&q=_'),
+      ])
+      toast({ title: "Reset Berhasil", description: target === 'bpjs' ? `Seluruh data ${labels[target]} beserta status & hasil verifikasi BPJS pada semua pelaku usaha telah dihapus dari sistem dan tidak muncul lagi di menu manapun.` : `Data ${labels[target]} telah dihapus permanen dari sistem dan tidak muncul lagi di menu manapun.` })
     } catch (error) {
       toast({ variant: "destructive", title: "Gagal Hapus", description: "Terjadi kesalahan saat menghapus data." })
     } finally {
@@ -1458,9 +1519,9 @@ export default function SettingsPage() {
           resetSheetTarget === '2023' ? 'Sheet 2 (Data Pembanding 2023)' :
           resetSheetTarget === '2024' ? 'Sheet 1 (Data Pembanding 2024)' :
           resetSheetTarget === '2025' ? 'Sheet 3 (Data Pembanding 2025)' :
-          resetSheetTarget === 'bpjs' ? 'Sheet 5 (Data Pembanding BPJS)' :
+          resetSheetTarget === 'bpjs' ? 'Sheet 5 (Data Pembanding BPJS) beserta seluruh status verifikasi BPJS pelaku usaha di semua menu' :
           'Sheet 4 (Data Blacklist)'
-        }? Tindakan ini tidak dapat dibatalkan.`}
+        }? Data akan dihapus permanen dari sistem dan tidak muncul lagi di menu mana pun. Tindakan ini tidak dapat dibatalkan.`}
         confirmText="Ya, Hapus"
         confirmIcon={<Trash2 className="w-4 h-4" />}
         variant="destructive"
