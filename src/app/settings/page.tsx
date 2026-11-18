@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useDatabase, useUser, useObject, useMemoFirebase, useAuth, useList } from "@/firebase"
 import { ref, get, update, remove, push } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -141,6 +141,16 @@ export default function SettingsPage() {
     }).catch(() => {})
     return () => { cancelled = true }
   }, [database, isAdmin, isBpjsLoading, bpjsData])
+
+  const nikDobHealedRef = useRef(false)
+  // Auto-sinkronisasi tanggal lahir mengikuti NIK untuk seluruh pelaku usaha jika NIK pernah diubah
+  useEffect(() => {
+    if (nikDobHealedRef.current || !database || !isAdmin) return
+    nikDobHealedRef.current = true
+    import("@/lib/stats-service").then(({ healAllActorsNikDob }) => {
+      healAllActorsNikDob(database).catch(() => {})
+    })
+  }, [database, isAdmin])
 
   useEffect(() => {
     if (themeError) {

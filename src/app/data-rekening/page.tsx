@@ -43,7 +43,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
-import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
+import { cn, extractDobFromNik, parsePobDob, calculateAge, resolveActorDob, resolveActorPobDob, resolvePob } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { normalizeCoordinator } from "@/lib/coordinator-utils"
 
@@ -333,7 +333,7 @@ function DataRekeningContent() {
       const parsed = parsePobDob(viewingActor.pobDob || "")
       setEditNik(viewingActor.nik || "")
       setEditPob(parsed.pob || viewingActor.pob || "")
-      setEditDob(parsed.dob || viewingActor.dob || "")
+      setEditDob(resolveActorDob(viewingActor) || parsed.dob || viewingActor.dob || "")
     } else {
       setEditNik("")
       setEditPob("")
@@ -547,8 +547,8 @@ function DataRekeningContent() {
     const a = actor as any
     const sd = a.surveyData || {}
     const parsed = parsePobDob(actor.pobDob || "")
-    const dob = actor.dob || parsed.dob || "-"
-    const pob = actor.pob || parsed.pob || "-"
+    const dob = resolveActorDob(actor) || actor.dob || parsed.dob || "-"
+    const pob = resolvePob(actor) || actor.pob || parsed.pob || "-"
     const regCode = actor.registrationCode || "-"
 
     const row = (label: string, value: string | undefined) =>
@@ -774,9 +774,9 @@ function DataRekeningContent() {
       nik: editNik,
       noKK: formData.get("noKK") as string,
       gender: formData.get("gender") as "Laki-laki" | "Perempuan",
-      pobDob: `${editPob}, ${editDob}`,
-      pob: editPob,
-      dob: editDob,
+      pobDob: (editPob && (extractDobFromNik(editNik) || editDob)) ? `${editPob.toUpperCase().trim()}, ${extractDobFromNik(editNik) || editDob}` : (extractDobFromNik(editNik) || editDob || editPob),
+      pob: editPob ? editPob.toUpperCase().trim() : "",
+      dob: extractDobFromNik(editNik) || editDob,
       phone: formData.get("phone") as string,
       kecamatan: formData.get("kecamatan") as string,
       kelurahan: formData.get("kelurahan") as string,
@@ -1385,9 +1385,9 @@ function DataRekeningContent() {
             const isLpjWaiting = viewingActor.readyForLPJ && !hasLpj
             const isOwnerMatch = !!(viewingActor.bankOwner && viewingActor.fullName && 
               viewingActor.bankOwner.trim().toLowerCase() === viewingActor.fullName.trim().toLowerCase())
-            const dob = viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || "")
+            const dob = resolveActorDob(viewingActor) || viewingActor.dob || parsePobDob(viewingActor.pobDob).dob
             const age = calculateAge(dob)
-            const pob = viewingActor.pob || parsePobDob(viewingActor.pobDob).pob
+            const pob = resolvePob(viewingActor) || viewingActor.pob || parsePobDob(viewingActor.pobDob).pob
 
             return (
               <div className="flex flex-col relative">

@@ -53,7 +53,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ActorMenuBadge } from "@/components/actor-menu-badge"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
-import { cn, parsePobDob, calculateAge, extractDobFromNik, formatDateTimeIndo, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob } from "@/lib/utils"
+import { cn, parsePobDob, calculateAge, extractDobFromNik, formatDateTimeIndo, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob, resolveActorDob, resolveActorPobDob, resolveActorAge } from "@/lib/utils"
 import { resolveSurveyorCanonicalName } from "@/lib/surveyor-utils"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -231,7 +231,8 @@ function HasilVerifikasiContent() {
   const [inputtingBankActor, setInputtingBankActor] = useState<BusinessActor | null>(null)
   const bpjsComparisonRef = useMemoFirebase(() => (database && viewingActor) ? ref(database, 'settings/bpjs_comparison_data') : null, [database, viewingActor])
   const { data: rawBpjsComparisonData, isLoading: isBpjsComparisonLoading } = useList(bpjsComparisonRef)
-  const isBpjsSheetEmpty = Boolean(viewingActor) && !isBpjsComparisonLoading && Array.isArray(rawBpjsComparisonData) && rawBpjsComparisonData.length === 0
+  const hasBpjsSheet = !isBpjsComparisonLoading && Array.isArray(rawBpjsComparisonData) && rawBpjsComparisonData.length > 0
+  const isBpjsSheetEmpty = !hasBpjsSheet
   const [isSubmittingBank, setIsSubmittingBank] = useState(false)
 
   // Kembalikan ke Petugas Survey states
@@ -680,8 +681,8 @@ function HasilVerifikasiContent() {
           "NIK": actor.nik || "-",
           "NOMOR KK": actor.noKK || "-",
           "TEMPAT LAHIR": pob,
-          "TANGGAL LAHIR": actor.dob || parsePobDob(actor.pobDob || "").dob || "-",
-          "UMUR": calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || "")),
+          "TANGGAL LAHIR": resolveActorDob(actor) || "-",
+          "UMUR": calculateAge(resolveActorDob(actor)),
           "NOMOR HP": actor.phone || "-",
           "ALAMAT": (actor.address || "").toUpperCase(),
           "RT/RW": rtRw,
@@ -1031,7 +1032,7 @@ function HasilVerifikasiContent() {
                 {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => {
                   const isFemale = normalizeGender(actor.gender) === 'Perempuan';
                   const cardTheme = isFemale ? '#e11d48' : '#0284c7';
-                  const actorAge = calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""));
+                  const actorAge = calculateAge(resolveActorDob(actor));
 
                   return (
                     <div
@@ -1392,9 +1393,9 @@ function HasilVerifikasiContent() {
         <DialogContent className="w-[96vw] max-w-5xl max-h-[92vh] p-0 overflow-hidden flex flex-col rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xl bg-white dark:bg-slate-950">
           {viewingActor && (() => {
             const parsed = parsePobDob(viewingActor.pobDob || "")
-            const pob = viewingActor.pob || parsed.pob || ""
-            const dob = viewingActor.dob || parsed.dob || ""
-            const rawAge = calculateAge(dob || (viewingActor.pobDob ? parsePobDob(viewingActor.pobDob).dob : "") || extractDobFromNik(viewingActor.nik || ""))
+            const pob = resolvePob(viewingActor) !== '-' ? resolvePob(viewingActor) : (viewingActor.pob || parsed.pob || "")
+            const dob = resolveActorDob(viewingActor) || viewingActor.dob || parsed.dob || ""
+            const rawAge = calculateAge(dob)
             const cleanAge = rawAge && rawAge !== "-" ? rawAge.replace(/[^0-9]/g, "") : ""
             const isFemale = normalizeGender(viewingActor.gender) === "Perempuan"
             const genderText = normalizeGender(viewingActor.gender) || "-"

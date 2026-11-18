@@ -27,7 +27,7 @@ import { ActorMenuBadge } from "@/components/actor-menu-badge"
 import { getActorCurrentMenu } from "@/lib/actor-menu-status"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ConfirmDialog } from "@/components/confirm-dialog"
-import { cn, extractDobFromNik, parsePobDob, calculateAge, formatCurrency, formatDateTimeIndo, AGAMA_INDONESIA, STATUS_KELUARGA_LIST, PEKERJAAN_DUKCAPIL, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob } from "@/lib/utils"
+import { cn, extractDobFromNik, parsePobDob, calculateAge, formatCurrency, formatDateTimeIndo, AGAMA_INDONESIA, STATUS_KELUARGA_LIST, PEKERJAAN_DUKCAPIL, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob, resolveActorDob, resolveActorPobDob, resolveActorAge } from "@/lib/utils"
 import { normalizeCoordinator } from "@/lib/coordinator-utils"
 import { resolveSurveyorCanonicalName, buildSurveyorMaps } from "@/lib/surveyor-utils"
 import { formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
@@ -557,13 +557,14 @@ function ActorDataContent() {
 
   // Lazy-load BPJS comparison data only when viewing actor list, searching, or modal is open (saves ~5MB on overview)
   const shouldLoadBpjs = Boolean(filterCoordinator || isSearching || isKoordinator || isPetugas || isInspektorat || viewingActor || editingActor)
-  const bpjsComparisonRef = useMemoFirebase(() => (database && shouldLoadBpjs) ? ref(database, 'settings/bpjs_comparison_data') : null, [database, shouldLoadBpjs])
+  const bpjsComparisonRef = useMemoFirebase(() => database ? ref(database, 'settings/bpjs_comparison_data') : null, [database])
+  const hasBpjsSheet = !isBpjsComparisonLoading && Array.isArray(rawBpjsData) && rawBpjsData.length > 0
   const { data: rawBpjsData, isLoading: isBpjsComparisonLoading } = useList(bpjsComparisonRef)
   const bpjsAutoPurgedRef = useRef(false)
 
   // Jika Sheet 5 (BPJS) sudah di-reset (0 data), bersihkan otomatis sisa field BPJS di database
   useEffect(() => {
-    if (bpjsAutoPurgedRef.current || !database || !isAdmin || !shouldLoadBpjs || isBpjsComparisonLoading || !Array.isArray(rawBpjsData) || rawBpjsData.length > 0) return
+    if (bpjsAutoPurgedRef.current || !database || !isAdmin || isBpjsComparisonLoading || hasBpjsSheet) return
     const sample = (allActorsRaw && allActorsRaw.length > 0) ? allActorsRaw : (localIndex || [])
     const hasStaleBpjs = sample.some((a: any) => a && (a.bpjsSubmissionStatus || a.bpjsCheckStatus || a.bpjsStatus || a.bpjsKeterangan || a.bpjsCheckNote || a.bpjsKpj))
     if (hasStaleBpjs) {
@@ -572,7 +573,16 @@ function ActorDataContent() {
         purgeAllBpjsDataFromActors(database).catch(() => {})
       })
     }
-  }, [database, isAdmin, shouldLoadBpjs, isBpjsComparisonLoading, rawBpjsData, allActorsRaw, localIndex])
+  }, [database, isAdmin, isBpjsComparisonLoading, hasBpjsSheet, allActorsRaw, localIndex])
+
+  const nikDobAutoHealedRef = useRef(false)
+  useEffect(() => {
+    if (nikDobAutoHealedRef.current || !database || !isAdmin) return
+    nikDobAutoHealedRef.current = true
+    import("@/lib/stats-service").then(({ healAllActorsNikDob }) => {
+      healAllActorsNikDob(database).catch(() => {})
+    })
+  }, [database, isAdmin])
 
   const bpjsLookupMap = useMemo(() => {
     const map = new Map<string, any>()
@@ -590,8 +600,8 @@ function ActorDataContent() {
   }, [rawBpjsData])
 
   const getActorBpjsStatus = (actor: BusinessActor) => {
-    // Jika Sheet 5 (settings/bpjs_comparison_data) sudah dimuat dan kosong (di-reset), jangan tampilkan status BPJS lama
-    if (shouldLoadBpjs && !isBpjsComparisonLoading && Array.isArray(rawBpjsData) && bpjsLookupMap.size === 0) {
+    // Jika Sheet 5 (Data Pembanding BPJS) di-reset atau belum diunggah, jangan tampilkan status BPJS
+    if (!hasBpjsSheet) {
       return {
         hasMatch: false,
         isVerified: false,
@@ -1134,8 +1144,8 @@ function ActorDataContent() {
     if (viewingActor) {
       const parsed = parsePobDob(viewingActor.pobDob || "")
       setEditNik(viewingActor.nik || "")
-      setEditPob(parsed.pob || viewingActor.pob || "")
-      setEditDob(parsed.dob || viewingActor.dob || "")
+      setEditPob(resolvePob(viewingActor) !== '-' ? resolvePob(viewingActor) : (parsed.pob || viewingActor.pob || ""))
+      setEditDob(resolveActorDob(viewingActor) || parsed.dob || viewingActor.dob || "")
     } else {
       setEditNik("")
       setEditPob("")
@@ -1340,14 +1350,18 @@ function ActorDataContent() {
     const bankOwnerUntouched = submittedBankOwner.toUpperCase() === oldBankOwner.toUpperCase()
     const syncedBankOwner = (rawBankNumber || submittedBankOwner || oldBankOwner) ? (fullNameChanged && (bankOwnerUntouched || !submittedBankOwner) ? newFullName : (submittedBankOwner || newFullName)) : submittedBankOwner
 
+    const finalDob = extractDobFromNik(editNik) || editDob || ""
+    const finalPob = (editPob || "").toUpperCase().trim()
+    const finalPobDob = finalPob && finalDob ? `${finalPob}, ${finalDob}` : (finalDob || finalPob || "")
+
     const updates: Partial<BusinessActor> = {
       fullName: newFullName,
       nik: editNik,
       noKK: formData.get('noKK') as string,
       gender: formData.get('gender') as "Laki-laki" | "Perempuan",
-      pobDob: `${editPob}, ${editDob}`,
-      pob: editPob,
-      dob: editDob,
+      pobDob: finalPobDob,
+      pob: finalPob,
+      dob: finalDob,
       agama: (formData.get('agama') as string) ?? viewingActor.agama ?? "",
       pekerjaan: (formData.get('pekerjaan') as string) ?? viewingActor.pekerjaan ?? "",
       tanggalCetakKtp: (formData.get('tanggalCetakKtp') as string) ?? viewingActor.tanggalCetakKtp ?? "",
@@ -1880,8 +1894,8 @@ function ActorDataContent() {
           "NIK": actor.nik || "-",
           "NOMOR KK": actor.noKK || "-",
           "TEMPAT LAHIR": pob,
-          "TANGGAL LAHIR": actor.dob || parsePobDob(actor.pobDob || "").dob || "-",
-          "UMUR": calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || "")),
+          "TANGGAL LAHIR": resolveActorDob(actor) || "-",
+          "UMUR": calculateAge(resolveActorDob(actor)),
           "NOMOR HP": actor.phone || "-",
           "ALAMAT": (actor.address || "").toUpperCase(),
           "RT/RW": rtRw,
@@ -2494,7 +2508,7 @@ function ActorDataContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 print:hidden">
                   {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => {
                     const isFemale = normalizeGender(actor.gender) === 'Perempuan';
-                    const actorAge = calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""));
+                    const actorAge = calculateAge(resolveActorDob(actor));
                     const cardTheme = isFemale ? '#e11d48' : '#0284c7';
                     return (
                       <div 
@@ -2674,7 +2688,7 @@ function ActorDataContent() {
                         <TableRow key={actor.id} className="border-black">
                           <TableCell className="py-4 pl-6 text-center font-bold text-black">{globalIndexMap.get(actor.id) || index + 1}</TableCell>
                           <TableCell className="py-4 font-bold text-black uppercase">{actor.fullName}</TableCell>
-                          <TableCell className="py-4 text-[13px] font-bold text-black">{calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}</TableCell>
+                          <TableCell className="py-4 text-[13px] font-bold text-black">{calculateAge(resolveActorDob(actor))}</TableCell>
                           <TableCell className="py-4 text-black">{actor.businessCategory}</TableCell>
                           <TableCell className="py-4 text-black">{actor.phone}</TableCell>
                           <TableCell className="py-4 text-black">{actor.address}</TableCell>
@@ -2699,7 +2713,7 @@ function ActorDataContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 print:hidden">
                   {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => {
                     const isFemale = normalizeGender(actor.gender) === 'Perempuan';
-                    const actorAge = calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""));
+                    const actorAge = calculateAge(resolveActorDob(actor));
                     const cardTheme = isFemale ? '#e11d48' : '#0284c7';
                     return (
                       <div
@@ -2962,7 +2976,7 @@ function ActorDataContent() {
                           <TableCell className="py-4 pl-6 text-center font-bold text-black">{globalIndexMap.get(actor.id) || index + 1}</TableCell>
                           <TableCell className="py-4 font-bold text-black uppercase">{actor.fullName}</TableCell>
                           <TableCell className="py-4 font-mono text-[11px] text-black">{actor.nik}</TableCell>
-                          <TableCell className="py-4 font-bold text-black text-[13px]">{calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}</TableCell>
+                          <TableCell className="py-4 font-bold text-black text-[13px]">{calculateAge(resolveActorDob(actor))}</TableCell>
                           <TableCell className="py-4 font-bold text-black text-[13px]">{actor.phone || "-"}</TableCell>
                           <TableCell className="py-4 text-[10px] text-black leading-tight max-w-[200px]">{actor.address || "-"}</TableCell>
                           <TableCell className="py-4">
@@ -3184,7 +3198,7 @@ function ActorDataContent() {
               .map((n: string) => n[0])
               .join("")
               .toUpperCase();
-            const rawAge = calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || ""));
+            const rawAge = calculateAge(resolveActorDob(viewingActor));
             const cleanAge = rawAge && rawAge !== '-' ? rawAge.replace(/[^0-9]/g, '') : '';
 
             // ── STRICT AVAILABILITY HELPER: Hanya tampilkan data yang tersedia / diinput ──
@@ -3622,7 +3636,7 @@ function ActorDataContent() {
                     // 1. PERSIAPAN DATA PELAKU USAHA
                     // ────────────────────────────────────────────────────────────
                     const pobVal = viewingActor.pob || parsePobDob(viewingActor.pobDob || "").pob;
-                    const dobVal = viewingActor.dob || parsePobDob(viewingActor.pobDob || "").dob;
+                    const dobVal = resolveActorDob(viewingActor);
                     const ttlCombined = hasVal(pobVal) && hasVal(dobVal)
                       ? `${pobVal}, ${dobVal}`
                       : (hasVal(pobVal) ? pobVal : (hasVal(dobVal) ? dobVal : ""));
@@ -3663,13 +3677,13 @@ function ActorDataContent() {
                     // 2. PERSIAPAN DATA PEMBACAAN DATABASE
                     // ────────────────────────────────────────────────────────────
                     const bpjsInfo = getActorBpjsStatus(viewingActor);
-                    const hasBpjsData = Boolean(
+                    const hasBpjsData = Boolean(hasBpjsSheet && (
                       bpjsInfo.hasMatch ||
                       hasVal((viewingActor as any).bpjsKpj) ||
                       hasVal((viewingActor as any).bpjsStatusCode) ||
                       hasVal((viewingActor as any).bpjsCheckNote) ||
                       hasVal((viewingActor as any).bpjsKeterangan)
-                    );
+                    ));
 
                     const allMasterMatches: Array<{ sheetTitle: string; sheetBadge: string; theme: "emerald" | "amber" | "rose"; item: any }> = [
                       ...(activeDetailData.data2024 || []).map((item: any) => ({
@@ -4804,7 +4818,7 @@ function ActorDataContent() {
             const actor = surveyViewActor
             const sd = (actor as any).surveyData || {}
             const pobDobData = parsePobDob(actor.pobDob || "")
-            const ageDisplay = calculateAge(actor.dob || pobDobData.dob || extractDobFromNik(actor.nik || ""))
+            const ageDisplay = calculateAge(resolveActorDob(actor))
             
             const Field = ({ label, value, className }: { label: string; value?: React.ReactNode | string | null; className?: string }) => (
               <div className={cn("space-y-0.5", className)}>
@@ -4946,7 +4960,7 @@ function ActorDataContent() {
                             label="Tempat, Tgl Lahir" 
                             value={
                               <span>
-                                {pobDobData.pob || actor.pob || "-"}, {pobDobData.dob || actor.dob || "-"}
+                                {resolvePob(actor)}, {resolveActorDob(actor)}
                                 {ageDisplay !== "-" && <span className="text-slate-500 font-bold ml-1">({ageDisplay})</span>}
                               </span>
                             } 

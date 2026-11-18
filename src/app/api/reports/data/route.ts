@@ -103,7 +103,7 @@ function normalizeActorForReport(id: string, a: any, bpjsMap: Map<string, any>) 
   const resolvedRt = resolveRtRw(a);
   const resolvedPob = resolvePob(a);
   const parsedPobDob = parsePobDob(a.pobDob || '');
-  const resolvedDob = a.dob || a.tanggalLahir || parsedPobDob.dob || extractDobFromNik(a.nik || '') || '';
+  const resolvedDob = extractDobFromNik(a.nik || '') || a.dob || a.tanggalLahir || parsedPobDob.dob || '';
   const bpjsResolved = resolveBpjsForActor(a, bpjsMap, true);
 
   const cleanFullName = String(a.fullName || '').trim();
@@ -116,7 +116,7 @@ function normalizeActorForReport(id: string, a: any, bpjsMap: Map<string, any>) 
     fullName: cleanFullName,
     nik: a.nik || '',
     noKK: a.noKK || '',
-    pobDob: a.pobDob || '',
+    pobDob: (resolvedPob !== '-' && resolvedDob) ? `${resolvedPob}, ${resolvedDob}` : (a.pobDob || resolvedDob || ''),
     pob: resolvedPob !== '-' ? resolvedPob : (a.pob || ''),
     dob: resolvedDob,
     gender: a.gender || a.surveyData?.jenisKelamin || '',
@@ -174,14 +174,14 @@ function normalizeActorForReport(id: string, a: any, bpjsMap: Map<string, any>) 
     dikembalikanKeVerifikatorBy: a.dikembalikanKeVerifikatorBy || '',
     dikembalikanKeVerifikatorReason: a.dikembalikanKeVerifikatorReason || '',
     catatanPengembalian: a.catatanPengembalian || '',
-    bpjsSubmissionStatus: a.bpjsSubmissionStatus || '',
-    bpjsCheckStatus: a.bpjsCheckStatus || '',
-    bpjsStatus: a.bpjsStatus || '',
-    bpjsKeterangan: a.bpjsKeterangan || '',
-    bpjsCheckNote: a.bpjsCheckNote || '',
-    bpjsCheckedAt: a.bpjsCheckedAt || '',
-    bpjsKpj: a.bpjsKpj || '',
-    bpjsSourceFile: a.bpjsSourceFile || '',
+    bpjsSubmissionStatus: bpjsMap.size > 0 ? (a.bpjsSubmissionStatus || '') : '',
+    bpjsCheckStatus: bpjsMap.size > 0 ? (a.bpjsCheckStatus || '') : '',
+    bpjsStatus: bpjsMap.size > 0 ? (a.bpjsStatus || '') : '',
+    bpjsKeterangan: bpjsMap.size > 0 ? (a.bpjsKeterangan || '') : '',
+    bpjsCheckNote: bpjsMap.size > 0 ? (a.bpjsCheckNote || '') : '',
+    bpjsCheckedAt: bpjsMap.size > 0 ? (a.bpjsCheckedAt || '') : '',
+    bpjsKpj: bpjsMap.size > 0 ? (a.bpjsKpj || '') : '',
+    bpjsSourceFile: bpjsMap.size > 0 ? (a.bpjsSourceFile || '') : '',
     bpjsResolved,
   };
 }

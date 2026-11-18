@@ -9,6 +9,7 @@ import {
   resolveKelurahan,
   resolveKecamatan,
   resolvePob,
+  resolveActorDob,
 } from '@/lib/utils';
 import { getActorCurrentMenu } from '@/lib/actor-menu-status';
 import { resolveSurveyorCanonicalName } from '@/lib/surveyor-utils';
@@ -193,7 +194,7 @@ export function buildBpjsLookupMap(rawSettingsBpjs: any, rawRootBpjs?: any): Map
 export function resolveBpjsForActor(
   actor: any,
   bpjsMap: Map<string, any>,
-  strictRequireComparisonSheet: boolean = false
+  strictRequireComparisonSheet: boolean = true
 ): ResolvedBpjsInfo {
   if (strictRequireComparisonSheet && bpjsMap.size === 0) {
     return {
@@ -683,7 +684,7 @@ function getLpjStatusLabel(actor: ReportActor): string {
 function getBiodataFields(actor: ReportActor) {
   const parsed = parsePobDob(actor.pobDob || '');
   const pob = resolvePob(actor);
-  const dob = actor.dob || parsed.dob || extractDobFromNik(actor.nik || '') || '-';
+  const dob = resolveActorDob(actor) || actor.dob || parsed.dob || '-';
   const age = calculateAge(dob);
   const rtRw = resolveRtRw(actor);
   const kelurahan = resolveKelurahan(actor);

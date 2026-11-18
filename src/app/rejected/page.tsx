@@ -20,7 +20,7 @@ import Link from "next/link"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
 import { VerificationBadge } from "@/components/verification-badge"
 
-import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
+import { cn, extractDobFromNik, parsePobDob, calculateAge, resolveActorDob, resolveActorPobDob, resolvePob } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { generateCancelDinasPDF } from "@/lib/generate-cancel-dinas-pdf"
@@ -246,8 +246,8 @@ function RejectedContent() {
     if (viewingActor) {
       const parsed = parsePobDob(viewingActor.pobDob || "")
       setEditNik(viewingActor.nik || "")
-      setEditPob(parsed.pob || viewingActor.pob || "")
-      setEditDob(parsed.dob || viewingActor.dob || "")
+      setEditPob(resolvePob(viewingActor) !== '-' ? resolvePob(viewingActor) : (parsed.pob || viewingActor.pob || ""))
+      setEditDob(resolveActorDob(viewingActor) || parsed.dob || viewingActor.dob || "")
     } else {
       setEditNik("")
       setEditPob("")
@@ -261,14 +261,18 @@ function RejectedContent() {
     if (!isAdmin || !database || !viewingActor) return
     const formData = new FormData(e.currentTarget)
     
+    const finalDob = extractDobFromNik(editNik) || editDob || ""
+    const finalPob = (editPob || "").toUpperCase().trim()
+    const finalPobDob = finalPob && finalDob ? `${finalPob}, ${finalDob}` : (finalDob || finalPob || "")
+
     const updates: Partial<BusinessActor> = {
       fullName: formData.get('fullName') as string,
       nik: editNik,
       noKK: formData.get('noKK') as string,
       gender: formData.get('gender') as "Perempuan" | "Laki-laki",
-      pobDob: `${editPob}, ${editDob}`,
-      pob: editPob,
-      dob: editDob,
+      pobDob: finalPobDob,
+      pob: finalPob,
+      dob: finalDob,
       phone: formData.get('phone') as string,
       kecamatan: formData.get('kecamatan') as string,
       kelurahan: formData.get('kelurahan') as string,

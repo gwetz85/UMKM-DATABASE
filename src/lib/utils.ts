@@ -32,13 +32,18 @@ export function extractDobFromNik(nik: string): string {
   if (dayVal > 40) {
     dayVal = dayVal - 40;
   }
+  if (dayVal < 1 || dayVal > 31) return "";
   
-  const dayStr = String(dayVal).padStart(2, "0");
-
   // Angka ke 9 dan 10 adalah bulan lahir
   const monthStr = cleanNik.substring(8, 10);
   const monthVal = parseInt(monthStr, 10);
   if (isNaN(monthVal) || monthVal < 1 || monthVal > 12) return "";
+
+  // Validasi jumlah hari dalam bulan
+  if (monthVal === 2 && dayVal > 29) return "";
+  if ([4, 6, 9, 11].includes(monthVal) && dayVal > 30) return "";
+
+  const dayStr = String(dayVal).padStart(2, "0");
 
   // Angka ke 11 dan 12 adalah tahun lahir (format: yy)
   const year2DigitStr = cleanNik.substring(10, 12);
@@ -226,6 +231,18 @@ export function calculateAge(dobStr: any): string {
           month = parseInt(parts[1], 10) - 1;
           day = parseInt(parts[2], 10);
         }
+      } else return "-";
+    } else if (raw.includes(" ")) {
+      const monthsIndo: { [key: string]: number } = {
+        'JANUARI': 0, 'FEBRUARI': 1, 'MARET': 2, 'APRIL': 3, 'MEI': 4, 'JUNI': 5,
+        'JULI': 6, 'AGUSTUS': 7, 'SEPTEMBER': 8, 'OKTOBER': 9, 'NOVEMBER': 10, 'DESEMBER': 11
+      };
+      const parts = raw.split(" ").filter(Boolean);
+      if (parts.length >= 3) {
+        day = parseInt(parts[0], 10);
+        const mKey = parts[1].toUpperCase().trim();
+        month = monthsIndo[mKey] !== undefined ? monthsIndo[mKey] : (parseInt(parts[1], 10) - 1);
+        year = parseInt(parts[2], 10);
       } else return "-";
     } else {
       return "-";
@@ -527,5 +544,52 @@ export function resolvePob(actor: any): string {
     return parsed.pob.toUpperCase();
   }
   return "-";
+}
+
+/**
+ * Mengambil tanggal lahir pelaku usaha secara akurat:
+ * Jika NIK valid (16 digit / >= 12 digit), tanggal lahir selalu mengikuti NIK.
+ * Jika NIK tidak valid / tidak ada, gunakan dob atau pobDob yang tersimpan.
+ */
+export function resolveActorDob(actor: any): string {
+  if (!actor) return "";
+  const rawNik = actor.nik || actor.noKtp || actor.nomorIdentitas || "";
+  const fromNik = extractDobFromNik(String(rawNik).trim());
+  if (fromNik) return fromNik;
+  if (actor.dob && String(actor.dob).trim() !== "" && actor.dob !== "-") {
+    return String(actor.dob).trim();
+  }
+  const parsed = parsePobDob(actor.pobDob || "");
+  if (parsed.dob && parsed.dob !== "-") {
+    return parsed.dob;
+  }
+  if (actor.tanggalLahir && String(actor.tanggalLahir).trim() !== "" && actor.tanggalLahir !== "-") {
+    return String(actor.tanggalLahir).trim();
+  }
+  return "";
+}
+
+/**
+ * Mengambil Tempat dan Tanggal Lahir gabungan (POB, DOB) secara akurat:
+ * Tanggal lahir otomatis mengikuti NIK jika NIK ada/berubah.
+ */
+export function resolveActorPobDob(actor: any): string {
+  if (!actor) return "-";
+  const pob = resolvePob(actor);
+  const dob = resolveActorDob(actor);
+  if (pob && pob !== "-" && dob && dob !== "-") return `${pob}, ${dob}`;
+  if (dob && dob !== "-") return dob;
+  if (pob && pob !== "-") return pob;
+  return "-";
+}
+
+/**
+ * Menghitung usia pelaku usaha dengan tanggal lahir yang mengikuti NIK.
+ */
+export function resolveActorAge(actor: any): string {
+  if (!actor) return "-";
+  const dob = resolveActorDob(actor);
+  if (!dob) return "-";
+  return calculateAge(dob);
 }
 

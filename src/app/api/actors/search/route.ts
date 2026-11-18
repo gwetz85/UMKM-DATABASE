@@ -9,7 +9,7 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 const database = getDatabase(app);
 const auth = getAuth(app);
 
-import { resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob } from '@/lib/utils';
+import { resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob, resolveActorDob, resolveActorPobDob } from '@/lib/utils';
 
 // In-memory cache for ultra-fast response & low network usage
 interface CacheItem {
@@ -147,9 +147,9 @@ async function getLightweightActors(forceRefresh: boolean = false): Promise<any[
       alasanCancelDinas: a.alasanCancelDinas || '',
       registrationCode: a.registrationCode || '',
       gender: a.gender || '',
-      pobDob: a.pobDob || '',
-      pob: (a.pob || a.tempatLahir || (resolvedPob !== '-' ? resolvedPob : '') || '').toUpperCase(),
-      dob: a.dob || a.tanggalLahir || (parsePobDob(a.pobDob || '').dob) || '',
+      pob: (resolvedPob !== '-' ? resolvedPob : (a.pob || '')).toUpperCase(),
+      dob: resolveActorDob(a),
+      pobDob: resolveActorPobDob(a),
       rtRw: a.rtRw || a.rt_rw || (a.rt && a.rw ? `${a.rt}/${a.rw}` : a.rt || '') || (resolvedRt !== '-' ? resolvedRt : ''),
       kelurahan: (a.kelurahan || a.kel || a.desa || (resolvedKel !== '-' ? resolvedKel : '') || '').toUpperCase(),
       kecamatan: (a.kecamatan || a.kec || (resolvedKec !== '-' ? resolvedKec : '') || '').toUpperCase(),

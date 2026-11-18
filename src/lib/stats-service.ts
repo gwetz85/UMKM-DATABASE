@@ -1,6 +1,6 @@
 import { Database, ref, runTransaction } from "firebase/database";
 import { normalizeCoordinator } from "./coordinator-utils";
-import { resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob, parsePobDob } from "./utils";
+import { resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob, parsePobDob, extractDobFromNik, resolveActorDob, resolveActorPobDob } from "./utils";
 
 export interface SystemStats {
   totalActors: number;
@@ -657,40 +657,51 @@ export const BPJS_ACTOR_FIELDS = [
   'bpjsSubmissionStatus',
   'bpjsCheckStatus',
   'bpjsStatus',
+  'bpjsStatusCode',
   'bpjsKeterangan',
   'bpjsCheckNote',
   'bpjsCheckedAt',
   'bpjsSourceFile',
   'bpjsKpj',
+  'bpjs',
+  'bpjsData',
+  'bpjsHistory',
 ] as const;
 
 export async function purgeAllBpjsDataFromActors(database: Database): Promise<number> {
   const { ref, get, update, remove } = await import('firebase/database');
   const { firebaseConfig } = await import('@/firebase/config');
 
-  // 1. Hapus kedua node pembanding BPJS (utama & legacy)
+  // 1. Hapus node pembanding BPJS (utama & legacy)
   await Promise.all([
     remove(ref(database, 'settings/bpjs_comparison_data')).catch(() => {}),
     remove(ref(database, 'bpjs_comparison_data')).catch(() => {}),
   ]);
 
-  // 2. Ambil seluruh ID pelaku usaha secara cepat (< 200ms) tanpa mengunduh 157MB businessActors
-  const [shallowRes, searchSnap, reportSnap] = await Promise.all([
-    fetch(`${firebaseConfig.databaseURL}/businessActors.json?shallow=true`)
+  // 2. Ambil seluruh ID pelaku usaha dari seluruh index & master
+  let masterIds: string[] = [];
+  try {
+    const { getAuth } = await import('firebase/auth');
+    const auth = getAuth();
+    const token = await auth?.currentUser?.getIdToken().catch(() => null);
+    const shallowUrl = token
+      ? `${firebaseConfig.databaseURL}/businessActors.json?shallow=true&auth=${token}`
+      : `${firebaseConfig.databaseURL}/businessActors.json?shallow=true`;
+    const shallowRes = await fetch(shallowUrl)
       .then((r) => (r.ok ? r.json() : null))
-      .catch(() => null),
+      .catch(() => null);
+    if (shallowRes && typeof shallowRes === 'object') {
+      masterIds = Object.keys(shallowRes);
+    }
+  } catch {}
+
+  const [searchSnap, reportSnap] = await Promise.all([
     get(ref(database, 'settings/actors_search')).catch(() => null),
     get(ref(database, 'settings/report_index/actors')).catch(() => null),
   ]);
 
-  const masterIds = shallowRes && typeof shallowRes === 'object' ? Object.keys(shallowRes) : [];
-  const masterIdSet = new Set<string>(masterIds);
-  const searchIds = new Set<string>(
-    searchSnap && searchSnap.exists() ? Object.keys(searchSnap.val() || {}) : []
-  );
-  const reportIds = new Set<string>(
-    reportSnap && reportSnap.exists() ? Object.keys(reportSnap.val() || {}) : []
-  );
+  const searchIds = searchSnap && searchSnap.exists() ? Object.keys(searchSnap.val() || {}) : [];
+  const reportIds = reportSnap && reportSnap.exists() ? Object.keys(reportSnap.val() || {}) : [];
 
   const allIds = Array.from(new Set([...masterIds, ...searchIds, ...reportIds]));
   if (allIds.length === 0) {
@@ -698,22 +709,16 @@ export async function purgeAllBpjsDataFromActors(database: Database): Promise<nu
     return 0;
   }
 
-  // 3. Bersihkan semua 8 field BPJS dari businessActors, settings/actors_search, dan settings/report_index/actors
-  const BATCH_SIZE = 150;
+  // 3. Bersihkan seluruh field BPJS dari businessActors, settings/actors_search, dan settings/report_index/actors
+  const BATCH_SIZE = 100;
   for (let i = 0; i < allIds.length; i += BATCH_SIZE) {
     const chunk = allIds.slice(i, i + BATCH_SIZE);
     const updates: Record<string, null> = {};
     chunk.forEach((id) => {
       BPJS_ACTOR_FIELDS.forEach((field) => {
-        if (masterIdSet.has(id)) {
-          updates[`businessActors/${id}/${field}`] = null;
-        }
-        if (searchIds.has(id)) {
-          updates[`settings/actors_search/${id}/${field}`] = null;
-        }
-        if (reportIds.has(id)) {
-          updates[`settings/report_index/actors/${id}/${field}`] = null;
-        }
+        updates[`businessActors/${id}/${field}`] = null;
+        updates[`settings/actors_search/${id}/${field}`] = null;
+        updates[`settings/report_index/actors/${id}/${field}`] = null;
       });
     });
     if (Object.keys(updates).length > 0) {
@@ -739,6 +744,10 @@ export async function syncActorToSearchIndex(database: Database, actorData: any)
       return;
     }
 
+    const finalPob = (actorData.pob || actorData.tempatLahir || (resolvePob(actorData) !== '-' ? resolvePob(actorData) : '') || '').toUpperCase();
+    const finalDob = resolveActorDob(actorData);
+    const finalPobDob = resolveActorPobDob({ ...actorData, pob: finalPob, dob: finalDob });
+
     const cleanItem = {
       id: actorData.id,
       fullName: actorData.fullName || '',
@@ -757,9 +766,9 @@ export async function syncActorToSearchIndex(database: Database, actorData: any)
       alasanCancelDinas: actorData.alasanCancelDinas || '',
       registrationCode: actorData.registrationCode || '',
       gender: actorData.gender || '',
-      pobDob: actorData.pobDob || '',
-      pob: (actorData.pob || actorData.tempatLahir || (resolvePob(actorData) !== '-' ? resolvePob(actorData) : '') || '').toUpperCase(),
-      dob: actorData.dob || actorData.tanggalLahir || (parsePobDob(actorData.pobDob || '').dob) || '',
+      pobDob: finalPobDob,
+      pob: finalPob,
+      dob: finalDob,
       rtRw: actorData.rtRw || actorData.rt_rw || (actorData.rt && actorData.rw ? `${actorData.rt}/${actorData.rw}` : actorData.rt || '') || (resolveRtRw(actorData) !== '-' ? resolveRtRw(actorData) : ''),
       kelurahan: (actorData.kelurahan || actorData.kel || actorData.desa || (resolveKelurahan(actorData) !== '-' ? resolveKelurahan(actorData) : '') || '').toUpperCase(),
       kecamatan: (actorData.kecamatan || actorData.kec || (resolveKecamatan(actorData) !== '-' ? resolveKecamatan(actorData) : '') || '').toUpperCase(),
@@ -814,6 +823,90 @@ export async function syncActorToSearchIndex(database: Database, actorData: any)
     invalidateAllActorCaches();
   } catch (err) {
     console.error('Error syncing actor to search index:', err);
+  }
+}
+
+/**
+ * Sinkronisasi otomatis tanggal lahir agar selalu mengikuti NIK untuk semua pelaku usaha di database.
+ * Jika NIK diubah atau ada tanggal lahir yang tidak sinkron dengan NIK, fungsi ini memperbaikinya secara menyeluruh.
+ */
+export async function healAllActorsNikDob(database: Database): Promise<{ checked: number; healed: number }> {
+  try {
+    const { ref, get, update } = await import("firebase/database");
+    const [searchSnap, reportSnap] = await Promise.all([
+      get(ref(database, 'settings/actors_search')).catch(() => null),
+      get(ref(database, 'settings/report_index/actors')).catch(() => null),
+    ]);
+
+    const searchMap = searchSnap && searchSnap.exists() ? (searchSnap.val() || {}) : {};
+    const reportMap = reportSnap && reportSnap.exists() ? (reportSnap.val() || {}) : {};
+
+    const allKeys = Array.from(new Set([...Object.keys(searchMap), ...Object.keys(reportMap)]));
+    if (allKeys.length === 0) return { checked: 0, healed: 0 };
+
+    const updates: Record<string, any> = {};
+    let healedCount = 0;
+
+    for (const id of allKeys) {
+      const a = searchMap[id] || reportMap[id];
+      if (!a || !a.nik) continue;
+
+      const expectedDob = extractDobFromNik(a.nik);
+      if (!expectedDob) continue;
+
+      const currentDob = (a.dob || '').trim();
+      const pob = resolvePob(a);
+      const cleanPob = pob !== '-' ? pob : (a.pob || '').toUpperCase().trim();
+      const expectedPobDob = cleanPob ? `${cleanPob}, ${expectedDob}` : expectedDob;
+      const currentPobDob = (a.pobDob || '').trim();
+
+      if (currentDob !== expectedDob || currentPobDob !== expectedPobDob) {
+        healedCount++;
+        updates[`businessActors/${id}/dob`] = expectedDob;
+        updates[`businessActors/${id}/pobDob`] = expectedPobDob;
+        if (cleanPob) {
+          updates[`businessActors/${id}/pob`] = cleanPob;
+        }
+
+        if (searchMap[id]) {
+          updates[`settings/actors_search/${id}/dob`] = expectedDob;
+          updates[`settings/actors_search/${id}/pobDob`] = expectedPobDob;
+          if (cleanPob) {
+            updates[`settings/actors_search/${id}/pob`] = cleanPob;
+          }
+        }
+
+        if (reportMap[id]) {
+          updates[`settings/report_index/actors/${id}/dob`] = expectedDob;
+          updates[`settings/report_index/actors/${id}/pobDob`] = expectedPobDob;
+          if (cleanPob) {
+            updates[`settings/report_index/actors/${id}/pob`] = cleanPob;
+          }
+        }
+
+        if (a.surveyData) {
+          updates[`businessActors/${id}/surveyData/tanggalLahir`] = expectedDob;
+          if (cleanPob) {
+            updates[`businessActors/${id}/surveyData/tempatLahir`] = cleanPob;
+          }
+        }
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      const entries = Object.entries(updates);
+      const BATCH = 150;
+      for (let i = 0; i < entries.length; i += BATCH) {
+        const chunk = Object.fromEntries(entries.slice(i, i + BATCH));
+        await update(ref(database), chunk);
+      }
+      invalidateAllActorCaches();
+    }
+
+    return { checked: allKeys.length, healed: healedCount };
+  } catch (err) {
+    console.error('Error healing actors NIK DOB:', err);
+    return { checked: 0, healed: 0 };
   }
 }
 

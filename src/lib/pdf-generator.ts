@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { BusinessActor } from '@/app/lib/types';
 import { generateBarcodeBase64, generateQRCodeBase64 } from './barcode-utils';
-import { parsePobDob, calculateAge, extractDobFromNik, formatCurrency, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob } from './utils';
+import { parsePobDob, calculateAge, extractDobFromNik, formatCurrency, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob, resolveActorDob } from './utils';
 import { getActorCurrentMenu } from './actor-menu-status';
 
 import { addTunasBangsaHeader } from './pdf-header';
@@ -88,8 +88,8 @@ export const generateRegistrationForm = async (actor: BusinessActor, sequenceNum
     ['NIK', `:  ${actor.nik || '-'}`],
     ['Nomor Kartu Keluarga', `:  ${actor.noKK || '-'}`],
     ['Jenis Kelamin', `:  ${actor.gender || '-'}`],
-    ['Tempat Lahir', `:  ${actor.pob || parsePobDob(actor.pobDob || '').pob || '-'}`],
-    ['Tanggal Lahir', `:  ${actor.dob || parsePobDob(actor.pobDob || '').dob || '-'}`],
+    ['Tempat Lahir', `:  ${resolvePob(actor) || '-'}`],
+    ['Tanggal Lahir', `:  ${resolveActorDob(actor) || actor.dob || '-'}`],
     ['Nomor HP / WhatsApp', `:  ${actor.phone || '-'}`],
     ['Kecamatan / Kelurahan', `:  ${actor.kecamatan || '-'} / ${actor.kelurahan || '-'}`],
     ['Alamat Domisili', `:  ${actor.address || '-'}`],
@@ -434,7 +434,7 @@ const renderCoordinatorSectionTable = (
     const sd = (actor as any).surveyData || {};
     const parsedPobDob = parsePobDob(actor.pobDob || '');
     const pob = resolvePob(actor);
-    const dob = actor.dob || parsedPobDob.dob || extractDobFromNik(actor.nik || '') || '-';
+    const dob = resolveActorDob(actor) || actor.dob || parsedPobDob.dob || '-';
     const age = calculateAge(dob);
     const gender = actor.gender || sd.jenisKelamin || '-';
     const regCode = actor.registrationCode || '-';

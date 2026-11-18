@@ -37,7 +37,8 @@ import {
 } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
-import { cn, parsePobDob, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob } from "@/lib/utils"
+import { cn, parsePobDob, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob, resolveActorDob, resolveActorPobDob, resolveActorAge, extractDobFromNik, calculateAge } from "@/lib/utils"
+import { BusinessActor } from "@/app/lib/types"
 
 // Normalization Helpers
 const normalizeNik = (nik: string): string => String(nik || "").replace(/\D/g, "").replace(/^0+/, "")
@@ -223,13 +224,13 @@ export default function BpjsPage() {
   const bpjsComparisonRef = useMemoFirebase(() => database ? ref(database, 'settings/bpjs_comparison_data') : null, [database])
   const { data: bpjsComparisonList, isLoading: isBpjsComparisonLoading } = useList<any>(bpjsComparisonRef)
   const bpjsAutoPurgedRef = useRef(false)
-  // Jika Sheet 5 (settings/bpjs_comparison_data) sudah dimuat dan kosong (0 data / sudah di-reset),
-  // jangan tampilkan status BPJS lama yang tersisa di record pelaku usaha
-  const isBpjsSheetEmpty = !isBpjsComparisonLoading && Array.isArray(bpjsComparisonList) && bpjsComparisonList.length === 0
+  // Sheet 5 aktif HANYA JIKA data pembanding ada (> 0). Jika di-reset (0 data / kosong), seluruh status BPJS dinonaktifkan
+  const hasBpjsSheet = !isBpjsComparisonLoading && Array.isArray(bpjsComparisonList) && bpjsComparisonList.length > 0
+  const isBpjsSheetEmpty = !hasBpjsSheet
 
-  // Jika Sheet 5 (Data Pembanding BPJS) di Pengaturan sudah di-reset (0 data), bersihkan otomatis sisa status BPJS di database
+  // Jika Sheet 5 (Data Pembanding BPJS) di Pengaturan sudah di-reset (0 data / kosong), bersihkan otomatis sisa status BPJS di database
   useEffect(() => {
-    if (bpjsAutoPurgedRef.current || !database || !user || !isBpjsSheetEmpty || !allActors) return
+    if (bpjsAutoPurgedRef.current || !database || !user || isBpjsComparisonLoading || hasBpjsSheet || !allActors) return
     const hasStaleBpjs = allActors.some((a: any) => a && (a.bpjsSubmissionStatus || a.bpjsCheckStatus || a.bpjsStatus || a.bpjsKeterangan || a.bpjsCheckNote || a.bpjsKpj))
     if (hasStaleBpjs) {
       bpjsAutoPurgedRef.current = true
@@ -237,7 +238,7 @@ export default function BpjsPage() {
         purgeAllBpjsDataFromActors(database).catch(() => {})
       })
     }
-  }, [database, user, isBpjsSheetEmpty, allActors])
+  }, [database, user, isBpjsComparisonLoading, hasBpjsSheet, allActors])
 
   // Calculate age as of a reference date (e.g., 1 Sep 2026)
   const calculateAgeOn = (dobString: string, refDate: Date): number => {
@@ -282,7 +283,8 @@ export default function BpjsPage() {
     if (!allActors) return []
     return allActors.filter(a => {
       if (!a || !a.fullName) return false
-      const age = calculateAgeOn(a.pobDob || "", refDate)
+      const dob = resolveActorDob(a)
+      const age = calculateAgeOn(dob || a.pobDob || "", refDate)
       return age > 0 && age < 65
     })
   }, [allActors, refDate])
@@ -734,7 +736,7 @@ export default function BpjsPage() {
       return
     }
 
-    const eligibleActors = filteredActors.filter(a => calculateAgeOn(a.pobDob || "", refDate) < 65)
+    const eligibleActors = filteredActors.filter(a => calculateAgeOn(resolveActorDob(a) || a.pobDob || "", refDate) < 65)
     if (eligibleActors.length === 0) {
       toast({
         variant: "destructive",
@@ -745,7 +747,8 @@ export default function BpjsPage() {
     }
 
     const exportData = eligibleActors.map((actor, idx) => {
-      const age = calculateAgeOn(actor.pobDob || "", refDate)
+      const dob = resolveActorDob(actor) || "-"
+      const age = calculateAgeOn(dob !== "-" ? dob : (actor.pobDob || ""), refDate)
       const parsed = parsePobDob(actor.pobDob || "")
       const matchInfo = matchedActorsMap.get(actor.id)
       const actorAny = actor as any
@@ -759,7 +762,7 @@ export default function BpjsPage() {
         "NIK": actor.nik || "-",
         "NOMOR KK": actor.noKK || "-",
         "TEMPAT LAHIR": resolvePob(actor),
-        "TANGGAL LAHIR": actor.dob || parsed.dob || "-",
+        "TANGGAL LAHIR": dob,
         "USIA": age,
         "NOMOR PONSEL": actor.phone || "-",
         "ALAMAT": (actor.address || "").toUpperCase(),
@@ -793,7 +796,7 @@ export default function BpjsPage() {
 
   // Print PDF using reference date (1 Sep 2026)
   const handlePrintPDF = async () => {
-    const eligibleActors = filteredActors.filter(a => calculateAgeOn(a.pobDob || "", refDate) < 65)
+    const eligibleActors = filteredActors.filter(a => calculateAgeOn(resolveActorDob(a) || a.pobDob || "", refDate) < 65)
     if (eligibleActors.length === 0) return
 
     const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
@@ -817,7 +820,8 @@ export default function BpjsPage() {
     doc.setTextColor(0)
 
     const tableData = eligibleActors.map((actor, index) => {
-      const age = calculateAgeOn(actor.pobDob || "", refDate)
+      const dob = resolveActorDob(actor) || "-"
+      const age = calculateAgeOn(dob !== "-" ? dob : (actor.pobDob || ""), refDate)
       const matchInfo = matchedActorsMap.get(actor.id)
       const note = matchInfo ? `Sesuai BPJS (${matchInfo.excelStatus})` : "Bisa Didaftarkan"
       return [
@@ -1223,7 +1227,7 @@ export default function BpjsPage() {
               ) : (
                 <>
                   {filteredActors.slice(0, pageLimit).map((actor, index) => {
-                    const age = calculateAge(actor.pobDob || "")
+                    const age = calculateAge(resolveActorDob(actor) || actor.pobDob || "")
                     const matchInfo = matchedActorsMap.get(actor.id)
                     const actorAny = actor as any
                     const isAccepted = !isBpjsSheetEmpty && actorAny.bpjsSubmissionStatus === 'accepted'
@@ -1256,7 +1260,7 @@ export default function BpjsPage() {
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground font-medium">Tempat / Tgl Lahir:</span>
                             <span className="font-semibold uppercase text-slate-700 dark:text-slate-300">
-                              {actor.pob || parsePobDob(actor.pobDob || "").pob || "-"}, {actor.dob || parsePobDob(actor.pobDob || "").dob || "-"}
+                              {resolvePob(actor)}, {resolveActorDob(actor) || parsePobDob(actor.pobDob || "").dob || "-"}
                             </span>
                           </div>
                           {actor.coordinator && (
@@ -1398,7 +1402,7 @@ export default function BpjsPage() {
                   ) : (
                     <>
                       {filteredActors.slice(0, pageLimit).map((actor, index) => {
-                        const age = calculateAge(actor.pobDob || "")
+                        const age = calculateAge(resolveActorDob(actor) || actor.pobDob || "")
                         const matchInfo = matchedActorsMap.get(actor.id)
                         const actorAny = actor as any
                         const isAccepted = !isBpjsSheetEmpty && actorAny.bpjsSubmissionStatus === 'accepted'
@@ -1426,12 +1430,12 @@ export default function BpjsPage() {
                             </TableCell>
                             <TableCell className="py-4 text-center">
                               <span className="text-[11px] font-bold text-slate-600 uppercase">
-                                {actor.pob || parsePobDob(actor.pobDob || "").pob || "-"}
+                                {resolvePob(actor)}
                               </span>
                             </TableCell>
                             <TableCell className="py-4 text-center">
                               <span className="text-[11px] font-bold text-slate-600 uppercase">
-                                {actor.dob || parsePobDob(actor.pobDob || "").dob || "-"}
+                                {resolveActorDob(actor) || parsePobDob(actor.pobDob || "").dob || "-"}
                               </span>
                             </TableCell>
                             <TableCell className="py-4 text-center">

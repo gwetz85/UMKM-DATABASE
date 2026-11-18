@@ -18,7 +18,7 @@ import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
 import { VerificationBadge } from "@/components/verification-badge"
-import { cn, extractDobFromNik, parsePobDob } from "@/lib/utils"
+import { cn, extractDobFromNik, parsePobDob, resolveActorDob, resolveActorPobDob, resolvePob } from "@/lib/utils"
 import { normalizeCoordinator } from "@/lib/coordinator-utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Switch } from "@/components/ui/switch"
@@ -468,14 +468,17 @@ export default function VerifyActorPage() {
       verificationLocation: null
     };
   } else {
+    const finalDob = extractDobFromNik(editNik) || editDob || ""
+    const finalPob = (editPob || "").toUpperCase().trim()
+    const finalPobDob = finalPob && finalDob ? `${finalPob}, ${finalDob}` : (finalDob || finalPob || "")
     updatePayload = {
       fullName: formData.get("fullName"),
       nik: editNik,
       noKK: formData.get("noKK"),
       gender: formData.get("gender"),
-      pobDob: `${editPob}, ${editDob}`,
-      pob: editPob,
-      dob: editDob,
+      pobDob: finalPobDob,
+      pob: finalPob,
+      dob: finalDob,
       phone: formData.get("phone"),
       address: formData.get("address"),
       rtRw: formData.get("rtRw"),
@@ -529,14 +532,17 @@ export default function VerifyActorPage() {
     setIsVerifying(true)
     const formData = new FormData(e.currentTarget)
     const actorRef = ref(database, `businessActors/${editingOnlyActor.id}`)
+    const finalDob = extractDobFromNik(editNik) || editDob || ""
+    const finalPob = (editPob || "").toUpperCase().trim()
+    const finalPobDob = finalPob && finalDob ? `${finalPob}, ${finalDob}` : (finalDob || finalPob || "")
     updateDocumentNonBlocking(actorRef, {
       fullName: formData.get("fullName"),
       nik: editNik,
       noKK: formData.get("noKK"),
       gender: formData.get("gender"),
-      pobDob: `${editPob}, ${editDob}`,
-      pob: editPob,
-      dob: editDob,
+      pobDob: finalPobDob,
+      pob: finalPob,
+      dob: finalDob,
       phone: formData.get("phone"),
       address: formData.get("address"),
       rtRw: formData.get("rtRw"),
@@ -635,8 +641,8 @@ export default function VerifyActorPage() {
     setEditKecamatan(actor.kecamatan || "")
     const parsed = parsePobDob(actor.pobDob || "")
     setEditNik(actor.nik || "")
-    setEditPob(parsed.pob || actor.pob || "")
-    setEditDob(parsed.dob || actor.dob || "")
+    setEditPob(resolvePob(actor) !== '-' ? resolvePob(actor) : (parsed.pob || actor.pob || ""))
+    setEditDob(resolveActorDob(actor) || parsed.dob || actor.dob || "")
     setLocation(null)
     // Untuk verifikasi manual, otomatis aktifkan bypass mode (tidak perlu lokasi, tapi wajib foto)
     setIsBypassMode(actor.status === 'verifikasi_manual')

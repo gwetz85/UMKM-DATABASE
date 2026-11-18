@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams } from "next/navigation"
-import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
+import { cn, extractDobFromNik, parsePobDob, calculateAge, resolveActorDob, resolveActorPobDob, resolvePob } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { normalizeCoordinator } from "@/lib/coordinator-utils"
 
@@ -66,7 +66,7 @@ function FinishContent() {
       const parsed = parsePobDob(viewingActor.pobDob || "")
       setEditNik(viewingActor.nik || "")
       setEditPob(parsed.pob || viewingActor.pob || "")
-      setEditDob(parsed.dob || viewingActor.dob || "")
+      setEditDob(resolveActorDob(viewingActor) || parsed.dob || viewingActor.dob || "")
     } else {
       setEditNik("")
       setEditPob("")
@@ -159,8 +159,8 @@ function FinishContent() {
     const a = actor as any
     const sd = a.surveyData || {}
     const parsed = parsePobDob(actor.pobDob || "")
-    const dob = actor.dob || parsed.dob || "-"
-    const pob = actor.pob || parsed.pob || "-"
+    const dob = resolveActorDob(actor) || actor.dob || parsed.dob || "-"
+    const pob = resolvePob(actor) || actor.pob || parsed.pob || "-"
     const regCode = actor.registrationCode || '-'
 
     const row = (label: string, value: string | undefined) =>
@@ -409,8 +409,8 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
         const a = actor as any
         const sd = a.surveyData || {}
         const parsed = parsePobDob(actor.pobDob || "")
-        const dob = actor.dob || parsed.dob || "-"
-        const pob = actor.pob || parsed.pob || "-"
+        const dob = resolveActorDob(actor) || actor.dob || parsed.dob || "-"
+        const pob = resolvePob(actor) || actor.pob || parsed.pob || "-"
         const locationGps = a.verificationLocationDinas
           ? `${a.verificationLocationDinas.lat}, ${a.verificationLocationDinas.lon}`
           : (a.verificationLocation ? `${a.verificationLocation.lat}, ${a.verificationLocation.lon}` : "-")
@@ -540,9 +540,9 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
       nik: editNik,
       noKK: formData.get('noKK') as string,
       gender: formData.get('gender') as "Laki-laki" | "Perempuan",
-      pobDob: `${editPob}, ${editDob}`,
-      pob: editPob,
-      dob: editDob,
+      pobDob: (editPob && (extractDobFromNik(editNik) || editDob)) ? `${editPob.toUpperCase().trim()}, ${extractDobFromNik(editNik) || editDob}` : (extractDobFromNik(editNik) || editDob || editPob),
+      pob: editPob ? editPob.toUpperCase().trim() : "",
+      dob: extractDobFromNik(editNik) || editDob,
       phone: formData.get('phone') as string,
       kecamatan: formData.get('kecamatan') as string,
       kelurahan: formData.get('kelurahan') as string,
@@ -880,9 +880,9 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
                         { label: "NIK", value: viewingActor.nik },
                         { label: "Nomor KK", value: viewingActor.noKK },
                         { label: "Jenis Kelamin", value: viewingActor.gender },
-                        { label: "Tempat Lahir", value: viewingActor.pob || parsePobDob(viewingActor.pobDob).pob },
-                        { label: "Tanggal Lahir", value: viewingActor.dob || parsePobDob(viewingActor.pobDob).dob },
-                        { label: "Usia", value: calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || "")) },
+                        { label: "Tempat Lahir", value: resolvePob(viewingActor) || viewingActor.pob || parsePobDob(viewingActor.pobDob).pob },
+                        { label: "Tanggal Lahir", value: resolveActorDob(viewingActor) || viewingActor.dob || parsePobDob(viewingActor.pobDob).dob },
+                        { label: "Usia", value: calculateAge(resolveActorDob(viewingActor) || viewingActor.dob || parsePobDob(viewingActor.pobDob).dob) },
                         { label: "Nomor HP", value: viewingActor.phone, isPhone: true },
                       ].map((item, i) => (
                         <div key={i} className="space-y-1">
