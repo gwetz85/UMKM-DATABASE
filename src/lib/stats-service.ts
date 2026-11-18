@@ -616,10 +616,47 @@ export async function recalculateAndSaveSystemStats(database: Database) {
   return stats;
 }
 
+export function invalidateAllActorCaches() {
+  if (typeof window === 'undefined') return;
+  try {
+    const keys = [
+      'simpu_actors_search_cache_v6',
+      'simpu_data_rekening_cache',
+      'simpu_rekening_bank_cache',
+      'simpu_cetak_berkas_cache',
+      'simpu_finish_cache',
+      'simpu_gbas_actors_cache',
+      'simpu_daftar_hadir_cache',
+      'simpu_surveyor_actors_cache',
+    ];
+    keys.forEach((k) => {
+      try {
+        localStorage.removeItem(k);
+      } catch {}
+    });
+
+    if (window.indexedDB) {
+      const req = window.indexedDB.open('simpu_large_cache', 1);
+      req.onsuccess = () => {
+        try {
+          const db = req.result;
+          if (db.objectStoreNames.contains('store')) {
+            const tx = db.transaction('store', 'readwrite');
+            tx.objectStore('store').delete('simpu_report_dataset_v2');
+            tx.objectStore('store').delete('simpu_rekapan_gabungan_v3');
+          }
+        } catch {}
+      };
+    }
+
+    window.dispatchEvent(new Event('simpu_cache_invalidated'));
+  } catch {}
+}
+
 export async function syncActorToSearchIndex(database: Database, actorData: any) {
   try {
     if (!actorData || !actorData.id) return;
-    const { ref, set } = await import("firebase/database");
+    const { ref, set, update, get } = await import("firebase/database");
     const s = (actorData.status || '').toLowerCase();
     const isActorCancelDinas = isCancelDinas(actorData);
     const searchActorRef = ref(database, `settings/actors_search/${actorData.id}`);
@@ -685,7 +722,24 @@ export async function syncActorToSearchIndex(database: Database, actorData: any)
       dikembalikanKePetugasAt: actorData.dikembalikanKePetugasAt || '',
     };
 
-    await set(searchActorRef, JSON.parse(JSON.stringify(cleanItem)));
+    const serialized = JSON.parse(JSON.stringify(cleanItem));
+    await set(searchActorRef, serialized);
+    update(ref(database, `settings/report_index/actors/${actorData.id}`), serialized).catch(() => {});
+
+    // Sync fullName, nik, businessName ke daftar_hadir jika pelaku usaha sudah tercatat di daftar hadir
+    get(ref(database, `daftar_hadir/${actorData.id}`))
+      .then((snap) => {
+        if (snap.exists()) {
+          update(ref(database, `daftar_hadir/${actorData.id}`), {
+            fullName: serialized.fullName,
+            nik: serialized.nik,
+            businessName: serialized.businessName || '',
+          }).catch(() => {});
+        }
+      })
+      .catch(() => {});
+
+    invalidateAllActorCaches();
   } catch (err) {
     console.error('Error syncing actor to search index:', err);
   }

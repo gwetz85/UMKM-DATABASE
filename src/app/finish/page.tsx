@@ -529,9 +529,14 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
     const formData = new FormData(e.currentTarget)
     const lpjVal = formData.get('lpjNominal') as string
     const lpjNum = lpjVal ? parseInt(lpjVal) : viewingActor.lpjNominal || 0
+    const newFullName = String(formData.get('fullName') || '').trim()
+    const oldFullName = String(viewingActor.fullName || '').trim()
+    const submittedBankOwner = String(formData.get('bankOwner') || '').trim()
+    const oldBankOwner = String(viewingActor.bankOwner || '').trim()
+    const syncedBankOwner = newFullName.toUpperCase() !== oldFullName.toUpperCase() && (submittedBankOwner.toUpperCase() === oldBankOwner.toUpperCase() || !submittedBankOwner) ? newFullName : (submittedBankOwner || newFullName)
 
     const updates: Partial<BusinessActor> = {
-      fullName: formData.get('fullName') as string,
+      fullName: newFullName,
       nik: editNik,
       noKK: formData.get('noKK') as string,
       gender: formData.get('gender') as "Laki-laki" | "Perempuan",
@@ -549,7 +554,7 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
       coordinator: normalizeCoordinator(formData.get('coordinator') as string).toUpperCase().trim(),
       bankName: formData.get('bankName') as string,
       bankNumber: formData.get('bankNumber') as string,
-      bankOwner: formData.get('bankOwner') as string,
+      bankOwner: syncedBankOwner,
       lpjNominal: lpjNum,
     }
 

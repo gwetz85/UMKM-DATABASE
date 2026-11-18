@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from "react"
 import { useUser, useDatabase, useMemoFirebase, useObject } from "@/firebase"
-import { ref, get, set } from "firebase/database"
+import { ref, get, set, update } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -328,19 +328,104 @@ function ReportContent() {
         let loadedTime = new Date().toISOString()
         let isIndexStale = true
 
-        // Priority 1: Lightweight pre-built full index (`settings/report_index`)
+        const searchValMap: Record<string, any> =
+          searchIdxSnap && searchIdxSnap.exists() ? (searchIdxSnap.val() || {}) : {}
+        const syncUpdates: Record<string, any> = {}
+
+        const mergeLiveSearchOverlay = (id: string, baseItem: any): ReportActor => {
+          const live = searchValMap[id]
+          const merged = live
+            ? {
+                ...baseItem,
+                fullName: live.fullName || baseItem.fullName || "",
+                nik: live.nik || baseItem.nik || "",
+                noKK: live.noKK || baseItem.noKK || "",
+                pob: live.pob || baseItem.pob || "",
+                dob: live.dob || baseItem.dob || "",
+                pobDob: live.pobDob || baseItem.pobDob || "",
+                gender: live.gender || baseItem.gender || "",
+                phone: live.phone || baseItem.phone || "",
+                address: live.address || baseItem.address || "",
+                rtRw: live.rtRw || baseItem.rtRw || "",
+                kelurahan: live.kelurahan || baseItem.kelurahan || "",
+                kecamatan: live.kecamatan || baseItem.kecamatan || "",
+                businessName: live.businessName || baseItem.businessName || "",
+                businessCategory: live.businessCategory || baseItem.businessCategory || "",
+                businessLocation: live.businessLocation || baseItem.businessLocation || "",
+                coordinator: live.coordinator || baseItem.coordinator || "",
+                petugasSurvey: live.petugasSurvey || baseItem.petugasSurvey || "",
+                verifikatorDinas: live.verifikatorDinas || baseItem.verifikatorDinas || "",
+                status: live.status || baseItem.status || "",
+                bankName: live.bankName || baseItem.bankName || "",
+                bankNumber: live.bankNumber || baseItem.bankNumber || "",
+                bankOwner: live.bankOwner || baseItem.bankOwner || "",
+                lpjNominal: live.lpjNominal !== undefined && live.lpjNominal !== "" ? live.lpjNominal : baseItem.lpjNominal,
+                readyForLPJ: live.readyForLPJ !== undefined ? Boolean(live.readyForLPJ) : Boolean(baseItem.readyForLPJ),
+              }
+            : { ...baseItem }
+
+          const cleanFullName = String(merged.fullName || "").trim()
+          const cleanNik = String(merged.nik || "").trim()
+          const cleanBankNum = String(merged.bankNumber || "").trim()
+          const cleanBankOwner = String(merged.bankOwner || "").trim()
+
+          if (cleanFullName && cleanBankNum) {
+            // Pastikan nama pemilik rekening selalu sama dengan nama pelaku usaha
+            if (cleanBankOwner.toUpperCase() !== cleanFullName.toUpperCase()) {
+              syncUpdates[`businessActors/${id}/bankOwner`] = cleanFullName
+              syncUpdates[`settings/actors_search/${id}/bankOwner`] = cleanFullName
+              syncUpdates[`settings/report_index/actors/${id}/bankOwner`] = cleanFullName
+              syncUpdates[`settings/report_index/actors/${id}/fullName`] = cleanFullName
+            }
+            merged.fullName = cleanFullName
+            merged.bankOwner = cleanFullName
+          }
+
+          if (cleanNik) {
+            merged.nik = cleanNik
+          }
+
+          // Auto-heal semua field yang berubah (NIK, Nama, TTL, JK, Alamat, Usaha, Rekening) di settings/report_index
+          if (live && baseItem && live !== baseItem) {
+            const syncFields = [
+              "fullName", "nik", "noKK", "pob", "dob", "pobDob", "gender",
+              "phone", "address", "rtRw", "kelurahan", "kecamatan",
+              "businessName", "businessCategory", "businessLocation",
+              "coordinator", "petugasSurvey", "verifikatorDinas",
+              "bankName", "bankNumber", "bankOwner", "status",
+            ]
+            for (const f of syncFields) {
+              const oldVal = String(baseItem[f] || "").trim()
+              const newVal = String((merged as any)[f] || "").trim()
+              if (newVal !== "" && oldVal !== newVal) {
+                syncUpdates[`settings/report_index/actors/${id}/${f}`] = newVal
+              }
+            }
+          }
+
+          return {
+            ...merged,
+            id,
+            bpjsResolved: resolveBpjsForActor(merged, emptyBpjsMap),
+          }
+        }
+
+        // Priority 1: Lightweight pre-built full index (`settings/report_index`) overlaid with live `settings/actors_search`
         if (reportIdxSnap && reportIdxSnap.exists()) {
           const val = reportIdxSnap.val() || {}
           const rawMap = val.actors || val
           if (rawMap && typeof rawMap === "object") {
             const list: ReportActor[] = []
+            const seenIds = new Set<string>()
             for (const [id, item] of Object.entries(rawMap as Record<string, any>)) {
               if (!item || typeof item !== "object" || (!item.fullName && !item.nik)) continue
-              list.push({
-                ...item,
-                id,
-                bpjsResolved: resolveBpjsForActor(item, emptyBpjsMap),
-              })
+              seenIds.add(id)
+              list.push(mergeLiveSearchOverlay(id, item))
+            }
+            // Include any new verified actors present in actors_search but not yet in report_index
+            for (const [id, liveItem] of Object.entries(searchValMap)) {
+              if (seenIds.has(id) || !liveItem || typeof liveItem !== "object" || (!liveItem.fullName && !liveItem.nik)) continue
+              list.push(mergeLiveSearchOverlay(id, liveItem))
             }
             if (list.length > 0) {
               loadedActors = list
@@ -353,20 +438,20 @@ function ReportContent() {
         }
 
         // Priority 2: Fallback to lightweight `settings/actors_search` (< 150ms)
-        if (loadedActors.length === 0 && searchIdxSnap && searchIdxSnap.exists()) {
-          const val = searchIdxSnap.val() || {}
+        if (loadedActors.length === 0 && Object.keys(searchValMap).length > 0) {
           const list: ReportActor[] = []
-          for (const [id, item] of Object.entries(val as Record<string, any>)) {
+          for (const [id, item] of Object.entries(searchValMap)) {
             if (!item || typeof item !== "object" || (!item.fullName && !item.nik)) continue
-            list.push({
-              ...item,
-              id,
-              bpjsResolved: resolveBpjsForActor(item, emptyBpjsMap),
-            })
+            list.push(mergeLiveSearchOverlay(id, item))
           }
           loadedActors = list
           loadedFromFullIndex = false
           isIndexStale = true
+        }
+
+        // Admin auto-heal: sinkronkan otomatis bankOwner & report_index yang belum sama dengan fullName
+        if (isAdmin && Object.keys(syncUpdates).length > 0) {
+          update(ref(database), syncUpdates).catch(() => {})
         }
 
         // Render immediately without waiting for BPJS node!
@@ -422,7 +507,7 @@ function ReportContent() {
         setIsRefreshing(false)
       }
     },
-    [database, syncFullMasterIndex, toast]
+    [database, isAdmin, syncFullMasterIndex, toast]
   )
 
   useEffect(() => {

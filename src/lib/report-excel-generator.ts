@@ -1219,7 +1219,7 @@ export async function exportReportRekeningExcel(
       coordinator: bio.coordinator,
       bankName: hasBank ? normalizeBankNameReport(actor.bankName) : '-',
       bankNumber: hasBank ? String(actor.bankNumber).trim() : '-',
-      bankOwner: hasBank ? (actor.bankOwner || actor.fullName || '-').toUpperCase() : '-',
+      bankOwner: hasBank ? (actor.fullName || actor.bankOwner || '-').trim().toUpperCase() : '-',
       statusRekening: hasBank ? 'TERVERIFIKASI' : 'BELUM ADA REKENING',
       posisiMenu: menuInfo.menuName.toUpperCase(),
       statusLpj: getLpjStatusLabel(actor),
@@ -1420,7 +1420,7 @@ export async function exportReportPelakuUsahaExcel(
 
       bankName: hasBank ? normalizeBankNameReport(actor.bankName) : '-',
       bankNumber: hasBank ? String(actor.bankNumber).trim() : '-',
-      bankOwner: hasBank ? (actor.bankOwner || actor.fullName || '-').toUpperCase() : '-',
+      bankOwner: hasBank ? (actor.fullName || actor.bankOwner || '-').trim().toUpperCase() : '-',
       statusLpj: getLpjStatusLabel(actor),
       lpjNominal: Number(actor.lpjNominal) || 0,
       lpjEntryDate: actor.lpjEntryDate ? formatDateTimeIndo(actor.lpjEntryDate) : '-',

@@ -106,10 +106,14 @@ function normalizeActorForReport(id: string, a: any, bpjsMap: Map<string, any>) 
   const resolvedDob = a.dob || a.tanggalLahir || parsedPobDob.dob || extractDobFromNik(a.nik || '') || '';
   const bpjsResolved = resolveBpjsForActor(a, bpjsMap);
 
+  const cleanFullName = String(a.fullName || '').trim();
+  const cleanBankNumber = String(a.bankNumber || '').trim();
+  const syncedBankOwner = cleanBankNumber ? (cleanFullName || String(a.bankOwner || '').trim()) : String(a.bankOwner || '').trim();
+
   return {
     id,
     registrationCode: a.registrationCode || '',
-    fullName: a.fullName || '',
+    fullName: cleanFullName,
     nik: a.nik || '',
     noKK: a.noKK || '',
     pobDob: a.pobDob || '',
@@ -134,8 +138,8 @@ function normalizeActorForReport(id: string, a: any, bpjsMap: Map<string, any>) 
     coordinator: a.coordinator || '',
     petugasSurvey: a.petugasSurvey || a.pejabatData?.petugas?.nama || a.surveyData?.pejabatData?.petugas?.nama || '',
     verifikatorDinas: a.verifikatorDinas || a.pejabatData?.verifikator?.nama || a.surveyData?.pejabatData?.verifikator?.nama || '',
-    bankNumber: a.bankNumber || '',
-    bankOwner: a.bankOwner || '',
+    bankNumber: cleanBankNumber,
+    bankOwner: syncedBankOwner,
     bankName: a.bankName || '',
     status: a.status || 'pending',
     rejectionReason: a.rejectionReason || '',
@@ -226,7 +230,10 @@ async function loadFastReportDataset(forceRefresh = false): Promise<ReportCacheP
   );
   const systemUsers = parseSystemUsers(usersSnap?.exists() ? usersSnap.val() : null);
 
-  // Priority 1: Use pre-built lightweight full report index if available
+  const searchValMap: Record<string, any> =
+    searchIndexSnap && searchIndexSnap.exists() ? (searchIndexSnap.val() || {}) : {};
+
+  // Priority 1: Use pre-built lightweight full report index overlaid with live `settings/actors_search`
   if (reportIndexSnap && reportIndexSnap.exists()) {
     const idxVal = reportIndexSnap.val() || {};
     const rawMap = idxVal.actors || idxVal;
@@ -234,10 +241,44 @@ async function loadFastReportDataset(forceRefresh = false): Promise<ReportCacheP
       const actors: any[] = [];
       for (const [id, a] of Object.entries(rawMap as Record<string, any>)) {
         if (!a || typeof a !== 'object' || (!a.fullName && !a.nik)) continue;
+        const live = searchValMap[id];
+        const merged = live
+          ? {
+              ...a,
+              fullName: live.fullName || a.fullName || '',
+              nik: live.nik || a.nik || '',
+              noKK: live.noKK || a.noKK || '',
+              pob: live.pob || a.pob || '',
+              dob: live.dob || a.dob || '',
+              pobDob: live.pobDob || a.pobDob || '',
+              gender: live.gender || a.gender || '',
+              phone: live.phone || a.phone || '',
+              address: live.address || a.address || '',
+              rtRw: live.rtRw || a.rtRw || '',
+              kelurahan: live.kelurahan || a.kelurahan || '',
+              kecamatan: live.kecamatan || a.kecamatan || '',
+              businessName: live.businessName || a.businessName || '',
+              businessCategory: live.businessCategory || a.businessCategory || '',
+              businessLocation: live.businessLocation || a.businessLocation || '',
+              petugasSurvey: live.petugasSurvey || a.petugasSurvey || '',
+              verifikatorDinas: live.verifikatorDinas || a.verifikatorDinas || '',
+              bankName: live.bankName || a.bankName || '',
+              bankNumber: live.bankNumber || a.bankNumber || '',
+              bankOwner: live.bankOwner || a.bankOwner || '',
+              coordinator: live.coordinator || a.coordinator || '',
+              status: live.status || a.status || '',
+            }
+          : { ...a };
+        const cleanFullName = String(merged.fullName || '').trim();
+        const cleanBankNum = String(merged.bankNumber || '').trim();
+        if (cleanFullName && cleanBankNum) {
+          merged.fullName = cleanFullName;
+          merged.bankOwner = cleanFullName;
+        }
         actors.push({
-          ...a,
+          ...merged,
           id,
-          bpjsResolved: resolveBpjsForActor(a, bpjsMap),
+          bpjsResolved: resolveBpjsForActor(merged, bpjsMap),
         });
       }
       if (actors.length > 0) {

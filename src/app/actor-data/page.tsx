@@ -1303,9 +1303,17 @@ function ActorDataContent() {
     
     const pSurveyRaw = (formData.get('petugasSurvey') as string || "").trim()
     const pSurvey = resolveSurveyorCanonicalName(pSurveyRaw, systemUsersRaw)
+    const newFullName = String(formData.get('fullName') || "").trim()
+    const oldFullName = String(viewingActor.fullName || "").trim()
+    const rawBankNumber = String(formData.get('bankNumber') || "").trim()
+    const submittedBankOwner = String(formData.get('bankOwner') || "").trim()
+    const oldBankOwner = String(viewingActor.bankOwner || "").trim()
+    const fullNameChanged = newFullName.toUpperCase() !== oldFullName.toUpperCase()
+    const bankOwnerUntouched = submittedBankOwner.toUpperCase() === oldBankOwner.toUpperCase()
+    const syncedBankOwner = (rawBankNumber || submittedBankOwner || oldBankOwner) ? (fullNameChanged && (bankOwnerUntouched || !submittedBankOwner) ? newFullName : (submittedBankOwner || newFullName)) : submittedBankOwner
 
     const updates: Partial<BusinessActor> = {
-      fullName: formData.get('fullName') as string,
+      fullName: newFullName,
       nik: editNik,
       noKK: formData.get('noKK') as string,
       gender: formData.get('gender') as "Laki-laki" | "Perempuan",
@@ -1335,13 +1343,22 @@ function ActorDataContent() {
       petugasSurvey: pSurvey,
       bankName: formData.get('bankName') as string,
       bankNumber: formData.get('bankNumber') as string,
-      bankOwner: formData.get('bankOwner') as string,
+      bankOwner: syncedBankOwner,
       googleDriveLink: formData.get('googleDriveLink') as string,
     }
 
     updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
+    try {
+      localStorage.removeItem('simpu_data_rekening_cache')
+      localStorage.removeItem('simpu_cetak_berkas_cache')
+      localStorage.removeItem('simpu_rekening_bank_cache')
+      window.dispatchEvent(new Event('simpu_cache_invalidated'))
+    } catch {}
     
     // Update global stats
+    if (fullNameChanged && viewingActor.surveyData) {
+      updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}/surveyData`), { namaPemilik: newFullName })
+    }
     import("@/lib/stats-service").then(({ updateStatsOnEdit }) => {
       updateStatsOnEdit(database, viewingActor, { ...viewingActor, ...updates }).catch(e => console.error(e));
     });
@@ -1465,6 +1482,12 @@ function ActorDataContent() {
       ...(isVerifiedDinas ? { readyForLPJ: false } : {})
     }
     updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
+    try {
+      localStorage.removeItem('simpu_data_rekening_cache')
+      localStorage.removeItem('simpu_cetak_berkas_cache')
+      localStorage.removeItem('simpu_rekening_bank_cache')
+      window.dispatchEvent(new Event('simpu_cache_invalidated'))
+    } catch {}
     
     // Update global stats categories if necessary (both are 'verified' so no change, but consistent)
     import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
@@ -1493,6 +1516,12 @@ function ActorDataContent() {
       googleDriveLink: formData.get('googleDriveLink') as string
     }
     updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
+    try {
+      localStorage.removeItem('simpu_data_rekening_cache')
+      localStorage.removeItem('simpu_cetak_berkas_cache')
+      localStorage.removeItem('simpu_rekening_bank_cache')
+      window.dispatchEvent(new Event('simpu_cache_invalidated'))
+    } catch {}
     
     logActivity({
       query: `UPDATE GOOGLE DRIVE: ${viewingActor.fullName}`,

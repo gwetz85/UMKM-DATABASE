@@ -369,14 +369,29 @@ function DataRekeningContent() {
     } catch {}
 
     if (!database) return
-    import("firebase/database").then(({ ref, get }) => {
+    import("firebase/database").then(({ ref, get, update }) => {
       get(ref(database, 'settings/actors_search')).then(snap => {
         if (snap.exists()) {
           const val = snap.val() || {}
-          const list = Object.entries(val).map(([id, item]: [string, any]) => ({
-            ...item,
-            id,
-          })).filter(a => a.status === 'finish')
+          const syncUpdates: Record<string, any> = {}
+          const list = Object.entries(val).map(([id, item]: [string, any]) => {
+            const cleanFullName = String(item?.fullName || "").trim()
+            const cleanBankNum = String(item?.bankNumber || "").trim()
+            const cleanBankOwner = String(item?.bankOwner || "").trim()
+            if (cleanFullName && cleanBankNum && cleanBankOwner.toUpperCase() !== cleanFullName.toUpperCase()) {
+              syncUpdates[`businessActors/${id}/bankOwner`] = cleanFullName
+              syncUpdates[`settings/actors_search/${id}/bankOwner`] = cleanFullName
+              syncUpdates[`settings/report_index/actors/${id}/bankOwner`] = cleanFullName
+              syncUpdates[`settings/report_index/actors/${id}/fullName`] = cleanFullName
+              return { ...item, id, fullName: cleanFullName, bankOwner: cleanFullName }
+            }
+            return { ...item, id }
+          }).filter(a => a.status === 'finish')
+
+          if (isAdmin && Object.keys(syncUpdates).length > 0) {
+            update(ref(database), syncUpdates).catch(console.error)
+          }
+
           if (list.length > 0) {
             setSearchIndexData(list)
             try { localStorage.setItem('simpu_data_rekening_cache', JSON.stringify(list)) } catch {}
@@ -384,7 +399,7 @@ function DataRekeningContent() {
         }
       }).catch(console.error).finally(() => setIsSearchLoading(false))
     })
-  }, [database])
+  }, [database, isAdmin])
 
   // Hanya ambil data master berat jika index pencarian kosong (hemat 157 MB payload)
   const shouldFetchMaster = Boolean(!searchIndexData || searchIndexData.length === 0)
@@ -594,7 +609,7 @@ function DataRekeningContent() {
   <div class="sec-body"><table>
     ${row("Nama Bank", actor.bankName)}
     ${row("Nomor Rekening", actor.bankNumber)}
-    ${row("Nama Pemilik Rekening", actor.bankOwner)}
+    ${row("Nama Pemilik Rekening", actor.fullName || actor.bankOwner)}
     ${row("Status LPJ", actor.lpjNominal ? `Sudah LPJ (Rp ${Number(actor.lpjNominal).toLocaleString("id-ID")})` : (actor.readyForLPJ ? "Dalam Proses LPJ" : "Tercatat"))}
   </table></div>
 </div>
@@ -705,7 +720,7 @@ function DataRekeningContent() {
           no: index + 1,
           bankName: actor.bankName || "-",
           bankNumber: actor.bankNumber || "-",
-          bankOwner: actor.bankOwner || "-",
+          bankOwner: actor.fullName || actor.bankOwner || "-",
           fullName: actor.fullName || "-",
           nik: actor.nik || "-",
           noKK: actor.noKK || "-",
@@ -748,9 +763,14 @@ function DataRekeningContent() {
     const formData = new FormData(e.currentTarget)
     const lpjVal = formData.get("lpjNominal") as string
     const lpjNum = lpjVal ? parseInt(lpjVal) : viewingActor.lpjNominal || 0
+    const newFullName = String(formData.get("fullName") || "").trim()
+    const oldFullName = String(viewingActor.fullName || "").trim()
+    const submittedBankOwner = String(formData.get("bankOwner") || "").trim()
+    const oldBankOwner = String(viewingActor.bankOwner || "").trim()
+    const syncedBankOwner = newFullName.toUpperCase() !== oldFullName.toUpperCase() && (submittedBankOwner.toUpperCase() === oldBankOwner.toUpperCase() || !submittedBankOwner) ? newFullName : (submittedBankOwner || newFullName)
 
     const updates: Partial<BusinessActor> = {
-      fullName: formData.get("fullName") as string,
+      fullName: newFullName,
       nik: editNik,
       noKK: formData.get("noKK") as string,
       gender: formData.get("gender") as "Laki-laki" | "Perempuan",
@@ -768,12 +788,13 @@ function DataRekeningContent() {
       coordinator: normalizeCoordinator(formData.get("coordinator") as string).toUpperCase().trim(),
       bankName: formData.get("bankName") as string,
       bankNumber: formData.get("bankNumber") as string,
-      bankOwner: formData.get("bankOwner") as string,
+      bankOwner: syncedBankOwner,
       lpjNominal: lpjNum,
     }
 
     updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
     updateDocumentNonBlocking(ref(database, `settings/actors_search/${viewingActor.id}`), updates)
+    updateDocumentNonBlocking(ref(database, `settings/report_index/actors/${viewingActor.id}`), updates)
     setSearchIndexData(prev => prev.map(item => item.id === viewingActor.id ? { ...item, ...updates } : item))
 
     import("@/lib/stats-service").then(({ updateStatsOnEdit }) => {

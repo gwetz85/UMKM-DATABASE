@@ -17,7 +17,7 @@ interface CacheItem {
   actors: any[];
 }
 let cachedActors: CacheItem | null = null;
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes in-memory cache
+const CACHE_TTL_MS = 30 * 1000; // 30 seconds in-memory cache for fast fresh edits
 
 async function ensureAuth() {
   if (!auth.currentUser) {
