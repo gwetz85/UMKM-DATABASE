@@ -1148,13 +1148,13 @@ export default function DataHoldPage() {
                     </span>
                     <div className="flex items-center gap-1.5">
                       <button
-                        onClick={() => openDetailDialog(item)}
+                        onClick={() => setViewingItem(item)}
                         className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100"
                       >
                         Detail
                       </button>
                       <button
-                        onClick={() => openEditDialog(item)}
+                        onClick={() => handleOpenEditForm(item)}
                         className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-primary text-white"
                       >
                         Edit

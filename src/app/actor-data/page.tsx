@@ -1849,8 +1849,8 @@ function ActorDataContent() {
               const coordKey = String(filterCoordinator).toUpperCase().trim();
               dataToExport = json.results.filter((a: any) => String(a.coordinator || '').toUpperCase().trim() === coordKey);
             } else if (isSearching || filterMenu !== "all") {
-              const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
-              dataToExport = (dataToExport || []).map(a => freshMap.get(a.id) || a);
+              const freshMap = new Map<string, BusinessActor>(json.results.map((r: any) => [r.id, r as BusinessActor]));
+              dataToExport = (dataToExport || []).map(a => freshMap.get(a.id) || a) as BusinessActor[];
             } else {
               dataToExport = json.results;
             }
@@ -2132,8 +2132,8 @@ function ActorDataContent() {
                                 const res = await fetch(`/api/actors/search?all=true&coordinator=${encodeURIComponent(coordKey)}`);
                                 const json = await res.json();
                                 if (json.success && Array.isArray(json.results) && json.results.length > 0) {
-                                  const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
-                                  coordActors = coordActors.map(a => freshMap.get(a.id) || a);
+                                  const freshMap = new Map<string, BusinessActor>(json.results.map((r: any) => [r.id, r as BusinessActor]));
+                                  coordActors = coordActors.map(a => freshMap.get(a.id) || a) as BusinessActor[];
                                 }
                               } catch (e) {
                                 console.warn("Could not re-fetch fresh survey details:", e);
@@ -2267,10 +2267,10 @@ function ActorDataContent() {
                                 if (json.success && Array.isArray(json.results) && json.results.length > 0) {
                                   setLocalIndex(json.results);
                                   try { localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(json.results)); } catch {}
-                                  const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
+                                  const freshMap = new Map<string, BusinessActor>(json.results.map((r: any) => [r.id, r as BusinessActor]));
                                   const refreshedGroups: Record<string, BusinessActor[]> = {};
                                   for (const [k, v] of Object.entries(groupsToPrint)) {
-                                    refreshedGroups[k] = v.map(a => freshMap.get(a.id) || a);
+                                    refreshedGroups[k] = v.map(a => freshMap.get(a.id) || a) as BusinessActor[];
                                   }
                                   groupsToPrint = refreshedGroups;
                                 }

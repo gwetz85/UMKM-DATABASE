@@ -503,12 +503,12 @@ function DataRekeningContent() {
   }, [allActorsRaw, searchIndexData, isKoordinator, userProfile, filterCoordinator])
 
   // Hitung total rekening per bank (hanya menampilkan bank yang sudah ada datanya - langsung < 100ms)
-  const bankStats = useMemo(() => {
+  const bankStats = useMemo<{ bank: string; count: number }[]>(() => {
     const listToUse = (allActorsRaw && allActorsRaw.length > 0) ? allActorsRaw : searchIndexData;
     if (!listToUse || listToUse.length === 0) {
       try {
         const cached = localStorage.getItem('simpu_rekening_bank_stats');
-        if (cached) return JSON.parse(cached);
+        if (cached) return JSON.parse(cached) as { bank: string; count: number }[];
       } catch {}
       return [];
     }
