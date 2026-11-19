@@ -558,8 +558,8 @@ function ActorDataContent() {
   // Lazy-load BPJS comparison data only when viewing actor list, searching, or modal is open (saves ~5MB on overview)
   const shouldLoadBpjs = Boolean(filterCoordinator || isSearching || isKoordinator || isPetugas || isInspektorat || viewingActor || editingActor)
   const bpjsComparisonRef = useMemoFirebase(() => database ? ref(database, 'settings/bpjs_comparison_data') : null, [database])
-  const hasBpjsSheet = !isBpjsComparisonLoading && Array.isArray(rawBpjsData) && rawBpjsData.length > 0
   const { data: rawBpjsData, isLoading: isBpjsComparisonLoading } = useList(bpjsComparisonRef)
+  const hasBpjsSheet = !isBpjsComparisonLoading && Array.isArray(rawBpjsData) && rawBpjsData.length > 0
   const bpjsAutoPurgedRef = useRef(false)
 
   // Jika Sheet 5 (BPJS) sudah di-reset (0 data), bersihkan otomatis sisa field BPJS di database
