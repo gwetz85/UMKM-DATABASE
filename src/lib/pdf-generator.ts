@@ -944,8 +944,6 @@ const getBerkasPencairanDateStr = () => {
 // ═══════════════════════════════════════════════════════════════════════════
 const renderKuitansiPage = (doc: jsPDF, actor: BusinessActor, dateStr: string) => {
   const pageWidth = doc.internal.pageSize.getWidth();
-  const materaiWidth = 20;
-  const materaiHeight = 27;
 
   const kBoxLeft = 16;
   const kBoxTop = 28;
@@ -1076,22 +1074,17 @@ const renderKuitansiPage = (doc: jsPDF, actor: BusinessActor, dateStr: string) =
   doc.text(dateStr, kRightColCenter, kMiddleSplitY + 30, { align: 'center' });
   doc.text('Penerima Dana Bantuan', kRightColCenter, kMiddleSplitY + 36, { align: 'center' });
 
-  // Kotak Materai di area tanda tangan kanan
-  const kMateraiX = kRightColCenter - materaiWidth;
-  const kMateraiY = kMiddleSplitY + 42;
-  doc.setDrawColor(180);
-  doc.setLineWidth(0.3);
-  doc.rect(kMateraiX, kMateraiY, materaiWidth, materaiHeight);
-  doc.setFontSize(6);
-  doc.setTextColor(150);
-  doc.text('MATERAI', kMateraiX + materaiWidth / 2, kMateraiY + materaiHeight / 2 - 1.5, { align: 'center' });
-  doc.text('TEMPEL', kMateraiX + materaiWidth / 2, kMateraiY + materaiHeight / 2 + 2.5, { align: 'center' });
+  // Area tanda tangan 4 cm (40 mm) dengan teks MATERAI 10.000 tanpa kotak border
+  doc.setFont('times', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(120);
+  doc.text('MATERAI 10.000', kRightColCenter - 10, kMiddleSplitY + 56, { align: 'center' });
 
-  // Nama Pelaku Usaha Terpusat di kolom kanan sejajar dengan nama Ketua Yayasan di kiri
+  // Nama Pelaku Usaha Terpusat di kolom kanan (jarak tanda tangan 4 cm / 40 mm dari Penerima Dana Bantuan)
   doc.setTextColor(0);
   doc.setFont('times', 'bold');
   doc.setFontSize(10);
-  doc.text((actor.fullName || '-').toUpperCase(), kRightColCenter, kMiddleSplitY + 80, { align: 'center' });
+  doc.text((actor.fullName || '-').toUpperCase(), kRightColCenter, kMiddleSplitY + 76, { align: 'center' });
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1100,8 +1093,6 @@ const renderKuitansiPage = (doc: jsPDF, actor: BusinessActor, dateStr: string) =
 const renderSuratPernyataanPage = (doc: jsPDF, actor: BusinessActor, dateStr: string) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 16;
-  const materaiWidth = 20;
-  const materaiHeight = 27;
 
   // ── JUDUL ──────────────────────────────────────────────────────────────────
   doc.setDrawColor(0);
@@ -1230,21 +1221,16 @@ const renderSuratPernyataanPage = (doc: jsPDF, actor: BusinessActor, dateStr: st
 
   // 2. Teks "Penerima Dana Bantuan"
   doc.text('Penerima Dana Bantuan', spDateCenterX, y, { align: 'center' });
+  const ySignTop = y;
 
-  // 3. Kotak Materai
-  const spMateraiX = spDateCenterX - materaiWidth;
-  y += 5.0;
+  // 3. Teks Materai 10.000 tanpa kotak border (area tanda tangan 4 cm = 40 mm)
+  doc.setFont('times', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(120);
+  doc.text('MATERAI 10.000', spDateCenterX - 10, ySignTop + 20, { align: 'center' });
 
-  doc.setDrawColor(180);
-  doc.setLineWidth(0.3);
-  doc.rect(spMateraiX, y, materaiWidth, materaiHeight);
-  doc.setFontSize(6);
-  doc.setTextColor(150);
-  doc.text('MATERAI', spMateraiX + materaiWidth / 2, y + materaiHeight / 2 - 1.5, { align: 'center' });
-  doc.text('TEMPEL', spMateraiX + materaiWidth / 2, y + materaiHeight / 2 + 2.5, { align: 'center' });
-
-  // 4. Nama Pelaku Usaha
-  y += materaiHeight + 5.0;
+  // 4. Nama Pelaku Usaha (jarak tanda tangan 4 cm / 40 mm dari Penerima Dana Bantuan)
+  y = ySignTop + 40;
   doc.setTextColor(0);
   doc.setFont('times', 'bold');
   doc.setFontSize(10);
