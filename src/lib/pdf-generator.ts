@@ -1074,11 +1074,11 @@ const renderKuitansiPage = (doc: jsPDF, actor: BusinessActor, dateStr: string) =
   doc.text(dateStr, kRightColCenter, kMiddleSplitY + 30, { align: 'center' });
   doc.text('Penerima Dana Bantuan', kRightColCenter, kMiddleSplitY + 36, { align: 'center' });
 
-  // Area tanda tangan 4 cm (40 mm) dengan teks MATERAI 10.000 tanpa kotak border
+  // Area tanda tangan 4 cm (40 mm) dengan teks Materai tanpa kotak border
   doc.setFont('times', 'normal');
-  doc.setFontSize(8);
+  doc.setFontSize(8.5);
   doc.setTextColor(120);
-  doc.text('MATERAI 10.000', kRightColCenter - 10, kMiddleSplitY + 56, { align: 'center' });
+  doc.text('Materai', kRightColCenter - 10, kMiddleSplitY + 56, { align: 'center' });
 
   // Nama Pelaku Usaha Terpusat di kolom kanan (jarak tanda tangan 4 cm / 40 mm dari Penerima Dana Bantuan)
   doc.setTextColor(0);
@@ -1223,11 +1223,11 @@ const renderSuratPernyataanPage = (doc: jsPDF, actor: BusinessActor, dateStr: st
   doc.text('Penerima Dana Bantuan', spDateCenterX, y, { align: 'center' });
   const ySignTop = y;
 
-  // 3. Teks Materai 10.000 tanpa kotak border (area tanda tangan 4 cm = 40 mm)
+  // 3. Teks Materai tanpa kotak border (area tanda tangan 4 cm = 40 mm)
   doc.setFont('times', 'normal');
-  doc.setFontSize(8);
+  doc.setFontSize(8.5);
   doc.setTextColor(120);
-  doc.text('MATERAI 10.000', spDateCenterX - 10, ySignTop + 20, { align: 'center' });
+  doc.text('Materai', spDateCenterX - 10, ySignTop + 20, { align: 'center' });
 
   // 4. Nama Pelaku Usaha (jarak tanda tangan 4 cm / 40 mm dari Penerima Dana Bantuan)
   y = ySignTop + 40;
