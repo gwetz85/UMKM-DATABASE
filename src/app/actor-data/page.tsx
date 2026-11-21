@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -1136,6 +1137,32 @@ function ActorDataContent() {
   const [showSingleLanjutDinasDialog, setShowSingleLanjutDinasDialog] = useState(false)
   const [singleLanjutDinasPending, setSingleLanjutDinasPending] = useState<BusinessActor | null>(null)
   const [isSingleLanjutDinasSubmitting, setIsSingleLanjutDinasSubmitting] = useState(false)
+
+  // Cancel / Batal Pengajuan States
+  const CANCEL_REASON_PRESETS = [
+    "Tidak Memenuhi Syarat Bantuan",
+    "Usaha Tutup / Tidak Beroperasi",
+    "Data Ganda / Duplikasi NIK",
+    "Bukan Warga Kota / Pindah Domisili",
+    "Pelaku Usaha Mengundurkan Diri",
+    "Tidak Dapat Dihubungi / Alamat Fiktif",
+    "Lainnya"
+  ]
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [cancelTargetActor, setCancelTargetActor] = useState<BusinessActor | null>(null)
+  const [cancelReason, setCancelReason] = useState("Tidak Memenuhi Syarat Bantuan")
+  const [cancelReasonPreset, setCancelReasonPreset] = useState("Tidak Memenuhi Syarat Bantuan")
+  const [isSubmittingCancel, setIsSubmittingCancel] = useState(false)
+  const [cancelError, setCancelError] = useState("")
+
+  const handleOpenCancelDialog = (actor: BusinessActor) => {
+    setCancelTargetActor(actor)
+    setCancelReason("Tidak Memenuhi Syarat Bantuan")
+    setCancelReasonPreset("Tidak Memenuhi Syarat Bantuan")
+    setCancelError("")
+    setShowCancelDialog(true)
+  }
+
   const [editNik, setEditNik] = useState("")
   const [editPob, setEditPob] = useState("")
   const [editDob, setEditDob] = useState("")
@@ -1648,6 +1675,85 @@ function ActorDataContent() {
     setViewingActor(null)
     setShowDeleteDialog(false)
     setDeletePending(null)
+  }
+
+  const executeCancelActor = async () => {
+    if (!cancelTargetActor || !database) return
+    const finalReason = cancelReason.trim()
+    if (!finalReason) {
+      setCancelError("Alasan pembatalan wajib diisi.")
+      return
+    }
+
+    setIsSubmittingCancel(true)
+    setCancelError("")
+
+    const actor = cancelTargetActor
+    const officerName = userProfile?.fullName || user?.email || user?.uid || 'Petugas'
+    const nowIso = new Date().toISOString()
+
+    try {
+      const cancelUpdates = {
+        status: 'verified_dinas' as const,
+        hasilVerifikasiDinas: 'Tidak Lolos',
+        alasanCancelDinas: finalReason,
+        cancelDinasAt: nowIso,
+        cancelDinasBy: officerName,
+        rejectionReason: finalReason,
+        cancelledAt: nowIso,
+        cancelledBy: officerName
+      }
+
+      // 1. Update document in Firebase Realtime Database
+      const actorRef = ref(database, `businessActors/${actor.id}`)
+      updateDocumentNonBlocking(actorRef, cancelUpdates)
+
+      // 2. Update global stats & return coordinator quota
+      const { updateStatsOnStatusChange } = await import('@/lib/stats-service')
+      await updateStatsOnStatusChange(
+        database,
+        actor.status || 'verified_actor',
+        'rejected',
+        { ...actor, ...cancelUpdates }
+      )
+
+      // 3. Log activity
+      logActivity({
+        query: `BATALKAN PENGAJUAN (CANCELL): ${actor.fullName} - Alasan: ${finalReason}`,
+        results: `Berhasil dibatalkan. Kuota koordinator ${actor.coordinator || '-'} otomatis dikembalikan (+1).`,
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'DATA PELAKU USAHA',
+        userId: officerName
+      })
+
+      // 4. Update local state for instant 0ms removal
+      setLocalIndex(prev => prev ? prev.filter(a => a.id !== actor.id) : null)
+      setSearchResults(prev => prev ? prev.filter(a => a.id !== actor.id) : null)
+      if (viewingActor?.id === actor.id) {
+        setViewingActor(null)
+      }
+
+      const coordName = normalizeCoordinator(actor.coordinator || '') || 'Koordinator'
+      toast({
+        title: "🚫 Pengajuan Berhasil Dibatalkan",
+        description: `Data ${actor.fullName} dipindahkan ke menu Data Ditolak / Cancell. Kuota koordinator ${coordName} telah otomatis dikembalikan.`
+      })
+
+      setShowCancelDialog(false)
+      setCancelTargetActor(null)
+      setCancelReason("")
+    } catch (error: any) {
+      console.error("Error cancelling actor:", error)
+      setCancelError(error?.message || "Terjadi kesalahan saat membatalkan pengajuan.")
+      toast({
+        variant: "destructive",
+        title: "Gagal Membatalkan",
+        description: error?.message || "Terjadi kesalahan sistem saat memproses pembatalan."
+      })
+    } finally {
+      setIsSubmittingCancel(false)
+    }
   }
 
   const handleLanjutDinasBatch = async (coordinator: string, coordinatorActors: BusinessActor[]) => {
@@ -2950,6 +3056,19 @@ function ActorDataContent() {
                           >
                             <Printer className="w-5 h-5" />
                           </Button>
+
+                          {/* Tombol Batal Pengajuan (Cancell) */}
+                          {!isKoordinator && !isInspektorat && (
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className="w-11 h-11 rounded-2xl border border-rose-300 dark:border-rose-800 bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 shrink-0 transition-all active:scale-95 shadow-2xs"
+                              onClick={() => handleOpenCancelDialog(actor)}
+                              title="Batalkan Pengajuan (Cancell & Kembalikan Kuota)"
+                            >
+                              <Ban className="w-5 h-5" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     );
@@ -3405,6 +3524,18 @@ function ActorDataContent() {
                         </button>
                       )}
 
+                      {!isEditMode && !isKoordinator && !isInspektorat && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenCancelDialog(viewingActor)}
+                          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors cursor-pointer"
+                          title="Batalkan Pengajuan & Kembalikan Kuota Koordinator"
+                        >
+                          <Ban className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                          <span>Batal Pengajuan</span>
+                        </button>
+                      )}
+
                       {!isEditMode && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -3447,6 +3578,17 @@ function ActorDataContent() {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} className="cursor-pointer text-xs font-medium text-rose-600">
                                   <Trash2 className="w-4 h-4 mr-2 text-rose-600" /> Hapus Permanen
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {!isKoordinator && !isInspektorat && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleOpenCancelDialog(viewingActor)}
+                                  className="cursor-pointer text-xs font-medium text-rose-600 dark:text-rose-400 focus:text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-950/50"
+                                >
+                                  <Ban className="w-4 h-4 mr-2 text-rose-600" /> Batalkan Pengajuan (Cancell)
                                 </DropdownMenuItem>
                               </>
                             )}
@@ -5380,6 +5522,162 @@ function ActorDataContent() {
         variant="default"
         onConfirm={executeSingleLanjutDinas}
       />
+
+      {/* Dialog Pembatalan Pengajuan (Cancell) */}
+      <Dialog
+        open={showCancelDialog}
+        onOpenChange={(open) => {
+          if (!isSubmittingCancel) {
+            setShowCancelDialog(open)
+            if (!open) {
+              setCancelTargetActor(null)
+              setCancelReason("")
+              setCancelError("")
+            }
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg w-[95vw] rounded-2xl p-5 sm:p-6 bg-white dark:bg-slate-900 border-2 border-rose-200 dark:border-rose-900 shadow-2xl">
+          <DialogHeader className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+                <Ban className="w-5 h-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-base sm:text-lg font-black text-rose-600 dark:text-rose-400 uppercase tracking-tight">
+                  Batalkan Pengajuan (Cancell)
+                </DialogTitle>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  Pengajuan akan dipindahkan ke menu <strong>Data Ditolak / Cancell</strong>
+                </p>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {cancelTargetActor && (
+            <div className="space-y-4 pt-2">
+              {/* Info Pelaku Usaha yang Dibatalkan */}
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2 text-xs">
+                <div className="flex justify-between items-start gap-2">
+                  <span className="text-slate-500">Nama Pelaku:</span>
+                  <span className="font-extrabold uppercase text-slate-800 dark:text-slate-200 text-right">{cancelTargetActor.fullName}</span>
+                </div>
+                <div className="flex justify-between items-start gap-2">
+                  <span className="text-slate-500">NIK:</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-right">{cancelTargetActor.nik || '-'}</span>
+                </div>
+                <div className="flex justify-between items-start gap-2">
+                  <span className="text-slate-500">Nama Usaha:</span>
+                  <span className="font-bold uppercase text-slate-800 dark:text-slate-200 text-right">{cancelTargetActor.businessName || '-'}</span>
+                </div>
+                <div className="flex justify-between items-start gap-2 pt-1 border-t border-slate-200 dark:border-slate-700">
+                  <span className="text-slate-500">Koordinator:</span>
+                  <span className="font-black text-primary uppercase text-right">{normalizeCoordinator(cancelTargetActor.coordinator || '') || '-'}</span>
+                </div>
+              </div>
+
+              {/* Callout Info Pengembalian Kuota */}
+              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="text-[11px] sm:text-xs text-amber-800 dark:text-amber-300 leading-relaxed font-medium">
+                  <strong>Pengembalian Kuota Otomatis:</strong> 1 kuota pengajuan akan otomatis dikembalikan ke koordinator <strong>{normalizeCoordinator(cancelTargetActor.coordinator || '') || 'terkait'}</strong> setelah dibatalkan.
+                </div>
+              </div>
+
+              {/* Form Alasan Pembatalan (Wajib Diisi) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="cancel-reason" className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                    <span>Alasan Pembatalan</span>
+                    <span className="text-rose-500 font-black">* (Wajib diisi)</span>
+                  </Label>
+                </div>
+
+                {/* Preset Buttons */}
+                <div className="flex flex-wrap gap-1.5 pb-1">
+                  {CANCEL_REASON_PRESETS.map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => {
+                        setCancelReasonPreset(preset)
+                        if (preset !== "Lainnya") {
+                          setCancelReason(preset)
+                          setCancelError("")
+                        } else {
+                          setCancelReason("")
+                        }
+                      }}
+                      className={cn(
+                        "text-[10px] font-bold px-2 py-1 rounded-lg border transition-all cursor-pointer",
+                        cancelReasonPreset === preset
+                          ? "bg-rose-500 text-white border-rose-600 shadow-2xs"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
+                      )}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+
+                <Textarea
+                  id="cancel-reason"
+                  rows={3}
+                  value={cancelReason}
+                  onChange={(e) => {
+                    setCancelReason(e.target.value)
+                    if (e.target.value.trim()) setCancelError("")
+                  }}
+                  placeholder="Tuliskan alasan pembatalan pengajuan secara lengkap dan jelas..."
+                  className="w-full text-xs font-medium rounded-xl border-slate-300 dark:border-slate-700 focus-visible:ring-rose-500"
+                  required
+                />
+                {cancelError && (
+                  <p className="text-[11px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                    <XCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{cancelError}</span>
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmittingCancel}
+              onClick={() => {
+                setShowCancelDialog(false)
+                setCancelTargetActor(null)
+                setCancelReason("")
+                setCancelError("")
+              }}
+              className="w-full sm:w-auto rounded-xl text-xs font-bold"
+            >
+              Kembali
+            </Button>
+            <Button
+              type="button"
+              disabled={isSubmittingCancel || !cancelReason.trim()}
+              onClick={executeCancelActor}
+              className="w-full sm:w-auto rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-700 text-white gap-2 shadow-sm cursor-pointer"
+            >
+              {isSubmittingCancel ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Memproses Pembatalan...</span>
+                </>
+              ) : (
+                <>
+                  <Ban className="w-4 h-4" />
+                  <span>Ya, Batalkan Pengajuan</span>
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

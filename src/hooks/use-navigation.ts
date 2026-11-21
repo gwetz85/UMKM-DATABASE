@@ -172,7 +172,7 @@ export function useNavigation() {
       name: "Data Pelaku Usaha",
       href: "/actor-data",
       icon: Users,
-      show: (!!user && !isDinas && !isVerifikatorDinas && !isPetugas) || isInspektorat,
+      show: (!!user && !isDinas && !isVerifikatorDinas) || isInspektorat,
       color: "#0284c7",
       description: "Database Seluruh Pelaku Usaha"
     },
@@ -180,7 +180,7 @@ export function useNavigation() {
       name: "Data Ditolak",
       href: "/rejected",
       icon: Ban,
-      show: !!user && !isDinas && !isVerifikatorDinas && !isKoordinator && !isPetugas,
+      show: !!user && !isDinas && !isVerifikatorDinas && !isKoordinator,
       color: "#f97316",
       description: "Arsip Data yang Tidak Disetujui"
     },
