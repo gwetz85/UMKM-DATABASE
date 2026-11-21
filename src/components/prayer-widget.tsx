@@ -13,7 +13,9 @@ import {
   Volume2, 
   VolumeX, 
   RefreshCw, 
-  Calendar
+  Calendar,
+  Maximize2,
+  Minimize2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -168,11 +170,71 @@ interface PrayerWidgetProps {
 }
 
 export function PrayerWidget({ className }: PrayerWidgetProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false)
   const [timings, setTimings] = useState<PrayerTimings>(DEFAULT_TIMINGS)
   const [currentTime, setCurrentTime] = useState<Date>(new Date())
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false)
   const alertedPrayerRef = useRef<string | null>(null)
+
+  // Fullscreen toggle handler (Native API with CSS fallback)
+  const toggleFullscreen = useCallback(async () => {
+    if (!containerRef.current) return
+
+    if (document.fullscreenElement || isFullscreen) {
+      try {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen()
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen()
+        }
+      } catch {
+        // ignore
+      }
+      setIsFullscreen(false)
+      return
+    }
+
+    try {
+      if (containerRef.current.requestFullscreen) {
+        await containerRef.current.requestFullscreen()
+      } else if ((containerRef.current as any).webkitRequestFullscreen) {
+        await (containerRef.current as any).webkitRequestFullscreen()
+      } else if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen()
+      }
+      setIsFullscreen(true)
+    } catch {
+      // Fallback: CSS fixed overlay
+      setIsFullscreen(true)
+    }
+  }, [isFullscreen])
+
+  // Sync state when native browser fullscreen changes (e.g. user pressed ESC or F11)
+  useEffect(() => {
+    const handleFsChange = () => {
+      const activeFs = Boolean(document.fullscreenElement)
+      setIsFullscreen(activeFs)
+    }
+    document.addEventListener("fullscreenchange", handleFsChange)
+    document.addEventListener("webkitfullscreenchange", handleFsChange)
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFsChange)
+      document.removeEventListener("webkitfullscreenchange", handleFsChange)
+    }
+  }, [])
+
+  // Handle ESC key for CSS overlay fallback
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isFullscreen && !document.fullscreenElement) {
+        setIsFullscreen(false)
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [isFullscreen])
 
   // Real-time second clock
   useEffect(() => {
@@ -365,43 +427,67 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
 
   return (
     <div
+      ref={containerRef}
       className={cn(
-        "w-full bg-white dark:bg-[#07161A] rounded-[24px] sm:rounded-[28px] border border-slate-200/90 dark:border-slate-800 px-3.5 sm:px-4 py-3 sm:py-3.5 shadow-sm flex flex-col justify-between transition-all duration-300 relative group overflow-hidden",
+        "w-full bg-white dark:bg-[#07161A] transition-all duration-300 relative group flex flex-col justify-between",
+        isFullscreen ? [
+          "fixed inset-0 z-[9999] rounded-none w-screen h-screen p-4 sm:p-6 md:p-8 lg:p-10",
+          "bg-gradient-to-b from-[#03181C] via-[#06262D] to-[#021114] text-white border-0 shadow-none overflow-y-auto"
+        ] : [
+          "rounded-[24px] sm:rounded-[28px] border border-slate-200/90 dark:border-slate-800 px-3.5 sm:px-4 py-3 sm:py-3.5 shadow-sm overflow-hidden"
+        ],
         className
       )}
     >
       {/* ─── 1. HEADER (Compact & Elegant) ─── */}
-      <div className="flex items-center justify-between pb-2 sm:pb-2.5 shrink-0 gap-2 flex-wrap">
-        <div className="flex items-center gap-2">
-          <MosqueEmblem />
+      <div className={cn(
+        "flex items-center justify-between pb-2 sm:pb-2.5 shrink-0 gap-2 flex-wrap",
+        isFullscreen && "pb-3 sm:pb-4 md:pb-6 border-b border-emerald-500/20"
+      )}>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <MosqueEmblem className={cn(isFullscreen && "w-10 h-10 sm:w-12 sm:h-12 rounded-2xl")} />
           <div>
-            <div className="flex items-center gap-1.5">
-              <h3 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base tracking-tight leading-tight">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <h3 className={cn(
+                "font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight",
+                isFullscreen ? "text-lg sm:text-2xl md:text-3xl text-white" : "text-sm sm:text-base"
+              )}>
                 Jadwal Waktu Sholat
               </h3>
-              <span className="relative flex h-1.5 w-1.5" title="Waktu Sholat Realtime Aktif">
+              <span className={cn("relative flex", isFullscreen ? "h-2 w-2 sm:h-2.5 sm:w-2.5" : "h-1.5 w-1.5")} title="Waktu Sholat Realtime Aktif">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                <span className={cn("relative inline-flex rounded-full bg-emerald-500", isFullscreen ? "h-2 w-2 sm:h-2.5 sm:w-2.5" : "h-1.5 w-1.5")} />
               </span>
             </div>
-            <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
-              <MapPin className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div className={cn(
+              "flex items-center gap-1 font-semibold text-slate-500 dark:text-slate-400 mt-0.5",
+              isFullscreen ? "text-xs sm:text-sm md:text-base text-emerald-300/90" : "text-[9px] sm:text-[10px]"
+            )}>
+              <MapPin className={cn(isFullscreen ? "w-3.5 h-3.5" : "w-2.5 h-2.5", "text-emerald-600 dark:text-emerald-400 shrink-0")} />
               <span>{CITY_NAME}, {PROVINCE} • Kemenag RI</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
           {/* Top Right Countdown Pill */}
           <div 
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-500/25 text-[11px] sm:text-xs font-bold shadow-2xs"
+            className={cn(
+              "flex items-center gap-1.5 rounded-full font-bold shadow-2xs",
+              isFullscreen 
+                ? "px-3.5 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-base md:text-lg border border-emerald-400/40 bg-emerald-950/70 text-emerald-200" 
+                : "px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-500/25 text-[11px] sm:text-xs"
+            )}
             title={`Hitung mundur menuju ${calculation.nextPrayer.name}`}
           >
-            <Clock className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <span className="font-semibold text-slate-700 dark:text-slate-300">
+            <Clock className={cn(isFullscreen ? "w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" : "w-3 h-3 text-emerald-600 dark:text-emerald-400", "shrink-0")} />
+            <span className={cn("font-semibold", isFullscreen ? "text-slate-200" : "text-slate-700 dark:text-slate-300")}>
               {calculation.isNextTomorrow ? "Subuh Besok" : calculation.nextPrayer.name}
             </span>
-            <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 tracking-tight text-[11px] sm:text-xs">
+            <span className={cn(
+              "font-mono font-black tracking-tight",
+              isFullscreen ? "text-emerald-300 text-sm sm:text-lg md:text-xl" : "text-emerald-600 dark:text-emerald-400 text-[11px] sm:text-xs"
+            )}>
               {formattedCountdown}
             </span>
           </div>
@@ -415,13 +501,18 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
             }}
             title={soundEnabled ? "Pengingat suara aktif" : "Aktifkan pengingat suara"}
             className={cn(
-              "w-6 h-6 rounded-lg flex items-center justify-center transition-all border shadow-2xs",
+              "rounded-lg flex items-center justify-center transition-all border shadow-2xs cursor-pointer",
+              isFullscreen ? "w-8 h-8 sm:w-10 sm:h-10 rounded-xl" : "w-6 h-6",
               soundEnabled
                 ? "bg-emerald-50 text-emerald-600 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-700"
                 : "bg-slate-50 text-slate-400 border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700 hover:text-slate-600"
             )}
           >
-            {soundEnabled ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
+            {soundEnabled ? (
+              <Volume2 className={cn(isFullscreen ? "w-4 h-4 sm:w-5 sm:h-5" : "w-3 h-3")} />
+            ) : (
+              <VolumeX className={cn(isFullscreen ? "w-4 h-4 sm:w-5 sm:h-5" : "w-3 h-3")} />
+            )}
           </button>
 
           {/* Refresh Button */}
@@ -429,15 +520,41 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
             onClick={() => fetchTimings(true)}
             disabled={isRefreshing}
             title="Perbarui Jadwal"
-            className="w-6 h-6 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 flex items-center justify-center border border-slate-200 dark:border-slate-700 transition-all shadow-2xs active:scale-95"
+            className={cn(
+              "rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 flex items-center justify-center border border-slate-200 dark:border-slate-700 transition-all shadow-2xs active:scale-95 cursor-pointer",
+              isFullscreen ? "w-8 h-8 sm:w-10 sm:h-10 rounded-xl text-slate-300 hover:text-white" : "w-6 h-6"
+            )}
           >
-            <RefreshCw className={cn("w-3 h-3", isRefreshing && "animate-spin text-emerald-500")} />
+            <RefreshCw className={cn(isFullscreen ? "w-4 h-4 sm:w-5 sm:h-5" : "w-3 h-3", isRefreshing && "animate-spin text-emerald-500")} />
+          </button>
+
+          {/* Fullscreen Button */}
+          <button
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "Keluar dari Layar Penuh (ESC)" : "Tampilan Layar Penuh (Full Screen)"}
+            className={cn(
+              "rounded-lg flex items-center justify-center transition-all border shadow-2xs active:scale-95 cursor-pointer",
+              isFullscreen 
+                ? "w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-500/20 text-amber-300 border-amber-400/40 hover:bg-amber-500/30" 
+                : "w-6 h-6 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:text-slate-700 dark:hover:text-slate-200"
+            )}
+          >
+            {isFullscreen ? (
+              <Minimize2 className={cn(isFullscreen ? "w-4 h-4 sm:w-5 sm:h-5" : "w-3 h-3")} />
+            ) : (
+              <Maximize2 className="w-3 h-3" />
+            )}
           </button>
         </div>
       </div>
 
       {/* ─── 2. AREA UTAMA: PANORAMIC MOSQUE HERO + ISLAMIC ARCH DISPLAY ─── */}
-      <div className="my-1.5 sm:my-2 rounded-[18px] sm:rounded-[20px] overflow-hidden relative shadow-sm border border-slate-200/80 dark:border-slate-800 min-h-[135px] sm:min-h-[145px] flex items-center">
+      <div className={cn(
+        "rounded-[18px] sm:rounded-[20px] overflow-hidden relative shadow-sm border border-slate-200/80 dark:border-slate-800 flex items-center",
+        isFullscreen 
+          ? "my-3 sm:my-5 flex-1 min-h-[220px] sm:min-h-[280px] md:min-h-[340px] rounded-2xl sm:rounded-3xl border-emerald-500/25" 
+          : "my-1.5 sm:my-2 min-h-[135px] sm:min-h-[145px]"
+      )}>
         {/* Background Photograph */}
         <div 
           className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
@@ -451,12 +568,23 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
         <div className="absolute inset-0 bg-gradient-to-r from-[#041D22]/95 via-[#082E36]/75 to-transparent pointer-events-none" />
 
         {/* Content Inside Hero Banner */}
-        <div className="relative z-10 w-full h-full p-2.5 sm:p-3.5 flex items-center justify-between gap-3">
+        <div className={cn(
+          "relative z-10 w-full h-full flex items-center justify-between gap-3",
+          isFullscreen ? "p-4 sm:p-6 md:p-8" : "p-2.5 sm:p-3.5"
+        )}>
           {/* Islamic Mihrab Arch */}
-          <div className="relative rounded-t-[36px] rounded-b-xl border-t-2 border-x-2 border-amber-300/40 bg-gradient-to-b from-[#092B32]/95 via-[#051C20]/95 to-[#031114]/98 backdrop-blur-md shadow-xl px-4 py-2 sm:py-2.5 text-center flex flex-col items-center justify-center shrink-0 min-w-[155px] sm:min-w-[175px]">
+          <div className={cn(
+            "relative rounded-t-[36px] rounded-b-xl border-t-2 border-x-2 border-amber-300/40 bg-gradient-to-b from-[#092B32]/95 via-[#051C20]/95 to-[#031114]/98 backdrop-blur-md shadow-xl text-center flex flex-col items-center justify-center shrink-0",
+            isFullscreen 
+              ? "min-w-[200px] sm:min-w-[280px] md:min-w-[360px] px-6 sm:px-10 py-4 sm:py-6 rounded-t-[44px] rounded-b-2xl border-amber-400/50" 
+              : "min-w-[155px] sm:min-w-[175px] px-4 py-2 sm:py-2.5"
+          )}>
             {/* Top Golden Dome Ornament */}
-            <div className="flex items-center gap-1 text-amber-300 text-[9px] sm:text-[10px] font-semibold tracking-wide">
-              <svg className="w-3 h-3 fill-amber-300" viewBox="0 0 24 24">
+            <div className={cn(
+              "flex items-center gap-1 text-amber-300 font-semibold tracking-wide",
+              isFullscreen ? "text-xs sm:text-sm md:text-base mb-1" : "text-[9px] sm:text-[10px]"
+            )}>
+              <svg className={cn(isFullscreen ? "w-4 h-4 sm:w-5 sm:h-5" : "w-3 h-3", "fill-amber-300")} viewBox="0 0 24 24">
                 <path d="M12 2C8 6, 8 10, 12 10C16 10, 16 6, 12 2Z" />
                 <path d="M5 10H19V12H5z" />
               </svg>
@@ -464,25 +592,37 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
             </div>
 
             {/* Prayer Name */}
-            <h4 className="text-base sm:text-lg font-black text-white tracking-tight mt-0.5">
+            <h4 className={cn(
+              "font-black text-white tracking-tight mt-0.5",
+              isFullscreen ? "text-xl sm:text-3xl md:text-4xl" : "text-base sm:text-lg"
+            )}>
               {calculation.activeEnteredPrayer ? calculation.activeEnteredPrayer.name : calculation.nextPrayer.name}
             </h4>
 
             {/* Huge Time Display */}
-            <div className="font-mono text-2xl sm:text-3xl lg:text-[36px] font-black text-white tracking-tight leading-none my-0.5 drop-shadow-md">
+            <div className={cn(
+              "font-mono font-black text-white tracking-tight leading-none drop-shadow-md",
+              isFullscreen ? "text-4xl sm:text-6xl md:text-7xl lg:text-8xl my-2 sm:my-3 text-amber-300" : "text-2xl sm:text-3xl lg:text-[36px] my-0.5"
+            )}>
               {calculation.activeEnteredPrayer ? calculation.activeEnteredPrayer.time : calculation.nextPrayer.time}
             </div>
 
             {/* Status Pill Badge */}
-            <div className="mt-0.5">
+            <div className="mt-0.5 sm:mt-1">
               {calculation.activeEnteredPrayer ? (
-                <span className="inline-flex items-center gap-0.5 px-2 py-0.2 rounded-full text-[8px] font-black uppercase tracking-wider bg-yellow-400 text-slate-950 shadow-sm animate-pulse">
-                  <BellRing className="w-2 h-2" />
+                <span className={cn(
+                  "inline-flex items-center gap-0.5 rounded-full font-black uppercase tracking-wider bg-yellow-400 text-slate-950 shadow-sm animate-pulse",
+                  isFullscreen ? "text-xs sm:text-sm px-3.5 py-1" : "text-[8px] px-2 py-0.2"
+                )}>
+                  <BellRing className={cn(isFullscreen ? "w-3.5 h-3.5" : "w-2 h-2")} />
                   SUDAH MASUK WAKTU
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-0.5 px-2 py-0.2 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-500/90 text-white shadow-sm border border-emerald-300/40">
-                  <Clock className="w-2 h-2" />
+                <span className={cn(
+                  "inline-flex items-center gap-0.5 rounded-full font-black uppercase tracking-wider bg-emerald-500/90 text-white shadow-sm border border-emerald-300/40",
+                  isFullscreen ? "text-xs sm:text-sm px-3.5 py-1" : "text-[8px] px-2 py-0.2"
+                )}>
+                  <Clock className={cn(isFullscreen ? "w-3.5 h-3.5" : "w-2 h-2")} />
                   BERIKUTNYA
                 </span>
               )}
@@ -490,27 +630,38 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
           </div>
 
           {/* Center Motivational Quote */}
-          <div className="hidden md:flex flex-col items-center justify-center text-center max-w-[240px] lg:max-w-[280px] px-2 py-0.5 bg-black/25 backdrop-blur-xs rounded-lg border border-white/10">
-            <span className="text-amber-300 text-base font-serif leading-none opacity-80">“</span>
-            <p className="text-[11px] sm:text-xs font-medium text-emerald-50/95 italic leading-snug drop-shadow-sm px-1.5">
+          <div className={cn(
+            "flex flex-col items-center justify-center text-center px-3 py-2 bg-black/35 backdrop-blur-xs rounded-xl border border-white/10",
+            isFullscreen 
+              ? "flex max-w-[320px] sm:max-w-[440px] md:max-w-[560px] p-4 sm:p-6 rounded-2xl border-white/15" 
+              : "hidden md:flex max-w-[240px] lg:max-w-[280px]"
+          )}>
+            <span className={cn("text-amber-300 font-serif leading-none opacity-80", isFullscreen ? "text-2xl sm:text-3xl" : "text-base")}>“</span>
+            <p className={cn(
+              "font-medium text-emerald-50/95 italic leading-snug drop-shadow-sm px-1.5",
+              isFullscreen ? "text-xs sm:text-base md:text-xl my-1" : "text-[11px] sm:text-xs"
+            )}>
               Semoga setiap langkah kita dalam keberkahan Allah
             </p>
-            <span className="text-amber-300 text-base font-serif leading-none opacity-80">”</span>
+            <span className={cn("text-amber-300 font-serif leading-none opacity-80", isFullscreen ? "text-2xl sm:text-3xl" : "text-base")}>”</span>
             
-            <div className="flex items-center gap-1.5 mt-0.5 w-full justify-center opacity-70">
-              <div className="h-px bg-gradient-to-r from-transparent via-amber-300 to-transparent w-12" />
-              <div className="w-1 h-1 rotate-45 bg-amber-400" />
-              <div className="h-px bg-gradient-to-r from-transparent via-amber-300 to-transparent w-12" />
+            <div className="flex items-center gap-1.5 mt-1 w-full justify-center opacity-70">
+              <div className={cn("h-px bg-gradient-to-r from-transparent via-amber-300 to-transparent", isFullscreen ? "w-20 sm:w-28" : "w-12")} />
+              <div className="w-1.5 h-1.5 rotate-45 bg-amber-400" />
+              <div className={cn("h-px bg-gradient-to-r from-transparent via-amber-300 to-transparent", isFullscreen ? "w-20 sm:w-28" : "w-12")} />
             </div>
           </div>
 
           {/* Right Spacer */}
-          <div className="w-6 sm:w-12 shrink-0" />
+          <div className={cn(isFullscreen ? "w-6 sm:w-16" : "w-6 sm:w-12", "shrink-0")} />
         </div>
       </div>
 
       {/* ─── 3. LIMA KARTU WAKTU SHOLAT (Subuh, Dzuhur, Ashar, Maghrib, Isya) ─── */}
-      <div className="grid grid-cols-5 gap-1 sm:gap-2 my-1.5">
+      <div className={cn(
+        "grid grid-cols-5",
+        isFullscreen ? "gap-2 sm:gap-4 md:gap-5 my-3 sm:my-5" : "gap-1 sm:gap-2 my-1.5"
+      )}>
         {fivePrayers.map((prayer) => {
           const IconComp = prayer.icon
           const isNext = calculation.nextPrayer.id === prayer.id && !calculation.isNextTomorrow
@@ -525,21 +676,26 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
             <div
               key={prayer.id}
               className={cn(
-                "p-1 sm:p-2 rounded-xl border transition-all duration-300 flex flex-col justify-between text-center relative group/card overflow-hidden min-w-0",
+                "border transition-all duration-300 flex flex-col justify-between text-center relative group/card overflow-hidden min-w-0",
+                isFullscreen ? "p-2 sm:p-4 md:p-5 rounded-2xl sm:rounded-3xl" : "p-1 sm:p-2 rounded-xl",
                 isCurrentActive || isNext
                   ? "bg-gradient-to-b from-[#0D5C4E] to-[#083B32] text-white border-emerald-300 dark:border-emerald-400 ring-2 ring-emerald-400/40 shadow-md shadow-emerald-950/20"
                   : isPassed
-                  ? "bg-slate-50/70 dark:bg-slate-800/40 border-slate-200/80 dark:border-slate-800 opacity-75"
+                  ? isFullscreen 
+                    ? "bg-white/5 border-white/10 opacity-70 text-slate-300" 
+                    : "bg-slate-50/70 dark:bg-slate-800/40 border-slate-200/80 dark:border-slate-800 opacity-75"
+                  : isFullscreen
+                  ? "bg-white/10 border-white/15 text-white shadow-2xs hover:border-emerald-400/50"
                   : "bg-white dark:bg-slate-800/70 border-slate-100 dark:border-slate-800 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700"
               )}
             >
               <MosqueArchWatermark className={isCurrentActive || isNext ? "opacity-[0.12] text-white" : "opacity-[0.05]"} />
 
               {/* Card Header: Icon + Name */}
-              <div className="flex items-center justify-center gap-1 mb-1 relative z-10">
+              <div className="flex items-center justify-center gap-1 sm:gap-1.5 mb-1 relative z-10">
                 <IconComp
                   className={cn(
-                    "w-3.5 h-3.5",
+                    isFullscreen ? "w-4 h-4 sm:w-6 sm:h-6" : "w-3.5 h-3.5",
                     isCurrentActive || isNext
                       ? prayer.activeColor
                       : isPassed
@@ -549,10 +705,9 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
                 />
                 <span
                   className={cn(
-                    "text-[9.5px] sm:text-xs font-black tracking-tight truncate",
-                    isCurrentActive || isNext
-                      ? "text-white"
-                      : "text-slate-900 dark:text-slate-100"
+                    "font-black tracking-tight truncate",
+                    isFullscreen ? "text-xs sm:text-base md:text-xl text-white" : "text-[9.5px] sm:text-xs",
+                    (isCurrentActive || isNext) && "text-white"
                   )}
                 >
                   {prayer.name}
@@ -562,9 +717,12 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
               {/* Card Time Display */}
               <div
                 className={cn(
-                  "font-mono text-xs sm:text-sm font-black tracking-tight leading-none my-0.5 relative z-10",
+                  "font-mono font-black tracking-tight leading-none my-0.5 sm:my-1 relative z-10",
+                  isFullscreen ? "text-base sm:text-2xl md:text-4xl lg:text-5xl" : "text-xs sm:text-sm",
                   isCurrentActive || isNext
                     ? "text-white drop-shadow-sm"
+                    : isFullscreen
+                    ? "text-emerald-100"
                     : "text-slate-800 dark:text-slate-200"
                 )}
               >
@@ -574,19 +732,31 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
               {/* Card Status Pill Badge */}
               <div className="mt-1 flex items-center justify-center relative z-10">
                 {isCurrentActive ? (
-                  <span className="text-[7.5px] sm:text-[8px] font-black uppercase px-1.5 py-0.2 rounded-full bg-yellow-400 text-slate-950 shadow-sm animate-pulse">
+                  <span className={cn(
+                    "font-black uppercase rounded-full bg-yellow-400 text-slate-950 shadow-sm animate-pulse",
+                    isFullscreen ? "text-[10px] sm:text-xs md:text-sm px-2.5 sm:px-3 py-0.5 sm:py-1" : "text-[7.5px] sm:text-[8px] px-1.5 py-0.2"
+                  )}>
                     Waktunya
                   </span>
                 ) : isNext ? (
-                  <span className="text-[7.5px] sm:text-[8px] font-black uppercase px-1.5 py-0.2 rounded-full bg-emerald-400 text-slate-950 font-extrabold shadow-sm">
+                  <span className={cn(
+                    "font-black uppercase rounded-full bg-emerald-400 text-slate-950 font-extrabold shadow-sm",
+                    isFullscreen ? "text-[10px] sm:text-xs md:text-sm px-2.5 sm:px-3 py-0.5 sm:py-1" : "text-[7.5px] sm:text-[8px] px-1.5 py-0.2"
+                  )}>
                     Berikutnya
                   </span>
                 ) : isPassed ? (
-                  <span className="text-[7.5px] sm:text-[8px] font-semibold text-slate-500 dark:text-slate-400 px-1.5 py-0.2 rounded-full bg-slate-200/60 dark:bg-slate-700/60">
+                  <span className={cn(
+                    "font-semibold text-slate-500 dark:text-slate-400 rounded-full",
+                    isFullscreen ? "bg-white/10 text-slate-300 text-[10px] sm:text-xs px-2.5 py-0.5" : "bg-slate-200/60 dark:bg-slate-700/60 text-[7.5px] sm:text-[8px] px-1.5 py-0.2"
+                  )}>
                     Lewat
                   </span>
                 ) : (
-                  <span className="text-[7.5px] sm:text-[8px] font-semibold text-slate-500 dark:text-slate-400 px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800">
+                  <span className={cn(
+                    "font-semibold text-slate-500 dark:text-slate-400 rounded-full",
+                    isFullscreen ? "bg-white/10 text-slate-200 text-[10px] sm:text-xs px-2.5 py-0.5" : "bg-slate-100 dark:bg-slate-800 text-[7.5px] sm:text-[8px] px-1.5 py-0.2"
+                  )}>
                     Mendatang
                   </span>
                 )}
@@ -597,35 +767,38 @@ export function PrayerWidget({ className }: PrayerWidgetProps) {
       </div>
 
       {/* ─── 4. PANEL INFORMASI WAKTU TAMBAHAN (Imsak, Terbit, Dhuha & Jam WIB) ─── */}
-      <div className="mt-1.5 rounded-xl bg-gradient-to-r from-[#041D22] via-[#092E36] to-[#041D22] text-white border border-teal-800/50 shadow-inner px-3 sm:px-3.5 py-1.5 sm:py-2 flex items-center justify-between relative overflow-hidden text-[8.5px] sm:text-[9.5px] font-semibold">
-        <IslamicCornerPattern className="absolute top-0 left-0 w-6 h-6" />
-        <IslamicCornerPattern className="absolute bottom-0 right-0 w-6 h-6 rotate-180" />
+      <div className={cn(
+        "rounded-xl bg-gradient-to-r from-[#041D22] via-[#092E36] to-[#041D22] text-white border border-teal-800/50 shadow-inner flex items-center justify-between relative overflow-hidden font-semibold",
+        isFullscreen ? "mt-2 sm:mt-4 px-4 sm:px-8 py-2.5 sm:py-4 md:py-5 text-xs sm:text-base md:text-lg rounded-2xl sm:rounded-3xl" : "mt-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 text-[8.5px] sm:text-[9.5px]"
+      )}>
+        <IslamicCornerPattern className={cn("absolute top-0 left-0", isFullscreen ? "w-10 h-10 sm:w-14 sm:h-14" : "w-6 h-6")} />
+        <IslamicCornerPattern className={cn("absolute bottom-0 right-0 rotate-180", isFullscreen ? "w-10 h-10 sm:w-14 sm:h-14" : "w-6 h-6")} />
 
         {/* Left Timing Stats */}
-        <div className="flex items-center gap-2.5 sm:gap-3.5 relative z-10">
-          <div className="flex items-center gap-1">
-            <Calendar className="w-3 h-3 text-teal-300 shrink-0" />
+        <div className={cn("flex items-center relative z-10", isFullscreen ? "gap-4 sm:gap-6 md:gap-8" : "gap-2.5 sm:gap-3.5")}>
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            <Calendar className={cn(isFullscreen ? "w-4 h-4 sm:w-5 sm:h-5 text-teal-300" : "w-3 h-3 text-teal-300", "shrink-0")} />
             <span className="text-teal-200/80">Imsak</span>
             <strong className="font-mono text-white font-bold">{timings.Imsak}</strong>
           </div>
           <span className="text-teal-700">|</span>
-          <div className="flex items-center gap-1">
-            <Sun className="w-3 h-3 text-amber-300 shrink-0" />
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            <Sun className={cn(isFullscreen ? "w-4 h-4 sm:w-5 sm:h-5 text-amber-300" : "w-3 h-3 text-amber-300", "shrink-0")} />
             <span className="text-teal-200/80">Terbit</span>
             <strong className="font-mono text-white font-bold">{timings.Sunrise}</strong>
           </div>
           <span className="text-teal-700">|</span>
-          <div className="flex items-center gap-1">
-            <Moon className="w-3 h-3 text-amber-200 shrink-0" />
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            <Moon className={cn(isFullscreen ? "w-4 h-4 sm:w-5 sm:h-5 text-amber-200" : "w-3 h-3 text-amber-200", "shrink-0")} />
             <span className="text-teal-200/80">Dhuha</span>
             <strong className="font-mono text-white font-bold">{timings.Dhuha || "06:05"}</strong>
           </div>
         </div>
 
         {/* Right Real-time Clock */}
-        <div className="flex items-center gap-1 font-mono font-bold text-white relative z-10 shrink-0">
-          <Clock className="w-3 h-3 text-emerald-400 shrink-0" />
-          <span className="text-[10px] sm:text-[11px] tracking-tight">{timeString} WIB</span>
+        <div className={cn("flex items-center gap-1 font-mono font-bold text-white relative z-10 shrink-0", isFullscreen && "gap-2")}>
+          <Clock className={cn(isFullscreen ? "w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" : "w-3 h-3 text-emerald-400", "shrink-0")} />
+          <span className={cn("tracking-tight", isFullscreen ? "text-sm sm:text-lg md:text-xl font-black text-amber-300" : "text-[10px] sm:text-[11px]")}>{timeString} WIB</span>
         </div>
       </div>
     </div>
