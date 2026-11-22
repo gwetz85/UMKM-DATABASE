@@ -58,3 +58,8 @@ check-*.js
 test-*.js
 fix-case.js
 o.json
+
+# cloudflare / open-next
+.open-next/
+.wrangler/
+
