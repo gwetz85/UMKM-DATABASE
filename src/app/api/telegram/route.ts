@@ -283,30 +283,25 @@ export async function POST(req: NextRequest) {
         await sendMessage(chatId, "⏳ _Sedang menghitung data statistik realtime dari database aplikasi SIMPU..._");
         
         try {
-          const [actorsSnap, quotaSnap] = await Promise.all([
-            get(ref(database, 'businessActors')),
+          const [statsSnap, quotaSnap] = await Promise.all([
+            get(ref(database, 'system_stats')),
             get(ref(database, 'koordinator_kuotas'))
           ]);
 
-          if (!actorsSnap.exists()) {
-            await sendMessage(chatId, "⚠️ Belum ada data pendaftar UMKM dalam database.");
+          if (!statsSnap.exists()) {
+            await sendMessage(chatId, "⚠️ Belum ada data statistik UMKM dalam database.");
             return NextResponse.json({ ok: true });
           }
 
-          const rawActors = actorsSnap.val();
-          const actorList = Object.values(rawActors) as any[];
-          
-          // Filter out dummy/ghost records that lack valid identity or are flagged as ghost
-          const validActors = actorList.filter((a: any) => 
-            a && (a.fullName || a.nik) && !a.isGhost && !(a.status || '').toLowerCase().includes('ghost')
-          );
-          const totalRecords = validActors.length;
+          const stats = statsSnap.val() || {};
+          const status = stats.status || {};
+          const verifiedCount = Number(status.verified || 0);
+          const rejectedCount = Number(status.rejected || 0);
+          const pendingCount = Number(status.pending || 0);
+          const totalProcessed = verifiedCount + rejectedCount;
+          const totalRecords = Number(stats.totalActors || totalProcessed);
 
-          let verifiedCount = 0;
-          let rejectedCount = 0;
-          let pendingCount = 0;
-
-          const detailedStatus = {
+          const detailedStatus = stats.detailedStatus || {
             survey: 0,
             verifikasi: 0,
             hasilVerifikasi: 0,
@@ -314,83 +309,13 @@ export async function POST(req: NextRequest) {
             lpj: 0
           };
 
-          const genderProcessed = {
-            laki: 0,
-            perempuan: 0,
-            unknown: 0
-          };
-
-          const genderVerified = {
+          const genderVerified = stats.verifiedGender || {
             'Laki-laki': 0,
             'Perempuan': 0
           };
 
-          const kelurahanMap: Record<string, number> = {};
-          const coordinatorMap: Record<string, number> = {};
-          const coordinatorRekeningMap: Record<string, number> = {};
-
-          validActors.forEach((actor: any) => {
-
-            const s = (actor.status || 'pending').toLowerCase();
-            const actorIsCancel = isCancelDinas(actor);
-            const isActorRejected = s === 'rejected' || actorIsCancel;
-            const isActorVerified = isVerifiedStatus(actor);
-
-            // Total actors & gender (verified + rejected)
-            if (isActorVerified || isActorRejected) {
-              const g = normGender(actor.gender);
-              genderProcessed[g] = (genderProcessed[g] || 0) + 1;
-            }
-
-            if (isActorVerified) {
-              verifiedCount++;
-              const gKey = normGenderKey(actor.gender);
-              genderVerified[gKey] = (genderVerified[gKey] || 0) + 1;
-
-              const stage = getDetailedStage(actor);
-              if (stage && detailedStatus[stage] !== undefined) {
-                detailedStatus[stage]++;
-              }
-
-              if (actor.coordinator) {
-                const coord = normalizeCoordinator(actor.coordinator).toUpperCase().trim();
-                coordinatorMap[coord] = (coordinatorMap[coord] || 0) + 1;
-                if (actor.bankNumber && String(actor.bankNumber).trim() !== '') {
-                  coordinatorRekeningMap[coord] = (coordinatorRekeningMap[coord] || 0) + 1;
-                }
-              }
-
-              if (actor.kelurahan) {
-                const kel = actor.kelurahan.toUpperCase().trim();
-                kelurahanMap[kel] = (kelurahanMap[kel] || 0) + 1;
-              }
-            } else if (isActorRejected) {
-              rejectedCount++;
-            } else {
-              pendingCount++;
-            }
-          });
-
-          const totalProcessed = verifiedCount + rejectedCount;
-
-          // Asynchronously update system_stats in Firebase Realtime Database
-          const freshStats: SystemStats = {
-            totalActors: totalProcessed,
-            gender: genderProcessed,
-            verifiedGender: genderVerified,
-            status: {
-              pending: pendingCount,
-              verified: verifiedCount,
-              rejected: rejectedCount,
-              finish: detailedStatus.selesai
-            },
-            detailedStatus,
-            kelurahan: kelurahanMap,
-            coordinator: coordinatorMap,
-            coordinatorRekening: coordinatorRekeningMap,
-            lastUpdated: new Date().toISOString()
-          };
-          set(ref(database, 'system_stats'), freshStats).catch((e) => console.error("Error updating system_stats:", e));
+          const coordinatorMap: Record<string, number> = stats.coordinator || {};
+          const kelurahanMap: Record<string, number> = stats.kelurahan || {};
 
           // Calculate Quota Stats
           let totalQuota = 0;
@@ -499,7 +424,7 @@ export async function POST(req: NextRequest) {
 
         let stats = statsSnap.exists() ? statsSnap.val() : null;
         if (!stats || !stats.coordinator) {
-          stats = await recalculateAndSaveSystemStats(database);
+          stats = stats || {};
         }
 
         const achievedMap: Record<string, number> = stats?.coordinator || {};
@@ -620,8 +545,10 @@ export async function POST(req: NextRequest) {
         
         await sendMessage(chatId, `⏳ _Mencari data dengan kata kunci "${keyword}"..._`);
         
-        const actorsRef = ref(database, 'businessActors');
-        const snapshot = await get(actorsRef);
+        let snapshot = await get(ref(database, 'settings/actors_search')).catch(() => null);
+        if (!snapshot || !snapshot.exists()) {
+          snapshot = await get(ref(database, 'businessActors'));
+        }
         
         if (snapshot.exists()) {
           const raw = snapshot.val();
@@ -779,8 +706,11 @@ export async function POST(req: NextRequest) {
         await sendMessage(chatId, `⏳ _Mengecek "${keyword}" di Sheet Pembanding & Data SIMPU 2026..._`);
         
         try {
-          const [actorsSnap, m2024Snap, m2023Snap, m2025Snap, blacklistSnap] = await Promise.all([
-            get(ref(database, 'businessActors')),
+          let actorsSnap = await get(ref(database, 'settings/actors_search')).catch(() => null);
+          if (!actorsSnap || !actorsSnap.exists()) {
+            actorsSnap = await get(ref(database, 'businessActors')).catch(() => null);
+          }
+          const [m2024Snap, m2023Snap, m2025Snap, blacklistSnap] = await Promise.all([
             get(ref(database, 'master_data_2024')),
             get(ref(database, 'master_data_2023')),
             get(ref(database, 'master_data_2025')),
