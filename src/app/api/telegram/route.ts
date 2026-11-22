@@ -115,11 +115,31 @@ function getStatusDetails(r: any) {
   };
 }
 
+// Helper function to get Telegram token from process.env or Cloudflare context
+async function getTelegramToken(): Promise<string | undefined> {
+  if (process.env.TELEGRAM_BOT_TOKEN) {
+    return process.env.TELEGRAM_BOT_TOKEN;
+  }
+  try {
+    const { getCloudflareContext } = await import('@opennextjs/cloudflare');
+    const ctx = getCloudflareContext();
+    if (ctx?.env) {
+      const cfEnv = ctx.env as Record<string, any>;
+      if (cfEnv.TELEGRAM_BOT_TOKEN) {
+        return cfEnv.TELEGRAM_BOT_TOKEN;
+      }
+    }
+  } catch {
+    // Fallback when outside Cloudflare
+  }
+  return undefined;
+}
+
 // Helper function to safely send message back to Telegram with chunking and Markdown error fallback
 async function sendMessage(chatId: number, text: string) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const token = await getTelegramToken();
   if (!token) {
-    console.error("TELEGRAM_BOT_TOKEN is not set!");
+    console.error("TELEGRAM_BOT_TOKEN is not set in process.env or Cloudflare context!");
     return;
   }
 
@@ -180,6 +200,20 @@ async function sendMessage(chatId: number, text: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    try {
+      const { getCloudflareContext } = await import('@opennextjs/cloudflare');
+      const ctx = getCloudflareContext();
+      if (ctx?.env) {
+        for (const [k, v] of Object.entries(ctx.env)) {
+          if (typeof v === 'string' && !process.env[k]) {
+            process.env[k] = v;
+          }
+        }
+      }
+    } catch {
+      // outside Cloudflare
+    }
+
     if (!auth.currentUser) {
       await signInAnonymously(auth);
     }
