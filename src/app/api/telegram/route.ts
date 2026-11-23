@@ -121,6 +121,7 @@ async function getTelegramToken(): Promise<string | undefined> {
     return process.env.TELEGRAM_BOT_TOKEN;
   }
   try {
+    // @ts-ignore
     const { getCloudflareContext } = await import('@opennextjs/cloudflare');
     const ctx = getCloudflareContext();
     if (ctx?.env) {
@@ -201,6 +202,7 @@ async function sendMessage(chatId: number, text: string) {
 export async function POST(req: NextRequest) {
   try {
     try {
+      // @ts-ignore
       const { getCloudflareContext } = await import('@opennextjs/cloudflare');
       const ctx = getCloudflareContext();
       if (ctx?.env) {
@@ -735,7 +737,7 @@ export async function POST(req: NextRequest) {
 
           // 1. Data Pelaku Usaha 2026 (SIMPU)
           const results2026: any[] = [];
-          if (actorsSnap.exists()) {
+          if (actorsSnap && actorsSnap.exists()) {
             const raw = actorsSnap.val();
             Object.keys(raw).forEach(key => {
               const r = raw[key];
