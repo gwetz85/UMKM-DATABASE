@@ -1,4 +1,4 @@
 # Vercel Deployment Trigger
-Deployment triggered at: 2026-10-22 07:50:00 WIB
+Deployment triggered at: 2026-11-23 10:43:00 WIB
 Author: gwetz85 <agus.sahabathanura@gmail.com>
-Reason: Exclude dummy/ghost test records from system stats and bot telegram stats
+Reason: Trigger fresh production build and cache purge for rekening-bank
