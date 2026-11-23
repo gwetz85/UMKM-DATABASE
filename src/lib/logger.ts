@@ -20,6 +20,7 @@ export interface ActivityLog {
   source: 'Web' | 'Telegram';
   method?: string;
   userId?: string;
+  userName?: string;
   chatId?: string;
 }
 

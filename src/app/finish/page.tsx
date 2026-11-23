@@ -115,10 +115,10 @@ function FinishContent() {
       get(ref(database, 'settings/actors_search')).then(snap => {
         if (snap.exists()) {
           const val = snap.val() || {}
-          const list = Object.entries(val).map(([id, item]) => ({
+          const list = Object.entries(val).map(([id, item]: [string, any]) => ({
             ...item,
             id,
-          })).filter(a => a.status === 'finish')
+          })).filter((a: any) => a.status === 'finish') as BusinessActor[]
           if (list.length > 0) {
             setSearchIndexData(list)
             try { localStorage.setItem('simpu_finish_cache', JSON.stringify(list)) } catch {}

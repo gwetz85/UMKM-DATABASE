@@ -283,6 +283,7 @@ function DaftarHadirContent() {
   const [scannerNikInput, setScannerNikInput] = useState("")
   const [scannerResult, setScannerResult] = useState<BusinessActor | null>(null)
   const [scannerStatus, setScannerStatus] = useState<'idle' | 'found' | 'not_found'>('idle')
+  const [suggestedActors, setSuggestedActors] = useState<{ actor: BusinessActor; diffCount: number; reason: string }[]>([])
   const [isKtpScannerOpen, setIsKtpScannerOpen] = useState(false)
   const inputScannerRef = React.useRef<HTMLInputElement | null>(null)
 

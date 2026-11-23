@@ -792,7 +792,7 @@ export default function CekUsahaPage() {
                       </span>
                       <Button
                         size="sm"
-                        onClick={() => setSelectedDetail(item)}
+                        onClick={() => setSelectedItem(item)}
                         className="h-8 px-3 text-xs font-bold bg-primary text-white rounded-xl active:scale-95"
                       >
                         <Eye className="w-3.5 h-3.5 mr-1" /> Detail
