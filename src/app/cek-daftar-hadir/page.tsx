@@ -54,7 +54,7 @@ const MONTHS_INDO_SHORT = [
   "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
 ]
 
-// Desk Icon Component matching the mock image (table / counter / bed shape)
+// Desk / No Absen Icon Component
 function DeskIcon({ className = "w-6 h-6" }: { className?: string }) {
   return (
     <svg 
@@ -66,13 +66,10 @@ function DeskIcon({ className = "w-6 h-6" }: { className?: string }) {
       strokeLinejoin="round" 
       className={className}
     >
-      {/* Table top */}
-      <path d="M3 8h18" />
-      <path d="M4 8V6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2" />
-      {/* Front panel & Legs */}
-      <path d="M5 8v10" />
-      <path d="M19 8v10" />
-      <path d="M8 8v6h8V8" />
+      <line x1="4" y1="9" x2="20" y2="9" />
+      <line x1="4" y1="15" x2="20" y2="15" />
+      <line x1="10" y1="3" x2="8" y2="21" />
+      <line x1="16" y1="3" x2="14" y2="21" />
     </svg>
   )
 }
@@ -366,7 +363,7 @@ function CekDaftarHadirContent() {
     }
   }
 
-  // Format Desk Number cleanly
+  // Format No. Absen cleanly
   const formatDeskDisplay = (rawDesk?: string) => {
     if (!rawDesk || !rawDesk.trim()) {
       return { main: "--", sub: "Belum Ditentukan" }
@@ -378,10 +375,14 @@ function CekDaftarHadirContent() {
       const formattedNum = num < 10 ? `0${num}` : `${num}`
       return {
         main: formattedNum,
-        sub: trimmed.toLowerCase().includes("meja") ? trimmed : `Meja ${trimmed}`
+        sub: trimmed.toLowerCase().includes("absen")
+          ? trimmed
+          : trimmed.toLowerCase().includes("no.") || trimmed.toLowerCase().includes("no ")
+            ? trimmed
+            : `No. Absen ${trimmed}`
       }
     }
-    return { main: trimmed, sub: "Loket Presensi" }
+    return { main: trimmed, sub: "Nomor Absen" }
   }
 
   // Format DOB
@@ -428,10 +429,10 @@ function CekDaftarHadirContent() {
     return `${day}, ${d} ${month} ${y}`
   }, [currentTime])
 
-  // Desk display values
+  // Desk / No Absen display values
   const deskInfo = useMemo(() => {
     if (!selectedActor) return { main: "--", sub: "" }
-    return formatDeskDisplay((selectedActor as any).attendanceDesk)
+    return formatDeskDisplay((selectedActor as any).attendanceNoAbsen || (selectedActor as any).attendanceDesk)
   }, [selectedActor])
 
   // Schedule display value
@@ -766,29 +767,29 @@ function CekDaftarHadirContent() {
         </section>
 
         {/* ══════════════════════════════════════════════════════════════
-            KOLOM KANAN: NOMOR MEJA (3/4 LAYAR ATAS) + JADWAL (SISANYA)
+            KOLOM KANAN: NOMOR ABSEN (3/4 LAYAR ATAS) + JADWAL (SISANYA)
             ══════════════════════════════════════════════════════════════ */}
         <section className="w-full lg:w-[58%] xl:w-[60%] flex flex-col gap-3 min-h-0 h-full">
-          {/* 3. NOMOR MEJA: Lebarnya mengisi 3/4 layar untuk sebelah kanan atas */}
+          {/* 3. NOMOR ABSEN: Lebarnya mengisi 3/4 layar untuk sebelah kanan atas */}
           <div className="flex-[3] min-h-0 bg-white rounded-2xl border border-[#cfe1f5] shadow-xs flex flex-col overflow-hidden">
             {/* Header Banner Solid Royal Blue */}
             <div className="bg-[#0055b3] text-white px-5 py-3.5 flex items-center gap-2.5 shrink-0 shadow-xs">
               <DeskIcon className="w-6 h-6 text-white" />
-              <h2 className="text-lg sm:text-xl font-bold tracking-wide">Meja</h2>
+              <h2 className="text-lg sm:text-xl font-bold tracking-wide">No. Absen</h2>
             </div>
 
-            {/* Body: Super Giant Desk Number */}
+            {/* Body: Super Giant Desk / No Absen Number */}
             <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 text-center min-h-0">
               <div className="text-8xl sm:text-9xl md:text-[140px] xl:text-[160px] font-black font-mono text-[#0055b3] tracking-tighter leading-none select-all drop-shadow-2xs">
                 {deskInfo.main}
               </div>
               <p className="text-xs sm:text-sm font-black uppercase tracking-widest text-slate-400 mt-2">
-                {selectedActor ? (deskInfo.sub || "Loket / Meja Presensi") : "Menunggu Input NIK"}
+                {selectedActor ? (deskInfo.sub || "Nomor Absen Presensi") : "Menunggu Input NIK"}
               </p>
             </div>
           </div>
 
-          {/* 4. JADWAL: Mengisi sisanya dari Nomor Meja */}
+          {/* 4. JADWAL: Mengisi sisanya dari Nomor Absen */}
           <div className="flex-[1] min-h-0 bg-white rounded-2xl border border-[#cfe1f5] shadow-xs flex flex-col overflow-hidden">
             {/* Header Banner Solid Royal Blue */}
             <div className="bg-[#0055b3] text-white px-5 py-2.5 flex items-center gap-2.5 shrink-0 shadow-xs">

@@ -499,6 +499,7 @@ function DaftarHadirContent() {
 
     if (desk !== undefined) {
       updatePayload.attendanceDesk = desk.trim() || null
+      updatePayload.attendanceNoAbsen = desk.trim() || null
     }
     if (schedule !== undefined) {
       updatePayload.attendanceSchedule = schedule.trim() || null
@@ -596,10 +597,11 @@ function DaftarHadirContent() {
 
       // Deteksi Header jika ada
       let headerRowIdx = -1
-      let colNik = 2 // Default Kolom C (0-indexed: 2)
-      let colSchedule = 4 // Default Kolom E (0-indexed: 4)
+      let colNik = -1
+      let colSchedule: number | null = null
       let colDesk: number | null = null
       let colDate: number | null = null
+      let colName: number | null = null
 
       // Scan 6 baris pertama untuk mencari baris header
       for (let r = 0; r < Math.min(rows2d.length, 6); r++) {
@@ -609,12 +611,19 @@ function DaftarHadirContent() {
         if (nikIdx !== -1) {
           headerRowIdx = r
           colNik = nikIdx
+          // Cari kolom No Absen / Meja / Loket
+          const deskIdx = rowText.findIndex((c: string) => 
+            c === 'no absen' || c === 'no. absen' || c === 'nomor absen' || 
+            c.includes('absen') || c === 'no' || c === 'no.' || c === 'nomor' || 
+            c.includes('meja') || c.includes('loket') || c.includes('posisi')
+          )
+          if (deskIdx !== -1) colDesk = deskIdx
+          // Cari kolom Nama Pelaku Usaha / Peserta
+          const nameIdx = rowText.findIndex((c: string) => c.includes('nama') || c.includes('peserta') || c.includes('pelaku'))
+          if (nameIdx !== -1) colName = nameIdx
           // Cari kolom Jadwal / Sesi
           const schIdx = rowText.findIndex((c: string) => c.includes('jadwal') || c.includes('sesi') || c.includes('waktu') || c.includes('jam'))
           if (schIdx !== -1) colSchedule = schIdx
-          // Cari kolom Meja / Loket
-          const deskIdx = rowText.findIndex((c: string) => c.includes('meja') || c.includes('loket') || c.includes('posisi'))
-          if (deskIdx !== -1) colDesk = deskIdx
           // Cari kolom Tanggal Pertemuan
           const dateIdx = rowText.findIndex((c: string) => c.includes('tanggal') || c.includes('tgl') || c.includes('date') || c.includes('pertemuan'))
           if (dateIdx !== -1) colDate = dateIdx
@@ -622,17 +631,52 @@ function DaftarHadirContent() {
         }
       }
 
-      // Jika kolom Meja belum ketemu dari header, scan nilai baris untuk mendeteksi kolom yang berisi kata 'Meja'
-      if (colDesk === null) {
-        for (let r = headerRowIdx + 1; r < Math.min(rows2d.length, 10); r++) {
+      // Jika header tidak memiliki NIK eksplisit, scan 4 baris pertama mencari kolom 16 digit NIK
+      if (colNik === -1) {
+        for (let r = 0; r < Math.min(rows2d.length, 4); r++) {
           const row = rows2d[r] || []
-          if (String(row[6] || "").toLowerCase().includes('meja')) { colDesk = 6; break }
-          if (String(row[3] || "").toLowerCase().includes('meja')) { colDesk = 3; break }
-          if (String(row[5] || "").toLowerCase().includes('meja')) { colDesk = 5; break }
+          const foundNik = row.findIndex((c: any) => {
+            const clean = String(c || '').replace(/\D/g, '')
+            return clean.length >= 15 && clean.length <= 17
+          })
+          if (foundNik !== -1) {
+            colNik = foundNik
+            headerRowIdx = r > 0 ? r - 1 : -1
+            break
+          }
+        }
+        if (colNik === -1) colNik = 0 // Default Kolom A (0)
+      }
+
+      // Deteksi Kolom No. Absen & Nama khusus Sheet Pembanding (Gambar 2):
+      // Kolom A = NIK (0), Kolom B = No Absen (1, mulai B2), Kolom C = Nama (2)
+      const dataStartRow = headerRowIdx !== -1 ? headerRowIdx + 1 : 0
+      if (colDesk === null) {
+        if (colNik === 0 && rows2d.length > dataStartRow) {
+          const sampleVal = String(rows2d[dataStartRow]?.[1] || "").trim()
+          if (/^\d+$/.test(sampleVal) || sampleVal === "") {
+            colDesk = 1 // Kolom B
+          }
+        }
+        // Jika masih null, cek kolom yang berisi kata 'absen' atau 'meja'
+        if (colDesk === null) {
+          for (let r = dataStartRow; r < Math.min(rows2d.length, dataStartRow + 10); r++) {
+            const row = rows2d[r] || []
+            if (String(row[1] || "").toLowerCase().includes('absen')) { colDesk = 1; break }
+            if (String(row[6] || "").toLowerCase().includes('meja')) { colDesk = 6; break }
+            if (String(row[3] || "").toLowerCase().includes('meja')) { colDesk = 3; break }
+            if (String(row[5] || "").toLowerCase().includes('meja')) { colDesk = 5; break }
+          }
         }
       }
 
-      const startRow = headerRowIdx !== -1 ? headerRowIdx + 1 : 0
+      if (colName === null) {
+        if (colNik === 0 && colDesk === 1) {
+          colName = 2 // Kolom C = Nama
+        }
+      }
+
+      const startRow = dataStartRow
       const parsed: Array<{
         rowNum: number
         rawNik: string
@@ -646,32 +690,49 @@ function DaftarHadirContent() {
       let matched = 0
       let unmatched = 0
 
-      // Lookup Map untuk O(1) matching NIK
-      const actorMap = new Map<string, BusinessActor>()
+      // Lookup Map untuk O(1) matching NIK & Nama
+      const actorMapByNik = new Map<string, BusinessActor>()
+      const actorMapByName = new Map<string, BusinessActor>()
       verifiedActorsList.forEach(a => {
         const cleanA = (a.nik || "").trim().replace(/\D/g, '')
-        if (cleanA) actorMap.set(cleanA, a)
+        if (cleanA) actorMapByNik.set(cleanA, a)
+        const cleanName = (a.fullName || "").trim().toLowerCase().replace(/\s+/g, ' ')
+        if (cleanName) actorMapByName.set(cleanName, a)
       })
 
       for (let r = startRow; r < rows2d.length; r++) {
         const row = rows2d[r] || []
         const rawNik = String(row[colNik] || "").trim()
         const cleanNik = rawNik.replace(/\D/g, '')
+        const rawName = colName !== null ? String(row[colName] || "").trim() : ""
+        const cleanName = rawName.toLowerCase().replace(/\s+/g, ' ')
 
-        // Lewati jika baris kosong atau digit NIK kurang dari 10
-        if (!cleanNik || cleanNik.length < 10) continue
+        // Lewati jika baris kosong
+        if (!cleanNik && !cleanName) continue
+        if (cleanNik && cleanNik.length < 8 && !cleanName) continue
 
-        const rawSchedule = String(row[colSchedule] || "").trim()
+        const rawSchedule = colSchedule !== null ? String(row[colSchedule] || "").trim() : ""
         const rawDeskVal = colDesk !== null ? String(row[colDesk] || "").trim() : ""
         const rawDateVal = colDate !== null ? String(row[colDate] || "").trim() : ""
 
-        // Matching dengan database
-        const matchedActor = actorMap.get(cleanNik) || verifiedActorsList.find(a => {
-          const c = (a.nik || "").replace(/\D/g, '')
-          return c === cleanNik || (cleanNik.length >= 12 && c.includes(cleanNik))
-        }) || null
+        // Matching dengan database: 1. NIK, 2. Nama, 3. Partial/Fuzzy
+        let matchedActor = cleanNik && cleanNik.length >= 10 ? actorMapByNik.get(cleanNik) : null
+        if (!matchedActor && cleanName) {
+          matchedActor = actorMapByName.get(cleanName) || null
+        }
+        if (!matchedActor) {
+          matchedActor = verifiedActorsList.find(a => {
+            const c = (a.nik || "").replace(/\D/g, '')
+            if (cleanNik && cleanNik.length >= 12 && c.includes(cleanNik)) return true
+            if (cleanName && cleanName.length >= 4) {
+              const aName = (a.fullName || "").trim().toLowerCase().replace(/\s+/g, ' ')
+              return aName === cleanName || aName.includes(cleanName) || cleanName.includes(aName)
+            }
+            return false
+          }) || null
+        }
 
-        // Tentukan Posisi Meja
+        // Tentukan Posisi No. Absen
         let finalDesk = rawDeskVal
         if (matchedActor) {
           if (importDeskMode === 'auto_kecamatan') {
@@ -679,11 +740,11 @@ function DaftarHadirContent() {
           } else if (importDeskMode === 'fixed') {
             finalDesk = importSelectedFixedDesk
           } else if (importDeskMode === 'keep') {
-            finalDesk = (matchedActor as any).attendanceDesk || ""
+            finalDesk = (matchedActor as any).attendanceNoAbsen || (matchedActor as any).attendanceDesk || ""
           } else {
-            // excel_or_kecamatan
+            // excel_or_kecamatan: jika excel berisi No. Absen, selalu prioritaskan dari Excel
             if (!finalDesk) {
-              finalDesk = getDeskByKecamatan(matchedActor.kecamatan)
+              finalDesk = (matchedActor as any).attendanceNoAbsen || (matchedActor as any).attendanceDesk || ""
             }
           }
         }
@@ -692,10 +753,10 @@ function DaftarHadirContent() {
           matched++
           parsed.push({
             rowNum: r + 1,
-            rawNik,
-            schedule: rawSchedule,
+            rawNik: rawNik || matchedActor.nik,
+            schedule: rawSchedule || ((matchedActor as any).attendanceSchedule || ""),
             desk: finalDesk,
-            date: rawDateVal,
+            date: rawDateVal || ((matchedActor as any).attendanceDate || ""),
             actor: matchedActor,
             status: 'matched'
           })
@@ -703,7 +764,7 @@ function DaftarHadirContent() {
           unmatched++
           parsed.push({
             rowNum: r + 1,
-            rawNik,
+            rawNik: rawNik || "-",
             schedule: rawSchedule,
             desk: finalDesk,
             date: rawDateVal,
@@ -737,7 +798,7 @@ function DaftarHadirContent() {
     }
   }
 
-  // ─── RE-EVALUATE MEJA KETIKA MODE MEJA DIUBAH PADA PREVIEW ───
+  // ─── RE-EVALUATE NO ABSEN KETIKA MODE DIUBAH PADA PREVIEW ───
   const handleUpdateImportDeskMode = (newMode: 'excel_or_kecamatan' | 'auto_kecamatan' | 'fixed' | 'keep', newFixedDesk?: string) => {
     setImportDeskMode(newMode)
     const fixedDesk = newFixedDesk || importSelectedFixedDesk
@@ -752,7 +813,7 @@ function DaftarHadirContent() {
         } else if (newMode === 'fixed') {
           finalDesk = fixedDesk
         } else if (newMode === 'keep') {
-          finalDesk = (item.actor as any).attendanceDesk || ""
+          finalDesk = (item.actor as any).attendanceNoAbsen || (item.actor as any).attendanceDesk || ""
         }
         return {
           ...item,
@@ -790,6 +851,7 @@ function DaftarHadirContent() {
         }
         if (item.desk && item.desk.trim()) {
           updates[`businessActors/${actor.id}/attendanceDesk`] = item.desk.trim()
+          updates[`businessActors/${actor.id}/attendanceNoAbsen`] = item.desk.trim()
         }
         if (item.date && item.date.trim()) {
           updates[`businessActors/${actor.id}/attendanceDate`] = item.date.trim()
@@ -806,7 +868,7 @@ function DaftarHadirContent() {
       }
 
       logActivity({
-        query: `IMPORT EXCEL JADWAL & MEJA: Sinkronisasi ${matched.length} peserta`,
+        query: `IMPORT EXCEL JADWAL & NO ABSEN: Sinkronisasi ${matched.length} peserta`,
         results: `Total baris: ${importSummary.totalRows}, Cocok: ${matched.length}`,
         device: getDeviceType(navigator.userAgent),
         source: 'Web',
@@ -818,7 +880,7 @@ function DaftarHadirContent() {
 
       toast({
         title: "✓ Berhasil Sinkronisasi!",
-        description: `Berhasil memperbarui Jadwal & Posisi Meja untuk ${matched.length} peserta ke Daftar Hadir.`
+        description: `Berhasil memperbarui Jadwal & Nomor Absen untuk ${matched.length} peserta ke Daftar Hadir.`
       })
 
       setShowImportExcelModal(false)
@@ -841,7 +903,7 @@ function DaftarHadirContent() {
     try {
       const ExcelJS = (await import("exceljs")).default
       const workbook = new ExcelJS.Workbook()
-      const worksheet = workbook.addWorksheet("Template Jadwal & Meja")
+      const worksheet = workbook.addWorksheet("Template Jadwal & No Absen")
 
       worksheet.columns = [
         { header: "NO", key: "no", width: 8 },
@@ -851,7 +913,7 @@ function DaftarHadirContent() {
         { header: "TANGGAL PERTEMUAN", key: "date", width: 25 },
         { header: "JADWAL SESI", key: "schedule", width: 32 },
         { header: "KOORDINATOR", key: "coordinator", width: 25 },
-        { header: "POSISI MEJA", key: "desk", width: 32 }
+        { header: "NO ABSEN", key: "desk", width: 20 }
       ]
 
       const headerRow = worksheet.getRow(1)
@@ -871,7 +933,7 @@ function DaftarHadirContent() {
           date: (actor as any).attendanceDate || "",
           schedule: (actor as any).attendanceSchedule || "",
           coordinator: normalizeCoordinator(actor.coordinator) || "-",
-          desk: (actor as any).attendanceDesk || ""
+          desk: (actor as any).attendanceNoAbsen || (actor as any).attendanceDesk || ""
         })
       })
 
@@ -882,7 +944,7 @@ function DaftarHadirContent() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `TEMPLATE_JADWAL_DAN_MEJA_DAFTAR_HADIR.xlsx`
+      a.download = `TEMPLATE_JADWAL_DAN_NO_ABSEN_DAFTAR_HADIR.xlsx`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -890,7 +952,7 @@ function DaftarHadirContent() {
 
       toast({
         title: "Template Terunduh",
-        description: "Buka file template, ubah kolom Jadwal & Posisi Meja, lalu upload kembali melalui tombol Import Excel."
+        description: "Buka file template, ubah kolom Jadwal & No Absen, lalu upload kembali melalui tombol Import Excel."
       })
     } catch (err) {
       console.error(err)
@@ -898,11 +960,11 @@ function DaftarHadirContent() {
     }
   }
 
-  // ─── FUNGSI TAMBAH DAN KELOLA MEJA ───
+  // ─── FUNGSI TAMBAH DAN KELOLA NO ABSEN ───
   const handleAddDesk = async () => {
     const deskName = newDeskInput.trim()
     if (!deskName) {
-      toast({ variant: "destructive", title: "Nama Meja Kosong", description: "Silakan masukkan nama meja atau pilih dari tombol pintas." })
+      toast({ variant: "destructive", title: "Nomor Absen Kosong", description: "Silakan masukkan nomor absen atau pilih dari pilihan." })
       return
     }
     if (!database || !user) return
@@ -920,6 +982,7 @@ function DaftarHadirContent() {
         const updates: Record<string, any> = {}
         filteredActors.forEach(actor => {
           updates[`businessActors/${actor.id}/attendanceDesk`] = deskName
+          updates[`businessActors/${actor.id}/attendanceNoAbsen`] = deskName
         })
 
         const entries = Object.entries(updates)
@@ -930,13 +993,13 @@ function DaftarHadirContent() {
         }
 
         toast({
-          title: "Meja Berhasil Diterapkan!",
-          description: `Posisi "${deskName}" diterapkan ke ${filteredActors.length} pelaku usaha.`
+          title: "Nomor Absen Berhasil Diterapkan!",
+          description: `Nomor Absen "${deskName}" diterapkan ke ${filteredActors.length} pelaku usaha.`
         })
       } else {
         toast({
-          title: "Meja Ditambahkan",
-          description: `Posisi "${deskName}" berhasil ditambahkan ke daftar pilihan meja.`
+          title: "Nomor Absen Ditambahkan",
+          description: `Nomor Absen "${deskName}" berhasil ditambahkan ke daftar pilihan.`
         })
       }
 
@@ -945,7 +1008,7 @@ function DaftarHadirContent() {
       setShowAddDeskModal(false)
     } catch (err: any) {
       console.error(err)
-      toast({ variant: "destructive", title: "Gagal Menambahkan Meja", description: err.message || "Terjadi kesalahan." })
+      toast({ variant: "destructive", title: "Gagal Menambahkan Nomor Absen", description: err.message || "Terjadi kesalahan." })
     } finally {
       setIsSubmitting(false)
     }
@@ -959,7 +1022,7 @@ function DaftarHadirContent() {
       await update(ref(database, 'settings'), {
         attendance_desks: updated
       })
-      toast({ title: "Meja Dihapus", description: `Meja "${deskToDelete}" dihapus dari daftar.` })
+      toast({ title: "Nomor Absen Dihapus", description: `Nomor Absen "${deskToDelete}" dihapus dari daftar.` })
     } catch (err: any) {
       console.error(err)
       toast({ variant: "destructive", title: "Gagal", description: err.message })
@@ -968,7 +1031,7 @@ function DaftarHadirContent() {
     }
   }
 
-  // ─── FUNGSI KOSONGKAN SELURUH POSISI MEJA ───
+  // ─── FUNGSI KOSONGKAN SELURUH NO ABSEN ───
   const executeClearAllDesks = async () => {
     if (!database || !user) return
     setIsSubmitting(true)
@@ -977,8 +1040,9 @@ function DaftarHadirContent() {
     try {
       const updates: Record<string, any> = {}
       verifiedActorsList.forEach(actor => {
-        if ((actor as any).attendanceDesk) {
+        if ((actor as any).attendanceDesk || (actor as any).attendanceNoAbsen) {
           updates[`businessActors/${actor.id}/attendanceDesk`] = null
+          updates[`businessActors/${actor.id}/attendanceNoAbsen`] = null
         }
       })
 
@@ -997,7 +1061,7 @@ function DaftarHadirContent() {
       }
 
       logActivity({
-        query: `KOSONGKAN MEJA: Seluruh posisi meja dibersihkan untuk ${verifiedActorsList.length} peserta`,
+        query: `KOSONGKAN NO ABSEN: Seluruh nomor absen dibersihkan untuk ${verifiedActorsList.length} peserta`,
         results: "Berhasil",
         device: getDeviceType(navigator.userAgent),
         source: 'Web',
@@ -1008,26 +1072,27 @@ function DaftarHadirContent() {
       playSound('success', 0.5)
 
       toast({
-        title: "Seluruh Meja Dikosongkan!",
-        description: "Seluruh posisi meja absensi peserta dan daftar pilihan meja telah dikosongkan."
+        title: "Seluruh Nomor Absen Dikosongkan!",
+        description: "Seluruh penetapan nomor absen peserta dan daftar pilihan telah dikosongkan."
       })
       setSelectedDeskFilter('semua')
     } catch (err: any) {
       console.error(err)
-      toast({ variant: "destructive", title: "Gagal", description: err.message || "Gagal mengosongkan meja." })
+      toast({ variant: "destructive", title: "Gagal", description: err.message || "Gagal mengosongkan nomor absen." })
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // ─── FUNGSI SIMPAN MEJA UNTUK 1 PESERTA TERTENTU ───
+  // ─── FUNGSI SIMPAN NO ABSEN UNTUK 1 PESERTA TERTENTU ───
   const handleSaveSingleActorDesk = async () => {
     if (!database || !user || !deskModalActor) return
     setIsSubmitting(true)
     try {
       const val = selectedSingleDesk.trim() || null
       await update(ref(database, `businessActors/${deskModalActor.id}`), {
-        attendanceDesk: val
+        attendanceDesk: val,
+        attendanceNoAbsen: val
       })
       
       if (val && !savedDesksList.includes(val)) {
@@ -1037,8 +1102,8 @@ function DaftarHadirContent() {
       }
 
       toast({
-        title: val ? "Posisi Meja Diatur" : "Posisi Meja Dikosongkan",
-        description: `${deskModalActor.fullName}: ${val || 'Tanpa Meja'}`
+        title: val ? "Nomor Absen Diatur" : "Nomor Absen Dikosongkan",
+        description: `${deskModalActor.fullName}: ${val || 'Tanpa Nomor Absen'}`
       })
       playSound('success', 0.4)
       setDeskModalActor(null)
@@ -1519,23 +1584,29 @@ function DaftarHadirContent() {
       .slice(0, 5)
   }, [verifiedActorsList])
 
-  // Distinct Desks (Daftar Meja Dinamis - Kosong secara default sampai ditambahkan user)
+  // Distinct Desks / No Absen (Daftar Nomor Absen Dinamis, Terurut Numerik)
   const distinctDesks = useMemo(() => {
     const set = new Set<string>()
 
-    // 1. Ambil dari meja yang pernah disimpan di settings/attendance_desks
+    // 1. Ambil dari no absen yang pernah disimpan di settings/attendance_desks
     savedDesksList.forEach(d => {
       if (d && d.trim()) set.add(d.trim())
     })
 
-    // 2. Ambil dari peserta yang memiliki attendanceDesk aktif
+    // 2. Ambil dari peserta yang memiliki attendanceNoAbsen atau attendanceDesk aktif
     verifiedActorsList.forEach(a => {
-      const d = (a as any).attendanceDesk
+      const d = (a as any).attendanceNoAbsen || (a as any).attendanceDesk
       if (d && typeof d === 'string' && d.trim()) {
         set.add(d.trim())
       }
     })
-    return Array.from(set)
+
+    return Array.from(set).sort((a, b) => {
+      const numA = parseInt(a.replace(/\D/g, '') || "0", 10)
+      const numB = parseInt(b.replace(/\D/g, '') || "0", 10)
+      if (numA && numB && numA !== numB) return numA - numB
+      return a.localeCompare(b, undefined, { numeric: true })
+    })
   }, [savedDesksList, verifiedActorsList])
 
   // Distinct Coordinators list with counts, current desks & schedules
@@ -1548,7 +1619,7 @@ function DaftarHadirContent() {
       }
       const item = map.get(koor)!
       item.count++
-      const d = (a as any).attendanceDesk
+      const d = (a as any).attendanceNoAbsen || (a as any).attendanceDesk
       if (d && typeof d === 'string' && d.trim()) item.desks.add(d.trim())
       const s = (a as any).attendanceSchedule
       if (s && typeof s === 'string' && s.trim()) item.schedules.add(s.trim())
@@ -1635,9 +1706,9 @@ function DaftarHadirContent() {
         return false
       }
 
-      // 2. Filter Meja
+      // 2. Filter No Absen / Meja
       if (selectedDeskFilter !== 'semua') {
-        const desk = ((actor as any).attendanceDesk || "").trim()
+        const desk = (((actor as any).attendanceNoAbsen || (actor as any).attendanceDesk || "") as string).trim()
         if (selectedDeskFilter === 'belum_diatur') {
           if (desk) return false
         } else {
@@ -1690,7 +1761,7 @@ function DaftarHadirContent() {
         const matchBusiness = (actor.businessName || "").toLowerCase().includes(query)
         const matchKelurahan = (actor.kelurahan || "").toLowerCase().includes(query)
         const matchCoordinator = (actor.coordinator || "").toLowerCase().includes(query)
-        const matchDesk = ((actor as any).attendanceDesk || "").toLowerCase().includes(query)
+        const matchDesk = (((actor as any).attendanceNoAbsen || (actor as any).attendanceDesk || "") as string).toLowerCase().includes(query)
         const matchSchedule = ((actor as any).attendanceSchedule || "").toLowerCase().includes(query)
         const matchDate = ((actor as any).attendanceDate || "").toLowerCase().includes(query) || formatDateIndoDisplay((actor as any).attendanceDate).toLowerCase().includes(query)
 
@@ -1743,6 +1814,7 @@ function DaftarHadirContent() {
         }
 
         updates[`businessActors/${actor.id}/attendanceDesk`] = targetDesk
+        updates[`businessActors/${actor.id}/attendanceNoAbsen`] = targetDesk
         if (assignSchedule) {
           updates[`businessActors/${actor.id}/attendanceSchedule`] = assignSchedule
         }
@@ -1800,6 +1872,7 @@ function DaftarHadirContent() {
         if (actorKoor.toLowerCase() === coordName.toLowerCase()) {
           if (desk.trim()) {
             updates[`businessActors/${actor.id}/attendanceDesk`] = desk.trim()
+            updates[`businessActors/${actor.id}/attendanceNoAbsen`] = desk.trim()
           }
           if (schedule.trim()) {
             updates[`businessActors/${actor.id}/attendanceSchedule`] = schedule.trim()
@@ -1863,6 +1936,7 @@ function DaftarHadirContent() {
         const koor = (normalizeCoordinator(actor.coordinator) || "TANPA KOORDINATOR").toLowerCase()
         const assignedDesk = coordToDeskMap.get(koor) || "Meja 1"
         updates[`businessActors/${actor.id}/attendanceDesk`] = assignedDesk
+        updates[`businessActors/${actor.id}/attendanceNoAbsen`] = assignedDesk
       })
 
       if (Object.keys(updates).length > 0) {
@@ -1950,6 +2024,7 @@ function DaftarHadirContent() {
       filteredActors.forEach(actor => {
         if (desk.trim()) {
           updates[`businessActors/${actor.id}/attendanceDesk`] = desk.trim()
+          updates[`businessActors/${actor.id}/attendanceNoAbsen`] = desk.trim()
         }
         if (schedule.trim()) {
           updates[`businessActors/${actor.id}/attendanceSchedule`] = schedule.trim()
@@ -1982,7 +2057,7 @@ function DaftarHadirContent() {
     }
   }
 
-  // 4. Reset Seluruh Jadwal & Meja
+  // 4. Reset Seluruh Jadwal & No Absen
   const executeResetScheduleAndDesk = async () => {
     if (!database || !user) return
     setIsSubmitting(true)
@@ -1992,6 +2067,7 @@ function DaftarHadirContent() {
       const updates: Record<string, any> = {}
       verifiedActorsList.forEach(actor => {
         updates[`businessActors/${actor.id}/attendanceDesk`] = null
+        updates[`businessActors/${actor.id}/attendanceNoAbsen`] = null
         updates[`businessActors/${actor.id}/attendanceSchedule`] = null
         updates[`businessActors/${actor.id}/attendanceDate`] = null
       })
@@ -2001,12 +2077,12 @@ function DaftarHadirContent() {
       }
 
       toast({
-        title: "Jadwal, Tanggal & Meja Dikosongkan",
-        description: "Seluruh penetapan meja, tanggal dan sesi kehadiran berhasil dikosongkan."
+        title: "Jadwal, Tanggal & No. Absen Dikosongkan",
+        description: "Seluruh penetapan nomor absen, tanggal dan sesi kehadiran berhasil dikosongkan."
       })
       setShowScheduleModal(false)
     } catch (err) {
-      console.error("Gagal reset meja & sesi:", err)
+      console.error("Gagal reset nomor absen & sesi:", err)
       toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan saat mereset data." })
     } finally {
       setIsSubmitting(false)
@@ -2127,7 +2203,7 @@ function DaftarHadirContent() {
         "KATEGORI",
         "USAHA",
         "KOORDINATOR",
-        "POSISI MEJA",
+        "NO ABSEN",
         "TANGGAL PERTEMUAN",
         "JADWAL SESI",
         "STATUS VERIFIKASI",
@@ -2176,7 +2252,7 @@ function DaftarHadirContent() {
           actor.businessCategory || "-",
           actor.businessName || "-",
           normalizeCoordinator(actor.coordinator),
-          (actor as any).attendanceDesk || "-",
+          (actor as any).attendanceNoAbsen || (actor as any).attendanceDesk || "-",
           attDate,
           (actor as any).attendanceSchedule || "-",
           formatVerificationLabel(actor.status),
@@ -2544,17 +2620,21 @@ function DaftarHadirContent() {
                     </h3>
                   </div>
                 </div>
-                {/* Posisi Absensi (Meja) */}
+                {/* Nomor Absen */}
                 <div className="p-2 sm:p-2.5 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                    <MapPin className="w-4 h-4" />
+                  <div className="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-2xs font-mono font-bold text-xs">
+                    #
                   </div>
                   <div className="min-w-0 flex-1">
                     <span className="text-[9.5px] font-black uppercase tracking-wider text-sky-700 dark:text-sky-300 block">
-                      POSISI ABSENSI (MEJA / LOKET)
+                      NO. ABSEN
                     </span>
                     <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 truncate">
-                      {(scannerResult as any).attendanceDesk || (
+                      {(scannerResult as any).attendanceNoAbsen || (scannerResult as any).attendanceDesk ? (
+                        `${(scannerResult as any).attendanceNoAbsen || (scannerResult as any).attendanceDesk}`.toLowerCase().includes("absen")
+                          ? `${(scannerResult as any).attendanceNoAbsen || (scannerResult as any).attendanceDesk}`
+                          : `No. Absen ${(scannerResult as any).attendanceNoAbsen || (scannerResult as any).attendanceDesk}`
+                      ) : (
                         <span className="text-amber-600 dark:text-amber-400 italic font-semibold">
                           Belum Ditentukan
                         </span>
@@ -2791,7 +2871,13 @@ function DaftarHadirContent() {
                           <span className="font-mono text-[10px] text-slate-500 font-bold">({actor.nik})</span>
                         </div>
                         <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
-                          <span>{(actor as any).attendanceDesk || "Tanpa Meja"}</span>
+                          <span>
+                            {(actor as any).attendanceNoAbsen || (actor as any).attendanceDesk
+                              ? `${(actor as any).attendanceNoAbsen || (actor as any).attendanceDesk}`.toLowerCase().includes("absen")
+                                ? `${(actor as any).attendanceNoAbsen || (actor as any).attendanceDesk}`
+                                : `No. Absen ${(actor as any).attendanceNoAbsen || (actor as any).attendanceDesk}`
+                              : "Tanpa No. Absen"}
+                          </span>
                           <span>•</span>
                           <span>{(actor as any).attendanceSchedule || "Tanpa Sesi"}</span>
                         </div>
@@ -2952,7 +3038,7 @@ function DaftarHadirContent() {
             <span>Ekspor</span>
           </Button>
 
-          {/* Tombol Import Excel Jadwal & Meja */}
+          {/* Tombol Import Excel Jadwal & No Absen */}
           <Button
             type="button"
             size="sm"
@@ -2962,7 +3048,7 @@ function DaftarHadirContent() {
               setImportExcelFile(null)
             }}
             className="h-10 px-3 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white gap-1.5 shadow-2xs"
-            title="Import Excel untuk membagi Jadwal Pertemuan (Kolom E) & Posisi Absensi Meja berdasarkan NIK (Kolom C)"
+            title="Import Excel untuk membagi Jadwal Pertemuan & Nomor Absen berdasarkan NIK (Kolom A) dan No. Absen (Kolom B mulai B2)"
           >
             <UploadCloud className="w-3.5 h-3.5" />
             <span>Import Excel</span>
@@ -3019,11 +3105,11 @@ function DaftarHadirContent() {
       {/* ─── BARIS FILTER OPERASIONAL: FILTER MEJA, SESI, KECAMATAN & TOMBOL ATUR JADWAL ─── */}
       <div className="flex flex-wrap items-center justify-between gap-2.5 px-2 py-1.5 bg-slate-50/90 dark:bg-zinc-800/50 rounded-xl border border-slate-200/80 dark:border-zinc-800 print:hidden mx-1 sm:mx-2">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          {/* Filter Meja / Posisi Loket */}
+          {/* Filter No Absen */}
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-1">
-              <MapPin className="w-3 h-3 text-sky-600" />
-              <span>Meja:</span>
+              <span className="font-mono font-bold text-sky-600 text-xs">#</span>
+              <span>No. Absen:</span>
             </span>
             <select
               value={selectedDeskFilter}
@@ -3033,11 +3119,13 @@ function DaftarHadirContent() {
               }}
               className="h-8 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer shadow-2xs"
             >
-              <option value="semua">Semua Meja {distinctDesks.length === 0 ? "(Kosong)" : `(${distinctDesks.length})`}</option>
+              <option value="semua">Semua No. Absen {distinctDesks.length === 0 ? "(Kosong)" : `(${distinctDesks.length})`}</option>
               {distinctDesks.map(desk => (
-                <option key={desk} value={desk}>{desk}</option>
+                <option key={desk} value={desk}>
+                  {desk.toLowerCase().includes("absen") || desk.toLowerCase().includes("no.") ? desk : `No. ${desk}`}
+                </option>
               ))}
-              <option value="belum_diatur">-- Belum Ditentukan Meja --</option>
+              <option value="belum_diatur">-- Belum Ditentukan No. Absen --</option>
             </select>
           </div>
 
@@ -3177,7 +3265,7 @@ function DaftarHadirContent() {
             <span>+ Tambah Sesi</span>
           </Button>
 
-          {/* Tombol Aksi: Tambah Meja */}
+          {/* Tombol Aksi: Tambah No Absen */}
           <Button
             type="button"
             size="sm"
@@ -3186,10 +3274,10 @@ function DaftarHadirContent() {
               setShowAddDeskModal(true)
             }}
             className="h-8 px-2.5 text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white gap-1 rounded-lg cursor-pointer shadow-2xs"
-            title="Tambah Posisi Meja / Loket"
+            title="Tambah Nomor Absen / Posisi Absensi"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>+ Tambah Meja</span>
+            <span>+ Tambah No. Absen</span>
           </Button>
 
           {/* Tombol Aksi: Kosongkan Tanggal */}
@@ -3218,17 +3306,17 @@ function DaftarHadirContent() {
             <span>Kosongkan Sesi</span>
           </Button>
 
-          {/* Tombol Aksi: Kosongkan Meja */}
+          {/* Tombol Aksi: Kosongkan No Absen */}
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => setShowClearDeskDialog(true)}
             className="h-8 px-2 text-xs font-bold border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:hover:bg-rose-950/40 gap-1 rounded-lg cursor-pointer shadow-2xs"
-            title="Kosongkan seluruh posisi meja peserta"
+            title="Kosongkan seluruh nomor absen peserta"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Kosongkan Meja</span>
+            <span>Kosongkan No. Absen</span>
           </Button>
 
           <Button
@@ -3236,10 +3324,10 @@ function DaftarHadirContent() {
             size="sm"
             onClick={() => setShowScheduleModal(true)}
             className="h-8 px-3 text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white gap-1.5 shadow-2xs rounded-lg cursor-pointer"
-            title="Buka pengaturan pembagian jadwal & meja absensi"
+            title="Buka pengaturan pembagian jadwal & nomor absen presensi"
           >
             <Calendar className="w-3.5 h-3.5" />
-            <span>Atur Jadwal & Meja</span>
+            <span>Atur Jadwal & No. Absen</span>
           </Button>
         </div>
       </div>
@@ -3291,7 +3379,7 @@ function DaftarHadirContent() {
                 <th className="w-[8%] text-center font-bold text-[11px] uppercase py-2.5 px-1">KATEGORI</th>
                 <th className="w-[13.5%] text-center font-bold text-[11px] uppercase py-2.5 px-2">USAHA</th>
                 <th className="w-[8%] text-center font-bold text-[11px] uppercase py-2.5 px-1">KOORDINATOR</th>
-                <th className="w-[15%] text-center font-bold text-[11px] uppercase py-2.5 px-1 leading-tight">TANGGAL, SESI & MEJA<br/>ABSENSI</th>
+                <th className="w-[15%] text-center font-bold text-[11px] uppercase py-2.5 px-1 leading-tight">TANGGAL, SESI & NO. ABSEN</th>
                 <th className="w-[10%] text-center font-bold text-[11px] uppercase py-2.5 px-1 leading-tight">STATUS<br/>VERIFIKASI</th>
                 <th className="w-[9%] text-center font-bold text-[11px] uppercase py-2.5 px-1">KEHADIRAN</th>
                 <th className="w-[8%] text-center font-bold text-[11px] uppercase py-2.5 px-1">AKSI</th>
@@ -3306,7 +3394,7 @@ function DaftarHadirContent() {
                 const officer = (actor as any).attendanceUpdatedBy
                 const time = (actor as any).attendanceUpdatedAt
                 const notes = (actor as any).attendanceNotes
-                const desk = (actor as any).attendanceDesk
+                const desk = (actor as any).attendanceNoAbsen || (actor as any).attendanceDesk
                 const schedule = (actor as any).attendanceSchedule
                 const attDate = (actor as any).attendanceDate
                 const rawCoord = (actor.coordinator || "").toUpperCase()
@@ -3444,7 +3532,7 @@ function DaftarHadirContent() {
                           </button>
                         )}
 
-                        {/* Meja / Posisi Loket Badge */}
+                        {/* No. Absen Badge */}
                         {desk ? (
                           <span 
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-sky-50 text-sky-800 border border-sky-200 dark:bg-sky-950/70 dark:text-sky-300 dark:border-sky-800 whitespace-nowrap cursor-pointer hover:bg-sky-100 transition-colors"
@@ -3457,10 +3545,14 @@ function DaftarHadirContent() {
                               setCustomDate(attDate || "")
                               setCustomCoordinator(actor.coordinator || "")
                             }}
-                            title="Klik untuk ubah Meja / Jadwal"
+                            title="Klik untuk ubah No. Absen / Jadwal"
                           >
-                            <MapPin className="w-2.5 h-2.5 text-sky-600 shrink-0" />
-                            <span className="truncate max-w-[130px]">{desk}</span>
+                            <span className="text-[10px] font-black text-sky-600">#</span>
+                            <span className="truncate max-w-[130px] font-mono font-bold">
+                              {desk.toLowerCase().includes("absen") || desk.toLowerCase().includes("no.") 
+                                ? desk 
+                                : `No. Absen ${desk}`}
+                            </span>
                           </span>
                         ) : (
                           <button
@@ -3475,9 +3567,9 @@ function DaftarHadirContent() {
                               setCustomCoordinator(actor.coordinator || "")
                             }}
                             className="inline-flex items-center gap-0.5 text-[10px] text-slate-400 hover:text-primary font-medium transition-colors cursor-pointer"
-                            title="Klik untuk tentukan meja"
+                            title="Klik untuk tentukan nomor absen"
                           >
-                            <span>+ Atur Meja</span>
+                            <span>+ Atur No. Absen</span>
                           </button>
                         )}
 
@@ -4040,7 +4132,7 @@ function DaftarHadirContent() {
                 onClick={() => setShowResetScheduleDialog(true)}
                 className="text-xs text-destructive hover:bg-destructive/10 cursor-pointer"
               >
-                Kosongkan Meja & Sesi
+                Kosongkan No. Absen & Sesi
               </Button>
             )}
             <Button
@@ -4056,7 +4148,7 @@ function DaftarHadirContent() {
         </DialogContent>
       </Dialog>
 
-      {/* ─── MODAL DIALOG 2: UBAH STATUS KEHADIRAN, CATATAN, MEJA & SESI PER ORANG ─── */}
+      {/* ─── MODAL DIALOG 2: UBAH STATUS KEHADIRAN, CATATAN, NO ABSEN & SESI PER ORANG ─── */}
       <Dialog open={!!notesModalActor} onOpenChange={(open) => { if (!open) setNotesModalActor(null) }}>
         <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader>
@@ -4064,7 +4156,7 @@ function DaftarHadirContent() {
               <ClipboardCheck className="w-5 h-5" /> Presensi Pelaku Usaha
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Atur status presensi, meja, dan jadwal untuk <strong className="text-slate-900 dark:text-slate-100">{notesModalActor?.fullName}</strong>.
+              Atur status presensi, nomor absen, dan jadwal untuk <strong className="text-slate-900 dark:text-slate-100">{notesModalActor?.fullName}</strong>.
             </DialogDescription>
           </DialogHeader>
 
@@ -4085,37 +4177,34 @@ function DaftarHadirContent() {
               </Select>
             </div>
 
-            {/* Posisi Meja */}
+            {/* Nomor Absen */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-sky-600" />
-                <span>Posisi Meja / Loket Absensi</span>
+                <span className="font-mono font-bold text-sky-600 text-xs">#</span>
+                <span>Nomor Absen Presensi</span>
               </label>
               <div className="space-y-1">
                 <Input
                   value={customDesk}
                   onChange={(e) => setCustomDesk(e.target.value)}
-                  placeholder="Contoh: Meja 1 (Kec. Tanjungpinang Barat)"
+                  placeholder="Contoh: 1 atau No. Absen 1"
                   className="text-xs h-9 font-medium"
                 />
                 {/* Quick Presets */}
-                <div className="flex flex-wrap gap-1">
-                  {[
-                    "Meja 1 (Kec. Tanjungpinang Barat)",
-                    "Meja 2 (Kec. Tanjungpinang Timur)",
-                    "Meja 3 (Kec. Bukit Bestari)",
-                    "Meja 4 (Kec. Tanjungpinang Kota)"
-                  ].map(m => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setCustomDesk(m)}
-                      className="text-[9px] font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-sky-100 hover:text-sky-800 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
-                    >
-                      {m.split(" ")[0]} {m.split(" ")[1]}
-                    </button>
-                  ))}
-                </div>
+                {distinctDesks.length > 0 && (
+                  <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto pt-1">
+                    {distinctDesks.slice(0, 16).map(m => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setCustomDesk(m)}
+                        className="text-[9px] font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-sky-100 hover:text-sky-800 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+                      >
+                        {m.toLowerCase().includes("absen") || m.toLowerCase().includes("no.") ? m : `No. ${m}`}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -4287,16 +4376,16 @@ function DaftarHadirContent() {
         </DialogContent>
       </Dialog>
 
-      {/* ─── MODAL DIALOG: IMPORT EXCEL JADWAL & POSISI MEJA ─── */}
+      {/* ─── MODAL DIALOG: IMPORT EXCEL JADWAL & NO ABSEN ─── */}
       <Dialog open={showImportExcelModal} onOpenChange={setShowImportExcelModal}>
         <DialogContent className="max-w-3xl rounded-2xl p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
           <DialogHeader className="pr-8">
             <DialogTitle className="text-primary font-black uppercase text-sm sm:text-base flex items-center gap-2">
               <UploadCloud className="w-5 h-5 text-teal-600 shrink-0" />
-              <span>Import Excel Jadwal & Posisi Absensi (Meja)</span>
+              <span>Import Excel Jadwal & Nomor Absen</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500 mt-1">
-              Upload file Excel untuk membagi <strong>Jadwal Pertemuan (Kolom E)</strong> dan <strong>Posisi Absensi Meja</strong> dengan pembacaan otomatis berdasarkan <strong>NIK (Kolom C)</strong>.
+              Upload file Excel untuk membagi <strong>Jadwal Pertemuan</strong> dan <strong>Nomor Absen</strong> dengan pembacaan otomatis berdasarkan <strong>NIK / Nama Pelaku Usaha</strong>.
             </DialogDescription>
           </DialogHeader>
 
@@ -4304,12 +4393,11 @@ function DaftarHadirContent() {
             {/* Box Petunjuk & Tombol Template */}
             <div className="bg-teal-50 dark:bg-teal-950/40 p-3.5 rounded-xl border border-teal-200 dark:border-teal-800 text-xs text-teal-900 dark:text-teal-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
-                <p className="font-bold">Format Kolom Excel yang Dibaca Sistem:</p>
-                <p className="text-[11px] text-teal-700 dark:text-teal-300 mt-0.5">
-                  • <strong>Kolom C:</strong> NIK Peserta (16 digit) <br />
-                  • <strong>Kolom E:</strong> Jadwal Sesi Pertemuan (contoh: <em>Sesi 1 (08.00 - 10.00 WIB)</em>) <br />
-                  • <strong>Kolom G / Posisi:</strong> Meja Absensi (opsional, dapat diisi otomatis)
-                </p>
+                <p className="font-bold">Format Kolom Excel yang Didukung Sistem:</p>
+                <div className="text-[11px] text-teal-800 dark:text-teal-200 mt-1 space-y-0.5">
+                  <p>• <strong>Format Sheet Pembanding:</strong> Kolom A = NIK | Kolom B = No. Absen (mulai B2) | Kolom C = Nama Peserta</p>
+                  <p>• <strong>Format Template Sistem:</strong> Kolom C = NIK | Kolom E = Sesi | Kolom G = No. Absen</p>
+                </div>
               </div>
               <Button
                 type="button"
@@ -4355,10 +4443,10 @@ function DaftarHadirContent() {
               </label>
             </div>
 
-            {/* Opsi Pengisian Posisi Meja */}
+            {/* Opsi Pengisian Posisi Meja / Nomor Absen */}
             <div className="p-3.5 bg-slate-50 dark:bg-zinc-800/60 rounded-xl border border-slate-200 dark:border-zinc-700 space-y-2">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-200 block">
-                Pengaturan Posisi Absensi (Meja):
+                Pengaturan Nomor Absen Presensi:
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 <label className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 cursor-pointer">
@@ -4371,35 +4459,7 @@ function DaftarHadirContent() {
                     className="accent-teal-600"
                   />
                   <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    Dari Excel (Auto Kecamatan jika kosong)
-                  </span>
-                </label>
-
-                <label className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="deskMode"
-                    value="auto_kecamatan"
-                    checked={importDeskMode === 'auto_kecamatan'}
-                    onChange={() => handleUpdateImportDeskMode('auto_kecamatan')}
-                    className="accent-teal-600"
-                  />
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    Otomatis 4 Meja sesuai Kecamatan
-                  </span>
-                </label>
-
-                <label className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="deskMode"
-                    value="fixed"
-                    checked={importDeskMode === 'fixed'}
-                    onChange={() => handleUpdateImportDeskMode('fixed')}
-                    className="accent-teal-600"
-                  />
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    Tetapkan Semua ke Meja Tertentu
+                    Gunakan No. Absen dari Excel (Sesuai Kolom File)
                   </span>
                 </label>
 
@@ -4413,23 +4473,47 @@ function DaftarHadirContent() {
                     className="accent-teal-600"
                   />
                   <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    Pertahankan Meja Saat Ini (Hanya Jadwal)
+                    Pertahankan No. Absen Saat Ini (Hanya Jadwal)
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="deskMode"
+                    value="auto_kecamatan"
+                    checked={importDeskMode === 'auto_kecamatan'}
+                    onChange={() => handleUpdateImportDeskMode('auto_kecamatan')}
+                    className="accent-teal-600"
+                  />
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    Otomatis 4 Meja sesuai Kecamatan (Mode Legacy)
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="deskMode"
+                    value="fixed"
+                    checked={importDeskMode === 'fixed'}
+                    onChange={() => handleUpdateImportDeskMode('fixed')}
+                    className="accent-teal-600"
+                  />
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    Tetapkan Semua ke No. Tertentu
                   </span>
                 </label>
               </div>
 
               {importDeskMode === 'fixed' && (
                 <div className="pt-2">
-                  <select
+                  <Input
                     value={importSelectedFixedDesk}
                     onChange={(e) => handleUpdateImportDeskMode('fixed', e.target.value)}
-                    className="h-9 w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-xs font-semibold"
-                  >
-                    <option value="Meja 1 (Kec. Tanjungpinang Barat)">Meja 1 (Kec. Tanjungpinang Barat)</option>
-                    <option value="Meja 2 (Kec. Tanjungpinang Timur)">Meja 2 (Kec. Tanjungpinang Timur)</option>
-                    <option value="Meja 3 (Kec. Bukit Bestari)">Meja 3 (Kec. Bukit Bestari)</option>
-                    <option value="Meja 4 (Kec. Tanjungpinang Kota)">Meja 4 (Kec. Tanjungpinang Kota)</option>
-                  </select>
+                    placeholder="Contoh: 1 atau No. Absen 1"
+                    className="h-9 w-full text-xs font-semibold"
+                  />
                 </div>
               )}
             </div>
@@ -4453,17 +4537,17 @@ function DaftarHadirContent() {
                   </div>
                 </div>
 
-                {/* Tabel Preview (10 baris pertama) */}
+                {/* Tabel Preview (15 baris pertama) */}
                 <div className="border border-slate-200 dark:border-zinc-700 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
                   <table className="w-full text-[11px] text-left">
                     <thead className="bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 font-bold sticky top-0">
                       <tr>
                         <th className="p-2 text-center w-10">No</th>
-                        <th className="p-2">NIK (Kolom C)</th>
+                        <th className="p-2">NIK</th>
                         <th className="p-2">Nama Peserta</th>
                         <th className="p-2">Tgl Pertemuan</th>
                         <th className="p-2">Jadwal Sesi</th>
-                        <th className="p-2">Posisi Meja</th>
+                        <th className="p-2">No. Absen</th>
                         <th className="p-2 text-center">Status</th>
                       </tr>
                     </thead>
@@ -4475,7 +4559,9 @@ function DaftarHadirContent() {
                           <td className="p-2 font-bold truncate max-w-[150px]">{row.actor ? row.actor.fullName : <span className="text-muted-foreground italic">-</span>}</td>
                           <td className="p-2 font-semibold text-indigo-700 dark:text-indigo-300 truncate max-w-[130px]">{row.date ? formatDateIndoShort(row.date) : "-"}</td>
                           <td className="p-2 font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[140px]">{row.schedule || "-"}</td>
-                          <td className="p-2 font-semibold text-sky-700 dark:text-sky-300 truncate max-w-[140px]">{row.desk || "-"}</td>
+                          <td className="p-2 font-semibold text-sky-700 dark:text-sky-300 truncate max-w-[140px]">
+                            {row.desk ? (row.desk.toLowerCase().includes("absen") ? row.desk : `No. ${row.desk}`) : "-"}
+                          </td>
                           <td className="p-2 text-center">
                             {row.status === 'matched' ? (
                               <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[9px] font-bold">
@@ -4526,49 +4612,41 @@ function DaftarHadirContent() {
         </DialogContent>
       </Dialog>
 
-      {/* ─── MODAL DIALOG: TAMBAH & KELOLA MEJA ─── */}
+      {/* ─── MODAL DIALOG: TAMBAH & KELOLA NO ABSEN ─── */}
       <Dialog open={showAddDeskModal} onOpenChange={setShowAddDeskModal}>
         <DialogContent className="max-w-md rounded-2xl p-5 sm:p-6">
           <DialogHeader className="pr-8">
             <DialogTitle className="text-sky-700 dark:text-sky-400 font-black uppercase text-sm sm:text-base flex items-center gap-2">
-              <MapPin className="w-5 h-5 shrink-0" />
-              <span>Tambah Posisi Meja / Loket</span>
+              <span className="font-mono font-bold text-sky-600 text-base">#</span>
+              <span>Tambah Nomor Absen</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500 mt-1">
-              Tambahkan posisi meja absensi baru ke dalam sistem atau terapkan langsung ke peserta yang sedang tampil.
+              Tambahkan nomor absen baru ke dalam sistem atau terapkan langsung ke peserta yang sedang tampil.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 mt-2">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                Nama Posisi Meja / Loket
+                Nomor Absen Baru
               </label>
               <Input
                 value={newDeskInput}
                 onChange={(e) => setNewDeskInput(e.target.value)}
-                placeholder="Contoh: Meja 1 (Kec. Tanjungpinang Barat)"
+                placeholder="Contoh: 1 atau No. Absen 1"
                 className="text-xs font-semibold h-10"
                 autoFocus
               />
 
-              {/* Tombol Pintas Preset Meja Standar */}
+              {/* Tombol Pintas Preset Standar */}
               <div className="pt-1.5">
                 <span className="text-[10px] text-muted-foreground font-bold uppercase block mb-1">
                   Pilihan Pintas (Klik untuk mengisi):
                 </span>
                 <div className="flex flex-wrap gap-1">
                   {[
-                    "Meja 1 (Kec. Tanjungpinang Barat)",
-                    "Meja 2 (Kec. Tanjungpinang Timur)",
-                    "Meja 3 (Kec. Bukit Bestari)",
-                    "Meja 4 (Kec. Tanjungpinang Kota)",
-                    "Meja 1",
-                    "Meja 2",
-                    "Meja 3",
-                    "Meja 4",
-                    "Loket 1",
-                    "Loket 2"
+                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+                    "No. Absen 1", "No. Absen 2", "No. Absen 3", "No. Absen 4"
                   ].map((preset) => (
                     <button
                       key={preset}
@@ -4598,7 +4676,7 @@ function DaftarHadirContent() {
                     onChange={() => setApplyDeskTarget('list_only')}
                     className="accent-sky-600"
                   />
-                  <span>Hanya simpan ke daftar pilihan meja (peserta tetap kosong)</span>
+                  <span>Hanya simpan ke daftar pilihan nomor absen (peserta tetap kosong)</span>
                 </label>
 
                 <label className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700 cursor-pointer">
@@ -4615,11 +4693,11 @@ function DaftarHadirContent() {
               </div>
             </div>
 
-            {/* Daftar Meja yang Saat Ini Tersimpan */}
+            {/* Daftar No Absen yang Saat Ini Tersimpan */}
             {savedDesksList.length > 0 && (
               <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-1.5">
                 <span className="text-[10px] text-muted-foreground font-bold uppercase block">
-                  Daftar Meja Tersimpan ({savedDesksList.length}):
+                  Daftar Nomor Absen Tersimpan ({savedDesksList.length}):
                 </span>
                 <div className="max-h-28 overflow-y-auto space-y-1 divide-y divide-slate-100 dark:divide-zinc-800 border rounded-lg p-1.5">
                   {savedDesksList.map(d => (
@@ -4657,67 +4735,63 @@ function DaftarHadirContent() {
               className="text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white gap-1.5 shadow-xs"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              <span>Simpan Meja</span>
+              <span>Simpan Nomor Absen</span>
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ─── MODAL DIALOG: ATUR MEJA SATUAN (PER PESERTA) ─── */}
+      {/* ─── MODAL DIALOG: ATUR NO ABSEN SATUAN (PER PESERTA) ─── */}
       <Dialog open={Boolean(deskModalActor)} onOpenChange={(open) => { if (!open) setDeskModalActor(null) }}>
         <DialogContent className="max-w-md rounded-2xl p-5 sm:p-6">
           <DialogHeader className="pr-8">
             <DialogTitle className="text-sky-700 dark:text-sky-400 font-black uppercase text-sm flex items-center gap-2">
-              <MapPin className="w-4 h-4 shrink-0" />
-              <span>Atur Posisi Meja Peserta</span>
+              <span className="font-mono font-bold text-sky-600 text-base">#</span>
+              <span>Atur Nomor Absen Peserta</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-600 mt-1">
-              Pilih atau ketik posisi meja absensi untuk <strong>{deskModalActor?.fullName}</strong>.
+              Pilih atau ketik nomor absen untuk <strong>{deskModalActor?.fullName}</strong>.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 mt-2">
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                Pilih atau Ketik Posisi Meja:
+                Pilih atau Ketik Nomor Absen:
               </label>
               <Input
                 value={selectedSingleDesk}
                 onChange={(e) => setSelectedSingleDesk(e.target.value)}
-                placeholder="Contoh: Meja 1 (Kec. Tanjungpinang Barat)"
+                placeholder="Contoh: 1 atau No. Absen 1"
                 className="text-xs font-semibold h-10"
               />
             </div>
 
-            {/* Pilihan Meja yang Tersedia */}
-            <div className="space-y-1">
-              <span className="text-[10px] text-muted-foreground font-bold uppercase block">
-                Pilihan Cepat Meja:
-              </span>
-              <div className="flex flex-wrap gap-1">
-                {Array.from(new Set([
-                  ...distinctDesks,
-                  "Meja 1 (Kec. Tanjungpinang Barat)",
-                  "Meja 2 (Kec. Tanjungpinang Timur)",
-                  "Meja 3 (Kec. Bukit Bestari)",
-                  "Meja 4 (Kec. Tanjungpinang Kota)"
-                ])).map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setSelectedSingleDesk(d)}
-                    className={cn(
-                      "text-[10.5px] font-bold px-2 py-1 rounded-md border transition-all cursor-pointer",
-                      selectedSingleDesk === d
-                        ? "bg-sky-600 text-white border-sky-600"
-                        : "bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:bg-sky-50 hover:border-sky-300"
-                    )}
-                  >
-                    {d}
-                  </button>
-                ))}
+            {/* Pilihan Nomor Absen yang Tersedia */}
+            {distinctDesks.length > 0 && (
+              <div className="space-y-1">
+                <span className="text-[10px] text-muted-foreground font-bold uppercase block">
+                  Pilihan Nomor Absen Tersedia:
+                </span>
+                <div className="flex flex-wrap gap-1 max-h-36 overflow-y-auto">
+                  {distinctDesks.map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setSelectedSingleDesk(d)}
+                      className={cn(
+                        "text-[10.5px] font-bold px-2 py-1 rounded-md border transition-all cursor-pointer",
+                        selectedSingleDesk === d
+                          ? "bg-sky-600 text-white border-sky-600"
+                          : "bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:bg-sky-50 hover:border-sky-300"
+                      )}
+                    >
+                      {d.toLowerCase().includes("absen") || d.toLowerCase().includes("no.") ? d : `No. ${d}`}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <DialogFooter className="mt-4 gap-2 flex-row justify-between sm:justify-between">
@@ -4731,7 +4805,7 @@ function DaftarHadirContent() {
               }}
               className="text-xs font-bold text-rose-600 hover:bg-rose-50 border-rose-200"
             >
-              Kosongkan Meja Ini
+              Kosongkan No. Absen Ini
             </Button>
             <div className="flex gap-2">
               <Button
@@ -4751,21 +4825,21 @@ function DaftarHadirContent() {
                 className="text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white gap-1.5 shadow-xs"
               >
                 {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                <span>Simpan Meja</span>
+                <span>Simpan No. Absen</span>
               </Button>
             </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ─── CONFIRM DIALOG: KOSONGKAN SELURUH MEJA ─── */}
+      {/* ─── CONFIRM DIALOG: KOSONGKAN SELURUH NO ABSEN ─── */}
       <ConfirmDialog
         open={showClearDeskDialog}
         onOpenChange={setShowClearDeskDialog}
-        title="Kosongkan Seluruh Posisi Meja"
-        description="Apakah Anda yakin ingin mengosongkan seluruh penetapan posisi meja absensi untuk semua peserta? Seluruh data meja dan daftar pilihan meja akan dibersihkan kembali ke kondisi kosong."
+        title="Kosongkan Seluruh Nomor Absen"
+        description="Apakah Anda yakin ingin mengosongkan seluruh penetapan nomor absen untuk semua peserta? Seluruh data nomor absen dan daftar pilihan nomor absen akan dibersihkan kembali ke kondisi kosong."
         onConfirm={executeClearAllDesks}
-        confirmText="Ya, Kosongkan Semua Meja"
+        confirmText="Ya, Kosongkan Semua Nomor Absen"
         variant="destructive"
         icon={<Trash2 className="w-8 h-8 text-destructive" />}
       />
@@ -5206,12 +5280,12 @@ function DaftarHadirContent() {
         icon={<RotateCcw className="w-8 h-8 text-destructive" />}
       />
 
-      {/* ─── CONFIRM DIALOG: RESET JADWAL & MEJA ─── */}
+      {/* ─── CONFIRM DIALOG: RESET JADWAL & NO ABSEN ─── */}
       <ConfirmDialog
         open={showResetScheduleDialog}
         onOpenChange={setShowResetScheduleDialog}
-        title="Kosongkan Seluruh Jadwal & Meja"
-        description="Apakah Anda yakin ingin mengosongkan seluruh penetapan posisi meja dan sesi kehadiran untuk seluruh pelaku usaha?"
+        title="Kosongkan Seluruh Jadwal & No. Absen"
+        description="Apakah Anda yakin ingin mengosongkan seluruh penetapan nomor absen dan sesi kehadiran untuk seluruh pelaku usaha?"
         onConfirm={executeResetScheduleAndDesk}
         confirmText="Ya, Kosongkan Semua"
         variant="destructive"
