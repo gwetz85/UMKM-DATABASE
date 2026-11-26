@@ -9,7 +9,7 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 const database = getDatabase(app);
 const auth = getAuth(app);
 
-import { resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob, resolveActorDob, resolveActorPobDob } from '@/lib/utils';
+import { resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob, resolveActorDob, resolveActorPobDob, parsePobDob } from '@/lib/utils';
 
 // In-memory cache for ultra-fast response & low network usage
 interface CacheItem {

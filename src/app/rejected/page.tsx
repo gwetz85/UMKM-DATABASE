@@ -45,6 +45,7 @@ function RejectedContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const filterCoordinator = searchParams.get('coordinator')
+  const tabParam = searchParams.get('tab')
   
   const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -52,9 +53,15 @@ function RejectedContent() {
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [printDate, setPrintDate] = useState<string>("")
   const [actorToPrint, setActorToPrint] = useState<BusinessActor | null>(null)
-  const [activeTab, setActiveTab] = useState<'pendataan' | 'dinas'>('pendataan')
+  const [activeTab, setActiveTab] = useState<'pendataan' | 'dinas'>(tabParam === 'dinas' ? 'dinas' : 'pendataan')
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (tabParam === 'dinas' || tabParam === 'pendataan') {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
 
   const handleCopy = (text: string, label: string) => {
     if (!text) return

@@ -121,6 +121,7 @@ async function getTelegramToken(): Promise<string | undefined> {
     return process.env.TELEGRAM_BOT_TOKEN;
   }
   try {
+    // @ts-ignore
     const { getCloudflareContext } = await import('@opennextjs/cloudflare');
     const ctx = getCloudflareContext();
     if (ctx?.env) {
@@ -201,6 +202,7 @@ async function sendMessage(chatId: number, text: string) {
 export async function POST(req: NextRequest) {
   try {
     try {
+      // @ts-ignore
       const { getCloudflareContext } = await import('@opennextjs/cloudflare');
       const ctx = getCloudflareContext();
       if (ctx?.env) {

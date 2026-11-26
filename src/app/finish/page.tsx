@@ -118,7 +118,7 @@ function FinishContent() {
           const list = Object.entries(val).map(([id, item]: [string, any]) => ({
             ...item,
             id,
-          })).filter(a => a.status === 'finish')
+          })).filter((a: any) => a.status === 'finish') as BusinessActor[]
           if (list.length > 0) {
             setSearchIndexData(list)
             try { localStorage.setItem('simpu_finish_cache', JSON.stringify(list)) } catch {}
