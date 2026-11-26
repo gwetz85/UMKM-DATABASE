@@ -735,7 +735,7 @@ export async function POST(req: NextRequest) {
 
           // 1. Data Pelaku Usaha 2026 (SIMPU)
           const results2026: any[] = [];
-          if (actorsSnap.exists()) {
+          if (actorsSnap && actorsSnap.exists()) {
             const raw = actorsSnap.val();
             Object.keys(raw).forEach(key => {
               const r = raw[key];

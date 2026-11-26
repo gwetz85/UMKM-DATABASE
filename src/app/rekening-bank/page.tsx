@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking } from "@/firebase"
 import { ref, query, orderByChild, equalTo } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
@@ -47,12 +47,8 @@ function RekeningBankContent() {
 
   const isKoordinator = userProfile?.role === 'koordinator'
 
-  const memoQuery = useMemoFirebase(() => {
-    if (!database || !user) return null
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('finish'))
-  }, [database, user])
 
-  const { data: allData, isLoading } = useList<BusinessActor>(memoQuery)
+
 
   // Pre-load cepat dari settings/actors_search (< 100ms)
   const [searchIndexData, setSearchIndexData] = useState<BusinessActor[]>([])
@@ -75,10 +71,10 @@ function RekeningBankContent() {
       get(ref(database, 'settings/actors_search')).then(snap => {
         if (snap.exists()) {
           const val = snap.val() || {}
-          const list = Object.entries(val).map(([id, item]) => ({
+          const list: BusinessActor[] = Object.entries(val).map(([id, item]: [string, any]) => ({
             ...item,
             id,
-          })).filter(a => a.status === 'finish')
+          })).filter((a: any) => a.status === 'finish')
           if (list.length > 0) {
             setSearchIndexData(list)
             try { localStorage.setItem('simpu_rekening_bank_cache', JSON.stringify(list)) } catch {}
@@ -88,11 +84,22 @@ function RekeningBankContent() {
     })
   }, [database])
 
+  const shouldFetchMaster = Boolean(!searchIndexData || searchIndexData.length === 0)
+  const memoQuery = useMemoFirebase(() => {
+    if (!database || !user || !shouldFetchMaster) return null
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('finish'))
+  }, [database, user, shouldFetchMaster])
+
+
+
+  const { data: allData, isLoading } = useList<BusinessActor>(memoQuery)
+
   const filteredAndGroupedData = useMemo(() => {
-    if (!allData) return {}
+    const sourceList = (allData && allData.length > 0) ? allData : searchIndexData
+    if (!sourceList || sourceList.length === 0) return {}
 
     // Filter actors who are verified (lpj_pending or finish)
-    const verifiedActors = sourceList.filter(a => {
+    const verifiedActors = sourceList.filter((a: BusinessActor) => {
       if (!a) return false;
       const basicFilter = (a.status === 'finish') &&
         (
@@ -117,7 +124,7 @@ function RekeningBankContent() {
     // The user said "Menu ini menampilkan Nama Bank dan List Nama", so I'll show only those with data or all from list?
     // I'll show all from the list that have at least one actor.
     
-    verifiedActors.forEach(actor => {
+    verifiedActors.forEach((actor: BusinessActor) => {
       const bank = actor.bankName?.toUpperCase().trim() || "LAINNYA"
       // Find matching bank from our official list
       const officialBank = (bank.includes("CIMB") || bank.includes("NIAGA"))
@@ -134,7 +141,7 @@ function RekeningBankContent() {
     })
 
     return groups
-  }, [allData, searchQuery, selectedBank])
+  }, [allData, searchIndexData, searchQuery, selectedBank, isKoordinator, userProfile])
 
   const handleForwardToLPJ = (bankName: string, actors: BusinessActor[]) => {
     if (!database) return

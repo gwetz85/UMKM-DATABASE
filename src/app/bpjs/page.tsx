@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
-import { cn, parsePobDob, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob, resolveActorDob, resolveActorPobDob, resolveActorAge, extractDobFromNik, calculateAge } from "@/lib/utils"
+import { cn, parsePobDob, resolveRtRw, resolveKelurahan, resolveKecamatan, resolvePob, resolveActorDob, resolveActorPobDob, resolveActorAge, extractDobFromNik } from "@/lib/utils"
 import { BusinessActor } from "@/app/lib/types"
 
 // Normalization Helpers

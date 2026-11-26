@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, Suspense } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
-import { ref, query, equalTo, orderByChild } from "firebase/database"
+import { sanitizeForFirebase } from "@/firebase/non-blocking-updates"
+import { ref, query, equalTo, orderByChild, update } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -369,28 +370,14 @@ function DataRekeningContent() {
     } catch {}
 
     if (!database) return
-    import("firebase/database").then(({ ref, get, update }) => {
+    import("firebase/database").then(({ ref, get }) => {
       get(ref(database, 'settings/actors_search')).then(snap => {
         if (snap.exists()) {
           const val = snap.val() || {}
-          const syncUpdates: Record<string, any> = {}
-          const list = Object.entries(val).map(([id, item]: [string, any]) => {
-            const cleanFullName = String(item?.fullName || "").trim()
-            const cleanBankNum = String(item?.bankNumber || "").trim()
-            const cleanBankOwner = String(item?.bankOwner || "").trim()
-            if (cleanFullName && cleanBankNum && cleanBankOwner.toUpperCase() !== cleanFullName.toUpperCase()) {
-              syncUpdates[`businessActors/${id}/bankOwner`] = cleanFullName
-              syncUpdates[`settings/actors_search/${id}/bankOwner`] = cleanFullName
-              syncUpdates[`settings/report_index/actors/${id}/bankOwner`] = cleanFullName
-              syncUpdates[`settings/report_index/actors/${id}/fullName`] = cleanFullName
-              return { ...item, id, fullName: cleanFullName, bankOwner: cleanFullName }
-            }
-            return { ...item, id }
-          }).filter(a => a.status === 'finish')
-
-          if (isAdmin && Object.keys(syncUpdates).length > 0) {
-            update(ref(database), syncUpdates).catch(console.error)
-          }
+          const list = Object.entries(val).map(([id, item]: [string, any]) => ({
+            ...item,
+            id,
+          })).filter(a => a.status === 'finish')
 
           if (list.length > 0) {
             setSearchIndexData(list)
@@ -399,7 +386,7 @@ function DataRekeningContent() {
         }
       }).catch(console.error).finally(() => setIsSearchLoading(false))
     })
-  }, [database, isAdmin])
+  }, [database])
 
   // Hanya ambil data master berat jika index pencarian kosong (hemat 157 MB payload)
   const shouldFetchMaster = Boolean(!searchIndexData || searchIndexData.length === 0)
@@ -757,12 +744,12 @@ function DataRekeningContent() {
   }
 
   // ── Edit Data Rekening & Pribadi ──────────────────────────────────────────
-  const handleSaveFullEdit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveFullEdit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!isAdmin || !database || !viewingActor) return
     const formData = new FormData(e.currentTarget)
     const lpjVal = formData.get("lpjNominal") as string
-    const lpjNum = lpjVal ? parseInt(lpjVal) : viewingActor.lpjNominal || 0
+    const lpjNum = lpjVal !== null && lpjVal !== "" ? (parseInt(lpjVal, 10) || 0) : 0
     const newFullName = String(formData.get("fullName") || "").trim()
     const oldFullName = String(viewingActor.fullName || "").trim()
     const submittedBankOwner = String(formData.get("bankOwner") || "").trim()
@@ -792,18 +779,43 @@ function DataRekeningContent() {
       lpjNominal: lpjNum,
     }
 
-    updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
-    updateDocumentNonBlocking(ref(database, `settings/actors_search/${viewingActor.id}`), updates)
-    updateDocumentNonBlocking(ref(database, `settings/report_index/actors/${viewingActor.id}`), updates)
-    setSearchIndexData(prev => prev.map(item => item.id === viewingActor.id ? { ...item, ...updates } : item))
+    const cleanUpdates = sanitizeForFirebase(updates)
+    const multiPathUpdates: Record<string, any> = {}
+    for (const [k, v] of Object.entries(cleanUpdates)) {
+      multiPathUpdates[`businessActors/${viewingActor.id}/${k}`] = v
+      multiPathUpdates[`settings/actors_search/${viewingActor.id}/${k}`] = v
+      multiPathUpdates[`settings/report_index/actors/${viewingActor.id}/${k}`] = v
+    }
 
-    import("@/lib/stats-service").then(({ updateStatsOnEdit }) => {
-      updateStatsOnEdit(database, viewingActor, { ...viewingActor, ...updates }).catch(e => console.error(e))
-    })
+    try {
+      await update(ref(database), multiPathUpdates)
+      setSearchIndexData(prev => {
+        const nextList = prev.map(item => item.id === viewingActor.id ? { ...item, ...cleanUpdates } : item)
+        try {
+          localStorage.setItem('simpu_data_rekening_cache', JSON.stringify(nextList))
+          localStorage.removeItem('simpu_rekening_bank_cache')
+          localStorage.removeItem('simpu_rekening_stats_summary')
+          localStorage.removeItem('simpu_rekening_bank_stats')
+          window.dispatchEvent(new Event('simpu_cache_invalidated'))
+        } catch {}
+        return nextList
+      })
 
-    toast({ title: "Tersimpan", description: "Data rekening pelaku usaha berhasil diperbarui." })
-    setIsEditMode(false)
-    setViewingActor({ ...viewingActor, ...updates } as BusinessActor)
+      import('@/lib/stats-service').then(({ updateStatsOnEdit }) => {
+        updateStatsOnEdit(database, viewingActor, { ...viewingActor, ...cleanUpdates }).catch(e => console.error(e))
+      })
+
+      toast({ title: 'Tersimpan', description: 'Data rekening pelaku usaha berhasil diperbarui.' })
+      setIsEditMode(false)
+      setViewingActor({ ...viewingActor, ...cleanUpdates } as BusinessActor)
+    } catch (error: any) {
+      console.error('Gagal menyimpan perubahan rekening:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Menyimpan',
+        description: error?.message || 'Terjadi kesalahan saat menyimpan ke database. Periksa koneksi atau izin akun Anda.'
+      })
+    }
   }
 
   // ── Revert ────────────────────────────────────────────────────────────────
@@ -944,7 +956,7 @@ function DataRekeningContent() {
             className="h-10 text-xs sm:text-sm px-3 rounded-md border border-slate-200 bg-white font-semibold text-slate-700"
           >
             <option value="">Semua Bank</option>
-            {bankStats.map(({ bank, count }) => (
+            {bankStats.map(({ bank, count }: { bank: string; count: number }) => (
               <option key={bank} value={bank}>{bank} ({count})</option>
             ))}
           </select>
@@ -1030,7 +1042,7 @@ function DataRekeningContent() {
                   {statsSummary.total}
                 </span>
               </button>
-              {bankStats.map(({ bank, count }) => {
+              {bankStats.map(({ bank, count }: { bank: string; count: number }) => {
                 const isSelected = selectedBank.toUpperCase() === bank.toUpperCase()
                 const theme = getBankTheme(bank)
 
@@ -1085,7 +1097,7 @@ function DataRekeningContent() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2.5">
-              {bankStats.map(({ bank, count }) => {
+              {bankStats.map(({ bank, count }: { bank: string; count: number }) => {
                 const isSelected = selectedBank.toUpperCase() === bank.toUpperCase()
                 const percentage = statsSummary.total > 0 ? Math.round((count / statsSummary.total) * 100) : 0
                 const theme = getBankTheme(bank)

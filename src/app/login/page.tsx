@@ -346,8 +346,7 @@ export default function LoginPage() {
         device: getDeviceType(navigator.userAgent),
         source: "Web",
         method: "LOGIN SISTEM",
-        userId: user.email || username,
-        userName: username
+        userId: user.email || username
       }, database || undefined)
 
       const sessionId = typeof crypto !== "undefined" && crypto.randomUUID

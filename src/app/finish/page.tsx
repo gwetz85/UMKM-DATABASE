@@ -115,7 +115,7 @@ function FinishContent() {
       get(ref(database, 'settings/actors_search')).then(snap => {
         if (snap.exists()) {
           const val = snap.val() || {}
-          const list = Object.entries(val).map(([id, item]) => ({
+          const list = Object.entries(val).map(([id, item]: [string, any]) => ({
             ...item,
             id,
           })).filter(a => a.status === 'finish')

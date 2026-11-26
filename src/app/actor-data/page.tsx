@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, Suspense, useMemo, useRef, memo } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
-import { ref, query, equalTo, limitToFirst, orderByChild, startAt, get, set } from "firebase/database"
+import { ref, query, equalTo, limitToFirst, orderByChild, startAt, get, set, update } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -1511,23 +1511,41 @@ function ActorDataContent() {
     }
   }
 
-  const handleSaveBank = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveBank = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!database || isMonitoring || !viewingActor) return
     const formData = new FormData(e.currentTarget)
     const isVerifiedDinas = viewingActor.hasilVerifikasiDinas === 'Lolos' || viewingActor.berkasDinasVerified || viewingActor.status === 'finish' || viewingActor.status === 'bank_pending'
     const updates: any = {
-      bankNumber: formData.get('bankNumber'),
-      bankOwner: formData.get('bankOwner'),
-      bankName: formData.get('bankName'),
+      bankNumber: String(formData.get('bankNumber') || '').trim(),
+      bankOwner: String(formData.get('bankOwner') || '').trim().toUpperCase(),
+      bankName: String(formData.get('bankName') || '').trim().toUpperCase(),
       status: isVerifiedDinas ? 'finish' : 'bank_pending',
       ...(isVerifiedDinas ? { readyForLPJ: false } : {})
     }
-    updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
+    const multiPathUpdates: Record<string, any> = {}
+    for (const [k, v] of Object.entries(updates)) {
+      multiPathUpdates[`businessActors/${viewingActor.id}/${k}`] = v
+      multiPathUpdates[`settings/actors_search/${viewingActor.id}/${k}`] = v
+      multiPathUpdates[`settings/report_index/actors/${viewingActor.id}/${k}`] = v
+    }
+    try {
+      await update(ref(database), multiPathUpdates)
+    } catch (err: any) {
+      console.error("Gagal menyimpan rekening:", err)
+      toast({
+        variant: "destructive",
+        title: "Gagal Menyimpan Rekening",
+        description: err?.message || "Terjadi kesalahan saat menyimpan data rekening ke database."
+      })
+      return
+    }
     try {
       localStorage.removeItem('simpu_data_rekening_cache')
       localStorage.removeItem('simpu_cetak_berkas_cache')
       localStorage.removeItem('simpu_rekening_bank_cache')
+      localStorage.removeItem('simpu_rekening_stats_summary')
+      localStorage.removeItem('simpu_rekening_bank_stats')
       window.dispatchEvent(new Event('simpu_cache_invalidated'))
     } catch {}
     
@@ -1840,7 +1858,7 @@ function ActorDataContent() {
           const res = await fetch('/api/actors/search?all=true');
           const json = await res.json();
           if (json.success && Array.isArray(json.results) && json.results.length > 0) {
-            setLocalIndex(json.results);
+            setLocalIndex(json.results as BusinessActor[]);
             try {
               localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(json.results));
             } catch {}
@@ -1849,7 +1867,7 @@ function ActorDataContent() {
               const coordKey = String(filterCoordinator).toUpperCase().trim();
               dataToExport = json.results.filter((a: any) => String(a.coordinator || '').toUpperCase().trim() === coordKey);
             } else if (isSearching || filterMenu !== "all") {
-              const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
+              const freshMap = new Map<string, BusinessActor>(json.results.map((r: any) => [r.id, r as BusinessActor]));
               dataToExport = (dataToExport || []).map(a => freshMap.get(a.id) || a);
             } else {
               dataToExport = json.results;
@@ -2111,7 +2129,7 @@ function ActorDataContent() {
                                 const baSnap = await get(query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(coordKey)));
                                 if (baSnap.exists() && baSnap.val()) {
                                   const raw = baSnap.val();
-                                  coordActors = coordActors.map(a => {
+                                  coordActors = (coordActors.map(a => {
                                     const rawItem = raw[a.id];
                                     if (rawItem && rawItem.surveyData) {
                                       return {
@@ -2120,7 +2138,7 @@ function ActorDataContent() {
                                       };
                                     }
                                     return a;
-                                  });
+                                  }) as BusinessActor[]);
                                 }
                               } catch (e) {
                                 console.warn("Direct RTDB coordinator survey hydration error:", e);
@@ -2132,7 +2150,7 @@ function ActorDataContent() {
                                 const res = await fetch(`/api/actors/search?all=true&coordinator=${encodeURIComponent(coordKey)}`);
                                 const json = await res.json();
                                 if (json.success && Array.isArray(json.results) && json.results.length > 0) {
-                                  const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
+                                  const freshMap = new Map<string, BusinessActor>(json.results.map((r: any) => [r.id, r as BusinessActor]));
                                   coordActors = coordActors.map(a => freshMap.get(a.id) || a);
                                 }
                               } catch (e) {
@@ -2245,7 +2263,7 @@ function ActorDataContent() {
                                   groupsToPrint = refreshedGroups;
 
                                   const allRefreshed = Object.values(refreshedGroups).flat();
-                                  setLocalIndex(allRefreshed);
+                                  setLocalIndex(allRefreshed as BusinessActor[]);
                                   try { localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(allRefreshed)); } catch {}
 
                                   // Background save clean searchMap to settings/actors_search
@@ -2267,7 +2285,7 @@ function ActorDataContent() {
                                 if (json.success && Array.isArray(json.results) && json.results.length > 0) {
                                   setLocalIndex(json.results);
                                   try { localStorage.setItem('simpu_actors_search_cache_v6', JSON.stringify(json.results)); } catch {}
-                                  const freshMap = new Map(json.results.map((r: any) => [r.id, r]));
+                                  const freshMap = new Map<string, BusinessActor>(json.results.map((r: any) => [r.id, r as BusinessActor]));
                                   const refreshedGroups: Record<string, BusinessActor[]> = {};
                                   for (const [k, v] of Object.entries(groupsToPrint)) {
                                     refreshedGroups[k] = v.map(a => freshMap.get(a.id) || a);
